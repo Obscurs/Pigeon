@@ -18,8 +18,8 @@ include_directories (
     "${PROJECT_SOURCE_DIR}/3rdParty/entt"
     "${PROJECT_SOURCE_DIR}/3rdParty/behaviortree_cpp_v3/include"
     "${PROJECT_SOURCE_DIR}/3rdParty/Catch"
-    "${PROJECT_SOURCE_DIR}/Code/PigeonApp"
-    "${PROJECT_SOURCE_DIR}/Code/PigeonApp/PigeonApp.dir/$(Configuration)"
+    "${PROJECT_SOURCE_DIR}/Code/PigeonLib"
+    "${PROJECT_SOURCE_DIR}/Code/PigeonLib/PigeonLib.dir/$(Configuration)"
 )
 
 link_directories (
@@ -39,11 +39,11 @@ link_directories (
 # Adds sources to the Solution Explorer
 
 SET(OBJS
-  ${CMAKE_CURRENT_BINARY_DIR}../../PigeonApp/PigeonApp.dir/$(Configuration)/pch.obj
+  ${CMAKE_CURRENT_BINARY_DIR}../../PigeonLib/PigeonLib.dir/$(Configuration)/pch.obj
 )
 
 add_executable (UT ${OBJS} ${SRC_MAIN} ${SRC_TESTS} )
-add_dependencies(UT PigeonApp) 
+add_dependencies(UT PigeonLib) 
 
 SET_SOURCE_FILES_PROPERTIES(
   ${OBJS}

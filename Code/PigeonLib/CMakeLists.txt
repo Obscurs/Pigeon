@@ -1,5 +1,5 @@
 file(GLOB SRCS
-    "main.cpp"
+    "Test.cpp"
     "pch.cpp"
 )
 
@@ -16,7 +16,7 @@ include_directories (
     "${PROJECT_SOURCE_DIR}/3rdParty/entt"
     "${PROJECT_SOURCE_DIR}/3rdParty/Optick_1.4.0/include"
     "${PROJECT_SOURCE_DIR}/3rdParty/behaviortree_cpp_v3/include"
-    "${PROJECT_SOURCE_DIR}/Code/PigeonApp"
+    "${PROJECT_SOURCE_DIR}/Code/PigeonLib"
 )
 
 link_directories (
@@ -27,19 +27,19 @@ link_directories (
 # Set Properties->General->Configuration Type to Application(.exe)
 # Creates app.exe with the listed sources (main.cxx)
 # Adds sources to the Solution Explorer
-add_executable (PigeonApp ${ECS} ${SRCS} ${BT})
+add_library(PigeonLib SHARED ${ECS} ${SRCS} ${BT})
 
-set_property(TARGET PigeonApp PROPERTY ENABLE_EXPORTS 1)
-set_property(TARGET PigeonApp PROPERTY VS_DEBUGGER_WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/Data)
+set_property(TARGET PigeonLib PROPERTY ENABLE_EXPORTS 1)
+set_property(TARGET PigeonLib PROPERTY VS_DEBUGGER_WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/Data)
 # Properties->Linker->Input->Additional Dependencies
 
 SET(BT optimized behaviortree_cpp_v3.lib debug behaviortree_cpp_v3d.lib)
 
 #to do make this work
-#target_precompile_headers(PigeonApp PUBLIC pch.h)
+#target_precompile_headers(PigeonLib PUBLIC pch.h)
 
 target_link_libraries (
-    PigeonApp
+    PigeonLib
     ${BT}
     bt_sample_nodes.lib
     debug OptickCore.lib optimized OptickCore
@@ -54,7 +54,7 @@ target_link_libraries (
 #set_property(TARGET app PROPERTY FOLDER "executables")
 
 # Properties->General->Output Directory
-set_target_properties(PigeonApp PROPERTIES
+set_target_properties(PigeonLib PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
 
@@ -71,7 +71,7 @@ file(GLOB DATA_TO_COPY
     ${PROJECT_SOURCE_DIR}/Data
 )
 
-add_custom_command(TARGET PigeonApp POST_BUILD
+add_custom_command(TARGET PigeonLib POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${DLLS_TO_COPY}/$(Configuration)
     ${PROJECT_BINARY_DIR}/bin/$(Configuration)
