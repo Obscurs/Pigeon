@@ -1,15 +1,22 @@
 file(GLOB SRCS
-    "Test.cpp"
-    "pch.cpp"
+    "Pigeon.h"
+)
+
+file(GLOB PG
+    "Pigeon/Application.cpp"
+    "Pigeon/Core.h"
+    "Pigeon/EntryPoing.h"
+    "Pigeon/pch.cpp"
 )
 
 file(GLOB BT
-    "BT/sample_nodes/*.cpp"
-    "BT/sample_nodes/*.h"
+    "Pigeon/BT/sample_nodes/*.cpp"
+    "Pigeon/BT/sample_nodes/*.h"
 )
 
 source_group("" FILES ${SRCS})
-source_group("BT" FILES ${BT})
+source_group("Pigeon" FILES ${PG})
+source_group("Pigeon/BT" FILES ${BT})
 
 # Properties->C/C++->General->Additional Include Directories
 include_directories (
@@ -27,11 +34,18 @@ link_directories (
 # Set Properties->General->Configuration Type to Application(.exe)
 # Creates app.exe with the listed sources (main.cxx)
 # Adds sources to the Solution Explorer
-add_library(PigeonLib SHARED ${ECS} ${SRCS} ${BT})
+add_library(PigeonLib SHARED ${ECS} ${SRCS} ${PG} ${BT})
 
 set_property(TARGET PigeonLib PROPERTY ENABLE_EXPORTS 1)
 set_property(TARGET PigeonLib PROPERTY VS_DEBUGGER_WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/Data)
 # Properties->Linker->Input->Additional Dependencies
+
+if(WIN32)
+    target_compile_definitions(PigeonLib PRIVATE PG_PLATFORM_WINDOWS)
+    target_compile_definitions(PigeonLib PRIVATE PG_BUILD_DLL)
+elseif(UNIX)
+    target_compile_definitions(PigeonLib PRIVATE PG_PLATFORM_UNIX)
+endif()
 
 SET(BT optimized behaviortree_cpp_v3.lib debug behaviortree_cpp_v3d.lib)
 

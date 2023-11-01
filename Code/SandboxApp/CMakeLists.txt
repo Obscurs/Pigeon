@@ -1,5 +1,5 @@
 file(GLOB SRCS
-    "main.cpp"
+    "SandboxApp.cpp"
     "pch.cpp"
 )
 
@@ -29,6 +29,12 @@ set_property(TARGET SandboxApp PROPERTY VS_DEBUGGER_WORKING_DIRECTORY ${PROJECT_
 # Properties->Linker->Input->Additional Dependencies
 
 add_dependencies(SandboxApp PigeonLib) 
+
+if(WIN32)
+    target_compile_definitions(SandboxApp PRIVATE PG_PLATFORM_WINDOWS)
+elseif(UNIX)
+    target_compile_definitions(SandboxApp PRIVATE PG_PLATFORM_UNIX)
+endif()
 
 #to do make this work
 #target_precompile_headers(SandboxApp PUBLIC pch.h)
