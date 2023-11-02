@@ -6,7 +6,6 @@ namespace pigeon
 	{
 	}
 
-
 	Application::~Application()
 	{
 	}

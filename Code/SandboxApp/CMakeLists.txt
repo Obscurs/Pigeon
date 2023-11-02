@@ -7,16 +7,18 @@ source_group("" FILES ${SRCS})
 
 # Properties->C/C++->General->Additional Include Directories
 include_directories (
-    "${PROJECT_SOURCE_DIR}/3rdParty/entt"
-    "${PROJECT_SOURCE_DIR}/3rdParty/Optick_1.4.0/include"
-    "${PROJECT_SOURCE_DIR}/3rdParty/behaviortree_cpp_v3/include"
     "${PROJECT_SOURCE_DIR}/Code/PigeonLib"
 	"${PROJECT_SOURCE_DIR}/Code/SandboxApp"
+    "${PROJECT_SOURCE_DIR}/3rdParty/behaviortree_cpp_v3/include"
+    "${PROJECT_SOURCE_DIR}/3rdParty/entt"
+    "${PROJECT_SOURCE_DIR}/3rdParty/Optick_1.4.0/include"
+    "${PROJECT_SOURCE_DIR}/3rdParty/spdlog-1.12.0/include"
 )
 
 link_directories (
     "${PROJECT_SOURCE_DIR}/3rdParty/behaviortree_cpp_v3/lib"
     "${PROJECT_SOURCE_DIR}/3rdParty/Optick_1.4.0/lib/x64"
+    "${PROJECT_SOURCE_DIR}/3rdParty/spdlog-1.12.0/lib"
 )
 
 # Set Properties->General->Configuration Type to Application(.exe)
@@ -47,6 +49,7 @@ target_link_libraries (
     gmock_main.lib
     gtest.lib
     gtest_main.lib
+    spdlog.lib
 )
 
 # Creates a folder "executables" and adds target 
