@@ -12,7 +12,6 @@ public:
 	{
 
 	}
-
 };
 
 pigeon::Application* pigeon::CreateApplication()

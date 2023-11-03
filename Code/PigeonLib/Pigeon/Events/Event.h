@@ -2,9 +2,6 @@
 
 #include "Pigeon/Core.h"
 
-#include <string>
-#include <functional>
-
 namespace pigeon {
 
 	// Events in Pigeon are currently blocking, meaning when an event occurs it

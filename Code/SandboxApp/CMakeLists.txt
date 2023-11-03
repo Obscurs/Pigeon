@@ -1,6 +1,5 @@
 file(GLOB SRCS
     "SandboxApp.cpp"
-    "pch.cpp"
 )
 
 source_group("" FILES ${SRCS})
@@ -9,15 +8,15 @@ source_group("" FILES ${SRCS})
 include_directories (
     "${PROJECT_SOURCE_DIR}/Code/PigeonLib"
 	"${PROJECT_SOURCE_DIR}/Code/SandboxApp"
-    "${PROJECT_SOURCE_DIR}/3rdParty/behaviortree_cpp_v3/include"
-    "${PROJECT_SOURCE_DIR}/3rdParty/entt"
-    "${PROJECT_SOURCE_DIR}/3rdParty/Optick_1.4.0/include"
+#    "${PROJECT_SOURCE_DIR}/3rdParty/behaviortree_cpp_v3/include"
+#    "${PROJECT_SOURCE_DIR}/3rdParty/entt"
+#    "${PROJECT_SOURCE_DIR}/3rdParty/Optick_1.4.0/include"
     "${PROJECT_SOURCE_DIR}/3rdParty/spdlog-1.12.0/include"
 )
 
 link_directories (
-    "${PROJECT_SOURCE_DIR}/3rdParty/behaviortree_cpp_v3/lib"
-    "${PROJECT_SOURCE_DIR}/3rdParty/Optick_1.4.0/lib/x64"
+#    "${PROJECT_SOURCE_DIR}/3rdParty/behaviortree_cpp_v3/lib"
+#    "${PROJECT_SOURCE_DIR}/3rdParty/Optick_1.4.0/lib/x64"
     "${PROJECT_SOURCE_DIR}/3rdParty/spdlog-1.12.0/lib"
 )
 
@@ -38,17 +37,16 @@ elseif(UNIX)
     target_compile_definitions(SandboxApp PRIVATE PG_PLATFORM_UNIX)
 endif()
 
-#to do make this work
-#target_precompile_headers(SandboxApp PUBLIC pch.h)
+target_precompile_headers(SandboxApp PRIVATE "${PROJECT_SOURCE_DIR}/Code/PigeonLib/pch.h")
 
 target_link_libraries (
     SandboxApp PRIVATE PigeonLib
-    bt_sample_nodes.lib
-    debug OptickCore.lib optimized OptickCore
-    gmock.lib
-    gmock_main.lib
-    gtest.lib
-    gtest_main.lib
+#    bt_sample_nodes.lib
+#    debug OptickCore.lib optimized OptickCore
+#    gmock.lib
+#    gmock_main.lib
+#    gtest.lib
+#    gtest_main.lib
     spdlog.lib
 )
 

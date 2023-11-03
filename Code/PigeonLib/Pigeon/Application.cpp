@@ -1,3 +1,5 @@
+#include "pch.h"
+
 #include "Application.h"
 
 #include "Pigeon/Events/ApplicationEvent.h"

@@ -15,18 +15,18 @@ source_group("Tests" FILES ${SRC_TESTS})
 #include_directories (.)
 
 include_directories (
-    "${PROJECT_SOURCE_DIR}/3rdParty/Optick_1.4.0/include"
-    "${PROJECT_SOURCE_DIR}/3rdParty/entt"
-    "${PROJECT_SOURCE_DIR}/3rdParty/behaviortree_cpp_v3/include"
+#    "${PROJECT_SOURCE_DIR}/3rdParty/Optick_1.4.0/include"
+#    "${PROJECT_SOURCE_DIR}/3rdParty/entt"
+#    "${PROJECT_SOURCE_DIR}/3rdParty/behaviortree_cpp_v3/include"
     "${PROJECT_SOURCE_DIR}/3rdParty/Catch"
     "${PROJECT_SOURCE_DIR}/Code/PigeonLib"
     "${PROJECT_SOURCE_DIR}/Code/PigeonLib/PigeonLib.dir/$(Configuration)"
 )
 
 link_directories (
-    "${PROJECT_SOURCE_DIR}/3rdParty/Optick_1.4.0/lib/x64"
-    "${PROJECT_SOURCE_DIR}/3rdParty/behaviortree_cpp_v3/lib"
-    "${PROJECT_SOURCE_DIR}/3rdParty/behaviortree_cpp_v3/lib"
+#    "${PROJECT_SOURCE_DIR}/3rdParty/Optick_1.4.0/lib/x64"
+#    "${PROJECT_SOURCE_DIR}/3rdParty/behaviortree_cpp_v3/lib"
+#    "${PROJECT_SOURCE_DIR}/3rdParty/behaviortree_cpp_v3/lib"
     "${PROJECT_BINARY_DIR}/bin"
 )
 
@@ -39,9 +39,9 @@ link_directories (
 # Creates app.exe with the listed sources (main.cxx)
 # Adds sources to the Solution Explorer
 
-SET(OBJS
-  ${CMAKE_CURRENT_BINARY_DIR}../../PigeonLib/PigeonLib.dir/$(Configuration)/pch.obj
-)
+#SET(OBJS
+#  ${CMAKE_CURRENT_BINARY_DIR}../../PigeonLib/PigeonLib.dir/$(Configuration)/pch.obj
+#)
 
 add_executable (UT ${OBJS} ${SRC_MAIN} ${SRC_TESTS} )
 add_dependencies(UT PigeonLib) 
@@ -55,12 +55,12 @@ SET_SOURCE_FILES_PROPERTIES(
 
 target_link_libraries (
     UT
-    bt_sample_nodes.lib
-    debug OptickCore.lib optimized OptickCore
-    gmock.lib
-    gmock_main.lib
-    gtest.lib
-    gtest_main.lib
+#    bt_sample_nodes.lib
+#    debug OptickCore.lib optimized OptickCore
+#    gmock.lib
+#    gmock_main.lib
+#    gtest.lib
+#    gtest_main.lib
 )
 
 #target_link_libraries(UT PigeonApp.lib)

@@ -2,8 +2,6 @@
 
 #include "Event.h"
 
-#include <sstream>
-
 namespace pigeon {
 
 	class PIGEON_API KeyEvent : public Event
