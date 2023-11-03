@@ -2,6 +2,8 @@
 
 #include "Core.h"
 
+#include "Events/Event.h"
+
 namespace pigeon 
 {
 	class PIGEON_API Application

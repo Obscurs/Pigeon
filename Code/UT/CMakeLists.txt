@@ -5,6 +5,7 @@ file(GLOB SRC_MAIN
 )
 file(GLOB SRC_TESTS
     "UT_Sample/*.cpp"
+    "UT_Events/*.cpp"
 )
 
 source_group("" FILES ${SRC_MAIN})
