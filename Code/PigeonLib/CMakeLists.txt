@@ -9,6 +9,10 @@ file(GLOB PG
     "Pigeon/EntryPoint.h"
 )
 
+file(GLOB PLATFORM
+    "Platform/Windows/WindowsWindow.cpp"
+)
+
 #file(GLOB BT
 #    "Pigeon/BT/sample_nodes/*.cpp"
 #    "Pigeon/BT/sample_nodes/*.h"
@@ -16,6 +20,7 @@ file(GLOB PG
 
 source_group("" FILES ${SRCS})
 source_group("Pigeon" FILES ${PG})
+source_group("Platform/Windows" FILES ${PLATFORM})
 #source_group("Pigeon/BT" FILES ${BT})
 
 # Properties->C/C++->General->Additional Include Directories
@@ -36,7 +41,7 @@ link_directories (
 # Set Properties->General->Configuration Type to Application(.exe)
 # Creates app.exe with the listed sources (main.cxx)
 # Adds sources to the Solution Explorer
-add_library(PigeonLib SHARED ${ECS} ${SRCS} ${PG})
+add_library(PigeonLib SHARED ${ECS} ${SRCS} ${PG} ${PLATFORM})
 
 set_property(TARGET PigeonLib PROPERTY ENABLE_EXPORTS 1)
 set_property(TARGET PigeonLib PROPERTY VS_DEBUGGER_WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/Data)
