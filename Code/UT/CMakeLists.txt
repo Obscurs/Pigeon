@@ -1,5 +1,3 @@
-
-
 file(GLOB SRC_MAIN
     "Test.cpp"
 )
@@ -20,7 +18,7 @@ include_directories (
 #    "${PROJECT_SOURCE_DIR}/3rdParty/behaviortree_cpp_v3/include"
     "${PROJECT_SOURCE_DIR}/3rdParty/Catch"
     "${PROJECT_SOURCE_DIR}/Code/PigeonLib"
-    "${PROJECT_SOURCE_DIR}/Code/PigeonLib/PigeonLib.dir/$(Configuration)"
+    "${PROJECT_SOURCE_DIR}/Code/PigeonLib/PigeonLib.dir/Test"
 )
 
 link_directories (
@@ -45,6 +43,9 @@ link_directories (
 
 add_executable (UT ${OBJS} ${SRC_MAIN} ${SRC_TESTS} )
 add_dependencies(UT PigeonLib) 
+
+set_property(TARGET UT PROPERTY EXCLUDE_FROM_DEFAULT_BUILD_RELEASE ON)
+set_property(TARGET UT PROPERTY EXCLUDE_FROM_DEFAULT_BUILD_DEBUG ON)
 
 SET_SOURCE_FILES_PROPERTIES(
   ${OBJS}

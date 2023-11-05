@@ -1,9 +1,17 @@
 #include "pch.h"
 #include "WindowsWindow.h"
 
+#ifndef PG_PLATFORM_TEST
+
+#include "Pigeon/Events/ApplicationEvent.h"
+#include "Pigeon/Events/MouseEvent.h"
+#include "Pigeon/Events/KeyEvent.h"
+
 namespace pigeon {
 	
 	static bool s_WindowInitialized = false;
+
+	WindowsWindow::WindowData WindowsWindow::m_Data;
 
 	Window* Window::Create(const WindowProps& props)
 	{
@@ -76,7 +84,7 @@ namespace pigeon {
 		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
 			if (msg.message == WM_QUIT)
-				return msg.wParam;
+				return 0;
 
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
@@ -89,11 +97,113 @@ namespace pigeon {
 	{
 		switch (msg)
 		{
-		case WM_DESTROY:
-			PostQuitMessage(0);
-			return 0;
+			case WM_DESTROY:
+			{
+				WindowCloseEvent event;
+				m_Data.EventCallback(event);
+				PostQuitMessage(0);
+				return 0;
+			}
+			case WM_SIZE: {
+				// The LOWORD and HIWORD macros extract the width and height
+				unsigned int width = LOWORD(lParam);
+				unsigned int height = HIWORD(lParam);
+
+				// Here you can update the internal data if you store the dimensions
+				m_Data.m_Width = width;
+				m_Data.m_Height = height;
+
+				// Now create a WindowResizeEvent and dispatch it
+				WindowResizeEvent event(width, height);
+				if (m_Data.EventCallback) {
+					m_Data.EventCallback(event);
+				}
+				break;
+			}
+			case WM_MOUSEMOVE: 
+			{
+				int x = LOWORD(lParam);
+				int y = HIWORD(lParam);
+				// Do something with x and y, like creating a mouse event and dispatching it.
+				MouseMovedEvent event((float)x, (float)y);
+				m_Data.EventCallback(event);
+				break;
+			}
+			case WM_MOUSEWHEEL: 
+			{
+				float yOffset = static_cast<float>(GET_WHEEL_DELTA_WPARAM(wParam)) / static_cast<float>(WHEEL_DELTA);
+				// Since there's no horizontal scrolling in this message, the xOffset is 0
+				float xOffset = 0.0f;
+
+				MouseScrolledEvent event((float)xOffset, (float)yOffset);
+				m_Data.EventCallback(event);
+				break;
+			}
+
+			case WM_LBUTTONDOWN:
+			{
+				MouseButtonPressedEvent event(0);
+				m_Data.EventCallback(event);
+				break;
+			}
+			case WM_RBUTTONDOWN:
+			{
+				MouseButtonPressedEvent event(1);
+				m_Data.EventCallback(event);
+				break;
+			}
+			case WM_MBUTTONDOWN:
+			{
+				MouseButtonPressedEvent event(2);
+				m_Data.EventCallback(event);
+				break;
+			}
+			case WM_LBUTTONUP:
+			{
+				MouseButtonReleasedEvent event(0);
+				m_Data.EventCallback(event);
+				break;
+			}
+			case WM_RBUTTONUP:
+			{
+				MouseButtonReleasedEvent event(1);
+				m_Data.EventCallback(event);
+				break;
+			}
+			case WM_MBUTTONUP: 
+			{
+				MouseButtonReleasedEvent event(2);
+				m_Data.EventCallback(event);
+				break;
+			}
+
+			case WM_KEYDOWN:
+			case WM_SYSKEYDOWN: 
+			{ // SYSKEYDOWN is used for ALT key combinations
+				bool isRepeat = (lParam & 0x40000000) != 0;
+				if (!isRepeat) {
+					// Key has been pressed (not a repeat)
+					KeyPressedEvent event(static_cast<int>(wParam), 0);
+					m_Data.EventCallback(event);
+				}
+				else
+				{
+					KeyPressedEvent event(static_cast<int>(wParam), 1);
+					m_Data.EventCallback(event);
+				}
+				break;
+			}
+
+			case WM_KEYUP:
+			case WM_SYSKEYUP: 
+			{
+				KeyReleasedEvent event(static_cast<int>(wParam));
+				m_Data.EventCallback(event);
+				break;
+			}
 		}
 		
 		return DefWindowProc(hWnd, msg, wParam, lParam);
 	}
 }
+#endif

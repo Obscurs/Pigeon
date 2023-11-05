@@ -1,3 +1,5 @@
+set(CMAKE_CONFIGURATION_TYPES "Debug;Release;Test" CACHE STRING "" FORCE)
+
 file(GLOB SRCS
     "Pigeon.h"
 )
@@ -9,8 +11,12 @@ file(GLOB PG
     "Pigeon/EntryPoint.h"
 )
 
-file(GLOB PLATFORM
+file(GLOB PLATFORM_WIN
     "Platform/Windows/WindowsWindow.cpp"
+)
+
+file(GLOB PLATFORM_TEST
+    "Platform/UTMockup/UTWindow.cpp"
 )
 
 #file(GLOB BT
@@ -20,7 +26,7 @@ file(GLOB PLATFORM
 
 source_group("" FILES ${SRCS})
 source_group("Pigeon" FILES ${PG})
-source_group("Platform/Windows" FILES ${PLATFORM})
+#source_group("Platform" FILES ${PLATFORM})
 #source_group("Pigeon/BT" FILES ${BT})
 
 # Properties->C/C++->General->Additional Include Directories
@@ -41,7 +47,23 @@ link_directories (
 # Set Properties->General->Configuration Type to Application(.exe)
 # Creates app.exe with the listed sources (main.cxx)
 # Adds sources to the Solution Explorer
-add_library(PigeonLib SHARED ${ECS} ${SRCS} ${PG} ${PLATFORM})
+add_library(PigeonLib SHARED)
+
+# Add common sources to target
+target_sources(PigeonLib PRIVATE ${ECS} ${SRCS} ${PG})
+
+# Platform/Test files are included only for the "Test" configuration
+if(CMAKE_CONFIGURATION_TYPES MATCHES "Test")
+    target_sources(PigeonLib PRIVATE $<$<CONFIG:Test>:${PLATFORM_TEST}>)
+    source_group("Platform\\Test" FILES ${PLATFORM_TEST})
+endif()
+
+# Platform/Windows files are included for configurations other than "Test"
+# This assumes WIN32 is true; adjust as necessary for other platforms
+if(WIN32)
+    target_sources(PigeonLib PRIVATE $<$<NOT:$<CONFIG:Test>>:${PLATFORM_WIN}>)
+    source_group("Platform\\Windows" FILES ${PLATFORM_WIN})
+endif()
 
 set_property(TARGET PigeonLib PROPERTY ENABLE_EXPORTS 1)
 set_property(TARGET PigeonLib PROPERTY VS_DEBUGGER_WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/Data)
@@ -49,6 +71,10 @@ set_property(TARGET PigeonLib PROPERTY VS_DEBUGGER_WORKING_DIRECTORY ${PROJECT_S
 target_precompile_headers(PigeonLib PRIVATE pch.h)
 
 # Properties->Linker->Input->Additional Dependencies
+
+target_compile_definitions(PigeonLib PRIVATE
+    $<$<CONFIG:Test>:PG_PLATFORM_TEST>
+)
 
 if(WIN32)
     target_compile_definitions(PigeonLib PRIVATE PG_PLATFORM_WINDOWS)
