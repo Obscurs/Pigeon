@@ -6,6 +6,8 @@ file(GLOB SRCS
 
 file(GLOB PG
     "Pigeon/Application.cpp"
+    "Pigeon/Layer.cpp"
+    "Pigeon/LayerStack.cpp"
     "Pigeon/Log.cpp"
     "Pigeon/Core.h"
     "Pigeon/EntryPoint.h"
