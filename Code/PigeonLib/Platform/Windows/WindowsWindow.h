@@ -22,7 +22,8 @@ namespace pigeon {
 		bool IsVSync() const override { return false; };
 
 		static std::optional<int> ProcessMessages();
-	
+		
+		static HWND GetWindowHandle() { return m_Data.m_HWnd; }
 	private:
 		virtual void Init(const WindowProps& props);
 		virtual void Shutdown();

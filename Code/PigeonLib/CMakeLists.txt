@@ -1,5 +1,3 @@
-set(CMAKE_CONFIGURATION_TYPES "Debug;Release;Test" CACHE STRING "" FORCE)
-
 file(GLOB SRCS
     "Pigeon.h"
 )
@@ -11,6 +9,10 @@ file(GLOB PG
     "Pigeon/Log.cpp"
     "Pigeon/Core.h"
     "Pigeon/EntryPoint.h"
+)
+
+file(GLOB PGIMGUI
+    "Pigeon/ImGui/ImGuiLayer.cpp"
 )
 
 file(GLOB PLATFORM_WIN
@@ -28,6 +30,7 @@ file(GLOB PLATFORM_TEST
 
 source_group("" FILES ${SRCS})
 source_group("Pigeon" FILES ${PG})
+source_group("Pigeon/ImGui" FILES ${PGIMGUI})
 #source_group("Platform" FILES ${PLATFORM})
 #source_group("Pigeon/BT" FILES ${BT})
 
@@ -38,6 +41,8 @@ include_directories (
 #    "${PROJECT_SOURCE_DIR}/3rdParty/entt"
 #    "${PROJECT_SOURCE_DIR}/3rdParty/Optick_1.4.0/include"
     "${PROJECT_SOURCE_DIR}/3rdParty/spdlog-1.12.0/include"
+    "${PROJECT_SOURCE_DIR}/3rdParty/imgui"
+    "${PROJECT_SOURCE_DIR}/3rdParty"
 )
 
 link_directories (
@@ -52,18 +57,20 @@ link_directories (
 add_library(PigeonLib SHARED)
 
 # Add common sources to target
-target_sources(PigeonLib PRIVATE ${ECS} ${SRCS} ${PG})
+target_sources(PigeonLib PRIVATE ${ECS} ${SRCS} ${PG} ${PGIMGUI})
+add_dependencies(PigeonLib ImGui) 
 
 # Platform/Test files are included only for the "Test" configuration
-if(CMAKE_CONFIGURATION_TYPES MATCHES "Test")
-    target_sources(PigeonLib PRIVATE $<$<CONFIG:Test>:${PLATFORM_TEST}>)
-    source_group("Platform\\Test" FILES ${PLATFORM_TEST})
-endif()
+#if(CMAKE_CONFIGURATION_TYPES MATCHES "Test")
+#    target_sources(PigeonLib PRIVATE $<$<CONFIG:Test>:${PLATFORM_TEST}>)
+#    source_group("Platform\\Test" FILES ${PLATFORM_TEST})
+#endif()
 
 # Platform/Windows files are included for configurations other than "Test"
 # This assumes WIN32 is true; adjust as necessary for other platforms
 if(WIN32)
-    target_sources(PigeonLib PRIVATE $<$<NOT:$<CONFIG:Test>>:${PLATFORM_WIN}>)
+    #target_sources(PigeonLib PRIVATE $<$<NOT:$<CONFIG:Test>>:${PLATFORM_WIN}>)
+    target_sources(PigeonLib PRIVATE ${PLATFORM_WIN})
     source_group("Platform\\Windows" FILES ${PLATFORM_WIN})
 endif()
 
@@ -74,9 +81,9 @@ target_precompile_headers(PigeonLib PRIVATE pch.h)
 
 # Properties->Linker->Input->Additional Dependencies
 
-target_compile_definitions(PigeonLib PRIVATE
-    $<$<CONFIG:Test>:PG_PLATFORM_TEST>
-)
+#target_compile_definitions(PigeonLib PRIVATE
+#    $<$<CONFIG:Test>:PG_PLATFORM_TEST>
+#)
 
 if(WIN32)
     target_compile_definitions(PigeonLib PRIVATE PG_PLATFORM_WINDOWS)
@@ -92,6 +99,7 @@ endif()
 
 target_link_libraries (
     PigeonLib
+    ImGui
 #    ${BT}
 #    bt_sample_nodes.lib
 #    debug OptickCore.lib optimized OptickCore

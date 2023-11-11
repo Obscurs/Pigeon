@@ -21,5 +21,6 @@ message ("cxx Flags: " ${CMAKE_CXX_FLAGS})
 
 # Sub-directories where more CMakeLists.txt exist
 add_subdirectory(Code/PigeonLib)
-add_subdirectory(Code/UT)
 add_subdirectory(Code/SandboxApp)
+add_subdirectory(Code/UT)
+add_subdirectory(3rdParty/imgui)
