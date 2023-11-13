@@ -53,10 +53,12 @@ namespace pigeon
 	{
 		while (m_Running)
 		{
+			m_Window->OnPreUpdate();
 			for (Layer* layer : m_LayerStack)
 				layer->OnUpdate();
 
 			m_Window->OnUpdate();
+			m_Window->OnPostUpdate();
 		}
 	}
 
