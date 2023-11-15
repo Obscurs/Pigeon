@@ -187,8 +187,8 @@ namespace pigeon {
 
 	LRESULT __stdcall WindowsWindow::WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
-		if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
-			return true;
+		//if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
+		//	return true;
 
 		switch (msg)
 		{
@@ -286,6 +286,13 @@ namespace pigeon {
 					KeyPressedEvent event(static_cast<int>(wParam), 1);
 					m_Data.EventCallback(event);
 				}
+				break;
+			}
+
+			case WM_CHAR:
+			{
+				KeyTypedEvent event(static_cast<int>(wParam));
+				m_Data.EventCallback(event);
 				break;
 			}
 
