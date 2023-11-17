@@ -10,12 +10,18 @@ public:
 
 	void OnUpdate() override
 	{
-		PG_INFO("ExampleLayer::Update");
+		//PG_INFO("ExampleLayer::Update");
 	}
 
 	void OnEvent(pigeon::Event& event) override
 	{
-		PG_TRACE("{0}", event);
+		if (event.GetEventType() == pigeon::EventType::KeyPressed)
+		{
+			pigeon::KeyPressedEvent& e = (pigeon::KeyPressedEvent&)event;
+			if (e.GetKeyCode() == PG_KEY_TAB)
+				PG_TRACE("Tab key is pressed (event)!");
+			PG_TRACE("{0}", (char)e.GetKeyCode());
+		}
 	}
 
 };

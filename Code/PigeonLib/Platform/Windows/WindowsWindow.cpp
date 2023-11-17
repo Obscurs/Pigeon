@@ -24,22 +24,22 @@ namespace pigeon {
 	void WindowsWindow::CleanupDeviceD3D()
 	{
 		CleanupRenderTarget();
-		if (m_Data.g_pSwapChain) { m_Data.g_pSwapChain->Release(); m_Data.g_pSwapChain = nullptr; }
-		if (m_Data.g_pd3dDeviceContext) { m_Data.g_pd3dDeviceContext->Release(); m_Data.g_pd3dDeviceContext = nullptr; }
-		if (m_Data.g_pd3dDevice) { m_Data.g_pd3dDevice->Release(); m_Data.g_pd3dDevice = nullptr; }
+		if (m_Data.m_PSwapChain) { m_Data.m_PSwapChain->Release(); m_Data.m_PSwapChain = nullptr; }
+		if (m_Data.m_Pd3dDeviceContext) { m_Data.m_Pd3dDeviceContext->Release(); m_Data.m_Pd3dDeviceContext = nullptr; }
+		if (m_Data.m_Pd3dDevice) { m_Data.m_Pd3dDevice->Release(); m_Data.m_Pd3dDevice = nullptr; }
 	}
 
 	void WindowsWindow::CreateRenderTarget()
 	{
 		ID3D11Texture2D* pBackBuffer;
-		m_Data.g_pSwapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
-		m_Data.g_pd3dDevice->CreateRenderTargetView(pBackBuffer, nullptr, &m_Data.g_mainRenderTargetView);
+		m_Data.m_PSwapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
+		m_Data.m_Pd3dDevice->CreateRenderTargetView(pBackBuffer, nullptr, &m_Data.m_MainRenderTargetView);
 		pBackBuffer->Release();
 	}
 
 	void WindowsWindow::CleanupRenderTarget()
 	{
-		if (m_Data.g_mainRenderTargetView) { m_Data.g_mainRenderTargetView->Release(); m_Data.g_mainRenderTargetView = nullptr; }
+		if (m_Data.m_MainRenderTargetView) { m_Data.m_MainRenderTargetView->Release(); m_Data.m_MainRenderTargetView = nullptr; }
 	}
 
 	bool WindowsWindow::CreateDeviceD3D(HWND hWnd)
@@ -65,9 +65,9 @@ namespace pigeon {
 		//createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
 		D3D_FEATURE_LEVEL featureLevel;
 		const D3D_FEATURE_LEVEL featureLevelArray[2] = { D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_0, };
-		HRESULT res = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, createDeviceFlags, featureLevelArray, 2, D3D11_SDK_VERSION, &sd, &m_Data.g_pSwapChain, &m_Data.g_pd3dDevice, &featureLevel, &m_Data.g_pd3dDeviceContext);
+		HRESULT res = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, createDeviceFlags, featureLevelArray, 2, D3D11_SDK_VERSION, &sd, &m_Data.m_PSwapChain, &m_Data.m_Pd3dDevice, &featureLevel, &m_Data.m_Pd3dDeviceContext);
 		if (res == DXGI_ERROR_UNSUPPORTED) // Try high-performance WARP software driver if hardware is not available.
-			res = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_WARP, nullptr, createDeviceFlags, featureLevelArray, 2, D3D11_SDK_VERSION, &sd, &m_Data.g_pSwapChain, &m_Data.g_pd3dDevice, &featureLevel, &m_Data.g_pd3dDeviceContext);
+			res = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_WARP, nullptr, createDeviceFlags, featureLevelArray, 2, D3D11_SDK_VERSION, &sd, &m_Data.m_PSwapChain, &m_Data.m_Pd3dDevice, &featureLevel, &m_Data.m_Pd3dDeviceContext);
 		if (res != S_OK)
 			return false;
 
@@ -148,17 +148,17 @@ namespace pigeon {
 	void WindowsWindow::OnPreUpdate()
 	{
 		// Handle window resize (we don't resize directly in the WM_SIZE handler)
-		if (m_Data.g_ResizeWidth != 0 && m_Data.g_ResizeHeight != 0)
+		if (m_Data.m_ResizeWidth != 0 && m_Data.m_ResizeHeight != 0)
 		{
 			CleanupRenderTarget();
-			m_Data.g_pSwapChain->ResizeBuffers(0, m_Data.g_ResizeWidth, m_Data.g_ResizeHeight, DXGI_FORMAT_UNKNOWN, 0);
-			m_Data.g_ResizeWidth = m_Data.g_ResizeHeight = 0;
+			m_Data.m_PSwapChain->ResizeBuffers(0, m_Data.m_ResizeWidth, m_Data.m_ResizeHeight, DXGI_FORMAT_UNKNOWN, 0);
+			m_Data.m_ResizeWidth = m_Data.m_ResizeHeight = 0;
 			CreateRenderTarget();
 		}
 
 		const float clear_color_with_alpha[4] = { 0.45f, 0.55f, 0.60f, 1.00f };
-		m_Data.g_pd3dDeviceContext->OMSetRenderTargets(1, &m_Data.g_mainRenderTargetView, nullptr);
-		m_Data.g_pd3dDeviceContext->ClearRenderTargetView(m_Data.g_mainRenderTargetView, clear_color_with_alpha);
+		m_Data.m_Pd3dDeviceContext->OMSetRenderTargets(1, &m_Data.m_MainRenderTargetView, nullptr);
+		m_Data.m_Pd3dDeviceContext->ClearRenderTargetView(m_Data.m_MainRenderTargetView, clear_color_with_alpha);
 	}
 
 	void WindowsWindow::OnUpdate()
@@ -167,7 +167,7 @@ namespace pigeon {
 	}
 	void WindowsWindow::OnPostUpdate()
 	{
-		m_Data.g_pSwapChain->Present(1, 0);
+		m_Data.m_PSwapChain->Present(1, 0);
 	}
 
 	std::optional<int> WindowsWindow::ProcessMessages()

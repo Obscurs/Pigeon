@@ -9,6 +9,7 @@ file(GLOB PG
     "Pigeon/Log.cpp"
     "Pigeon/Core.h"
     "Pigeon/EntryPoint.h"
+    "Pigeon/Input.h"
 )
 
 file(GLOB PGIMGUI
@@ -17,6 +18,7 @@ file(GLOB PGIMGUI
 
 file(GLOB PLATFORM_WIN
     "Platform/Windows/WindowsWindow.cpp"
+    "Platform/Windows/WindowsInput.cpp"
 )
 
 file(GLOB PLATFORM_TEST

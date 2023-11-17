@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include "Application.h"
+#include "Input.h"
 
 #include "Pigeon/Events/ApplicationEvent.h"
 #include "Pigeon/Log.h"

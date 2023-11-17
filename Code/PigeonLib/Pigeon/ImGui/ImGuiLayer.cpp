@@ -6,6 +6,8 @@
 #include "imgui/backends/imgui_impl_win32.h"
 
 #include "Pigeon/Application.h"
+#include "Pigeon/KeyCodes.h"
+
 #include "Platform/Windows/WindowsWindow.h"
 
 static bool s_show_demo_window = true;
@@ -31,31 +33,31 @@ namespace pigeon
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
-		// TEMPORARY: should eventually use Pigeon key codes
-		io.KeyMap[ImGuiKey_Tab] = 258;
-		io.KeyMap[ImGuiKey_LeftArrow] = 263;
-		io.KeyMap[ImGuiKey_RightArrow] = 262;
-		io.KeyMap[ImGuiKey_UpArrow] = 265;
-		io.KeyMap[ImGuiKey_DownArrow] = 264;
-		io.KeyMap[ImGuiKey_PageUp] = 266;
-		io.KeyMap[ImGuiKey_PageDown] = 267;
-		io.KeyMap[ImGuiKey_Home] = 268;
-		io.KeyMap[ImGuiKey_End] = 269;
-		io.KeyMap[ImGuiKey_Insert] = 260;
-		io.KeyMap[ImGuiKey_Delete] = 261;
-		io.KeyMap[ImGuiKey_Backspace] = 8;
-		io.KeyMap[ImGuiKey_Space] = 32;
-		io.KeyMap[ImGuiKey_Enter] = 257;
-		io.KeyMap[ImGuiKey_Escape] = 256;
-		io.KeyMap[ImGuiKey_A] = 65;
-		io.KeyMap[ImGuiKey_C] = 67;
-		io.KeyMap[ImGuiKey_V] = 86;
-		io.KeyMap[ImGuiKey_X] = 88;
-		io.KeyMap[ImGuiKey_Y] = 89;
-		io.KeyMap[ImGuiKey_Z] = 90;
+		io.KeyMap[ImGuiKey_Tab] = PG_KEY_TAB;
+		io.KeyMap[ImGuiKey_LeftArrow] = PG_KEY_LEFT;
+		io.KeyMap[ImGuiKey_RightArrow] = PG_KEY_RIGHT;
+		io.KeyMap[ImGuiKey_UpArrow] = PG_KEY_UP;
+		io.KeyMap[ImGuiKey_DownArrow] = PG_KEY_DOWNN;
+		io.KeyMap[ImGuiKey_PageUp] = PG_KEY_PAGE_UP;
+		io.KeyMap[ImGuiKey_PageDown] = PG_KEY_PAGE_DOWN;
+		io.KeyMap[ImGuiKey_Home] = PG_KEY_HOME;
+		io.KeyMap[ImGuiKey_End] = PG_KEY_END;
+		io.KeyMap[ImGuiKey_Insert] = PG_KEY_INSERT;
+		io.KeyMap[ImGuiKey_Delete] = PG_KEY_DELETE;
+		io.KeyMap[ImGuiKey_Backspace] = PG_KEY_BACKSPACE;
+		io.KeyMap[ImGuiKey_Space] = PG_KEY_SPACE;
+		io.KeyMap[ImGuiKey_Enter] = PG_KEY_ENTER;
+		io.KeyMap[ImGuiKey_Escape] = PG_KEY_ESCAPE;
+		io.KeyMap[ImGuiKey_A] = PG_KEY_A;
+		io.KeyMap[ImGuiKey_C] = PG_KEY_C;
+		io.KeyMap[ImGuiKey_V] = PG_KEY_V;
+		io.KeyMap[ImGuiKey_X] = PG_KEY_X;
+		io.KeyMap[ImGuiKey_Y] = PG_KEY_Y;
+		io.KeyMap[ImGuiKey_Z] = PG_KEY_Z;
 
-		ImGui_ImplWin32_Init(pigeon::WindowsWindow::GetWindowData().m_HWnd);
-		ImGui_ImplDX11_Init(pigeon::WindowsWindow::GetWindowData().g_pd3dDevice, pigeon::WindowsWindow::GetWindowData().g_pd3dDeviceContext);
+		auto window = static_cast<WindowsWindow::WindowData*>(Application::Get().GetWindow().GetNativeWindow());
+		ImGui_ImplWin32_Init(window->m_HWnd);
+		ImGui_ImplDX11_Init(window->m_Pd3dDevice, window->m_Pd3dDeviceContext);
 	}
 
 	void ImGuiLayer::OnDetach()

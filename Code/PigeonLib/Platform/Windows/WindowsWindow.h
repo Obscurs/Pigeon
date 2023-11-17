@@ -16,11 +16,11 @@ namespace pigeon {
 			unsigned int m_Width, m_Height;
 			HWND m_HWnd;
 			HINSTANCE m_HInstance;
-			ID3D11Device* g_pd3dDevice = nullptr;
-			ID3D11DeviceContext* g_pd3dDeviceContext = nullptr;
-			IDXGISwapChain* g_pSwapChain = nullptr;
-			UINT g_ResizeWidth = 0, g_ResizeHeight = 0;
-			ID3D11RenderTargetView* g_mainRenderTargetView = nullptr;
+			ID3D11Device* m_Pd3dDevice = nullptr;
+			ID3D11DeviceContext* m_Pd3dDeviceContext = nullptr;
+			IDXGISwapChain* m_PSwapChain = nullptr;
+			UINT m_ResizeWidth = 0, m_ResizeHeight = 0;
+			ID3D11RenderTargetView* m_MainRenderTargetView = nullptr;
 
 			EventCallbackFn EventCallback;
 		};
@@ -40,9 +40,10 @@ namespace pigeon {
 		void SetVSync(bool enabled) override {};
 		bool IsVSync() const override { return false; };
 
+		inline virtual void* GetNativeWindow() const { return &m_Data; }
+
 		static std::optional<int> ProcessMessages();
 		
-		static const WindowData& GetWindowData() { return m_Data; }
 	private:
 		virtual void Init(const WindowProps& props);
 		virtual void Shutdown();
