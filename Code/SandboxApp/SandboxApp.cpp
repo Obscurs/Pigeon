@@ -1,5 +1,7 @@
 #include <Pigeon.h>
 
+#include "imgui/imgui.h"
+
 class ExampleLayer : public pigeon::Layer
 {
 public:
@@ -10,7 +12,15 @@ public:
 
 	void OnUpdate() override
 	{
-		//PG_INFO("ExampleLayer::Update");
+		if (pigeon::Input::IsKeyPressed(PG_KEY_TAB))
+			PG_TRACE("Tab key is pressed (poll)!");
+	}
+
+	virtual void OnImGuiRender() override
+	{
+		ImGui::Begin("Test");
+		ImGui::Text("Hello World");
+		ImGui::End();
 	}
 
 	void OnEvent(pigeon::Event& event) override
@@ -31,7 +41,6 @@ public:
 	Sandbox()
 	{
 		PushLayer(new ExampleLayer());
-		PushOverlay(new pigeon::ImGuiLayer());
 	}
 
 	~Sandbox()

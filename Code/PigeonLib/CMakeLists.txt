@@ -57,7 +57,7 @@ link_directories (
 # Set Properties->General->Configuration Type to Application(.exe)
 # Creates app.exe with the listed sources (main.cxx)
 # Adds sources to the Solution Explorer
-add_library(PigeonLib SHARED)
+add_library(PigeonLib STATIC)
 
 # Add common sources to target
 target_sources(PigeonLib PRIVATE ${ECS} ${SRCS} ${PG} ${PGIMGUI})

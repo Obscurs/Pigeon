@@ -26,34 +26,26 @@ namespace pigeon
 
 	void ImGuiLayer::OnAttach()
 	{
+		// Setup Dear ImGui context
+		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
+		ImGuiIO& io = ImGui::GetIO(); (void)io;
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
+		//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
+		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
+		//io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoTaskBarIcons;
+		//io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoMerge;
+
+		// Setup Dear ImGui style
 		ImGui::StyleColorsDark();
 
-		ImGuiIO& io = ImGui::GetIO(); (void)io;
-		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-		io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-
-		io.KeyMap[ImGuiKey_Tab] = PG_KEY_TAB;
-		io.KeyMap[ImGuiKey_LeftArrow] = PG_KEY_LEFT;
-		io.KeyMap[ImGuiKey_RightArrow] = PG_KEY_RIGHT;
-		io.KeyMap[ImGuiKey_UpArrow] = PG_KEY_UP;
-		io.KeyMap[ImGuiKey_DownArrow] = PG_KEY_DOWNN;
-		io.KeyMap[ImGuiKey_PageUp] = PG_KEY_PAGE_UP;
-		io.KeyMap[ImGuiKey_PageDown] = PG_KEY_PAGE_DOWN;
-		io.KeyMap[ImGuiKey_Home] = PG_KEY_HOME;
-		io.KeyMap[ImGuiKey_End] = PG_KEY_END;
-		io.KeyMap[ImGuiKey_Insert] = PG_KEY_INSERT;
-		io.KeyMap[ImGuiKey_Delete] = PG_KEY_DELETE;
-		io.KeyMap[ImGuiKey_Backspace] = PG_KEY_BACKSPACE;
-		io.KeyMap[ImGuiKey_Space] = PG_KEY_SPACE;
-		io.KeyMap[ImGuiKey_Enter] = PG_KEY_ENTER;
-		io.KeyMap[ImGuiKey_Escape] = PG_KEY_ESCAPE;
-		io.KeyMap[ImGuiKey_A] = PG_KEY_A;
-		io.KeyMap[ImGuiKey_C] = PG_KEY_C;
-		io.KeyMap[ImGuiKey_V] = PG_KEY_V;
-		io.KeyMap[ImGuiKey_X] = PG_KEY_X;
-		io.KeyMap[ImGuiKey_Y] = PG_KEY_Y;
-		io.KeyMap[ImGuiKey_Z] = PG_KEY_Z;
+		ImGuiStyle& style = ImGui::GetStyle();
+		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+		{
+			style.WindowRounding = 0.0f;
+			style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+		}
 
 		auto window = static_cast<WindowsWindow::WindowData*>(Application::Get().GetWindow().GetNativeWindow());
 		ImGui_ImplWin32_Init(window->m_HWnd);
@@ -68,12 +60,33 @@ namespace pigeon
 		ImGui::DestroyContext();
 	}
 
-	void ImGuiLayer::OnUpdate()
+	void ImGuiLayer::Begin()
 	{
 		ImGui_ImplDX11_NewFrame();
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
+	}
 
+	void ImGuiLayer::End()
+	{
+		ImGuiIO& io = ImGui::GetIO();
+		Application& app = Application::Get();
+		io.DisplaySize = ImVec2((float)app.GetWindow().GetWidth(), (float)app.GetWindow().GetHeight());
+		
+		// Rendering
+		ImGui::Render();
+
+		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+		{
+			ImGui::UpdatePlatformWindows();
+			ImGui::RenderPlatformWindowsDefault();
+		}
+	}
+
+	void ImGuiLayer::OnImGuiRender()
+	{
 		// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
 		if (s_show_demo_window)
 			ImGui::ShowDemoWindow(&s_show_demo_window);
@@ -111,96 +124,5 @@ namespace pigeon
 				s_show_another_window = false;
 			ImGui::End();
 		}
-
-		// Rendering
-		ImGui::Render();
-
-		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 	}
-
-	void ImGuiLayer::OnEvent(Event& event)
-	{
-		EventDispatcher dispatcher(event);
-		dispatcher.Dispatch<MouseButtonPressedEvent>(PG_BIND_EVENT_FN(ImGuiLayer::OnMouseButtonPressedEvent));
-		dispatcher.Dispatch<MouseButtonReleasedEvent>(PG_BIND_EVENT_FN(ImGuiLayer::OnMouseButtonReleasedEvent));
-		dispatcher.Dispatch<MouseMovedEvent>(PG_BIND_EVENT_FN(ImGuiLayer::OnMouseMovedEvent));
-		dispatcher.Dispatch<MouseScrolledEvent>(PG_BIND_EVENT_FN(ImGuiLayer::OnMouseScrolledEvent));
-		dispatcher.Dispatch<KeyPressedEvent>(PG_BIND_EVENT_FN(ImGuiLayer::OnKeyPressedEvent));
-		dispatcher.Dispatch<KeyTypedEvent>(PG_BIND_EVENT_FN(ImGuiLayer::OnKeyTypedEvent));
-		dispatcher.Dispatch<KeyReleasedEvent>(PG_BIND_EVENT_FN(ImGuiLayer::OnKeyReleasedEvent));
-		dispatcher.Dispatch<WindowResizeEvent>(PG_BIND_EVENT_FN(ImGuiLayer::OnWindowResizeEvent));
-	}
-
-	bool ImGuiLayer::OnMouseButtonPressedEvent(MouseButtonPressedEvent& e)
-	{
-		ImGuiIO& io = ImGui::GetIO();
-		io.MouseDown[e.GetMouseButton()] = true;
-
-		return false;
-	}
-
-	bool ImGuiLayer::OnMouseButtonReleasedEvent(MouseButtonReleasedEvent& e)
-	{
-		ImGuiIO& io = ImGui::GetIO();
-		io.MouseDown[e.GetMouseButton()] = false;
-
-		return false;
-	}
-
-	bool ImGuiLayer::OnMouseMovedEvent(MouseMovedEvent& e)
-	{
-		ImGuiIO& io = ImGui::GetIO();
-		io.MousePos = ImVec2(e.GetX(), e.GetY());
-
-		return false;
-	}
-
-	bool ImGuiLayer::OnMouseScrolledEvent(MouseScrolledEvent& e)
-	{
-		ImGuiIO& io = ImGui::GetIO();
-		io.MouseWheelH += e.GetXOffset();
-		io.MouseWheel += e.GetYOffset();
-
-		return false;
-	}
-
-	bool ImGuiLayer::OnKeyPressedEvent(KeyPressedEvent& e)
-	{
-		ImGuiIO& io = ImGui::GetIO();
-		io.KeysDown[e.GetKeyCode()] = true;
-
-		io.KeyCtrl = io.KeysDown[341] || io.KeysDown[345];
-		io.KeyShift = io.KeysDown[340] || io.KeysDown[344];
-		io.KeyAlt = io.KeysDown[342] || io.KeysDown[346];
-		io.KeySuper = io.KeysDown[343] || io.KeysDown[347];
-		return false;
-	}
-
-	bool ImGuiLayer::OnKeyReleasedEvent(KeyReleasedEvent& e)
-	{
-		ImGuiIO& io = ImGui::GetIO();
-		io.KeysDown[e.GetKeyCode()] = false;
-
-		return false;
-	}
-
-	bool ImGuiLayer::OnKeyTypedEvent(KeyTypedEvent& e)
-	{
-		ImGuiIO& io = ImGui::GetIO();
-		int keycode = e.GetKeyCode();
-		if (keycode > 0 && keycode < 0x10000)
-			io.AddInputCharacter((unsigned short)keycode);
-
-		return false;
-	}
-
-	bool ImGuiLayer::OnWindowResizeEvent(WindowResizeEvent& e)
-	{
-		ImGuiIO& io = ImGui::GetIO();
-		io.DisplaySize = ImVec2(e.GetWidth(), e.GetHeight());
-		io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
-
-		return false;
-	}
-
 }

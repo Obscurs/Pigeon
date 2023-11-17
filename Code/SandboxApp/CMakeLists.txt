@@ -11,6 +11,7 @@ include_directories (
 #    "${PROJECT_SOURCE_DIR}/3rdParty/behaviortree_cpp_v3/include"
 #    "${PROJECT_SOURCE_DIR}/3rdParty/entt"
 #    "${PROJECT_SOURCE_DIR}/3rdParty/Optick_1.4.0/include"
+    "${PROJECT_SOURCE_DIR}/3rdParty/"
     "${PROJECT_SOURCE_DIR}/3rdParty/spdlog-1.12.0/include"
 )
 

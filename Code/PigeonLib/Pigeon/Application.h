@@ -7,6 +7,11 @@
 #include "Pigeon/Events/Event.h"
 #include "Pigeon/Events/ApplicationEvent.h"
 
+namespace pigeon
+{
+	class ImGuiLayer;
+}
+
 namespace pigeon 
 {
 	class PIGEON_API Application
@@ -28,6 +33,7 @@ namespace pigeon
 	private:
 		bool OnWindowClose(WindowCloseEvent& e);
 
+		ImGuiLayer* m_ImGuiLayer;
 		std::unique_ptr<Window> m_Window;
 		bool m_Running = true;
 		LayerStack m_LayerStack;
