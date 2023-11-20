@@ -19,6 +19,8 @@ set(CMAKE_CXX_STANDARD 17)
 # Useful for displaying errors, warnings, and debugging
 message ("cxx Flags: " ${CMAKE_CXX_FLAGS})
 
+add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+
 # Sub-directories where more CMakeLists.txt exist
 add_subdirectory(Code/PigeonLib)
 add_subdirectory(Code/SandboxApp)
