@@ -8,6 +8,7 @@
 #include "Pigeon/Application.h"
 #include "Pigeon/KeyCodes.h"
 
+#include "Platform/DirectX11/Dx11Context.h"
 #include "Platform/Windows/WindowsWindow.h"
 
 static bool s_show_demo_window = true;
@@ -47,9 +48,12 @@ namespace pigeon
 			style.Colors[ImGuiCol_WindowBg].w = 1.0f;
 		}
 
-		auto window = static_cast<WindowsWindow::WindowData*>(Application::Get().GetWindow().GetNativeWindow());
-		ImGui_ImplWin32_Init(window->m_HWnd);
-		ImGui_ImplDX11_Init(window->m_Pd3dDevice, window->m_Pd3dDeviceContext);
+		auto window = static_cast<HWND>(Application::Get().GetWindow().GetNativeWindow());
+		ImGui_ImplWin32_Init(window);
+
+		auto context = static_cast<Dx11Context*>(Application::Get().GetWindow().GetGraphicsContext());
+
+		ImGui_ImplDX11_Init(context->GetPd3dDevice(), context->GetPd3dDeviceContext());
 	}
 
 	void ImGuiLayer::OnDetach()

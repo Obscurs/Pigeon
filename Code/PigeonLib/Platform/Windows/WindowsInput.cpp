@@ -20,10 +20,10 @@ namespace pigeon
 
 	std::pair<float, float> WindowsInput::GetMousePositionImpl()
 	{
-		auto window = static_cast<WindowsWindow::WindowData*>(Application::Get().GetWindow().GetNativeWindow());
+		auto window = static_cast<HWND>(Application::Get().GetWindow().GetNativeWindow());
 
 		POINT point;
-		if (ScreenToClient(window->m_HWnd, &point)) //Use GetCursorPos(&point) if you want to get the global pos instead
+		if (ScreenToClient(window, &point)) //Use GetCursorPos(&point) if you want to get the global pos instead
 		{
 			return { static_cast<float>(point.x), static_cast<float>(point.y) };
 		}

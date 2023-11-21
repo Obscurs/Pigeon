@@ -16,9 +16,17 @@ file(GLOB PGIMGUI
     "Pigeon/ImGui/ImGuiLayer.cpp"
 )
 
+file(GLOB RENDERER
+    "Pigeon/Renderer/GraphicsContext.h"
+)
+
 file(GLOB PLATFORM_WIN
     "Platform/Windows/WindowsWindow.cpp"
     "Platform/Windows/WindowsInput.cpp"
+)
+
+file(GLOB PLATFORM_DX
+    "Platform/DirectX11/Dx11Context.cpp"
 )
 
 file(GLOB PLATFORM_TEST
@@ -32,7 +40,8 @@ file(GLOB PLATFORM_TEST
 
 source_group("" FILES ${SRCS})
 source_group("Pigeon" FILES ${PG})
-source_group("Pigeon/ImGui" FILES ${PGIMGUI})
+source_group("Pigeon\\ImGui" FILES ${PGIMGUI})
+source_group("Pigeon\\Renderer" FILES ${RENDERER})
 #source_group("Platform" FILES ${PLATFORM})
 #source_group("Pigeon/BT" FILES ${BT})
 
@@ -60,7 +69,7 @@ link_directories (
 add_library(PigeonLib STATIC)
 
 # Add common sources to target
-target_sources(PigeonLib PRIVATE ${ECS} ${SRCS} ${PG} ${PGIMGUI})
+target_sources(PigeonLib PRIVATE ${ECS} ${SRCS} ${PG} ${PGIMGUI} ${RENDERER})
 add_dependencies(PigeonLib ImGui) 
 
 # Platform/Test files are included only for the "Test" configuration
@@ -76,6 +85,9 @@ if(WIN32)
     target_sources(PigeonLib PRIVATE ${PLATFORM_WIN})
     source_group("Platform\\Windows" FILES ${PLATFORM_WIN})
 endif()
+
+target_sources(PigeonLib PRIVATE ${PLATFORM_DX})
+source_group("Platform\\DirectX11" FILES ${PLATFORM_DX})
 
 set_property(TARGET PigeonLib PROPERTY ENABLE_EXPORTS 1)
 set_property(TARGET PigeonLib PROPERTY VS_DEBUGGER_WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/Data)

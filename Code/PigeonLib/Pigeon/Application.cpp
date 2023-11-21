@@ -58,7 +58,7 @@ namespace pigeon
 	{
 		while (m_Running)
 		{
-			m_Window->OnPreUpdate();
+			m_Window->OnBegin();
 			for (Layer* layer : m_LayerStack)
 				layer->OnUpdate();
 
@@ -68,7 +68,6 @@ namespace pigeon
 			m_ImGuiLayer->End();
 
 			m_Window->OnUpdate();
-			m_Window->OnPostUpdate();
 		}
 	}
 

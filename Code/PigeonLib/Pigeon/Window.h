@@ -29,9 +29,8 @@ namespace pigeon {
 
 		virtual ~Window() {}
 
-		virtual void OnPreUpdate() = 0;
+		virtual void OnBegin() = 0;
 		virtual void OnUpdate() = 0;
-		virtual void OnPostUpdate() = 0;
 
 		virtual unsigned int GetWidth() const = 0;
 		virtual unsigned int GetHeight() const = 0;
@@ -42,6 +41,7 @@ namespace pigeon {
 		virtual bool IsVSync() const = 0;
 
 		virtual void* GetNativeWindow() const = 0;
+		virtual void* GetGraphicsContext() const = 0;
 
 		static Window* Create(const WindowProps& props = WindowProps());
 	};
