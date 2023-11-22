@@ -18,7 +18,10 @@ namespace pigeon
 		virtual void OnDetach() override;
 		virtual void OnImGuiRender() override;
 
-		void Begin();
-		void End();
+		virtual void Begin() override;
+		virtual void End() override;
+		bool IsAttached() { return m_Attached; }
+	private:
+		bool m_Attached;
 	};
 }

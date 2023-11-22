@@ -17,6 +17,9 @@ namespace pigeon
 		virtual void OnImGuiRender() {}
 		virtual void OnEvent(Event& event) {}
 
+		virtual void Begin() {};
+		virtual void End() {};
+
 		inline const std::string& GetName() const { return m_DebugName; }
 	protected:
 		std::string m_DebugName;

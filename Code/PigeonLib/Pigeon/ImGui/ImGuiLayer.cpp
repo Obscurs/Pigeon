@@ -17,7 +17,8 @@ static bool s_show_another_window = false;
 namespace pigeon 
 {
 	ImGuiLayer::ImGuiLayer()
-		: Layer("ImGuiLayer")
+		: Layer("ImGuiLayer"),
+		m_Attached(false)
 	{
 	}
 
@@ -54,6 +55,7 @@ namespace pigeon
 		auto context = static_cast<Dx11Context*>(Application::Get().GetWindow().GetGraphicsContext());
 
 		ImGui_ImplDX11_Init(context->GetPd3dDevice(), context->GetPd3dDeviceContext());
+		m_Attached = true;
 	}
 
 	void ImGuiLayer::OnDetach()
@@ -62,6 +64,7 @@ namespace pigeon
 		ImGui_ImplDX11_Shutdown();
 		ImGui_ImplWin32_Shutdown();
 		ImGui::DestroyContext();
+		m_Attached = false;
 	}
 
 	void ImGuiLayer::Begin()

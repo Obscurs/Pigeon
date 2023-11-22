@@ -7,6 +7,33 @@
 #include "Pigeon/ImGui/ImGuiLayer.h"
 #include "Pigeon/Log.h"
 
+#include "Platform/DirectX11/Dx11Context.h"
+
+#include <d3dcompiler.h>
+
+struct VERTEX {
+	FLOAT X, Y, Z;
+};
+
+struct VERTEXCOL {
+	FLOAT X, Y, Z;
+	FLOAT Color[4];
+};
+
+VERTEX s_OurVertices[] = {
+	{ 0.0f, 0.5f, 0.0f },
+	{ 0.45f, -0.5, 0.0f},
+	{ -0.45f, -0.5f, 0.0f}
+};
+
+VERTEXCOL s_OurVerticesCol[] = {
+	{ 0.0f, 0.5f, 0.0f, { 1.0f, 0.0f, 0.0f, 1.0f } },
+	{ 0.45f, -0.5, 0.0f, { 0.0f, 1.0f, 0.0f, 1.0f } },
+	{ -0.45f, -0.5f, 0.0f, { 0.0f, 0.0f, 1.0f, 1.0f } }
+};
+
+DWORD s_Indices[] = { 0, 1, 2 };
+
 namespace pigeon 
 {
 #define BIND_EVENT_FN(x) std::bind(&Application::x, this, std::placeholders::_1)
@@ -22,11 +49,43 @@ namespace pigeon
 		m_Window->SetEventCallback(BIND_EVENT_FN(OnEvent));
 
 		m_ImGuiLayer = new ImGuiLayer();
-		PushOverlay(m_ImGuiLayer);
+		//PushOverlay(m_ImGuiLayer);
+
+		D3D11_BUFFER_DESC bd = { 0 };
+		bd.Usage = D3D11_USAGE_DEFAULT;
+		bd.ByteWidth = sizeof(VERTEX) * 3;
+		bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		bd.CPUAccessFlags = 0;
+
+		D3D11_SUBRESOURCE_DATA initData = { 0 };
+		initData.pSysMem = s_OurVertices;
+
+		auto context = static_cast<Dx11Context*>(Application::Get().GetWindow().GetGraphicsContext());
+		context->GetPd3dDevice()->CreateBuffer(&bd, &initData, &m_VertexBuffer);
+
+		D3D11_BUFFER_DESC ibd = { 0 };
+		ibd.Usage = D3D11_USAGE_DEFAULT;
+		ibd.ByteWidth = sizeof(DWORD) * 3; // Number of indices
+		ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+		ibd.CPUAccessFlags = 0;
+
+		D3D11_SUBRESOURCE_DATA iinitData = { 0 };
+		iinitData.pSysMem = s_Indices;
+
+		context->GetPd3dDevice()->CreateBuffer(&ibd, &iinitData, &m_IndexBuffer);
+
 	}
 
 	Application::~Application()
 	{
+		if (m_IndexBuffer) {
+			m_IndexBuffer->Release();
+			m_IndexBuffer = nullptr;
+		}
+		if (m_VertexBuffer) {
+			m_VertexBuffer->Release();
+			m_VertexBuffer = nullptr;
+		}
 	}
 
 	void Application::PushLayer(Layer* layer)
@@ -58,14 +117,33 @@ namespace pigeon
 	{
 		while (m_Running)
 		{
+
 			m_Window->OnBegin();
+
+			UINT stride = sizeof(VERTEX);
+			UINT offset = 0;
+			auto context = static_cast<Dx11Context*>(Application::Get().GetWindow().GetGraphicsContext());
+			context->GetPd3dDeviceContext()->IASetVertexBuffers(0, 1, &m_VertexBuffer, &stride, &offset);
+			context->GetPd3dDeviceContext()->IASetIndexBuffer(m_IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+			context->GetPd3dDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			context->GetPd3dDeviceContext()->DrawIndexed(3, 0, 0);
+
+			for (Layer* layer : m_LayerStack)
+				layer->Begin();
+
 			for (Layer* layer : m_LayerStack)
 				layer->OnUpdate();
 
-			m_ImGuiLayer->Begin();
+			if (m_ImGuiLayer->IsAttached())
+			{
+				for (Layer* layer : m_LayerStack)
+					layer->OnImGuiRender();
+			}
+
 			for (Layer* layer : m_LayerStack)
-				layer->OnImGuiRender();
-			m_ImGuiLayer->End();
+				layer->End();
+
+			//context->GetPd3dDeviceContext()->DrawIndexed(3, 0, 0);
 
 			m_Window->OnUpdate();
 		}
