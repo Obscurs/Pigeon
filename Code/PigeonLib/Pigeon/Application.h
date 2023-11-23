@@ -34,6 +34,7 @@ namespace pigeon
 
 	private:
 		bool OnWindowClose(WindowCloseEvent& e);
+		bool OnWindowResize(WindowResizeEvent& e);
 
 		ImGuiLayer* m_ImGuiLayer;
 		std::unique_ptr<Window> m_Window;

@@ -1,9 +1,44 @@
 #include "pch.h"
 #include "Dx11Context.h"
 
+#include <D3DCompiler.h>
+
+namespace
+{
+// Simple vertex shader
+char* s_VsCode =
+	"struct VS_INPUT\n"
+	"{\n"
+	"	float4 Pos : POSITION;\n"
+	"	float4 Col : COLOR;\n"
+	"};\n"
+	"struct PS_INPUT\n"
+	"{\n"
+	"	float4 Pos : SV_POSITION; \n"
+	"	float4 Col : COLOR; \n"
+	"};\n"
+	"PS_INPUT main(VS_INPUT input)\n"
+	"{\n"
+	"	PS_INPUT output;\n"
+	"	output.Pos = input.Pos; // Pass position to rasterizer\n"
+	"	output.Col = input.Col; // Pass color to pixel shader\n"
+	"	return output;\n"
+	"};";
+
+// Simple pixel shader
+char* s_PsCode =
+	"struct PS_INPUT\n"
+	"{\n"
+	"	float4 Pos : SV_POSITION;\n"
+	"	float4 Col : COLOR;\n"
+	"};\n"
+	"float4 main(PS_INPUT input) : SV_TARGET\n"
+	"{\n"
+	"    return input.Col; // Output the interpolated color\n"
+	"};";
+}
 namespace pigeon 
 {
-
 	Dx11Context::Dx11Context(HWND windowHandle)
 		: m_HWnd(windowHandle)
 	{
@@ -24,7 +59,9 @@ namespace pigeon
 			//UnregisterClass(m_Data.m_Title, m_Data.m_HInstance);
 			return;
 		}
-		PG_CORE_ASSERT(status, "Failed to initialize Glad!");
+		CompileShaders();
+
+		PG_CORE_ASSERT(status, "Failed to initialize DirectX!");
 	}
 
 	void Dx11Context::Begin()
@@ -34,6 +71,8 @@ namespace pigeon
 		{
 			CleanupRenderTarget();
 			m_PSwapChain->ResizeBuffers(0, m_ResizeWidth, m_ResizeHeight, DXGI_FORMAT_UNKNOWN, 0);
+			m_Width = m_ResizeWidth;
+			m_Height = m_ResizeHeight;
 			m_ResizeWidth = m_ResizeHeight = 0;
 			CreateRenderTarget();
 		}
@@ -41,11 +80,35 @@ namespace pigeon
 		const float clear_color_with_alpha[4] = { 0.45f, 0.55f, 0.60f, 1.00f };
 		m_Pd3dDeviceContext->OMSetRenderTargets(1, &m_MainRenderTargetView, nullptr);
 		m_Pd3dDeviceContext->ClearRenderTargetView(m_MainRenderTargetView, clear_color_with_alpha);
+
+		D3D11_VIEWPORT viewport;
+		ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
+
+		viewport.TopLeftX = 0;
+		viewport.TopLeftY = 0;
+		viewport.Width = static_cast<float>(m_Width);  // Replace 'width' with actual width
+		viewport.Height = static_cast<float>(m_Height); // Replace 'height' with actual height
+		viewport.MinDepth = 0.0f;
+		viewport.MaxDepth = 1.0f;
+
+		m_Pd3dDeviceContext->RSSetViewports(1, &viewport);
+
+		m_Pd3dDeviceContext->IASetInputLayout(m_InputLayout);
+
+		// Set the vertex and pixel shaders
+		m_Pd3dDeviceContext->VSSetShader(m_VertexShader, nullptr, 0);
+		m_Pd3dDeviceContext->PSSetShader(m_PixelShader, nullptr, 0);
 	}
 
 	void Dx11Context::SwapBuffers()
 	{
 		m_PSwapChain->Present(1, 0);
+	}
+
+	void Dx11Context::SetSize(unsigned int width, unsigned int height)
+	{
+		m_ResizeHeight = height;
+		m_ResizeWidth = width;
 	}
 
 	void Dx11Context::CleanupDeviceD3D()
@@ -54,6 +117,9 @@ namespace pigeon
 		if (m_PSwapChain) { m_PSwapChain->Release(); m_PSwapChain = nullptr; }
 		if (m_Pd3dDeviceContext) { m_Pd3dDeviceContext->Release(); m_Pd3dDeviceContext = nullptr; }
 		if (m_Pd3dDevice) { m_Pd3dDevice->Release(); m_Pd3dDevice = nullptr; }
+		if (m_InputLayout) { m_InputLayout->Release(); m_InputLayout = nullptr; }
+		if (m_VertexShader) { m_VertexShader->Release(); m_VertexShader = nullptr; }
+		if (m_PixelShader) { m_PixelShader->Release(); m_PixelShader = nullptr; }
 	}
 
 	void Dx11Context::CreateRenderTarget()
@@ -67,6 +133,54 @@ namespace pigeon
 	void Dx11Context::CleanupRenderTarget()
 	{
 		if (m_MainRenderTargetView) { m_MainRenderTargetView->Release(); m_MainRenderTargetView = nullptr; }
+	}
+
+	void Dx11Context::CompileShaders()
+	{
+		bool success = true;
+		ID3D10Blob* errorBlob;
+		ID3D10Blob* vsBlob;
+		ID3D10Blob* psBlob;
+		// Compile vertex shader
+		if (FAILED(D3DCompile(s_VsCode, strlen(s_VsCode), nullptr, nullptr, nullptr, "main", "vs_5_0", 0, 0, &vsBlob, &errorBlob))) {
+			// Handle errors
+			if (errorBlob) {
+				OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+				errorBlob->Release();
+				success = false;
+			}
+			// Handle further error
+		}
+
+		// Compile pixel shader
+		if (FAILED(D3DCompile(s_PsCode, strlen(s_PsCode), nullptr, nullptr, nullptr, "main", "ps_5_0", 0, 0, &psBlob, &errorBlob))) {
+			// Handle errors
+			if (errorBlob) {
+				OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+				errorBlob->Release();
+				success = false;
+			}
+			// Handle further error
+		}
+		if (success)
+		{
+			m_Pd3dDevice->CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, &m_VertexShader);
+			m_Pd3dDevice->CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), nullptr, &m_PixelShader);
+
+			// Define and create the input layout
+			D3D11_INPUT_ELEMENT_DESC layout[] = {
+				{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+				{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+			};
+			UINT numElements = ARRAYSIZE(layout);
+
+			m_Pd3dDevice->CreateInputLayout(layout, numElements, vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &m_InputLayout);
+		}
+
+		vsBlob->Release();
+		psBlob->Release();
+
+		PG_CORE_ASSERT(success, "Failed to compile shaders!");
 	}
 
 	bool Dx11Context::CreateDeviceD3D(HWND hWnd)

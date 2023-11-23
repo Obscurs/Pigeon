@@ -64,6 +64,7 @@ namespace pigeon {
 
 		m_Context = new Dx11Context(m_Window);
 		m_Context->Init();
+		m_Context->SetSize(m_Data.m_Width, m_Data.m_Height);
 
 		PG_CORE_INFO("Creating window {0} ({1}, {2})", props.Title, props.Width, props.Height);
 

@@ -18,6 +18,7 @@ namespace pigeon {
 		virtual void Shutdown() override;
 		virtual void Begin() override;
 		virtual void SwapBuffers() override;
+		virtual void SetSize(unsigned int width, unsigned int height) override;
 
 		ID3D11Device* GetPd3dDevice() { return m_Pd3dDevice; }
 		ID3D11DeviceContext* GetPd3dDeviceContext() { return m_Pd3dDeviceContext; }
@@ -27,14 +28,19 @@ namespace pigeon {
 		void CleanupDeviceD3D();
 		void CreateRenderTarget();
 		void CleanupRenderTarget();
+		void CompileShaders();
 
 		HWND m_HWnd;
 		ID3D11Device* m_Pd3dDevice = nullptr;
 		ID3D11DeviceContext* m_Pd3dDeviceContext = nullptr;
 		IDXGISwapChain* m_PSwapChain = nullptr;
 		UINT m_ResizeWidth = 0, m_ResizeHeight = 0;
+		UINT m_Width = 0, m_Height = 0;
 		ID3D11RenderTargetView* m_MainRenderTargetView = nullptr;
 
+		ID3D11InputLayout* m_InputLayout = nullptr;
+		ID3D11VertexShader* m_VertexShader = nullptr;
+		ID3D11PixelShader* m_PixelShader = nullptr;
 	};
 
 }

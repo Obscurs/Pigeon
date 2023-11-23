@@ -9,24 +9,12 @@
 
 #include "Platform/DirectX11/Dx11Context.h"
 
-#include <d3dcompiler.h>
-
 struct VERTEX {
-	FLOAT X, Y, Z;
-};
-
-struct VERTEXCOL {
 	FLOAT X, Y, Z;
 	FLOAT Color[4];
 };
 
 VERTEX s_OurVertices[] = {
-	{ 0.0f, 0.5f, 0.0f },
-	{ 0.45f, -0.5, 0.0f},
-	{ -0.45f, -0.5f, 0.0f}
-};
-
-VERTEXCOL s_OurVerticesCol[] = {
 	{ 0.0f, 0.5f, 0.0f, { 1.0f, 0.0f, 0.0f, 1.0f } },
 	{ 0.45f, -0.5, 0.0f, { 0.0f, 1.0f, 0.0f, 1.0f } },
 	{ -0.45f, -0.5f, 0.0f, { 0.0f, 0.0f, 1.0f, 1.0f } }
@@ -49,7 +37,7 @@ namespace pigeon
 		m_Window->SetEventCallback(BIND_EVENT_FN(OnEvent));
 
 		m_ImGuiLayer = new ImGuiLayer();
-		//PushOverlay(m_ImGuiLayer);
+		PushOverlay(m_ImGuiLayer);
 
 		D3D11_BUFFER_DESC bd = { 0 };
 		bd.Usage = D3D11_USAGE_DEFAULT;
@@ -104,6 +92,7 @@ namespace pigeon
 	{
 		EventDispatcher dispatcher(e);
 		dispatcher.Dispatch<WindowCloseEvent>(BIND_EVENT_FN(OnWindowClose));
+		dispatcher.Dispatch<WindowResizeEvent>(BIND_EVENT_FN(OnWindowResize));
 
 		for (auto it = m_LayerStack.end(); it != m_LayerStack.begin(); )
 		{
@@ -117,9 +106,9 @@ namespace pigeon
 	{
 		while (m_Running)
 		{
-
 			m_Window->OnBegin();
 
+			//TODO move this wherever
 			UINT stride = sizeof(VERTEX);
 			UINT offset = 0;
 			auto context = static_cast<Dx11Context*>(Application::Get().GetWindow().GetGraphicsContext());
@@ -143,8 +132,6 @@ namespace pigeon
 			for (Layer* layer : m_LayerStack)
 				layer->End();
 
-			//context->GetPd3dDeviceContext()->DrawIndexed(3, 0, 0);
-
 			m_Window->OnUpdate();
 		}
 	}
@@ -152,6 +139,14 @@ namespace pigeon
 	bool Application::OnWindowClose(WindowCloseEvent& e)
 	{
 		m_Running = false;
+		return true;
+	}
+
+	bool Application::OnWindowResize(WindowResizeEvent& e)
+	{
+		//TODO do directly in the context layer???
+		auto context = static_cast<Dx11Context*>(Application::Get().GetWindow().GetGraphicsContext());
+		context->SetSize(e.GetWidth(), e.GetHeight());
 		return true;
 	}
 }
