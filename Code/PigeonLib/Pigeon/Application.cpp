@@ -4,23 +4,59 @@
 #include "Input.h"
 
 #include "Pigeon/Events/ApplicationEvent.h"
+#include "Pigeon/Renderer/Shader.h"
 #include "Pigeon/ImGui/ImGuiLayer.h"
 #include "Pigeon/Log.h"
 
 #include "Platform/DirectX11/Dx11Context.h"
 
-struct VERTEX {
-	FLOAT X, Y, Z;
-	FLOAT Color[4];
-};
+namespace
+{
+	// Simple vertex shader
+	char* s_VsCode =
+		"struct VS_INPUT\n"
+		"{\n"
+		"	float4 Pos : POSITION;\n"
+		"	float4 Col : COLOR;\n"
+		"};\n"
+		"struct PS_INPUT\n"
+		"{\n"
+		"	float4 Pos : SV_POSITION; \n"
+		"	float4 Col : COLOR; \n"
+		"};\n"
+		"PS_INPUT main(VS_INPUT input)\n"
+		"{\n"
+		"	PS_INPUT output;\n"
+		"	output.Pos = input.Pos; // Pass position to rasterizer\n"
+		"	output.Col = input.Col; // Pass color to pixel shader\n"
+		"	return output;\n"
+		"};";
 
-VERTEX s_OurVertices[] = {
-	{ 0.0f, 0.5f, 0.0f, { 1.0f, 0.0f, 0.0f, 1.0f } },
-	{ 0.45f, -0.5, 0.0f, { 0.0f, 1.0f, 0.0f, 1.0f } },
-	{ -0.45f, -0.5f, 0.0f, { 0.0f, 0.0f, 1.0f, 1.0f } }
-};
+	// Simple pixel shader
+	char* s_PsCode =
+		"struct PS_INPUT\n"
+		"{\n"
+		"	float4 Pos : SV_POSITION;\n"
+		"	float4 Col : COLOR;\n"
+		"};\n"
+		"float4 main(PS_INPUT input) : SV_TARGET\n"
+		"{\n"
+		"    return input.Col; // Output the interpolated color\n"
+		"};";
 
-DWORD s_Indices[] = { 0, 1, 2 };
+	struct VERTEX {
+		FLOAT X, Y, Z;
+		FLOAT Color[4];
+	};
+
+	VERTEX s_OurVertices[] = {
+		{ 0.0f, 0.5f, 0.0f, { 1.0f, 0.0f, 0.0f, 1.0f } },
+		{ 0.45f, -0.5, 0.0f, { 0.0f, 1.0f, 0.0f, 1.0f } },
+		{ -0.45f, -0.5f, 0.0f, { 0.0f, 0.0f, 1.0f, 1.0f } }
+	};
+
+	DWORD s_Indices[] = { 0, 1, 2 };
+}
 
 namespace pigeon 
 {
@@ -61,6 +97,8 @@ namespace pigeon
 		iinitData.pSysMem = s_Indices;
 
 		context->GetPd3dDevice()->CreateBuffer(&ibd, &iinitData, &m_IndexBuffer);
+
+		m_Shader.reset(new Shader(s_VsCode, s_PsCode));
 
 	}
 
@@ -115,6 +153,7 @@ namespace pigeon
 			context->GetPd3dDeviceContext()->IASetVertexBuffers(0, 1, &m_VertexBuffer, &stride, &offset);
 			context->GetPd3dDeviceContext()->IASetIndexBuffer(m_IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 			context->GetPd3dDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			m_Shader->Bind();
 			context->GetPd3dDeviceContext()->DrawIndexed(3, 0, 0);
 
 			for (Layer* layer : m_LayerStack)

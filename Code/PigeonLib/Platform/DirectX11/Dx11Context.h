@@ -28,7 +28,6 @@ namespace pigeon {
 		void CleanupDeviceD3D();
 		void CreateRenderTarget();
 		void CleanupRenderTarget();
-		void CompileShaders();
 
 		HWND m_HWnd;
 		ID3D11Device* m_Pd3dDevice = nullptr;
@@ -37,10 +36,6 @@ namespace pigeon {
 		UINT m_ResizeWidth = 0, m_ResizeHeight = 0;
 		UINT m_Width = 0, m_Height = 0;
 		ID3D11RenderTargetView* m_MainRenderTargetView = nullptr;
-
-		ID3D11InputLayout* m_InputLayout = nullptr;
-		ID3D11VertexShader* m_VertexShader = nullptr;
-		ID3D11PixelShader* m_PixelShader = nullptr;
 	};
 
 }

@@ -17,6 +17,7 @@ file(GLOB PGIMGUI
 )
 
 file(GLOB RENDERER
+    "Pigeon/Renderer/Shader.cpp"
     "Pigeon/Renderer/GraphicsContext.h"
 )
 

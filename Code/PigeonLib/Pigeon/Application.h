@@ -12,6 +12,7 @@
 namespace pigeon
 {
 	class ImGuiLayer;
+	class Shader;
 }
 
 namespace pigeon 
@@ -43,6 +44,7 @@ namespace pigeon
 		ID3D11Buffer* m_VertexBuffer = nullptr;
 		ID3D11Buffer* m_IndexBuffer = nullptr;
 
+		std::unique_ptr<Shader> m_Shader;
 	private:
 		static Application* s_Instance;
 	};
