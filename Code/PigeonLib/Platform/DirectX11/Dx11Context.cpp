@@ -25,8 +25,6 @@ namespace pigeon
 			//UnregisterClass(m_Data.m_Title, m_Data.m_HInstance);
 			return;
 		}
-
-		PG_CORE_ASSERT(status, "Failed to initialize DirectX!");
 	}
 
 	void Dx11Context::Begin()

@@ -97,10 +97,6 @@ target_precompile_headers(PigeonLib PRIVATE pch.h)
 
 # Properties->Linker->Input->Additional Dependencies
 
-#target_compile_definitions(PigeonLib PRIVATE
-#    $<$<CONFIG:Test>:PG_PLATFORM_TEST>
-#)
-
 if(WIN32)
     target_compile_definitions(PigeonLib PRIVATE PG_PLATFORM_WINDOWS)
     target_compile_definitions(PigeonLib PRIVATE PG_BUILD_DLL)

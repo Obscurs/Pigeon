@@ -1,11 +1,10 @@
 #pragma once
 
-#ifndef PG_PLATFORM_TEST
 #include "Pigeon/Window.h"
 #include "Pigeon/Renderer/GraphicsContext.h"
 
-namespace pigeon {
-
+namespace pigeon 
+{
 	class WindowsWindow : public Window
 	{
 	public:
@@ -17,12 +16,30 @@ namespace pigeon {
 			EventCallbackFn EventCallback;
 		};
 
+		enum class EventType
+		{
+			DESTROY,
+			SIZE,
+			MOUSEMOVE,
+			MOUSEWHEEL,
+			MOUSELBUTTONDOWN,
+			MOUSERBUTTONDOWN,
+			MOUSEMBUTTONDOWN,
+			MOUSELBUTTONUP,
+			MOUSERBUTTONUP,
+			MOUSEMBUTTONUP,
+			KEYDOWN,
+			KEYUP,
+			CHAR,
+		};
+
 		WindowsWindow(const WindowProps& props);
 		virtual ~WindowsWindow();
 
 		void OnBegin() override;
 		void OnUpdate() override;
 
+		void Shutdown() override;
 		inline unsigned int GetWidth() const override { return m_Data.m_Width; }
 		inline unsigned int GetHeight() const override { return m_Data.m_Height; }
 
@@ -36,16 +53,27 @@ namespace pigeon {
 
 		static std::optional<int> ProcessMessages();
 		
+#ifdef TESTS_ENABLED
+		static void SendFakeEvent(EventType type, WPARAM wParam, LPARAM lParam);
+#endif
+
 	private:
 		virtual void Init(const WindowProps& props);
-		virtual void Shutdown();
-
-		static LRESULT __stdcall WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM hParam);
 		
+		static LRESULT __stdcall WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+		static bool ProcessEvent(UINT msg, WPARAM wParam, LPARAM lParam);
+		static void ProcessCharPressedEvent(WPARAM wParam);
+		static void ProcessKeyUpEvent(WPARAM wParam);
+		static void ProcessKeyDownEvent(LPARAM lParam, WPARAM wParam);
+		static void ProcessMouseButtonEvent(UINT msg);
+		static void ProcessMouseWheelEvent(WPARAM wParam);
+		static void ProcessMouseMoveEvent(LPARAM lParam);
+		static void ProcessWindowResizeEvent(LPARAM lParam);
+		static bool ProcessWindowDestroyEvent();
+
 		GraphicsContext* m_Context;
 		HWND m_Window;
 
 		static WindowData m_Data;
 	};
 }
-#endif

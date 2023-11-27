@@ -1,8 +1,6 @@
 cmake_minimum_required (VERSION 3.20)
 
-# Maps to a solution file (Tutorial.sln). The solution will 
-# have all targets (exe, lib, dll) as projects (.vcproj)
-project (Pigeon)
+project(PigeonEngine)
 
 # Turn on the ability to create folders to organize projects (.vcproj)
 # It creates "CMakePredefinedTargets" folder by default and adds CMake
@@ -15,6 +13,13 @@ set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT S
 # set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
 set(CMAKE_CXX_STANDARD 17)
 
+set(CMAKE_CONFIGURATION_TYPES "Debug;Release;Testing" CACHE STRING "" FORCE)
+set(CMAKE_C_FLAGS_TESTING "${CMAKE_C_FLAGS_DEBUG}" CACHE STRING "" FORCE)
+set(CMAKE_CXX_FLAGS_TESTING "${CMAKE_CXX_FLAGS_DEBUG}" CACHE STRING "" FORCE)
+set(CMAKE_EXE_LINKER_FLAGS_TESTING "${CMAKE_EXE_LINKER_FLAGS_DEBUG}" CACHE STRING "" FORCE)
+add_compile_options(
+  "$<$<CONFIG:Testing>:-DTESTS_ENABLED>"
+)
 # Command to output information to the console
 # Useful for displaying errors, warnings, and debugging
 message ("cxx Flags: " ${CMAKE_CXX_FLAGS})

@@ -23,8 +23,11 @@ namespace pigeon
 		Application();
 		virtual ~Application();
 
+#ifdef TESTS_ENABLED
+		void TestUpdate() { Update(); }
+#else
 		void Run();
-
+#endif
 		void OnEvent(Event& e);
 		void PushLayer(Layer* layer);
 		void PushOverlay(Layer* layer);
@@ -34,19 +37,24 @@ namespace pigeon
 		inline static Application& Get() { return *s_Instance; }
 
 	private:
+		void Update();
+
 		bool OnWindowClose(WindowCloseEvent& e);
 		bool OnWindowResize(WindowResizeEvent& e);
 
 		ImGuiLayer* m_ImGuiLayer;
 		std::unique_ptr<Window> m_Window;
 		bool m_Running = true;
+		bool m_Initialized = false;
 		LayerStack m_LayerStack;
 		ID3D11Buffer* m_VertexBuffer = nullptr;
 		ID3D11Buffer* m_IndexBuffer = nullptr;
 
 		std::unique_ptr<Shader> m_Shader;
+
 	private:
 		static Application* s_Instance;
+
 	};
 
 	// To be defined in CLIENT

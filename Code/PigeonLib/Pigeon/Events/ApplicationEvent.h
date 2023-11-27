@@ -35,7 +35,7 @@ namespace pigeon {
 		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 	};
 
-	class PIGEON_API AppTickEvent : public Event
+	/*class PIGEON_API AppTickEvent : public Event
 	{
 	public:
 		AppTickEvent() {}
@@ -60,5 +60,5 @@ namespace pigeon {
 
 		EVENT_CLASS_TYPE(AppRender)
 		EVENT_CLASS_CATEGORY(EventCategoryApplication)
-	};
+	};*/
 }

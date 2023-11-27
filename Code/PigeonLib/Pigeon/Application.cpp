@@ -84,7 +84,7 @@ namespace pigeon
 		D3D11_SUBRESOURCE_DATA initData = { 0 };
 		initData.pSysMem = s_OurVertices;
 
-		auto context = static_cast<Dx11Context*>(Application::Get().GetWindow().GetGraphicsContext());
+		auto context = static_cast<Dx11Context*>(m_Window->GetGraphicsContext());
 		context->GetPd3dDevice()->CreateBuffer(&bd, &initData, &m_VertexBuffer);
 
 		D3D11_BUFFER_DESC ibd = { 0 };
@@ -100,10 +100,16 @@ namespace pigeon
 
 		m_Shader.reset(new Shader(s_VsCode, s_PsCode));
 
+		
+		m_Initialized = true;
 	}
 
 	Application::~Application()
 	{
+		m_ImGuiLayer->OnDetach();
+		m_LayerStack.PopOverlay(m_ImGuiLayer);
+		m_Shader.reset();
+		m_Window.reset();
 		if (m_IndexBuffer) {
 			m_IndexBuffer->Release();
 			m_IndexBuffer = nullptr;
@@ -112,6 +118,8 @@ namespace pigeon
 			m_VertexBuffer->Release();
 			m_VertexBuffer = nullptr;
 		}
+
+		s_Instance = nullptr;
 	}
 
 	void Application::PushLayer(Layer* layer)
@@ -128,57 +136,67 @@ namespace pigeon
 
 	void Application::OnEvent(Event& e)
 	{
-		EventDispatcher dispatcher(e);
-		dispatcher.Dispatch<WindowCloseEvent>(BIND_EVENT_FN(OnWindowClose));
-		dispatcher.Dispatch<WindowResizeEvent>(BIND_EVENT_FN(OnWindowResize));
-
-		for (auto it = m_LayerStack.end(); it != m_LayerStack.begin(); )
+		if (m_Initialized)
 		{
-			(*--it)->OnEvent(e);
-			if (e.Handled)
-				break;
+			EventDispatcher dispatcher(e);
+			dispatcher.Dispatch<WindowCloseEvent>(BIND_EVENT_FN(OnWindowClose));
+			dispatcher.Dispatch<WindowResizeEvent>(BIND_EVENT_FN(OnWindowResize));
+
+			for (auto it = m_LayerStack.end(); it != m_LayerStack.begin(); )
+			{
+				(*--it)->OnEvent(e);
+				if (e.Handled)
+					break;
+			}
 		}
 	}
 
+#ifndef TESTS_ENABLED
 	void Application::Run()
 	{
 		while (m_Running)
 		{
-			m_Window->OnBegin();
-
-			//TODO move this wherever
-			UINT stride = sizeof(VERTEX);
-			UINT offset = 0;
-			auto context = static_cast<Dx11Context*>(Application::Get().GetWindow().GetGraphicsContext());
-			context->GetPd3dDeviceContext()->IASetVertexBuffers(0, 1, &m_VertexBuffer, &stride, &offset);
-			context->GetPd3dDeviceContext()->IASetIndexBuffer(m_IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-			context->GetPd3dDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			m_Shader->Bind();
-			context->GetPd3dDeviceContext()->DrawIndexed(3, 0, 0);
-
-			for (Layer* layer : m_LayerStack)
-				layer->Begin();
-
-			for (Layer* layer : m_LayerStack)
-				layer->OnUpdate();
-
-			if (m_ImGuiLayer->IsAttached())
-			{
-				for (Layer* layer : m_LayerStack)
-					layer->OnImGuiRender();
-			}
-
-			for (Layer* layer : m_LayerStack)
-				layer->End();
-
-			m_Window->OnUpdate();
+			Update();
 		}
+	}
+#endif
+
+	void Application::Update()
+	{
+		m_Window->OnBegin();
+
+		//TODO move this wherever
+		UINT stride = sizeof(VERTEX);
+		UINT offset = 0;
+		auto context = static_cast<Dx11Context*>(Application::Get().GetWindow().GetGraphicsContext());
+		context->GetPd3dDeviceContext()->IASetVertexBuffers(0, 1, &m_VertexBuffer, &stride, &offset);
+		context->GetPd3dDeviceContext()->IASetIndexBuffer(m_IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+		context->GetPd3dDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		m_Shader->Bind();
+		context->GetPd3dDeviceContext()->DrawIndexed(3, 0, 0);
+
+		for (Layer* layer : m_LayerStack)
+			layer->Begin();
+
+		for (Layer* layer : m_LayerStack)
+			layer->OnUpdate();
+
+		if (m_ImGuiLayer->IsAttached())
+		{
+			for (Layer* layer : m_LayerStack)
+				layer->OnImGuiRender();
+		}
+
+		for (Layer* layer : m_LayerStack)
+			layer->End();
+
+		m_Window->OnUpdate();
 	}
 
 	bool Application::OnWindowClose(WindowCloseEvent& e)
 	{
 		m_Running = false;
-		return true;
+		return false;
 	}
 
 	bool Application::OnWindowResize(WindowResizeEvent& e)
@@ -186,6 +204,6 @@ namespace pigeon
 		//TODO do directly in the context layer???
 		auto context = static_cast<Dx11Context*>(Application::Get().GetWindow().GetGraphicsContext());
 		context->SetSize(e.GetWidth(), e.GetHeight());
-		return true;
+		return false;
 	}
 }

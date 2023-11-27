@@ -24,6 +24,7 @@ namespace pigeon
 
 	ImGuiLayer::~ImGuiLayer()
 	{
+
 	}
 
 	void ImGuiLayer::OnAttach()

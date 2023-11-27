@@ -28,6 +28,9 @@ add_executable (SandboxApp ${SRCS})
 
 set_property(TARGET SandboxApp PROPERTY ENABLE_EXPORTS 1)
 set_property(TARGET SandboxApp PROPERTY VS_DEBUGGER_WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/Data)
+
+set_property(TARGET SandboxApp PROPERTY EXCLUDE_FROM_DEFAULT_BUILD_TESTING ON)
+
 # Properties->Linker->Input->Additional Dependencies
 
 add_dependencies(SandboxApp PigeonLib) 

@@ -1,4 +1,5 @@
 #pragma once
+#define PG_ENABLE_ASSERTS
 
 #ifdef PG_PLATFORM_WINDOWS
 	#if PG_DYNAMIC_LINK

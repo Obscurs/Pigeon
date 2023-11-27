@@ -19,6 +19,8 @@ include_directories (
     "${PROJECT_SOURCE_DIR}/3rdParty/Catch"
     "${PROJECT_SOURCE_DIR}/Code/PigeonLib"
     "${PROJECT_SOURCE_DIR}/Code/PigeonLib/PigeonLib.dir/Test"
+    "${PROJECT_SOURCE_DIR}/3rdParty/"
+    "${PROJECT_SOURCE_DIR}/3rdParty/spdlog-1.12.0/include"
 )
 
 link_directories (
@@ -26,6 +28,7 @@ link_directories (
 #    "${PROJECT_SOURCE_DIR}/3rdParty/behaviortree_cpp_v3/lib"
 #    "${PROJECT_SOURCE_DIR}/3rdParty/behaviortree_cpp_v3/lib"
     "${PROJECT_BINARY_DIR}/bin"
+    "${PROJECT_SOURCE_DIR}/3rdParty/spdlog-1.12.0/lib"
 )
 
 # Set Properties->General->Configuration Type to Dynamic Library(.dll)
@@ -54,8 +57,15 @@ SET_SOURCE_FILES_PROPERTIES(
   GENERATED true
 )
 
+if(WIN32)
+    target_compile_definitions(UT PRIVATE PG_PLATFORM_WINDOWS)
+elseif(UNIX)
+    target_compile_definitions(UT PRIVATE PG_PLATFORM_UNIX)
+endif()
+
 target_link_libraries (
-    UT
+    UT PRIVATE PigeonLib
+    spdlog.lib
 #    bt_sample_nodes.lib
 #    debug OptickCore.lib optimized OptickCore
 #    gmock.lib
