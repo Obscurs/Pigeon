@@ -74,9 +74,13 @@ namespace pigeon
 		m_VertexBuffer.reset(VertexBuffer::Create(s_OurVertices, sizeof(s_OurVertices)));
 		m_IndexBuffer.reset(IndexBuffer::Create(s_Indices, sizeof(s_Indices) / sizeof(uint32_t)));
 
-		m_Shader.reset(new Shader(s_VsCode, s_PsCode));
+		BufferLayout buffLayout = {
+			{ ShaderDataType::Float3, "POSITION" },
+			{ ShaderDataType::Float4, "COLOR" }
+		};
 
-		
+		m_Shader.reset(new Shader(s_VsCode, s_PsCode, buffLayout));
+
 		m_Initialized = true;
 	}
 

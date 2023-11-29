@@ -9,8 +9,36 @@
 
 namespace pigeon 
 {
+	static DXGI_FORMAT ShaderDataTypeToDx11BaseType(ShaderDataType type)
+	{
+		switch (type)
+		{
+		case pigeon::ShaderDataType::Float:    return DXGI_FORMAT_R32_FLOAT;
+		case pigeon::ShaderDataType::Float2:   return DXGI_FORMAT_R32G32_FLOAT;
+		case pigeon::ShaderDataType::Float3:   return DXGI_FORMAT_R32G32B32_FLOAT;
+		case pigeon::ShaderDataType::Float4:   return DXGI_FORMAT_R32G32B32A32_FLOAT;
+		//case pigeon::ShaderDataType::Mat3:    
+		//case pigeon::ShaderDataType::Mat4:     
+		case pigeon::ShaderDataType::Int:      return DXGI_FORMAT_R32_SINT;
+		case pigeon::ShaderDataType::Int2:     return DXGI_FORMAT_R32G32_SINT;
+		case pigeon::ShaderDataType::Int3:     return DXGI_FORMAT_R32G32B32_SINT;
+		case pigeon::ShaderDataType::Int4:     return DXGI_FORMAT_R32G32B32A32_SINT;
+		case pigeon::ShaderDataType::Bool:     return DXGI_FORMAT_R32_UINT;
+		}
 
-	Shader::Shader(const char* vertexSrc, const char* fragmentSrc)
+		PG_CORE_ASSERT(false, "Unknown ShaderDataType!");
+		return DXGI_FORMAT_UNKNOWN;
+	}
+
+	void BufferLayoutToDx11InputDesc(const BufferLayout& bufferLayout, std::vector<D3D11_INPUT_ELEMENT_DESC>& layoutDesc)
+	{
+		for (const BufferElement& elem : bufferLayout)
+		{
+			layoutDesc.push_back({ elem.Name.c_str(), 0, ShaderDataTypeToDx11BaseType(elem.Type), 0, elem.Offset, D3D11_INPUT_PER_VERTEX_DATA, 0 });
+		}
+	}
+
+	Shader::Shader(const char* vertexSrc, const char* fragmentSrc, const BufferLayout& buffLayout)
 	{
 		bool success = true;
 		ID3D10Blob* errorBlob;
@@ -45,14 +73,12 @@ namespace pigeon
 			device->CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, &m_VertexShader);
 			device->CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), nullptr, &m_PixelShader);
 
-			// Define and create the input layout
-			D3D11_INPUT_ELEMENT_DESC layout[] = {
-				{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-				{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-			};
-			UINT numElements = ARRAYSIZE(layout);
+			SetLayout(buffLayout);
+			
+			std::vector<D3D11_INPUT_ELEMENT_DESC> layoutDesc;
+			BufferLayoutToDx11InputDesc(buffLayout, layoutDesc);
 
-			device->CreateInputLayout(layout, numElements, vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &m_InputLayout);
+			device->CreateInputLayout(layoutDesc.data(), layoutDesc.size(), vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &m_InputLayout);
 		}
 
 		vsBlob->Release();
