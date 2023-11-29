@@ -3,6 +3,7 @@
 //#include "optick.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <functional>
 #include <iostream>
 #include <memory>

@@ -3,11 +3,10 @@
 #include "Core.h"
 
 #include "Window.h"
-#include "Pigeon/LayerStack.h"
 #include "Pigeon/Events/Event.h"
 #include "Pigeon/Events/ApplicationEvent.h"
-
-#include <d3d11.h>
+#include "Pigeon/LayerStack.h"
+#include "Pigeon/Renderer/Buffer.h"
 
 namespace pigeon
 {
@@ -47,14 +46,13 @@ namespace pigeon
 		bool m_Running = true;
 		bool m_Initialized = false;
 		LayerStack m_LayerStack;
-		ID3D11Buffer* m_VertexBuffer = nullptr;
-		ID3D11Buffer* m_IndexBuffer = nullptr;
+		std::unique_ptr<VertexBuffer> m_VertexBuffer;
+		std::unique_ptr<IndexBuffer> m_IndexBuffer;
 
 		std::unique_ptr<Shader> m_Shader;
 
 	private:
 		static Application* s_Instance;
-
 	};
 
 	// To be defined in CLIENT

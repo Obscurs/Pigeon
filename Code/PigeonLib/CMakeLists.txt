@@ -1,4 +1,4 @@
-file(GLOB SRCS
+file(GLOB ROOT
     "Pigeon.h"
 )
 
@@ -17,8 +17,11 @@ file(GLOB PGIMGUI
 )
 
 file(GLOB RENDERER
-    "Pigeon/Renderer/Shader.cpp"
+    "Pigeon/Renderer/Buffer.cpp"
     "Pigeon/Renderer/GraphicsContext.h"
+    "Pigeon/Renderer/Renderer.cpp"
+    "Pigeon/Renderer/Shader.cpp"
+
 )
 
 file(GLOB PLATFORM_WIN
@@ -27,6 +30,7 @@ file(GLOB PLATFORM_WIN
 )
 
 file(GLOB PLATFORM_DX
+    "Platform/DirectX11/Dx11Buffer.cpp"
     "Platform/DirectX11/Dx11Context.cpp"
 )
 
@@ -34,24 +38,21 @@ file(GLOB PLATFORM_TEST
     "Platform/UTMockup/UTWindow.cpp"
 )
 
-#file(GLOB BT
-#    "Pigeon/BT/sample_nodes/*.cpp"
-#    "Pigeon/BT/sample_nodes/*.h"
-#)
+file(GLOB_RECURSE SRC
+    "Pigeon/*.cpp"
+    "Pigeon/*.h"
+    "Platform/*.cpp"
+    "Platform/*.h"
+)
 
-source_group("" FILES ${SRCS})
+source_group("" FILES ${ROOT})
 source_group("Pigeon" FILES ${PG})
 source_group("Pigeon\\ImGui" FILES ${PGIMGUI})
 source_group("Pigeon\\Renderer" FILES ${RENDERER})
-#source_group("Platform" FILES ${PLATFORM})
-#source_group("Pigeon/BT" FILES ${BT})
 
 # Properties->C/C++->General->Additional Include Directories
 include_directories (
     "${PROJECT_SOURCE_DIR}/Code/PigeonLib"
-#    "${PROJECT_SOURCE_DIR}/3rdParty/behaviortree_cpp_v3/include"
-#    "${PROJECT_SOURCE_DIR}/3rdParty/entt"
-#    "${PROJECT_SOURCE_DIR}/3rdParty/Optick_1.4.0/include"
     "${PROJECT_SOURCE_DIR}/3rdParty/spdlog-1.12.0/include"
     "${PROJECT_SOURCE_DIR}/3rdParty/glm"
     "${PROJECT_SOURCE_DIR}/3rdParty/imgui"
@@ -59,8 +60,6 @@ include_directories (
 )
 
 link_directories (
-#    "${PROJECT_SOURCE_DIR}/3rdParty/behaviortree_cpp_v3/lib"
-#    "${PROJECT_SOURCE_DIR}/3rdParty/Optick_1.4.0/lib/x64"
     "${PROJECT_SOURCE_DIR}/3rdParty/spdlog-1.12.0/lib"
 )
 
@@ -70,19 +69,12 @@ link_directories (
 add_library(PigeonLib STATIC)
 
 # Add common sources to target
-target_sources(PigeonLib PRIVATE ${ECS} ${SRCS} ${PG} ${PGIMGUI} ${RENDERER})
+target_sources(PigeonLib PRIVATE ${SRC})
 add_dependencies(PigeonLib ImGui) 
-
-# Platform/Test files are included only for the "Test" configuration
-#if(CMAKE_CONFIGURATION_TYPES MATCHES "Test")
-#    target_sources(PigeonLib PRIVATE $<$<CONFIG:Test>:${PLATFORM_TEST}>)
-#    source_group("Platform\\Test" FILES ${PLATFORM_TEST})
-#endif()
 
 # Platform/Windows files are included for configurations other than "Test"
 # This assumes WIN32 is true; adjust as necessary for other platforms
 if(WIN32)
-    #target_sources(PigeonLib PRIVATE $<$<NOT:$<CONFIG:Test>>:${PLATFORM_WIN}>)
     target_sources(PigeonLib PRIVATE ${PLATFORM_WIN})
     source_group("Platform\\Windows" FILES ${PLATFORM_WIN})
 endif()
@@ -104,38 +96,15 @@ elseif(UNIX)
     target_compile_definitions(PigeonLib PRIVATE PG_PLATFORM_UNIX)
 endif()
 
-#SET(BT optimized behaviortree_cpp_v3.lib debug behaviortree_cpp_v3d.lib)
-
-#to do make this work
-#target_precompile_headers(PigeonLib PUBLIC pch.h)
-
 target_link_libraries (
     PigeonLib
     ImGui
-#    ${BT}
-#    bt_sample_nodes.lib
-#    debug OptickCore.lib optimized OptickCore
-#    gmock.lib
-#    gmock_main.lib
-#    gtest.lib
-#    gtest_main.lib
     spdlog.lib
 )
-
-# Creates a folder "executables" and adds target 
-# project (app.vcproj) under it
-#set_property(TARGET app PROPERTY FOLDER "executables")
 
 # Properties->General->Output Directory
 set_target_properties(PigeonLib PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
-
-
-
-# Adds logic to INSTALL.vcproj to copy app.exe to destination directory
-#install (TARGETS app
-#         RUNTIME DESTINATION ${PROJECT_SOURCE_DIR}/_install)
-#"$(SolutionDir)..\External\*.dll"
 
 file(GLOB DLLS_TO_COPY
     ${PROJECT_SOURCE_DIR}/External

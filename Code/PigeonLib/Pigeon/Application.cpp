@@ -44,18 +44,14 @@ namespace
 		"    return input.Col; // Output the interpolated color\n"
 		"};";
 
-	struct VERTEX {
-		FLOAT X, Y, Z;
-		FLOAT Color[4];
+
+	float s_OurVertices[3 * 7] = {
+		 0.0f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+		 0.45f, -0.5, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+		 -0.45f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f
 	};
 
-	VERTEX s_OurVertices[] = {
-		{ 0.0f, 0.5f, 0.0f, { 1.0f, 0.0f, 0.0f, 1.0f } },
-		{ 0.45f, -0.5, 0.0f, { 0.0f, 1.0f, 0.0f, 1.0f } },
-		{ -0.45f, -0.5f, 0.0f, { 0.0f, 0.0f, 1.0f, 1.0f } }
-	};
-
-	DWORD s_Indices[] = { 0, 1, 2 };
+	uint32_t s_Indices[3] = { 0, 1, 2 };
 }
 
 namespace pigeon 
@@ -75,28 +71,8 @@ namespace pigeon
 		m_ImGuiLayer = new ImGuiLayer();
 		PushOverlay(m_ImGuiLayer);
 
-		D3D11_BUFFER_DESC bd = { 0 };
-		bd.Usage = D3D11_USAGE_DEFAULT;
-		bd.ByteWidth = sizeof(VERTEX) * 3;
-		bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-		bd.CPUAccessFlags = 0;
-
-		D3D11_SUBRESOURCE_DATA initData = { 0 };
-		initData.pSysMem = s_OurVertices;
-
-		auto context = static_cast<Dx11Context*>(m_Window->GetGraphicsContext());
-		context->GetPd3dDevice()->CreateBuffer(&bd, &initData, &m_VertexBuffer);
-
-		D3D11_BUFFER_DESC ibd = { 0 };
-		ibd.Usage = D3D11_USAGE_DEFAULT;
-		ibd.ByteWidth = sizeof(DWORD) * 3; // Number of indices
-		ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
-		ibd.CPUAccessFlags = 0;
-
-		D3D11_SUBRESOURCE_DATA iinitData = { 0 };
-		iinitData.pSysMem = s_Indices;
-
-		context->GetPd3dDevice()->CreateBuffer(&ibd, &iinitData, &m_IndexBuffer);
+		m_VertexBuffer.reset(VertexBuffer::Create(s_OurVertices, sizeof(s_OurVertices)));
+		m_IndexBuffer.reset(IndexBuffer::Create(s_Indices, sizeof(s_Indices) / sizeof(uint32_t)));
 
 		m_Shader.reset(new Shader(s_VsCode, s_PsCode));
 
@@ -110,14 +86,9 @@ namespace pigeon
 		m_LayerStack.PopOverlay(m_ImGuiLayer);
 		m_Shader.reset();
 		m_Window.reset();
-		if (m_IndexBuffer) {
-			m_IndexBuffer->Release();
-			m_IndexBuffer = nullptr;
-		}
-		if (m_VertexBuffer) {
-			m_VertexBuffer->Release();
-			m_VertexBuffer = nullptr;
-		}
+
+		m_VertexBuffer.reset();
+		m_IndexBuffer.reset();
 
 		s_Instance = nullptr;
 	}
@@ -166,13 +137,12 @@ namespace pigeon
 		m_Window->OnBegin();
 
 		//TODO move this wherever
-		UINT stride = sizeof(VERTEX);
-		UINT offset = 0;
+
 		auto context = static_cast<Dx11Context*>(Application::Get().GetWindow().GetGraphicsContext());
-		context->GetPd3dDeviceContext()->IASetVertexBuffers(0, 1, &m_VertexBuffer, &stride, &offset);
-		context->GetPd3dDeviceContext()->IASetIndexBuffer(m_IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-		context->GetPd3dDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		m_VertexBuffer->Bind();
+		m_IndexBuffer->Bind();
 		m_Shader->Bind();
+		context->GetPd3dDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		context->GetPd3dDeviceContext()->DrawIndexed(3, 0, 0);
 
 		for (Layer* layer : m_LayerStack)
