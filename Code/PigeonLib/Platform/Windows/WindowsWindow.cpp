@@ -7,8 +7,6 @@
 #include "Pigeon/Events/MouseEvent.h"
 #include "Pigeon/Events/KeyEvent.h"
 
-#include "Platform/DirectX11/Dx11Context.h"
-
 // Forward declare message handler from imgui_impl_win32.cpp
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -35,6 +33,11 @@ namespace pigeon
 	WindowsWindow::~WindowsWindow()
 	{
 		Shutdown();
+	}
+
+	void WindowsWindow::SetSize(unsigned int width, unsigned int height)
+	{
+		m_Context->SetSize(width, height);
 	}
 
 	void WindowsWindow::Init(const WindowProps& props)
@@ -65,8 +68,8 @@ namespace pigeon
 			// Now you can use errorCode to understand the issue.
 			// You might want to convert it to a human-readable error message.
 		}
-
-		m_Context = new Dx11Context(m_Window);
+		//TODO context abstaction 
+		m_Context = GraphicsContext::Create(this);
 		m_Context->Init();
 		m_Context->SetSize(m_Data.m_Width, m_Data.m_Height);
 
@@ -88,11 +91,6 @@ namespace pigeon
 		UnregisterClass(m_Data.m_Title, m_Data.m_HInstance);
 		DestroyWindow(m_Window);
 		m_Data = WindowsWindow::WindowData();
-	}
-
-	void WindowsWindow::OnBegin()
-	{
-		m_Context->Begin();
 	}
 
 	void WindowsWindow::OnUpdate()

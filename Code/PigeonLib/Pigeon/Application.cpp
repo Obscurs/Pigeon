@@ -4,11 +4,10 @@
 #include "Input.h"
 
 #include "Pigeon/Events/ApplicationEvent.h"
+#include "Pigeon/Renderer/Renderer.h"
 #include "Pigeon/Renderer/Shader.h"
 #include "Pigeon/ImGui/ImGuiLayer.h"
 #include "Pigeon/Log.h"
-
-#include "Platform/DirectX11/Dx11Context.h"
 
 namespace
 {
@@ -138,16 +137,16 @@ namespace pigeon
 
 	void Application::Update()
 	{
-		m_Window->OnBegin();
+		RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
 
-		//TODO move this wherever
-
-		auto context = static_cast<Dx11Context*>(Application::Get().GetWindow().GetGraphicsContext());
+		Renderer::BeginScene();
+		
 		m_VertexBuffer->Bind();
 		m_IndexBuffer->Bind();
 		m_Shader->Bind();
-		context->GetPd3dDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		context->GetPd3dDeviceContext()->DrawIndexed(3, 0, 0);
+
+		Renderer::Submit();
+		Renderer::EndScene();
 
 		for (Layer* layer : m_LayerStack)
 			layer->Begin();
@@ -175,9 +174,8 @@ namespace pigeon
 
 	bool Application::OnWindowResize(WindowResizeEvent& e)
 	{
-		//TODO do directly in the context layer???
-		auto context = static_cast<Dx11Context*>(Application::Get().GetWindow().GetGraphicsContext());
-		context->SetSize(e.GetWidth(), e.GetHeight());
+		PG_CORE_ASSERT(m_Window, "Window not initialized");
+		m_Window->SetSize(e.GetWidth(), e.GetHeight());
 		return false;
 	}
 }

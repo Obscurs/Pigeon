@@ -11,8 +11,8 @@ namespace pigeon
 	{
 		switch (Renderer::GetAPI())
 		{
-		case RendererAPI::None:    PG_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
-		case RendererAPI::DirectX11:  return new Dx11VertexBuffer(vertices, size);
+		case RendererAPI::API::None:    PG_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
+		case RendererAPI::API::DirectX11:  return new Dx11VertexBuffer(vertices, size);
 		}
 
 		PG_CORE_ASSERT(false, "Unknown RendererAPI!");
@@ -23,8 +23,8 @@ namespace pigeon
 	{
 		switch (Renderer::GetAPI())
 		{
-		case RendererAPI::None:    PG_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
-		case RendererAPI::DirectX11:  return new Dx11IndexBuffer(indices, size);
+		case RendererAPI::API::None:    PG_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
+		case RendererAPI::API::DirectX11:  return new Dx11IndexBuffer(indices, size);
 		}
 
 		PG_CORE_ASSERT(false, "Unknown RendererAPI!");

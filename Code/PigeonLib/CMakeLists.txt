@@ -18,8 +18,9 @@ file(GLOB PGIMGUI
 
 file(GLOB RENDERER
     "Pigeon/Renderer/Buffer.cpp"
-    "Pigeon/Renderer/GraphicsContext.h"
+    "Pigeon/Renderer/RenderCommand.cpp"
     "Pigeon/Renderer/Renderer.cpp"
+    "Pigeon/Renderer/RendererAPI.cpp"
     "Pigeon/Renderer/Shader.cpp"
 
 )
@@ -32,6 +33,7 @@ file(GLOB PLATFORM_WIN
 file(GLOB PLATFORM_DX
     "Platform/DirectX11/Dx11Buffer.cpp"
     "Platform/DirectX11/Dx11Context.cpp"
+    "Platform/DirectX11/Dx11RendererAPI.cpp"
 )
 
 file(GLOB PLATFORM_TEST
@@ -49,7 +51,7 @@ source_group("" FILES ${ROOT})
 source_group("Pigeon" FILES ${PG})
 source_group("Pigeon\\ImGui" FILES ${PGIMGUI})
 source_group("Pigeon\\Renderer" FILES ${RENDERER})
-
+source_group("Platform\\DirectX11" FILES ${PLATFORM_DX})
 # Properties->C/C++->General->Additional Include Directories
 include_directories (
     "${PROJECT_SOURCE_DIR}/Code/PigeonLib"
@@ -78,9 +80,6 @@ if(WIN32)
     target_sources(PigeonLib PRIVATE ${PLATFORM_WIN})
     source_group("Platform\\Windows" FILES ${PLATFORM_WIN})
 endif()
-
-target_sources(PigeonLib PRIVATE ${PLATFORM_DX})
-source_group("Platform\\DirectX11" FILES ${PLATFORM_DX})
 
 set_property(TARGET PigeonLib PROPERTY ENABLE_EXPORTS 1)
 set_property(TARGET PigeonLib PROPERTY VS_DEBUGGER_WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/Data)

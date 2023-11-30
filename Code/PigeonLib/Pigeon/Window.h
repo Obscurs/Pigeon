@@ -29,7 +29,7 @@ namespace pigeon {
 
 		virtual ~Window() {}
 
-		virtual void OnBegin() = 0;
+		virtual void SetSize(unsigned int width, unsigned int height) = 0;
 		virtual void OnUpdate() = 0;
 		virtual void Shutdown() = 0;
 		virtual unsigned int GetWidth() const = 0;

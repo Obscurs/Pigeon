@@ -3,5 +3,18 @@
 
 namespace pigeon 
 {
-	RendererAPI Renderer::s_RendererAPI = RendererAPI::DirectX11;
+	void Renderer::BeginScene()
+	{
+		RenderCommand::Begin();
+	}
+
+	void Renderer::EndScene()
+	{
+		RenderCommand::End();
+	}
+
+	void Renderer::Submit()
+	{
+		RenderCommand::DrawIndexed();
+	}
 }

@@ -1,13 +1,18 @@
 #pragma once
 
-namespace pigeon {
-
+namespace pigeon
+{
+	class WindowsWindow;
+}
+namespace pigeon 
+{
 	class GraphicsContext
 	{
 	public:
+		static GraphicsContext* Create(const WindowsWindow* window);
+
 		virtual void Shutdown() = 0;
 		virtual void Init() = 0;
-		virtual void Begin() = 0;
 		virtual void SwapBuffers() = 0;
 		virtual void SetSize(unsigned int width, unsigned int height) = 0;
 	};
