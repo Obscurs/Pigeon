@@ -33,6 +33,10 @@ namespace pigeon
 	{
 		m_ResizeHeight = height;
 		m_ResizeWidth = width;
+		if (m_Width == 0 && m_Height == 0)
+		{
+			ResizeBuffers();
+		}
 	}
 
 	bool Dx11Context::NeedsResize() const

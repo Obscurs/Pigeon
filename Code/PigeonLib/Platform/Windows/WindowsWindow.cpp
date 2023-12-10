@@ -24,8 +24,6 @@ namespace pigeon
 	WindowsWindow::WindowsWindow(const WindowProps& props)
 	{
 		m_WindowData.m_Title = props.Title.c_str();
-		m_WindowData.m_Width = props.Width;
-		m_WindowData.m_Height = props.Height;
 		m_WindowData.m_HInstance = GetModuleHandle(nullptr);
 		Init(props);
 	}
@@ -51,9 +49,9 @@ namespace pigeon
 
 		RECT winRect;
 		winRect.left = 100;
-		winRect.right = m_WindowData.m_Width + winRect.left;
+		winRect.right = props.Width + winRect.left;
 		winRect.top = 100;
-		winRect.bottom = m_WindowData.m_Height + +winRect.top;
+		winRect.bottom = props.Height + winRect.top;
 		AdjustWindowRect(&winRect, WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU, false);
 
 		m_Window = CreateWindow(
@@ -71,7 +69,7 @@ namespace pigeon
 
 		m_Context = GraphicsContext::Create(this);
 		m_Context->Init();
-		m_Context->SetSize(m_WindowData.m_Width, m_WindowData.m_Height);
+		m_Context->SetSize(props.Width, props.Height);
 
 		PG_CORE_INFO("Creating window {0} ({1}, {2})", props.Title, props.Width, props.Height);
 
@@ -86,11 +84,32 @@ namespace pigeon
 
 	void WindowsWindow::Shutdown()
 	{
-		m_Context->Shutdown();
-		m_Context = nullptr;
-		UnregisterClass(m_WindowData.m_Title, m_WindowData.m_HInstance);
-		DestroyWindow(m_Window);
+		if (m_Context)
+		{
+			m_Context->Shutdown();
+			m_Context = nullptr;
+		}
+		if (m_Window)
+		{
+			UnregisterClass(m_WindowData.m_Title, m_WindowData.m_HInstance);
+			DestroyWindow(m_Window);
+			m_Window = nullptr;
+		}
+
 		m_WindowData = WindowsWindow::WindowData();
+	}
+
+
+	unsigned int WindowsWindow::GetWidth() const
+	{
+		PG_CORE_ASSERT(m_Context, "context is null");
+		return m_Context->GetWidth();
+	}
+
+	unsigned int WindowsWindow::GetHeight() const
+	{
+		PG_CORE_ASSERT(m_Context, "context is null");
+		return m_Context->GetHeight();
 	}
 
 	void WindowsWindow::OnUpdate()
@@ -208,7 +227,6 @@ namespace pigeon
 		return true;
 	}
 
-
 	void WindowsWindow::ProcessCharPressedEvent(WPARAM wParam)
 	{
 		KeyTypedEvent event(static_cast<int>(wParam));
@@ -304,10 +322,6 @@ namespace pigeon
 		// The LOWORD and HIWORD macros extract the width and height
 		unsigned int width = LOWORD(lParam);
 		unsigned int height = HIWORD(lParam);
-
-		// Here you can update the internal data if you store the dimensions
-		m_WindowData.m_Width = width;
-		m_WindowData.m_Height = height;
 
 		// Now create a WindowResizeEvent and dispatch it
 		WindowResizeEvent event(width, height);

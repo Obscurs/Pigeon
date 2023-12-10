@@ -3,17 +3,14 @@ file(GLOB SRC_MAIN
     "Utils/TestApp.cpp"
 )
 
-file(GLOB SRC_TESTS_SAMPLE
-    "UT_Sample/*.cpp"
-)
-
-file(GLOB SRC_TESTS_LAYERS
-    "UT_Layers/*.cpp"
-)
+file(GLOB SRC_TESTS_SAMPLE "UT_Sample/*.cpp")
+file(GLOB SRC_TESTS_LAYERS "UT_Layers/*.cpp")
+file(GLOB SRC_TESTS_WINDOW "UT_Window/*.cpp")
 
 source_group("" FILES ${SRC_MAIN})
 source_group("Tests/Sample" FILES ${SRC_TESTS_SAMPLE})
 source_group("Tests/Layers" FILES ${SRC_TESTS_LAYERS})
+source_group("Tests/Window" FILES ${SRC_TESTS_WINDOW})
 
 include_directories (
     "${PROJECT_SOURCE_DIR}/3rdParty/Catch"
@@ -30,7 +27,13 @@ link_directories (
     "${PROJECT_SOURCE_DIR}/3rdParty/spdlog-1.12.0/lib"
 )
 
-add_executable (UT ${OBJS} ${SRC_MAIN} ${SRC_TESTS_LAYERS}  ${SRC_TESTS_SAMPLE})
+add_executable (UT 
+    ${OBJS} 
+    ${SRC_MAIN} 
+    ${SRC_TESTS_LAYERS}  
+    ${SRC_TESTS_SAMPLE}
+    ${SRC_TESTS_WINDOW}
+)
 add_dependencies(UT PigeonLib) 
 
 set_property(TARGET UT PROPERTY EXCLUDE_FROM_DEFAULT_BUILD_RELEASE ON)

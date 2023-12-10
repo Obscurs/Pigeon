@@ -11,7 +11,6 @@
 
 namespace
 {
-
 	using ExpectedEventResult = std::variant<
 		pigeon::KeyPressedEvent,
 		pigeon::KeyReleasedEvent,

@@ -11,7 +11,6 @@ namespace pigeon
 		struct WindowData
 		{
 			const char* m_Title = "Windows Window";
-			unsigned int m_Width, m_Height;
 			HINSTANCE m_HInstance;
 			EventCallbackFn EventCallback;
 		};
@@ -40,8 +39,8 @@ namespace pigeon
 		void OnUpdate() override;
 
 		void Shutdown() override;
-		inline unsigned int GetWidth() const override { return m_WindowData.m_Width; }
-		inline unsigned int GetHeight() const override { return m_WindowData.m_Height; }
+		unsigned int GetWidth() const override;
+		unsigned int GetHeight() const override;
 
 		// Window attributes
 		inline void SetEventCallback(const EventCallbackFn& callback) override { m_WindowData.EventCallback = callback; }
@@ -51,13 +50,13 @@ namespace pigeon
 		inline virtual void* GetNativeWindow() const { return m_Window; }
 		inline virtual void* GetGraphicsContext() const { return m_Context; }
 
-		static std::optional<int> ProcessMessages();
-		
 #ifdef TESTS_ENABLED
 		static void SendFakeEvent(EventType type, WPARAM wParam, LPARAM lParam);
 #endif
 
 	private:
+		static std::optional<int> ProcessMessages();
+
 		virtual void Init(const WindowProps& props);
 		
 		static LRESULT __stdcall WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);

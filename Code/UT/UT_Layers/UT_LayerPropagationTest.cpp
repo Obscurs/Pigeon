@@ -1,7 +1,6 @@
 #pragma once
 #include <catch.hpp>
 #include <cstdlib>
-#include <variant>
 
 #include "Utils/TestApp.h"
 

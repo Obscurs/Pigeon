@@ -18,8 +18,8 @@ namespace pigeon
 
 		bool NeedsResize() const;
 		void ResizeBuffers();
-		UINT GetWidth() { return m_Width; }
-		UINT GetHeight() { return m_Height; }
+		virtual unsigned int GetWidth() override { return m_Width; }
+		virtual unsigned int GetHeight() override { return m_Height; }
 		ID3D11Device* GetPd3dDevice() { return m_Pd3dDevice; }
 		ID3D11DeviceContext* GetPd3dDeviceContext() { return m_Pd3dDeviceContext; }
 		IDXGISwapChain* GetSwapChain() { return m_PSwapChain; }
