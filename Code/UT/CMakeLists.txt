@@ -6,11 +6,13 @@ file(GLOB SRC_MAIN
 file(GLOB SRC_TESTS_SAMPLE "UT_Sample/*.cpp")
 file(GLOB SRC_TESTS_LAYERS "UT_Layers/*.cpp")
 file(GLOB SRC_TESTS_WINDOW "UT_Window/*.cpp")
+file(GLOB SRC_TESTS_RENDERER "UT_Renderer/*.cpp")
 
 source_group("" FILES ${SRC_MAIN})
 source_group("Tests/Sample" FILES ${SRC_TESTS_SAMPLE})
 source_group("Tests/Layers" FILES ${SRC_TESTS_LAYERS})
 source_group("Tests/Window" FILES ${SRC_TESTS_WINDOW})
+source_group("Tests/Renderer" FILES ${SRC_TESTS_RENDERER})
 
 include_directories (
     "${PROJECT_SOURCE_DIR}/3rdParty/Catch"
@@ -33,6 +35,7 @@ add_executable (UT
     ${SRC_TESTS_LAYERS}  
     ${SRC_TESTS_SAMPLE}
     ${SRC_TESTS_WINDOW}
+    ${SRC_TESTS_RENDERER}
 )
 add_dependencies(UT PigeonLib) 
 

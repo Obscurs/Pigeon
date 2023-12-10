@@ -7,6 +7,10 @@ namespace pigeon
 	class RenderCommand
 	{
 	public:
+#ifdef TESTS_ENABLED
+		static const RendererAPI* GetRenderAPI() { return s_RendererAPI; }
+#endif
+
 		inline static void SetClearColor(const glm::vec4& color)
 		{
 			s_RendererAPI->SetClearColor(color);

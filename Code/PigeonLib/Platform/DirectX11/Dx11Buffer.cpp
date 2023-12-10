@@ -22,14 +22,14 @@ namespace pigeon {
 		initData.pSysMem = vertices;
 
 		auto context = static_cast<Dx11Context*>(Application::Get().GetWindow().GetGraphicsContext());
-		context->GetPd3dDevice()->CreateBuffer(&bd, &initData, &m_Buffer);
+		context->GetPd3dDevice()->CreateBuffer(&bd, &initData, &m_Data.m_Buffer);
 	}
 
 	Dx11VertexBuffer::~Dx11VertexBuffer()
 	{
 		Unbind();
-		if (m_Buffer)
-			m_Buffer->Release();
+		if (m_Data.m_Buffer)
+			m_Data.m_Buffer->Release();
 	}
 
 	void Dx11VertexBuffer::Bind() const
@@ -37,7 +37,7 @@ namespace pigeon {
 		auto context = static_cast<Dx11Context*>(Application::Get().GetWindow().GetGraphicsContext());
 		const UINT offset = 0;
 		const UINT stride = sizeof(float) * 7;
-		context->GetPd3dDeviceContext()->IASetVertexBuffers(0, 1, &m_Buffer, &stride, &offset);
+		context->GetPd3dDeviceContext()->IASetVertexBuffers(0, 1, &m_Data.m_Buffer, &stride, &offset);
 	}
 
 	void Dx11VertexBuffer::Unbind() const
@@ -54,8 +54,8 @@ namespace pigeon {
 	/////////////////////////////////////////////////////////////////////////////
 
 	Dx11IndexBuffer::Dx11IndexBuffer(uint32_t* indices, uint32_t count)
-		: m_Count(count)
 	{
+		m_Data.m_Count = count;
 		D3D11_BUFFER_DESC ibd = { 0 };
 		ibd.Usage = D3D11_USAGE_DEFAULT;
 		ibd.ByteWidth = sizeof(DWORD) * 3; // Number of indices
@@ -66,20 +66,20 @@ namespace pigeon {
 		iinitData.pSysMem = indices;
 
 		auto context = static_cast<Dx11Context*>(Application::Get().GetWindow().GetGraphicsContext());
-		context->GetPd3dDevice()->CreateBuffer(&ibd, &iinitData, &m_Buffer);
+		context->GetPd3dDevice()->CreateBuffer(&ibd, &iinitData, &m_Data.m_Buffer);
 	}
 
 	Dx11IndexBuffer::~Dx11IndexBuffer()
 	{
 		Unbind();
-		if (m_Buffer)
-			m_Buffer->Release();
+		if (m_Data.m_Buffer)
+			m_Data.m_Buffer->Release();
 	}
 
 	void Dx11IndexBuffer::Bind() const
 	{
 		auto context = static_cast<Dx11Context*>(Application::Get().GetWindow().GetGraphicsContext());
-		context->GetPd3dDeviceContext()->IASetIndexBuffer(m_Buffer, DXGI_FORMAT_R32_UINT, 0);
+		context->GetPd3dDeviceContext()->IASetIndexBuffer(m_Data.m_Buffer, DXGI_FORMAT_R32_UINT, 0);
 	}
 
 	void Dx11IndexBuffer::Unbind() const

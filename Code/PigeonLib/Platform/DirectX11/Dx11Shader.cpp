@@ -70,15 +70,15 @@ namespace pigeon
 			auto context = static_cast<Dx11Context*>(Application::Get().GetWindow().GetGraphicsContext());
 			ID3D11Device* device = context->GetPd3dDevice();
 
-			device->CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, &m_VertexShader);
-			device->CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), nullptr, &m_PixelShader);
+			device->CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, &m_Data.m_VertexShader);
+			device->CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), nullptr, &m_Data.m_PixelShader);
 
 			SetLayout(buffLayout);
 
 			std::vector<D3D11_INPUT_ELEMENT_DESC> layoutDesc;
 			BufferLayoutToDx11InputDesc(buffLayout, layoutDesc);
 
-			device->CreateInputLayout(layoutDesc.data(), layoutDesc.size(), vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &m_InputLayout);
+			device->CreateInputLayout(layoutDesc.data(), layoutDesc.size(), vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &m_Data.m_InputLayout);
 		}
 
 		vsBlob->Release();
@@ -91,9 +91,9 @@ namespace pigeon
 	{
 		Unbind();
 
-		if (m_InputLayout) { m_InputLayout->Release(); m_InputLayout = nullptr; }
-		if (m_VertexShader) { m_VertexShader->Release(); m_VertexShader = nullptr; }
-		if (m_PixelShader) { m_PixelShader->Release(); m_PixelShader = nullptr; }
+		if (m_Data.m_InputLayout) { m_Data.m_InputLayout->Release(); m_Data.m_InputLayout = nullptr; }
+		if (m_Data.m_VertexShader) { m_Data.m_VertexShader->Release(); m_Data.m_VertexShader = nullptr; }
+		if (m_Data.m_PixelShader) { m_Data.m_PixelShader->Release(); m_Data.m_PixelShader = nullptr; }
 	}
 
 	void Dx11Shader::Bind() const
@@ -101,10 +101,10 @@ namespace pigeon
 		auto context = static_cast<Dx11Context*>(Application::Get().GetWindow().GetGraphicsContext());
 		ID3D11DeviceContext* deviceContext = context->GetPd3dDeviceContext();
 
-		deviceContext->IASetInputLayout(m_InputLayout);
+		deviceContext->IASetInputLayout(m_Data.m_InputLayout);
 		// Set the vertex and pixel shaders
-		deviceContext->VSSetShader(m_VertexShader, nullptr, 0);
-		deviceContext->PSSetShader(m_PixelShader, nullptr, 0);
+		deviceContext->VSSetShader(m_Data.m_VertexShader, nullptr, 0);
+		deviceContext->PSSetShader(m_Data.m_PixelShader, nullptr, 0);
 	}
 
 	void Dx11Shader::Unbind() const

@@ -5,8 +5,8 @@
 namespace pigeon 
 {
 	Dx11Context::Dx11Context(HWND windowHandle)
-		: m_HWnd(windowHandle)
 	{
+		m_Data.m_HWnd = windowHandle;
 		PG_CORE_ASSERT(windowHandle, "Window handle is null!")
 	}
 
@@ -17,7 +17,7 @@ namespace pigeon
 
 	void Dx11Context::Init()
 	{
-		if (!CreateDeviceD3D(m_HWnd))
+		if (!CreateDeviceD3D(m_Data.m_HWnd))
 		{
 			CleanupDeviceD3D();
 			return;
@@ -26,14 +26,14 @@ namespace pigeon
 
 	void Dx11Context::SwapBuffers()
 	{
-		m_PSwapChain->Present(1, 0);
+		m_Data.m_PSwapChain->Present(1, 0);
 	}
 
 	void Dx11Context::SetSize(unsigned int width, unsigned int height)
 	{
-		m_ResizeHeight = height;
-		m_ResizeWidth = width;
-		if (m_Width == 0 && m_Height == 0)
+		m_Data.m_ResizeHeight = height;
+		m_Data.m_ResizeWidth = width;
+		if (m_Data.m_Width == 0 && m_Data.m_Height == 0)
 		{
 			ResizeBuffers();
 		}
@@ -41,23 +41,24 @@ namespace pigeon
 
 	bool Dx11Context::NeedsResize() const
 	{
-		return m_ResizeWidth != 0 && m_ResizeHeight != 0;
+		return m_Data.m_ResizeWidth != 0 && m_Data.m_ResizeHeight != 0;
 	}
 
 	void Dx11Context::ResizeBuffers()
 	{
-		PG_CORE_ASSERT(m_ResizeWidth != 0 || m_ResizeHeight != 0, "Called resized but no resize was needed");
-		m_PSwapChain->ResizeBuffers(0, m_ResizeWidth, m_ResizeHeight, DXGI_FORMAT_UNKNOWN, 0);
-		m_Width = m_ResizeWidth;
-		m_Height = m_ResizeHeight;
-		m_ResizeWidth = m_ResizeHeight = 0;
+		PG_CORE_ASSERT(m_Data.m_ResizeWidth != 0 || m_Data.m_ResizeHeight != 0, "Called resized but no resize was needed");
+		m_Data.m_PSwapChain->ResizeBuffers(0, m_Data.m_ResizeWidth, m_Data.m_ResizeHeight, DXGI_FORMAT_UNKNOWN, 0);
+		m_Data.m_Width = m_Data.m_ResizeWidth;
+		m_Data.m_Height = m_Data.m_ResizeHeight;
+		m_Data.m_ResizeWidth = m_Data.m_ResizeHeight = 0;
 	}
 
 	void Dx11Context::CleanupDeviceD3D()
 	{
-		if (m_PSwapChain) { m_PSwapChain->Release(); m_PSwapChain = nullptr; }
-		if (m_Pd3dDeviceContext) { m_Pd3dDeviceContext->Release(); m_Pd3dDeviceContext = nullptr; }
-		if (m_Pd3dDevice) { m_Pd3dDevice->Release(); m_Pd3dDevice = nullptr; }
+		if (m_Data.m_PSwapChain) { m_Data.m_PSwapChain->Release(); m_Data.m_PSwapChain = nullptr; }
+		if (m_Data.m_Pd3dDeviceContext) { m_Data.m_Pd3dDeviceContext->Release(); m_Data.m_Pd3dDeviceContext = nullptr; }
+		if (m_Data.m_Pd3dDevice) { m_Data.m_Pd3dDevice->Release(); m_Data.m_Pd3dDevice = nullptr; }
+		m_Data.m_HWnd = nullptr;
 	}
 
 	bool Dx11Context::CreateDeviceD3D(HWND hWnd)
@@ -83,9 +84,9 @@ namespace pigeon
 		//createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
 		D3D_FEATURE_LEVEL featureLevel;
 		const D3D_FEATURE_LEVEL featureLevelArray[2] = { D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_0, };
-		HRESULT res = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, createDeviceFlags, featureLevelArray, 2, D3D11_SDK_VERSION, &sd, &m_PSwapChain, &m_Pd3dDevice, &featureLevel, &m_Pd3dDeviceContext);
+		HRESULT res = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, createDeviceFlags, featureLevelArray, 2, D3D11_SDK_VERSION, &sd, &m_Data.m_PSwapChain, &m_Data.m_Pd3dDevice, &featureLevel, &m_Data.m_Pd3dDeviceContext);
 		if (res == DXGI_ERROR_UNSUPPORTED) // Try high-performance WARP software driver if hardware is not available.
-			res = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_WARP, nullptr, createDeviceFlags, featureLevelArray, 2, D3D11_SDK_VERSION, &sd, &m_PSwapChain, &m_Pd3dDevice, &featureLevel, &m_Pd3dDeviceContext);
+			res = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_WARP, nullptr, createDeviceFlags, featureLevelArray, 2, D3D11_SDK_VERSION, &sd, &m_Data.m_PSwapChain, &m_Data.m_Pd3dDevice, &featureLevel, &m_Data.m_Pd3dDeviceContext);
 		if (res != S_OK)
 			return false;
 

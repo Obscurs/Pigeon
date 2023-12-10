@@ -11,29 +11,30 @@ namespace pigeon
 		auto context = static_cast<Dx11Context*>(Application::Get().GetWindow().GetGraphicsContext());
 		ID3D11Texture2D* pBackBuffer;
 		context->GetSwapChain()->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
-		context->GetPd3dDevice()->CreateRenderTargetView(pBackBuffer, nullptr, &m_MainRenderTargetView);
+		context->GetPd3dDevice()->CreateRenderTargetView(pBackBuffer, nullptr, &m_Data.m_MainRenderTargetView);
 		pBackBuffer->Release();
 	}
 
 	void Dx11RendererAPI::CleanupRenderTarget()
 	{
-		if (m_MainRenderTargetView) { m_MainRenderTargetView->Release(); m_MainRenderTargetView = nullptr; }
+		if (m_Data.m_MainRenderTargetView) { m_Data.m_MainRenderTargetView->Release(); m_Data.m_MainRenderTargetView = nullptr; }
 	}
 
 	void Dx11RendererAPI::SetClearColor(const glm::vec4& color)
 	{
-		m_ClearColor[0] = color.r;
-		m_ClearColor[1] = color.g;
-		m_ClearColor[2] = color.b;
-		m_ClearColor[3] = color.a;
+		m_Data.m_ClearColor[0] = color.r;
+		m_Data.m_ClearColor[1] = color.g;
+		m_Data.m_ClearColor[2] = color.b;
+		m_Data.m_ClearColor[3] = color.a;
 	}
 
 	void Dx11RendererAPI::Begin()
 	{
 		auto context = static_cast<Dx11Context*>(Application::Get().GetWindow().GetGraphicsContext());
 		
-		if (!m_Initialized)
+		if (!m_Data.m_Initialized)
 		{
+			m_Data.m_Initialized = true;
 			CreateRenderTarget();
 		}
 		// Handle window resize (we don't resize directly in the WM_SIZE handler)
@@ -44,7 +45,7 @@ namespace pigeon
 			CreateRenderTarget();
 		}
 
-		context->GetPd3dDeviceContext()->OMSetRenderTargets(1, &m_MainRenderTargetView, nullptr);
+		context->GetPd3dDeviceContext()->OMSetRenderTargets(1, &m_Data.m_MainRenderTargetView, nullptr);
 		Clear();
 
 		D3D11_VIEWPORT viewport;
@@ -68,7 +69,7 @@ namespace pigeon
 	void Dx11RendererAPI::Clear()
 	{
 		auto context = static_cast<Dx11Context*>(Application::Get().GetWindow().GetGraphicsContext());
-		context->GetPd3dDeviceContext()->ClearRenderTargetView(m_MainRenderTargetView, m_ClearColor);
+		context->GetPd3dDeviceContext()->ClearRenderTargetView(m_Data.m_MainRenderTargetView, m_Data.m_ClearColor);
 	}
 
 	void Dx11RendererAPI::DrawIndexed()
