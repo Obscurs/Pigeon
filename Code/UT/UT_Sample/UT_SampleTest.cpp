@@ -4,8 +4,8 @@
 
 namespace CatchTestsetFail
 {
-    TEST_CASE("SampleTest")
+    TEST_CASE("SampleTest.test::SampleTest")
     {
-        CHECK(true);
+		CHECK(true);
     }
 } // End namespace: CatchTestsetFail

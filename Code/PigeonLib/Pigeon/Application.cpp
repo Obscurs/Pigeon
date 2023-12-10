@@ -88,10 +88,11 @@ namespace pigeon
 		m_ImGuiLayer->OnDetach();
 		m_LayerStack.PopOverlay(m_ImGuiLayer);
 		m_Shader.reset();
-		m_Window.reset();
 
 		m_VertexBuffer.reset();
 		m_IndexBuffer.reset();
+
+		m_Window.reset();
 
 		s_Instance = nullptr;
 	}
