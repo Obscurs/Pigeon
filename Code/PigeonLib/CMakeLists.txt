@@ -34,6 +34,7 @@ file(GLOB PLATFORM_DX
     "Platform/DirectX11/Dx11Buffer.cpp"
     "Platform/DirectX11/Dx11Context.cpp"
     "Platform/DirectX11/Dx11RendererAPI.cpp"
+    "Platform/DirectX11/Dx11Shader.cpp"
 )
 
 file(GLOB PLATFORM_TEST

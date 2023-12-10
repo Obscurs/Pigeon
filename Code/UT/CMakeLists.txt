@@ -21,6 +21,7 @@ include_directories (
     "${PROJECT_SOURCE_DIR}/Code/PigeonLib/PigeonLib.dir/Test"
     "${PROJECT_SOURCE_DIR}/Code/UT"
     "${PROJECT_SOURCE_DIR}/3rdParty/"
+    "${PROJECT_SOURCE_DIR}/3rdParty/glm"
     "${PROJECT_SOURCE_DIR}/3rdParty/spdlog-1.12.0/include"
 )
 

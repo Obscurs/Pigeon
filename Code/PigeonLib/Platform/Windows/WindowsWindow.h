@@ -40,11 +40,11 @@ namespace pigeon
 		void OnUpdate() override;
 
 		void Shutdown() override;
-		inline unsigned int GetWidth() const override { return m_Data.m_Width; }
-		inline unsigned int GetHeight() const override { return m_Data.m_Height; }
+		inline unsigned int GetWidth() const override { return m_WindowData.m_Width; }
+		inline unsigned int GetHeight() const override { return m_WindowData.m_Height; }
 
 		// Window attributes
-		inline void SetEventCallback(const EventCallbackFn& callback) override { m_Data.EventCallback = callback; }
+		inline void SetEventCallback(const EventCallbackFn& callback) override { m_WindowData.EventCallback = callback; }
 		void SetVSync(bool enabled) override {};
 		bool IsVSync() const override { return false; };
 
@@ -71,9 +71,9 @@ namespace pigeon
 		static void ProcessWindowResizeEvent(LPARAM lParam);
 		static bool ProcessWindowDestroyEvent();
 
-		GraphicsContext* m_Context;
-		HWND m_Window;
+		GraphicsContext* m_Context = nullptr;
+		HWND m_Window = nullptr;
 
-		static WindowData m_Data;
+		static WindowData m_WindowData;
 	};
 }

@@ -9,6 +9,7 @@ include_directories (
     "${PROJECT_SOURCE_DIR}/Code/PigeonLib"
 	"${PROJECT_SOURCE_DIR}/Code/SandboxApp"
     "${PROJECT_SOURCE_DIR}/3rdParty/"
+    "${PROJECT_SOURCE_DIR}/3rdParty/glm"
     "${PROJECT_SOURCE_DIR}/3rdParty/spdlog-1.12.0/include"
 )
 

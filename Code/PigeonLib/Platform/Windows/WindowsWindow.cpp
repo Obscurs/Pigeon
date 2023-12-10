@@ -14,7 +14,7 @@ namespace pigeon
 {
 	static bool s_WindowInitialized = false;
 
-	WindowsWindow::WindowData WindowsWindow::m_Data;
+	WindowsWindow::WindowData WindowsWindow::m_WindowData;
 
 	Window* Window::Create(const WindowProps& props)
 	{
@@ -23,10 +23,10 @@ namespace pigeon
 
 	WindowsWindow::WindowsWindow(const WindowProps& props)
 	{
-		m_Data.m_Title = props.Title.c_str();
-		m_Data.m_Width = props.Width;
-		m_Data.m_Height = props.Height;
-		m_Data.m_HInstance = GetModuleHandle(nullptr);
+		m_WindowData.m_Title = props.Title.c_str();
+		m_WindowData.m_Width = props.Width;
+		m_WindowData.m_Height = props.Height;
+		m_WindowData.m_HInstance = GetModuleHandle(nullptr);
 		Init(props);
 	}
 
@@ -44,23 +44,23 @@ namespace pigeon
 	{
 		WNDCLASS wc = {};
 		wc.lpfnWndProc = WindowProc;
-		wc.hInstance = m_Data.m_HInstance;
-		wc.lpszClassName = m_Data.m_Title;
+		wc.hInstance = m_WindowData.m_HInstance;
+		wc.lpszClassName = m_WindowData.m_Title;
 
 		RegisterClass(&wc);
 
 		RECT winRect;
 		winRect.left = 100;
-		winRect.right = m_Data.m_Width + winRect.left;
+		winRect.right = m_WindowData.m_Width + winRect.left;
 		winRect.top = 100;
-		winRect.bottom = m_Data.m_Height + +winRect.top;
+		winRect.bottom = m_WindowData.m_Height + +winRect.top;
 		AdjustWindowRect(&winRect, WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU, false);
 
 		m_Window = CreateWindow(
-			m_Data.m_Title, m_Data.m_Title,
+			m_WindowData.m_Title, m_WindowData.m_Title,
 			WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU,
 			CW_USEDEFAULT, CW_USEDEFAULT, winRect.right - winRect.left, winRect.bottom - winRect.top,
-			nullptr, nullptr, m_Data.m_HInstance, this
+			nullptr, nullptr, m_WindowData.m_HInstance, this
 		);
 		if (!m_Window) {
 			DWORD errorCode = GetLastError();
@@ -68,10 +68,10 @@ namespace pigeon
 			// Now you can use errorCode to understand the issue.
 			// You might want to convert it to a human-readable error message.
 		}
-		//TODO context abstaction 
+
 		m_Context = GraphicsContext::Create(this);
 		m_Context->Init();
-		m_Context->SetSize(m_Data.m_Width, m_Data.m_Height);
+		m_Context->SetSize(m_WindowData.m_Width, m_WindowData.m_Height);
 
 		PG_CORE_INFO("Creating window {0} ({1}, {2})", props.Title, props.Width, props.Height);
 
@@ -88,9 +88,9 @@ namespace pigeon
 	{
 		m_Context->Shutdown();
 		m_Context = nullptr;
-		UnregisterClass(m_Data.m_Title, m_Data.m_HInstance);
+		UnregisterClass(m_WindowData.m_Title, m_WindowData.m_HInstance);
 		DestroyWindow(m_Window);
-		m_Data = WindowsWindow::WindowData();
+		m_WindowData = WindowsWindow::WindowData();
 	}
 
 	void WindowsWindow::OnUpdate()
@@ -212,13 +212,13 @@ namespace pigeon
 	void WindowsWindow::ProcessCharPressedEvent(WPARAM wParam)
 	{
 		KeyTypedEvent event(static_cast<int>(wParam));
-		m_Data.EventCallback(event);
+		m_WindowData.EventCallback(event);
 	}
 
 	void WindowsWindow::ProcessKeyUpEvent(WPARAM wParam)
 	{
 		KeyReleasedEvent event(static_cast<int>(wParam));
-		m_Data.EventCallback(event);
+		m_WindowData.EventCallback(event);
 	}
 
 	void WindowsWindow::ProcessKeyDownEvent(LPARAM lParam, WPARAM wParam)
@@ -228,12 +228,12 @@ namespace pigeon
 		if (!isRepeat) {
 			// Key has been pressed (not a repeat)
 			KeyPressedEvent event(static_cast<int>(wParam), 0);
-			m_Data.EventCallback(event);
+			m_WindowData.EventCallback(event);
 		}
 		else
 		{
 			KeyPressedEvent event(static_cast<int>(wParam), 1);
-			m_Data.EventCallback(event);
+			m_WindowData.EventCallback(event);
 		}
 	}
 
@@ -244,37 +244,37 @@ namespace pigeon
 		case WM_LBUTTONDOWN:
 		{
 			MouseButtonPressedEvent event(0);
-			m_Data.EventCallback(event);
+			m_WindowData.EventCallback(event);
 			break;
 		}
 		case WM_RBUTTONDOWN:
 		{
 			MouseButtonPressedEvent event(1);
-			m_Data.EventCallback(event);
+			m_WindowData.EventCallback(event);
 			break;
 		}
 		case WM_MBUTTONDOWN:
 		{
 			MouseButtonPressedEvent event(2);
-			m_Data.EventCallback(event);
+			m_WindowData.EventCallback(event);
 			break;
 		}
 		case WM_LBUTTONUP:
 		{
 			MouseButtonReleasedEvent event(0);
-			m_Data.EventCallback(event);
+			m_WindowData.EventCallback(event);
 			break;
 		}
 		case WM_RBUTTONUP:
 		{
 			MouseButtonReleasedEvent event(1);
-			m_Data.EventCallback(event);
+			m_WindowData.EventCallback(event);
 			break;
 		}
 		case WM_MBUTTONUP:
 		{
 			MouseButtonReleasedEvent event(2);
-			m_Data.EventCallback(event);
+			m_WindowData.EventCallback(event);
 			break;
 		}
 		}
@@ -287,7 +287,7 @@ namespace pigeon
 		float xOffset = 0.0f;
 
 		MouseScrolledEvent event((float)xOffset, (float)yOffset);
-		m_Data.EventCallback(event);
+		m_WindowData.EventCallback(event);
 	}
 
 	void WindowsWindow::ProcessMouseMoveEvent(LPARAM lParam)
@@ -296,7 +296,7 @@ namespace pigeon
 		int y = HIWORD(lParam);
 		// Do something with x and y, like creating a mouse event and dispatching it.
 		MouseMovedEvent event((float)x, (float)y);
-		m_Data.EventCallback(event);
+		m_WindowData.EventCallback(event);
 	}
 
 	void WindowsWindow::ProcessWindowResizeEvent(LPARAM lParam)
@@ -306,19 +306,19 @@ namespace pigeon
 		unsigned int height = HIWORD(lParam);
 
 		// Here you can update the internal data if you store the dimensions
-		m_Data.m_Width = width;
-		m_Data.m_Height = height;
+		m_WindowData.m_Width = width;
+		m_WindowData.m_Height = height;
 
 		// Now create a WindowResizeEvent and dispatch it
 		WindowResizeEvent event(width, height);
-		if (m_Data.EventCallback) 
-			m_Data.EventCallback(event);
+		if (m_WindowData.EventCallback) 
+			m_WindowData.EventCallback(event);
 	}
 
 	bool WindowsWindow::ProcessWindowDestroyEvent()
 	{
 		WindowCloseEvent event;
-		m_Data.EventCallback(event);
+		m_WindowData.EventCallback(event);
 		PostQuitMessage(0);
 		return false;
 	}

@@ -16,13 +16,23 @@ namespace pigeon
 
 namespace pigeon 
 {
-	class PIGEON_API Application
+	class Application
 	{
 	public:
+		struct Data
+		{
+			ImGuiLayer* m_ImGuiLayer;
+			std::unique_ptr<Window> m_Window;
+			bool m_Running = true;
+			bool m_Initialized = false;
+			LayerStack m_LayerStack;
+		};
+
 		Application();
 		virtual ~Application();
 
 #ifdef TESTS_ENABLED
+		const Data& GetData() const { return m_Data; }
 		void TestUpdate() { Update(); }
 #else
 		void Run();
@@ -31,7 +41,7 @@ namespace pigeon
 		void PushLayer(Layer* layer);
 		void PushOverlay(Layer* layer);
 
-		inline Window& GetWindow() { return *m_Window; }
+		inline Window& GetWindow() { return *m_Data.m_Window; }
 
 		inline static Application& Get() { return *s_Instance; }
 
@@ -41,16 +51,7 @@ namespace pigeon
 		bool OnWindowClose(WindowCloseEvent& e);
 		bool OnWindowResize(WindowResizeEvent& e);
 
-		ImGuiLayer* m_ImGuiLayer;
-		std::unique_ptr<Window> m_Window;
-		bool m_Running = true;
-		bool m_Initialized = false;
-		LayerStack m_LayerStack;
-		std::unique_ptr<VertexBuffer> m_VertexBuffer;
-		std::unique_ptr<IndexBuffer> m_IndexBuffer;
-
-		std::unique_ptr<Shader> m_Shader;
-
+		Data m_Data;
 	private:
 		static Application* s_Instance;
 	};

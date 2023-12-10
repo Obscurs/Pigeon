@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include <d3d11.h>
 
 namespace pigeon 
 {
@@ -106,19 +105,16 @@ namespace pigeon
 	class Shader
 	{
 	public:
-		Shader(const char* vertexSrc, const char* fragmentSrc, const BufferLayout& buffLayout);
-		~Shader();
+		virtual ~Shader() = default;
 
-		void Bind() const;
-		void Unbind() const;
+		virtual void Bind() const = 0;
+		virtual void Unbind() const = 0;
 
-	private:
+		static Shader* Create(const char* vertexSrc, const char* fragmentSrc, const BufferLayout& buffLayout);
+
+	protected:
 		const BufferLayout& GetLayout() const { return m_Layout; }
 		void SetLayout(const BufferLayout& layout) { m_Layout = layout; }
-
-		ID3D11InputLayout* m_InputLayout = nullptr;
-		ID3D11VertexShader* m_VertexShader = nullptr;
-		ID3D11PixelShader* m_PixelShader = nullptr;
 
 		BufferLayout m_Layout;
 	};

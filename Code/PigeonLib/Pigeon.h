@@ -8,4 +8,12 @@
 #include "Pigeon/Log.h"
 #include "Pigeon/MouseButtonCodes.h"
 
+// ---Renderer------------------------
+#include "Pigeon/Renderer/Renderer.h"
+#include "Pigeon/Renderer/RenderCommand.h"
+
+#include "Pigeon/Renderer/Buffer.h"
+#include "Pigeon/Renderer/Shader.h"
+
 #include "Pigeon/EntryPoint.h"
+

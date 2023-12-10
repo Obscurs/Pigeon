@@ -91,7 +91,7 @@ namespace
 
 namespace CatchTestsetFail
 {
-	TEST_CASE("pigeon.Layers::EventsTest")
+	TEST_CASE("app.Layers::EventsTest")
 	{
 		TestApp* app = static_cast<TestApp*>(pigeon::CreateApplication());
 

@@ -58,15 +58,18 @@ namespace
 	};
 }
 
-namespace layers::CatchTestsetFail
+namespace CatchTestsetFail
 {
-	TEST_CASE("pigeon.Layers::Propagation")
+	TEST_CASE("app.Layers::Propagation")
 	{
 		TestApp* app = static_cast<TestApp*>(pigeon::CreateApplication());
 		
 		int wParam = 123;
 		int lParam = 456;
 
+		const pigeon::LayerStack::Data& layerStackData = app->GetData().m_LayerStack.GetData();
+		CHECK(layerStackData.m_LayerInsertIndex == 0);
+		CHECK(layerStackData.m_Layers.size() == 1);
 		TestLayerEventPropagate* testLayerPropagate1 = new TestLayerEventPropagate();
 		TestLayerEventPropagate* testLayerPropagate2 = new TestLayerEventPropagate();
 		TestLayerEventNoPropagate* testLayerNoPropagate1 = new TestLayerEventNoPropagate();
@@ -85,6 +88,9 @@ namespace layers::CatchTestsetFail
 		{
 			app->PushLayer(testLayerPropagate1);
 
+			CHECK(layerStackData.m_LayerInsertIndex == 1);
+			CHECK(layerStackData.m_Layers.size() == 2);
+
 			CHECK(!testLayerPropagate1->m_ReceivedEvent);
 			CHECK(!testLayerPropagate2->m_ReceivedEvent);
 			CHECK(!testLayerNoPropagate1->m_ReceivedEvent);
@@ -99,6 +105,8 @@ namespace layers::CatchTestsetFail
 			SECTION("Two propagatorLayers")
 			{
 				app->PushLayer(testLayerPropagate2);
+				CHECK(layerStackData.m_LayerInsertIndex == 2);
+				CHECK(layerStackData.m_Layers.size() == 3);
 
 				app->SendFakeEvent(pigeon::WindowsWindow::EventType::KEYDOWN, wParam, lParam);
 				CHECK(testLayerPropagate1->m_ReceivedEvent);
@@ -117,6 +125,8 @@ namespace layers::CatchTestsetFail
 				app->PushLayer(testLayerPropagate1);
 				app->PushLayer(testLayerPropagate2);
 				app->PushLayer(testLayerNoPropagate1);
+				CHECK(layerStackData.m_LayerInsertIndex == 3);
+				CHECK(layerStackData.m_Layers.size() == 4);
 
 				app->SendFakeEvent(pigeon::WindowsWindow::EventType::KEYDOWN, wParam, lParam);
 				CHECK(!testLayerPropagate1->m_ReceivedEvent);
@@ -133,6 +143,8 @@ namespace layers::CatchTestsetFail
 				app->PushLayer(testLayerNoPropagate1);
 				app->PushLayer(testLayerPropagate1);
 				app->PushLayer(testLayerPropagate2);
+				CHECK(layerStackData.m_LayerInsertIndex == 3);
+				CHECK(layerStackData.m_Layers.size() == 4);
 
 				app->SendFakeEvent(pigeon::WindowsWindow::EventType::KEYDOWN, wParam, lParam);
 				CHECK(testLayerPropagate1->m_ReceivedEvent);
@@ -149,6 +161,8 @@ namespace layers::CatchTestsetFail
 				app->PushLayer(testLayerPropagate1);
 				app->PushLayer(testLayerNoPropagate1);
 				app->PushLayer(testLayerPropagate2);
+				CHECK(layerStackData.m_LayerInsertIndex == 3);
+				CHECK(layerStackData.m_Layers.size() == 4);
 
 				app->SendFakeEvent(pigeon::WindowsWindow::EventType::KEYDOWN, wParam, lParam);
 				CHECK(!testLayerPropagate1->m_ReceivedEvent);
