@@ -70,7 +70,8 @@ namespace
 	public:
 		ExampleLayer()
 			: Layer("Example"),
-			m_Camera(-1.6f, 1.6f, -0.9f, 0.9f)
+			m_Camera(-1.6f, 1.6f, -0.9f, 0.9f),
+			m_CameraPosition(0.0f)
 		{
 			m_VertexBuffer.reset(pigeon::VertexBuffer::Create(s_OurVertices, sizeof(s_OurVertices)));
 			m_IndexBuffer.reset(pigeon::IndexBuffer::Create(s_Indices, sizeof(s_Indices) / sizeof(uint32_t)));
@@ -91,12 +92,30 @@ namespace
 			m_IndexBuffer.reset();
 		}
 
-		void OnUpdate() override
+		void OnUpdate(pigeon::Timestep ts) override
 		{
 			pigeon::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1.f });
 
-			m_Camera.SetPosition({ 0.5f, 0.5f, 0.0f });
-			m_Camera.SetRotation(45.0f);
+			if (pigeon::Input::IsKeyPressed(PG_KEY_LEFT))
+				m_CameraPosition.x -= m_CameraMoveSpeed * ts;
+			else if (pigeon::Input::IsKeyPressed(PG_KEY_RIGHT))
+				m_CameraPosition.x += m_CameraMoveSpeed * ts;
+
+			if (pigeon::Input::IsKeyPressed(PG_KEY_UP))
+				m_CameraPosition.y += m_CameraMoveSpeed * ts;
+			else if (pigeon::Input::IsKeyPressed(PG_KEY_DOWN))
+				m_CameraPosition.y -= m_CameraMoveSpeed * ts;
+
+			if (pigeon::Input::IsKeyPressed(PG_KEY_A))
+				m_CameraRotation += m_CameraRotationSpeed * ts;
+			if (pigeon::Input::IsKeyPressed(PG_KEY_D))
+				m_CameraRotation -= m_CameraRotationSpeed * ts;
+
+			pigeon::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
+			pigeon::RenderCommand::Clear();
+
+			m_Camera.SetPosition(m_CameraPosition);
+			m_Camera.SetRotation(m_CameraRotation);
 
 			pigeon::Renderer::BeginScene();
 			m_SceneData.ViewProjectionMatrix = m_Camera.GetViewProjectionMatrix();
@@ -143,19 +162,26 @@ namespace
 		}
 
 	private:
-		std::unique_ptr<pigeon::VertexBuffer> m_VertexBuffer;
-		std::unique_ptr<pigeon::IndexBuffer> m_IndexBuffer;
-		std::unique_ptr<pigeon::Shader> m_Shader;
-
-		pigeon::OrthographicCamera m_Camera;
-		glm::vec3 m_SquareColor = { 0.2f, 0.3f, 0.8f };
-
 		struct SceneData
 		{
 			glm::mat4 ViewProjectionMatrix;
 		};
 
+		std::unique_ptr<pigeon::VertexBuffer> m_VertexBuffer;
+		std::unique_ptr<pigeon::IndexBuffer> m_IndexBuffer;
+		std::unique_ptr<pigeon::Shader> m_Shader;
+
+		pigeon::OrthographicCamera m_Camera;
+		glm::vec3 m_CameraPosition;
+		float m_CameraMoveSpeed = 5.0f;
+
+		float m_CameraRotation = 0.0f;
+		float m_CameraRotationSpeed = 180.0f;
+
+		glm::vec3 m_SquareColor = { 0.2f, 0.3f, 0.8f };
+
 		SceneData m_SceneData;
+		std::chrono::steady_clock::time_point m_LastFrameTime;
 	};
 }
 

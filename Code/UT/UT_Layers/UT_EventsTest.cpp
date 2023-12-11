@@ -74,7 +74,7 @@ namespace
 			: Layer("UTLayerEventPropagate")
 		{
 		}
-		void OnUpdate() override
+		void OnUpdate(pigeon::Timestep ts) override
 		{
 			m_ExpectedEvent = false;
 		}

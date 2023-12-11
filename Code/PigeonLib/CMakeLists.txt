@@ -8,6 +8,7 @@ file(GLOB PG
     "Pigeon/LayerStack.cpp"
     "Pigeon/Log.cpp"
     "Pigeon/Core.h"
+    "Pigeon/Core/Timestep.h"
     "Pigeon/EntryPoint.h"
     "Pigeon/Input.h"
 )

@@ -18,7 +18,7 @@ namespace
 		{
 		}
 
-		void OnUpdate() override
+		void OnUpdate(pigeon::Timestep ts) override
 		{
 			m_ReceivedEvent = false;
 		}
@@ -42,7 +42,7 @@ namespace
 			: Layer("UTLayerEventPropagate")
 		{
 		}
-		void OnUpdate() override
+		void OnUpdate(pigeon::Timestep ts) override
 		{
 			m_ReceivedEvent = false;
 		}

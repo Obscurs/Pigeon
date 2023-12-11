@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Pigeon/Core.h"
+#include "Pigeon/Core/Timestep.h"
 #include "Pigeon/Events/Event.h"
 
 namespace pigeon 
@@ -13,7 +14,7 @@ namespace pigeon
 
 		virtual void OnAttach() {}
 		virtual void OnDetach() {}
-		virtual void OnUpdate() {}
+		virtual void OnUpdate(Timestep ts) {}
 		virtual void OnImGuiRender() {}
 		virtual void OnEvent(Event& event) {}
 

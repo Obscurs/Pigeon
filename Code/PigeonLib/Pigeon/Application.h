@@ -25,6 +25,7 @@ namespace pigeon
 			std::unique_ptr<Window> m_Window;
 			bool m_Running = true;
 			bool m_Initialized = false;
+			std::chrono::steady_clock::time_point m_LastFrameTime;
 			LayerStack m_LayerStack;
 		};
 

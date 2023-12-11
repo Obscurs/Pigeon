@@ -7,6 +7,8 @@
 #include "Pigeon/ImGui/ImGuiLayer.h"
 #include "Pigeon/Log.h"
 
+#include <chrono>
+
 namespace pigeon 
 {
 #define BIND_EVENT_FN(x) std::bind(&Application::x, this, std::placeholders::_1)
@@ -78,11 +80,15 @@ namespace pigeon
 
 	void Application::Update()
 	{
+		auto currentTime = std::chrono::steady_clock::now();
+		Timestep timestep = std::chrono::duration<float>(currentTime - m_Data.m_LastFrameTime).count();
+		m_Data.m_LastFrameTime = currentTime;
+
 		for (Layer* layer : m_Data.m_LayerStack)
 			layer->Begin();
 
 		for (Layer* layer : m_Data.m_LayerStack)
-			layer->OnUpdate();
+			layer->OnUpdate(timestep);
 
 		if (m_Data.m_ImGuiLayer->IsAttached())
 		{
