@@ -25,7 +25,7 @@ namespace pigeon
 		virtual void End() override;
 		virtual void Clear() override;
 
-		virtual void DrawIndexed() override;
+		virtual void DrawIndexed(unsigned int count) override;
 
 	private:
 		void CreateRenderTarget();

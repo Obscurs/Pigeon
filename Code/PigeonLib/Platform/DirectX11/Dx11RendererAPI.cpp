@@ -72,10 +72,10 @@ namespace pigeon
 		context->GetPd3dDeviceContext()->ClearRenderTargetView(m_Data.m_MainRenderTargetView, m_Data.m_ClearColor);
 	}
 
-	void Dx11RendererAPI::DrawIndexed()
+	void Dx11RendererAPI::DrawIndexed(unsigned int count)
 	{
 		auto context = static_cast<Dx11Context*>(Application::Get().GetWindow().GetGraphicsContext());
 		context->GetPd3dDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		context->GetPd3dDeviceContext()->DrawIndexed(3, 0, 0);
+		context->GetPd3dDeviceContext()->DrawIndexed(count, 0, 0);
 	}
 }

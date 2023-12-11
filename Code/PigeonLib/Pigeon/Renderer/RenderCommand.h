@@ -31,9 +31,9 @@ namespace pigeon
 			s_RendererAPI->Clear();
 		}
 
-		inline static void DrawIndexed()
+		inline static void DrawIndexed(unsigned int count)
 		{
-			s_RendererAPI->DrawIndexed();
+			s_RendererAPI->DrawIndexed(count);
 		}
 	private:
 		static RendererAPI* s_RendererAPI;

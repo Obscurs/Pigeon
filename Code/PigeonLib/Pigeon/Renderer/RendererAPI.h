@@ -18,7 +18,7 @@ namespace pigeon
 		virtual void End() = 0;
 		virtual void Clear() = 0;
 
-		virtual void DrawIndexed() = 0;
+		virtual void DrawIndexed(unsigned int count) = 0;
 
 		inline static API GetAPI() { return s_API; }
 	private:

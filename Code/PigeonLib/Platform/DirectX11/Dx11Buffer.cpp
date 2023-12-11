@@ -4,8 +4,8 @@
 #include "Pigeon/Application.h"
 #include "Platform/DirectX11/Dx11Context.h"
 
-namespace pigeon {
-
+namespace pigeon 
+{
 	/////////////////////////////////////////////////////////////////////////////
 	// VertexBuffer /////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////
@@ -87,5 +87,4 @@ namespace pigeon {
 		auto context = static_cast<Dx11Context*>(Application::Get().GetWindow().GetGraphicsContext());
 		context->GetPd3dDeviceContext()->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
 	}
-
 }

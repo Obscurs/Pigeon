@@ -1,14 +1,33 @@
 #include <Pigeon.h>
 
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include "imgui/imgui.h"
 
+#include "Pigeon/Renderer/OrthographicCamera.h"
 namespace
 {
-	// Simple vertex shader
 	char* s_VsCode =
+		"	cbuffer MatrixBuffer : register(b0)\n"
+		"{ \n"
+		"	matrix u_ViewProjection; \n"
+		"}; \n"
+
+		"	cbuffer MatrixBuffer : register(b1)\n"
+		"{ \n"
+		"	matrix u_Transform; \n"
+		"}; \n"
+
+		"	cbuffer VectorBuffer : register(b2)\n"
+		"{ \n"
+		"	float3 u_Color; \n"
+		"   float padding; \n"
+		"}; \n"
+
 		"struct VS_INPUT\n"
 		"{\n"
-		"	float4 Pos : POSITION;\n"
+		"	float3 Pos : POSITION;\n"
 		"	float4 Col : COLOR;\n"
 		"};\n"
 		"struct PS_INPUT\n"
@@ -19,8 +38,9 @@ namespace
 		"PS_INPUT main(VS_INPUT input)\n"
 		"{\n"
 		"	PS_INPUT output;\n"
-		"	output.Pos = input.Pos; // Pass position to rasterizer\n"
-		"	output.Col = input.Col; // Pass color to pixel shader\n"
+		"	output.Pos = mul(float4(input.Pos, 1.f), u_Transform); // Pass position to rasterizer\n"
+		"	output.Pos = mul(output.Pos, u_ViewProjection); // Pass position to rasterizer\n"
+		"	output.Col = float4(u_Color.x, u_Color.y, u_Color.z, 1.0f); // Pass color to pixel shader\n"
 		"	return output;\n"
 		"};";
 
@@ -49,7 +69,8 @@ namespace
 	{
 	public:
 		ExampleLayer()
-			: Layer("Example")
+			: Layer("Example"),
+			m_Camera(-1.6f, 1.6f, -0.9f, 0.9f)
 		{
 			m_VertexBuffer.reset(pigeon::VertexBuffer::Create(s_OurVertices, sizeof(s_OurVertices)));
 			m_IndexBuffer.reset(pigeon::IndexBuffer::Create(s_Indices, sizeof(s_Indices) / sizeof(uint32_t)));
@@ -74,13 +95,29 @@ namespace
 		{
 			pigeon::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1.f });
 
+			m_Camera.SetPosition({ 0.5f, 0.5f, 0.0f });
+			m_Camera.SetRotation(45.0f);
+
 			pigeon::Renderer::BeginScene();
+			m_SceneData.ViewProjectionMatrix = m_Camera.GetViewProjectionMatrix();
 
 			m_VertexBuffer->Bind();
 			m_IndexBuffer->Bind();
 			m_Shader->Bind();
+			m_Shader->UploadUniformMat4("u_ViewProjection", m_SceneData.ViewProjectionMatrix);
+			m_Shader->UploadUniformFloat3("u_Color", m_SquareColor);
 
-			pigeon::Renderer::Submit();
+			glm::mat4 scale = glm::scale(glm::mat4(1.f), glm::vec3(0.1f));
+			for (int y = -10; y < 10; y++)
+			{
+				for (int x = -10; x < 10; x++)
+				{
+					glm::vec3 pos(x *0.11f, y * 0.11f, 0.f);
+					glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos) * scale;
+					m_Shader->UploadUniformMat4("u_Transform", transform);
+					pigeon::Renderer::Submit(3);
+				}
+			}
 			pigeon::Renderer::EndScene();
 
 			//if (pigeon::Input::IsKeyPressed(PG_KEY_TAB))
@@ -89,9 +126,9 @@ namespace
 
 		virtual void OnImGuiRender() override
 		{
-			/*ImGui::Begin("Test");
-			ImGui::Text("Hello World");
-			ImGui::End();*/
+			ImGui::Begin("Settings");
+			ImGui::ColorEdit3("Square Color", glm::value_ptr(m_SquareColor));
+			ImGui::End();
 		}
 
 		void OnEvent(pigeon::Event& event) override
@@ -109,6 +146,16 @@ namespace
 		std::unique_ptr<pigeon::VertexBuffer> m_VertexBuffer;
 		std::unique_ptr<pigeon::IndexBuffer> m_IndexBuffer;
 		std::unique_ptr<pigeon::Shader> m_Shader;
+
+		pigeon::OrthographicCamera m_Camera;
+		glm::vec3 m_SquareColor = { 0.2f, 0.3f, 0.8f };
+
+		struct SceneData
+		{
+			glm::mat4 ViewProjectionMatrix;
+		};
+
+		SceneData m_SceneData;
 	};
 }
 

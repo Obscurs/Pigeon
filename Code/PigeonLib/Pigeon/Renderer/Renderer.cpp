@@ -13,8 +13,8 @@ namespace pigeon
 		RenderCommand::End();
 	}
 
-	void Renderer::Submit()
+	void Renderer::Submit(unsigned int count)
 	{
-		RenderCommand::DrawIndexed();
+		RenderCommand::DrawIndexed(count);
 	}
 }
