@@ -6,9 +6,9 @@
 namespace
 {
 	bool s_EventReceived = false;
-	void TestOnEvent(pigeon::Event& e)
+	void TestOnEvent(pig::Event& e)
 	{
-		if(e.GetEventType() == pigeon::EventType::KeyPressed)
+		if(e.GetEventType() == pig::EventType::KeyPressed)
 			s_EventReceived = true;
 	}
 }
@@ -16,8 +16,8 @@ namespace CatchTestsetFail
 {
 	TEST_CASE("app.Window::WindowsWindowTest")
 	{
-		TestApp* app = static_cast<TestApp*>(pigeon::CreateApplication());
-		pigeon::WindowsWindow& window = static_cast<pigeon::WindowsWindow&>(app->GetWindow());
+		pig::S_Ptr<pig::Application> app = pig::CreateApplication();
+		pig::WindowsWindow& window = static_cast<pig::WindowsWindow&>(app->GetWindow());
 		CHECK(window.GetNativeWindow() != nullptr);
 		CHECK(window.GetGraphicsContext() != nullptr);
 		CHECK(!window.IsVSync());
@@ -37,7 +37,7 @@ namespace CatchTestsetFail
 
 		int wParam = 123; //Arbitrary value, not needed
 		int lParam = 456; //Arbitrary value, not needed
-		app->SendFakeEvent(pigeon::WindowsWindow::EventType::KEYDOWN, wParam, lParam);
+		window.SendFakeEvent(pig::WindowsWindow::EventType::KEYDOWN, wParam, lParam);
 		CHECK(s_EventReceived);
 
 		CHECK(window.GetHeight() == 720);
@@ -46,8 +46,6 @@ namespace CatchTestsetFail
 		window.Shutdown();
 		CHECK(window.GetNativeWindow() == nullptr);
 		CHECK(window.GetGraphicsContext() == nullptr);
-
-		delete app;
 	}
 } // End namespace: CatchTestsetFail
 

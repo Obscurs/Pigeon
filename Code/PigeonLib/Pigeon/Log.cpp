@@ -4,24 +4,21 @@
 
 #include "spdlog/sinks/stdout_color_sinks.h"
 
-namespace pigeon 
+std::shared_ptr<spdlog::logger> pig::Log::s_CoreLogger;
+std::shared_ptr<spdlog::logger> pig::Log::s_ClientLogger;
+
+void pig::Log::Init()
 {
-	std::shared_ptr<spdlog::logger> Log::s_CoreLogger;
-	std::shared_ptr<spdlog::logger> Log::s_ClientLogger;
-
-	void Log::Init()
+	if (!s_CoreLogger)
 	{
-		if (!s_CoreLogger)
-		{
-			spdlog::set_pattern("%^[%T] %n: %v%$");
-			s_CoreLogger = spdlog::stdout_color_mt("PGN");
-			s_CoreLogger->set_level(spdlog::level::trace);
-		}
+		spdlog::set_pattern("%^[%T] %n: %v%$");
+		s_CoreLogger = spdlog::stdout_color_mt("PGN");
+		s_CoreLogger->set_level(spdlog::level::trace);
+	}
 
-		if (!s_ClientLogger)
-		{
-			s_ClientLogger = spdlog::stdout_color_mt("APP");
-			s_ClientLogger->set_level(spdlog::level::trace);
-		}
+	if (!s_ClientLogger)
+	{
+		s_ClientLogger = spdlog::stdout_color_mt("APP");
+		s_ClientLogger->set_level(spdlog::level::trace);
 	}
 }

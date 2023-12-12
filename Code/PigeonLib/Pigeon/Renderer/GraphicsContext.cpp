@@ -6,18 +6,14 @@
 #include "Platform/Windows/WindowsWindow.h"
 #include "Platform/DirectX11/Dx11Context.h"
 
-namespace pigeon
+pig::GraphicsContext* pig::GraphicsContext::Create(const pig::WindowsWindow* window)
 {
-	GraphicsContext* GraphicsContext::Create(const WindowsWindow* window)
+	switch (pig::Renderer::GetAPI())
 	{
-		switch (Renderer::GetAPI())
-		{
-		case RendererAPI::API::None:    PG_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
-		case RendererAPI::API::DirectX11:  return new Dx11Context(static_cast<HWND>(window->GetNativeWindow()));
-		}
-
-		PG_CORE_ASSERT(false, "Unknown RendererAPI!");
-		return nullptr;
+	case pig::RendererAPI::API::None:    PG_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
+	case pig::RendererAPI::API::DirectX11:  return new pig::Dx11Context(static_cast<HWND>(window->GetNativeWindow()));
 	}
 
+	PG_CORE_ASSERT(false, "Unknown RendererAPI!");
+	return nullptr;
 }

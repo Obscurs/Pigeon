@@ -6,7 +6,7 @@
 #include "Pigeon/Events/KeyEvent.h"
 #include "Pigeon/Events/MouseEvent.h"
 
-namespace pigeon 
+namespace pig 
 {
 	class PIGEON_API ImGuiLayer : public Layer
 	{

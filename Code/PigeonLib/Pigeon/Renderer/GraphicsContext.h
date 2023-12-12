@@ -1,10 +1,10 @@
 #pragma once
 
-namespace pigeon
+namespace pig
 {
 	class WindowsWindow;
 }
-namespace pigeon 
+namespace pig 
 {
 	class GraphicsContext
 	{

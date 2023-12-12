@@ -10,7 +10,7 @@
 
 namespace
 {
-	class TestLayerEventNoPropagate : public pigeon::Layer
+	class TestLayerEventNoPropagate : public pig::Layer
 	{
 	public:
 		TestLayerEventNoPropagate()
@@ -18,16 +18,16 @@ namespace
 		{
 		}
 
-		void OnUpdate(pigeon::Timestep ts) override
+		void OnUpdate(pig::Timestep ts) override
 		{
 			m_ReceivedEvent = false;
 		}
 
-		void OnEvent(pigeon::Event& event) override
+		void OnEvent(pig::Event& event) override
 		{
 
 			//THIS IS TO TEST LAYER PROPAGATION
-			if (auto e = dynamic_cast<pigeon::KeyPressedEvent*>(&event)) {
+			if (auto e = dynamic_cast<pig::KeyPressedEvent*>(&event)) {
 				m_ReceivedEvent = true;
 				event.Handled = true;
 			}
@@ -35,21 +35,21 @@ namespace
 		bool m_ReceivedEvent = false;
 	};
 
-	class TestLayerEventPropagate : public pigeon::Layer
+	class TestLayerEventPropagate : public pig::Layer
 	{
 	public:
 		TestLayerEventPropagate()
 			: Layer("UTLayerEventPropagate")
 		{
 		}
-		void OnUpdate(pigeon::Timestep ts) override
+		void OnUpdate(pig::Timestep ts) override
 		{
 			m_ReceivedEvent = false;
 		}
 
-		void OnEvent(pigeon::Event& event) override
+		void OnEvent(pig::Event& event) override
 		{
-			if (auto e = dynamic_cast<pigeon::KeyPressedEvent*>(&event)) {
+			if (auto e = dynamic_cast<pig::KeyPressedEvent*>(&event)) {
 				m_ReceivedEvent = true;
 			}
 		}
@@ -61,23 +61,23 @@ namespace CatchTestsetFail
 {
 	TEST_CASE("app.Layers::Propagation")
 	{
-		TestApp* app = static_cast<TestApp*>(pigeon::CreateApplication());
-		
+		pig::S_Ptr<pig::Application> app = pig::CreateApplication();
+		pig::WindowsWindow& appWindow = static_cast<pig::WindowsWindow&>(app->GetWindow());
 		int wParam = 123;
 		int lParam = 456;
 
-		const pigeon::LayerStack::Data& layerStackData = app->GetData().m_LayerStack.GetData();
+		const pig::LayerStack::Data& layerStackData = app->GetData().m_LayerStack.GetData();
 		CHECK(layerStackData.m_LayerInsertIndex == 0);
 		CHECK(layerStackData.m_Layers.size() == 1);
 		TestLayerEventPropagate* testLayerPropagate1 = new TestLayerEventPropagate();
 		TestLayerEventPropagate* testLayerPropagate2 = new TestLayerEventPropagate();
 		TestLayerEventNoPropagate* testLayerNoPropagate1 = new TestLayerEventNoPropagate();
-			
+
 		CHECK(!testLayerPropagate1->m_ReceivedEvent);
 		CHECK(!testLayerPropagate2->m_ReceivedEvent);
 		CHECK(!testLayerNoPropagate1->m_ReceivedEvent);
 
-		app->SendFakeEvent(pigeon::WindowsWindow::EventType::KEYDOWN, wParam, lParam);
+		appWindow.SendFakeEvent(pig::WindowsWindow::EventType::KEYDOWN, wParam, lParam);
 
 		CHECK(!testLayerPropagate1->m_ReceivedEvent);
 		CHECK(!testLayerPropagate2->m_ReceivedEvent);
@@ -94,7 +94,7 @@ namespace CatchTestsetFail
 			CHECK(!testLayerPropagate2->m_ReceivedEvent);
 			CHECK(!testLayerNoPropagate1->m_ReceivedEvent);
 
-			app->SendFakeEvent(pigeon::WindowsWindow::EventType::KEYDOWN, wParam, lParam);
+			appWindow.SendFakeEvent(pig::WindowsWindow::EventType::KEYDOWN, wParam, lParam);
 			CHECK(testLayerPropagate1->m_ReceivedEvent);
 			CHECK(!testLayerPropagate2->m_ReceivedEvent);
 			CHECK(!testLayerNoPropagate1->m_ReceivedEvent);
@@ -107,7 +107,7 @@ namespace CatchTestsetFail
 				CHECK(layerStackData.m_LayerInsertIndex == 2);
 				CHECK(layerStackData.m_Layers.size() == 3);
 
-				app->SendFakeEvent(pigeon::WindowsWindow::EventType::KEYDOWN, wParam, lParam);
+				appWindow.SendFakeEvent(pig::WindowsWindow::EventType::KEYDOWN, wParam, lParam);
 				CHECK(testLayerPropagate1->m_ReceivedEvent);
 				CHECK(testLayerPropagate2->m_ReceivedEvent);
 				CHECK(!testLayerNoPropagate1->m_ReceivedEvent);
@@ -127,7 +127,7 @@ namespace CatchTestsetFail
 				CHECK(layerStackData.m_LayerInsertIndex == 3);
 				CHECK(layerStackData.m_Layers.size() == 4);
 
-				app->SendFakeEvent(pigeon::WindowsWindow::EventType::KEYDOWN, wParam, lParam);
+				appWindow.SendFakeEvent(pig::WindowsWindow::EventType::KEYDOWN, wParam, lParam);
 				CHECK(!testLayerPropagate1->m_ReceivedEvent);
 				CHECK(!testLayerPropagate2->m_ReceivedEvent);
 				CHECK(testLayerNoPropagate1->m_ReceivedEvent);
@@ -145,7 +145,7 @@ namespace CatchTestsetFail
 				CHECK(layerStackData.m_LayerInsertIndex == 3);
 				CHECK(layerStackData.m_Layers.size() == 4);
 
-				app->SendFakeEvent(pigeon::WindowsWindow::EventType::KEYDOWN, wParam, lParam);
+				appWindow.SendFakeEvent(pig::WindowsWindow::EventType::KEYDOWN, wParam, lParam);
 				CHECK(testLayerPropagate1->m_ReceivedEvent);
 				CHECK(testLayerPropagate2->m_ReceivedEvent);
 				CHECK(testLayerNoPropagate1->m_ReceivedEvent);
@@ -163,7 +163,7 @@ namespace CatchTestsetFail
 				CHECK(layerStackData.m_LayerInsertIndex == 3);
 				CHECK(layerStackData.m_Layers.size() == 4);
 
-				app->SendFakeEvent(pigeon::WindowsWindow::EventType::KEYDOWN, wParam, lParam);
+				appWindow.SendFakeEvent(pig::WindowsWindow::EventType::KEYDOWN, wParam, lParam);
 				CHECK(!testLayerPropagate1->m_ReceivedEvent);
 				CHECK(testLayerPropagate2->m_ReceivedEvent);
 				CHECK(testLayerNoPropagate1->m_ReceivedEvent);
@@ -174,7 +174,6 @@ namespace CatchTestsetFail
 				CHECK(!testLayerNoPropagate1->m_ReceivedEvent);
 			}
 		}
-		delete app;
 	}
 } // End namespace: CatchTestsetFail
 

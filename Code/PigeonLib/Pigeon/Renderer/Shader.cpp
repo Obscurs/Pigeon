@@ -6,16 +6,13 @@
 
 #include "Platform/DirectX11/Dx11Shader.h"
 
-namespace pigeon 
+pig::Shader* pig::Shader::Create(const char* vertexSrc, const char* fragmentSrc, const pig::BufferLayout& buffLayout)
 {
-	Shader* Shader::Create(const char* vertexSrc, const char* fragmentSrc, const BufferLayout& buffLayout)
+	switch (pig::Renderer::GetAPI())
 	{
-		switch (Renderer::GetAPI())
-		{
-		case RendererAPI::API::None:    PG_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
-		case RendererAPI::API::DirectX11:  return new Dx11Shader(vertexSrc, fragmentSrc, buffLayout);
-		}
-		PG_CORE_ASSERT(false, "Unknown RendererAPI!");
-		return nullptr;
+	case pig::RendererAPI::API::None:    PG_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
+	case pig::RendererAPI::API::DirectX11:  return new pig::Dx11Shader(vertexSrc, fragmentSrc, buffLayout);
 	}
+	PG_CORE_ASSERT(false, "Unknown RendererAPI!");
+	return nullptr;
 }

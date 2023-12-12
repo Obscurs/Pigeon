@@ -65,7 +65,7 @@ namespace
 
 	uint32_t s_Indices[3] = { 0, 1, 2 };
 
-	class ExampleLayer : public pigeon::Layer
+	class ExampleLayer : public pig::Layer
 	{
 	public:
 		ExampleLayer()
@@ -73,15 +73,15 @@ namespace
 			m_Camera(-1.6f, 1.6f, -0.9f, 0.9f),
 			m_CameraPosition(0.0f)
 		{
-			m_VertexBuffer.reset(pigeon::VertexBuffer::Create(s_OurVertices, sizeof(s_OurVertices)));
-			m_IndexBuffer.reset(pigeon::IndexBuffer::Create(s_Indices, sizeof(s_Indices) / sizeof(uint32_t)));
+			m_VertexBuffer.reset(pig::VertexBuffer::Create(s_OurVertices, sizeof(s_OurVertices)));
+			m_IndexBuffer.reset(pig::IndexBuffer::Create(s_Indices, sizeof(s_Indices) / sizeof(uint32_t)));
 
-			pigeon::BufferLayout buffLayout = {
-				{ pigeon::ShaderDataType::Float3, "POSITION" },
-				{ pigeon::ShaderDataType::Float4, "COLOR" }
+			pig::BufferLayout buffLayout = {
+				{ pig::ShaderDataType::Float3, "POSITION" },
+				{ pig::ShaderDataType::Float4, "COLOR" }
 			};
 
-			m_Shader.reset(pigeon::Shader::Create(s_VsCode, s_PsCode, buffLayout));
+			m_Shader.reset(pig::Shader::Create(s_VsCode, s_PsCode, buffLayout));
 		}
 
 		~ExampleLayer()
@@ -92,32 +92,32 @@ namespace
 			m_IndexBuffer.reset();
 		}
 
-		void OnUpdate(pigeon::Timestep ts) override
+		void OnUpdate(pig::Timestep ts) override
 		{
-			pigeon::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1.f });
+			pig::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1.f });
 
-			if (pigeon::Input::IsKeyPressed(PG_KEY_LEFT))
+			if (pig::Input::IsKeyPressed(PG_KEY_LEFT))
 				m_CameraPosition.x -= m_CameraMoveSpeed * ts;
-			else if (pigeon::Input::IsKeyPressed(PG_KEY_RIGHT))
+			else if (pig::Input::IsKeyPressed(PG_KEY_RIGHT))
 				m_CameraPosition.x += m_CameraMoveSpeed * ts;
 
-			if (pigeon::Input::IsKeyPressed(PG_KEY_UP))
+			if (pig::Input::IsKeyPressed(PG_KEY_UP))
 				m_CameraPosition.y += m_CameraMoveSpeed * ts;
-			else if (pigeon::Input::IsKeyPressed(PG_KEY_DOWN))
+			else if (pig::Input::IsKeyPressed(PG_KEY_DOWN))
 				m_CameraPosition.y -= m_CameraMoveSpeed * ts;
 
-			if (pigeon::Input::IsKeyPressed(PG_KEY_A))
+			if (pig::Input::IsKeyPressed(PG_KEY_A))
 				m_CameraRotation += m_CameraRotationSpeed * ts;
-			if (pigeon::Input::IsKeyPressed(PG_KEY_D))
+			if (pig::Input::IsKeyPressed(PG_KEY_D))
 				m_CameraRotation -= m_CameraRotationSpeed * ts;
 
-			pigeon::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
-			pigeon::RenderCommand::Clear();
+			pig::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
+			pig::RenderCommand::Clear();
 
 			m_Camera.SetPosition(m_CameraPosition);
 			m_Camera.SetRotation(m_CameraRotation);
 
-			pigeon::Renderer::BeginScene();
+			pig::Renderer::BeginScene();
 			m_SceneData.ViewProjectionMatrix = m_Camera.GetViewProjectionMatrix();
 
 			m_VertexBuffer->Bind();
@@ -134,10 +134,10 @@ namespace
 					glm::vec3 pos(x *0.11f, y * 0.11f, 0.f);
 					glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos) * scale;
 					m_Shader->UploadUniformMat4("u_Transform", transform);
-					pigeon::Renderer::Submit(3);
+					pig::Renderer::Submit(3);
 				}
 			}
-			pigeon::Renderer::EndScene();
+			pig::Renderer::EndScene();
 
 			//if (pigeon::Input::IsKeyPressed(PG_KEY_TAB))
 			//	PG_TRACE("Tab key is pressed (poll)!");
@@ -150,7 +150,7 @@ namespace
 			ImGui::End();
 		}
 
-		void OnEvent(pigeon::Event& event) override
+		void OnEvent(pig::Event& event) override
 		{
 			/*if (event.GetEventType() == pigeon::EventType::KeyPressed)
 			{
@@ -167,11 +167,11 @@ namespace
 			glm::mat4 ViewProjectionMatrix;
 		};
 
-		std::unique_ptr<pigeon::VertexBuffer> m_VertexBuffer;
-		std::unique_ptr<pigeon::IndexBuffer> m_IndexBuffer;
-		std::unique_ptr<pigeon::Shader> m_Shader;
+		std::unique_ptr<pig::VertexBuffer> m_VertexBuffer;
+		std::unique_ptr<pig::IndexBuffer> m_IndexBuffer;
+		std::unique_ptr<pig::Shader> m_Shader;
 
-		pigeon::OrthographicCamera m_Camera;
+		pig::OrthographicCamera m_Camera;
 		glm::vec3 m_CameraPosition;
 		float m_CameraMoveSpeed = 5.0f;
 
@@ -185,21 +185,16 @@ namespace
 	};
 }
 
-class Sandbox : public pigeon::Application
+class Sandbox : public pig::Application
 {
 public:
-	Sandbox()
-	{
-		PushLayer(new ExampleLayer());
-	}
-
-	~Sandbox()
-	{
-
-	}
+	Sandbox() = default;
+	~Sandbox() = default;
 };
 
-pigeon::Application* pigeon::CreateApplication()
+pig::S_Ptr<pig::Application> pig::CreateApplication()
 {
-	return new Sandbox();
+	pig::S_Ptr<pig::Application> sandbox = Sandbox::Create();
+	sandbox->PushLayer(new ExampleLayer());
+	return sandbox;
 }

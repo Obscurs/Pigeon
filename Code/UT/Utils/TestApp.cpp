@@ -1,12 +1,7 @@
 #include "TestApp.h"
 
-void TestApp::SendFakeEvent(pigeon::WindowsWindow::EventType type, WPARAM wParam, LPARAM lParam)
+pig::S_Ptr<pig::Application> pig::CreateApplication()
 {
-	static_cast<pigeon::WindowsWindow&>(GetWindow()).SendFakeEvent(type, wParam, lParam);
-}
-
-pigeon::Application* pigeon::CreateApplication()
-{
-	pigeon::Log::Init();
-	return new TestApp();
+	pig::Log::Init();
+	return TestApp::Create();
 }

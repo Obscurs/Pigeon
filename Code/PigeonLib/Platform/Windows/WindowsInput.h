@@ -1,7 +1,7 @@
 #pragma once
 #include "Pigeon/Input.h"
 
-namespace pigeon 
+namespace pig 
 {
 	class WindowsInput : public Input
 	{

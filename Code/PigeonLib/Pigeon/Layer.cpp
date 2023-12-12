@@ -1,15 +1,12 @@
 #include "pch.h"
 #include "Layer.h"
 
-namespace pigeon 
+pig::Layer::Layer(const std::string& debugName)
+	: m_DebugName(debugName)
 {
-	Layer::Layer(const std::string& debugName)
-		: m_DebugName(debugName)
-	{
-	}
+}
 
-	Layer::~Layer()
-	{
+pig::Layer::~Layer()
+{
 
-	}
 }

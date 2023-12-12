@@ -2,7 +2,7 @@
 
 #include "RenderCommand.h"
 
-namespace pigeon 
+namespace pig 
 {
 	class Renderer
 	{
@@ -14,6 +14,4 @@ namespace pigeon
 
 		inline static RendererAPI::API GetAPI() { return RendererAPI::GetAPI(); }
 	};
-
-
 }

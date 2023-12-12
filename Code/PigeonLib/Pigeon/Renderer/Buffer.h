@@ -1,6 +1,6 @@
 #pragma once
 
-namespace pigeon 
+namespace pig 
 {
 	class VertexBuffer
 	{

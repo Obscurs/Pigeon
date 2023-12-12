@@ -4,7 +4,7 @@
 
 #include <d3d11.h>
 
-namespace pigeon 
+namespace pig 
 {
 	class Dx11Context : public GraphicsContext
 	{

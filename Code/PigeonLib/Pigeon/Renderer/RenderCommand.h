@@ -2,7 +2,7 @@
 
 #include "RendererAPI.h"
 
-namespace pigeon 
+namespace pig 
 {
 	class RenderCommand
 	{

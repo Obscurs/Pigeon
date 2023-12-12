@@ -4,7 +4,7 @@
 #include "spdlog/spdlog.h"
 #include "spdlog/fmt/ostr.h"
 
-namespace pigeon 
+namespace pig 
 {
 	class PIGEON_API Log
 	{
@@ -21,15 +21,15 @@ namespace pigeon
 }
 
 // Core log macros
-#define PG_CORE_TRACE(...)    ::pigeon::Log::GetCoreLogger()->trace(__VA_ARGS__)
-#define PG_CORE_INFO(...)     ::pigeon::Log::GetCoreLogger()->info(__VA_ARGS__)
-#define PG_CORE_WARN(...)     ::pigeon::Log::GetCoreLogger()->warn(__VA_ARGS__)
-#define PG_CORE_ERROR(...)    ::pigeon::Log::GetCoreLogger()->error(__VA_ARGS__)
-#define PG_CORE_FATAL(...)    ::pigeon::Log::GetCoreLogger()->critical(__VA_ARGS__)
+#define PG_CORE_TRACE(...)    ::pig::Log::GetCoreLogger()->trace(__VA_ARGS__)
+#define PG_CORE_INFO(...)     ::pig::Log::GetCoreLogger()->info(__VA_ARGS__)
+#define PG_CORE_WARN(...)     ::pig::Log::GetCoreLogger()->warn(__VA_ARGS__)
+#define PG_CORE_ERROR(...)    ::pig::Log::GetCoreLogger()->error(__VA_ARGS__)
+#define PG_CORE_FATAL(...)    ::pig::Log::GetCoreLogger()->critical(__VA_ARGS__)
 
 // Client log macros
-#define PG_TRACE(...)	      ::pigeon::Log::GetClientLogger()->trace(__VA_ARGS__)
-#define PG_INFO(...)	      ::pigeon::Log::GetClientLogger()->info(__VA_ARGS__)
-#define PG_WARN(...)	      ::pigeon::Log::GetClientLogger()->warn(__VA_ARGS__)
-#define PG_ERROR(...)	      ::pigeon::Log::GetClientLogger()->error(__VA_ARGS__)
-#define PG_FATAL(...)	      ::pigeon::Log::GetClientLogger()->critical(__VA_ARGS__)
+#define PG_TRACE(...)	      ::pig::Log::GetClientLogger()->trace(__VA_ARGS__)
+#define PG_INFO(...)	      ::pig::Log::GetClientLogger()->info(__VA_ARGS__)
+#define PG_WARN(...)	      ::pig::Log::GetClientLogger()->warn(__VA_ARGS__)
+#define PG_ERROR(...)	      ::pig::Log::GetClientLogger()->error(__VA_ARGS__)
+#define PG_FATAL(...)	      ::pig::Log::GetClientLogger()->critical(__VA_ARGS__)

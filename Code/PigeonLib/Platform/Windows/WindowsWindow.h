@@ -3,7 +3,7 @@
 #include "Pigeon/Window.h"
 #include "Pigeon/Renderer/GraphicsContext.h"
 
-namespace pigeon 
+namespace pig 
 {
 	class WindowsWindow : public Window
 	{

@@ -5,7 +5,7 @@
 
 #include <vector>
 
-namespace pigeon 
+namespace pig 
 {
 	class PIGEON_API LayerStack
 	{

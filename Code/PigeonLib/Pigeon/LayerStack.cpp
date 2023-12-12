@@ -1,49 +1,46 @@
 #include "pch.h"
 #include "LayerStack.h"
 
-namespace pigeon 
+pig::LayerStack::~LayerStack()
 {
-	LayerStack::~LayerStack()
-	{
-		Shutdown();
-	}
+	Shutdown();
+}
 
-	void LayerStack::Shutdown()
-	{
-		for (Layer* layer : m_Data.m_Layers)
-			layer->OnDetach();
-		for (Layer* layer : m_Data.m_Layers)
-			if(layer)
-				delete layer;
+void pig::LayerStack::Shutdown()
+{
+	for (Layer* layer : m_Data.m_Layers)
+		layer->OnDetach();
+	for (Layer* layer : m_Data.m_Layers)
+		if(layer)
+			delete layer;
 
-		m_Data.m_Layers.clear();
-	}
+	m_Data.m_Layers.clear();
+}
 
-	void LayerStack::PushLayer(Layer* layer)
-	{
-		m_Data.m_Layers.emplace(m_Data.m_Layers.begin() + m_Data.m_LayerInsertIndex, layer);
-		m_Data.m_LayerInsertIndex++;
-	}
+void pig::LayerStack::PushLayer(pig::Layer* layer)
+{
+	m_Data.m_Layers.emplace(m_Data.m_Layers.begin() + m_Data.m_LayerInsertIndex, layer);
+	m_Data.m_LayerInsertIndex++;
+}
 
-	void LayerStack::PushOverlay(Layer* overlay)
-	{
-		m_Data.m_Layers.emplace_back(overlay);
-	}
+void pig::LayerStack::PushOverlay(pig::Layer* overlay)
+{
+	m_Data.m_Layers.emplace_back(overlay);
+}
 
-	void LayerStack::PopLayer(Layer* layer)
+void pig::LayerStack::PopLayer(pig::Layer* layer)
+{
+	auto it = std::find(m_Data.m_Layers.begin(), m_Data.m_Layers.end(), layer);
+	if (it != m_Data.m_Layers.end())
 	{
-		auto it = std::find(m_Data.m_Layers.begin(), m_Data.m_Layers.end(), layer);
-		if (it != m_Data.m_Layers.end())
-		{
-			m_Data.m_Layers.erase(it);
-			m_Data.m_LayerInsertIndex--;
-		}
+		m_Data.m_Layers.erase(it);
+		m_Data.m_LayerInsertIndex--;
 	}
+}
 
-	void LayerStack::PopOverlay(Layer* overlay)
-	{
-		auto it = std::find(m_Data.m_Layers.begin(), m_Data.m_Layers.end(), overlay);
-		if (it != m_Data.m_Layers.end())
-			m_Data.m_Layers.erase(it);
-	}
+void pig::LayerStack::PopOverlay(pig::Layer* overlay)
+{
+	auto it = std::find(m_Data.m_Layers.begin(), m_Data.m_Layers.end(), overlay);
+	if (it != m_Data.m_Layers.end())
+		m_Data.m_Layers.erase(it);
 }

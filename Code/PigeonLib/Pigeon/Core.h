@@ -26,3 +26,12 @@
 #define BIT(x) (1 << x)
 
 #define PG_BIND_EVENT_FN(fn) std::bind(&fn, this, std::placeholders::_1)
+
+namespace pig
+{
+	template<typename T>
+	using U_Ptr = std::unique_ptr<T>;
+
+	template<typename T>
+	using S_Ptr = std::shared_ptr<T>;
+}

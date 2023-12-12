@@ -3,7 +3,7 @@
 #include "Pigeon/Renderer/Buffer.h"
 
 #include <d3d11.h>
-namespace pigeon 
+namespace pig 
 {
 	class Dx11VertexBuffer : public VertexBuffer
 	{

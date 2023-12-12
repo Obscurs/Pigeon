@@ -5,7 +5,7 @@
 #include "Pigeon/Core.h"
 #include "Pigeon/Events/Event.h"
 
-namespace pigeon {
+namespace pig {
 
 	struct WindowProps
 	{

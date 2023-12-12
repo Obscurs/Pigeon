@@ -8,13 +8,13 @@
 #include "Pigeon/LayerStack.h"
 #include "Pigeon/Renderer/Buffer.h"
 
-namespace pigeon
+namespace pig
 {
 	class ImGuiLayer;
 	class Shader;
 }
 
-namespace pigeon 
+namespace pig
 {
 	class Application
 	{
@@ -29,7 +29,21 @@ namespace pigeon
 			LayerStack m_LayerStack;
 		};
 
-		Application();
+		static pig::S_Ptr<Application> Create()
+		{
+			if (s_Instance)
+			{
+				s_Instance.reset();
+			}
+			if (!s_Instance)
+			{
+				s_Instance = std::make_shared<Application>();
+				s_Instance->Init();
+			}
+			return s_Instance;
+		}
+
+		Application() = default;
 		virtual ~Application();
 
 #ifdef TESTS_ENABLED
@@ -45,8 +59,9 @@ namespace pigeon
 		inline Window& GetWindow() { return *m_Data.m_Window; }
 
 		inline static Application& Get() { return *s_Instance; }
-
 	private:
+		void Init();
+
 		void Update();
 
 		bool OnWindowClose(WindowCloseEvent& e);
@@ -54,9 +69,9 @@ namespace pigeon
 
 		Data m_Data;
 	private:
-		static Application* s_Instance;
+		static pig::S_Ptr<Application> s_Instance;
 	};
 
 	// To be defined in CLIENT
-	Application* CreateApplication();
+	pig::S_Ptr<Application> CreateApplication();
 }

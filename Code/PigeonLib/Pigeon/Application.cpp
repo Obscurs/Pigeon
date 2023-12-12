@@ -9,109 +9,103 @@
 
 #include <chrono>
 
-namespace pigeon 
+#define BIND_EVENT_FN(x) std::bind(&pig::Application::x, this, std::placeholders::_1)
+
+pig::S_Ptr<pig::Application> pig::Application::s_Instance = nullptr;
+
+pig::Application::~Application()
 {
-#define BIND_EVENT_FN(x) std::bind(&Application::x, this, std::placeholders::_1)
+	m_Data.m_ImGuiLayer->OnDetach();
+	m_Data.m_LayerStack.PopOverlay(m_Data.m_ImGuiLayer);
+	m_Data.m_LayerStack.Shutdown();
 
-	Application* Application::s_Instance = nullptr;
+	m_Data.m_Window.reset();
+	s_Instance = nullptr;
+}
 
-	Application::Application()
+void pig::Application::PushLayer(pig::Layer* layer)
+{
+	m_Data.m_LayerStack.PushLayer(layer);
+	layer->OnAttach();
+}
+
+void pig::Application::PushOverlay(pig::Layer* layer)
+{
+	m_Data.m_LayerStack.PushOverlay(layer);
+	layer->OnAttach();
+}
+
+void pig::Application::OnEvent(pig::Event& e)
+{
+	if (m_Data.m_Initialized)
 	{
-		PG_CORE_ASSERT(!s_Instance, "Application already exists!");
-		s_Instance = this;
+		pig::EventDispatcher dispatcher(e);
+		dispatcher.Dispatch<pig::WindowCloseEvent>(BIND_EVENT_FN(OnWindowClose));
+		dispatcher.Dispatch<pig::WindowResizeEvent>(BIND_EVENT_FN(OnWindowResize));
 
-		m_Data.m_Window = std::unique_ptr<Window>(Window::Create());
-		m_Data.m_Window->SetEventCallback(BIND_EVENT_FN(OnEvent));
-
-		m_Data.m_ImGuiLayer = new ImGuiLayer();
-		PushOverlay(m_Data.m_ImGuiLayer);
-
-		m_Data.m_Initialized = true;
-	}
-
-	Application::~Application()
-	{
-		m_Data.m_ImGuiLayer->OnDetach();
-		m_Data.m_LayerStack.PopOverlay(m_Data.m_ImGuiLayer);
-		m_Data.m_LayerStack.Shutdown();
-
-		m_Data.m_Window.reset();
-		s_Instance = nullptr;
-	}
-
-	void Application::PushLayer(Layer* layer)
-	{
-		m_Data.m_LayerStack.PushLayer(layer);
-		layer->OnAttach();
-	}
-
-	void Application::PushOverlay(Layer* layer)
-	{
-		m_Data.m_LayerStack.PushOverlay(layer);
-		layer->OnAttach();
-	}
-
-	void Application::OnEvent(Event& e)
-	{
-		if (m_Data.m_Initialized)
+		for (auto it = m_Data.m_LayerStack.end(); it != m_Data.m_LayerStack.begin(); )
 		{
-			EventDispatcher dispatcher(e);
-			dispatcher.Dispatch<WindowCloseEvent>(BIND_EVENT_FN(OnWindowClose));
-			dispatcher.Dispatch<WindowResizeEvent>(BIND_EVENT_FN(OnWindowResize));
-
-			for (auto it = m_Data.m_LayerStack.end(); it != m_Data.m_LayerStack.begin(); )
-			{
-				(*--it)->OnEvent(e);
-				if (e.Handled)
-					break;
-			}
+			(*--it)->OnEvent(e);
+			if (e.Handled)
+				break;
 		}
 	}
+}
 
 #ifndef TESTS_ENABLED
-	void Application::Run()
+void pig::Application::Run()
+{
+	while (m_Data.m_Running)
 	{
-		while (m_Data.m_Running)
-		{
-			Update();
-		}
+		Update();
 	}
+}
 #endif
 
-	void Application::Update()
+void pig::Application::Init()
+{
+	m_Data.m_Window = std::unique_ptr<Window>(Window::Create());
+	m_Data.m_Window->SetEventCallback(BIND_EVENT_FN(OnEvent));
+
+	m_Data.m_ImGuiLayer = new ImGuiLayer();
+	PushOverlay(m_Data.m_ImGuiLayer);
+
+	m_Data.m_Initialized = true;
+}
+
+void pig::Application::Update()
+{
+	auto currentTime = std::chrono::steady_clock::now();
+	pig::Timestep timestep = std::chrono::duration<float>(currentTime - m_Data.m_LastFrameTime).count();
+	m_Data.m_LastFrameTime = currentTime;
+
+	for (pig::Layer* layer : m_Data.m_LayerStack)
+		layer->Begin();
+
+	for (pig::Layer* layer : m_Data.m_LayerStack)
+		layer->OnUpdate(timestep);
+
+	if (m_Data.m_ImGuiLayer->IsAttached())
 	{
-		auto currentTime = std::chrono::steady_clock::now();
-		Timestep timestep = std::chrono::duration<float>(currentTime - m_Data.m_LastFrameTime).count();
-		m_Data.m_LastFrameTime = currentTime;
-
-		for (Layer* layer : m_Data.m_LayerStack)
-			layer->Begin();
-
-		for (Layer* layer : m_Data.m_LayerStack)
-			layer->OnUpdate(timestep);
-
-		if (m_Data.m_ImGuiLayer->IsAttached())
-		{
-			for (Layer* layer : m_Data.m_LayerStack)
-				layer->OnImGuiRender();
-		}
-
-		for (Layer* layer : m_Data.m_LayerStack)
-			layer->End();
-
-		m_Data.m_Window->OnUpdate();
+		for (pig::Layer* layer : m_Data.m_LayerStack)
+			layer->OnImGuiRender();
 	}
 
-	bool Application::OnWindowClose(WindowCloseEvent& e)
-	{
-		m_Data.m_Running = false;
-		return false;
-	}
+	for (pig::Layer* layer : m_Data.m_LayerStack)
+		layer->End();
 
-	bool Application::OnWindowResize(WindowResizeEvent& e)
-	{
-		PG_CORE_ASSERT(m_Data.m_Window, "Window not initialized");
-		m_Data.m_Window->SetSize(e.GetWidth(), e.GetHeight());
-		return false;
-	}
+	m_Data.m_Window->OnUpdate();
+}
+
+bool pig::Application::OnWindowClose(pig::WindowCloseEvent& e)
+{
+	m_Data.m_Running = false;
+	return false;
+}
+
+bool pig::Application::OnWindowResize(pig::WindowResizeEvent& e)
+{
+	PG_CORE_ASSERT(m_Data.m_Window, "Window not initialized");
+	m_Data.m_Window->SetSize(e.GetWidth(), e.GetHeight());
+	return false;
 }

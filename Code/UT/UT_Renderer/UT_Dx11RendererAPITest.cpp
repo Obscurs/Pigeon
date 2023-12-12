@@ -121,10 +121,10 @@ namespace CatchTestsetFail
 {
 	TEST_CASE("app.Renderer::Dx11RendererAPITest")
 	{
-		TestApp* app = static_cast<TestApp*>(pigeon::CreateApplication());
+		pig::S_Ptr<pig::Application> app = pig::CreateApplication();
 
-		const pigeon::Dx11RendererAPI* rendererAPI = static_cast<const pigeon::Dx11RendererAPI*>(pigeon::RenderCommand::GetRenderAPI());
-		CHECK(rendererAPI->GetAPI() == pigeon::RendererAPI::API::DirectX11);
+		const pig::Dx11RendererAPI* rendererAPI = static_cast<const pig::Dx11RendererAPI*>(pig::RenderCommand::GetRenderAPI());
+		CHECK(rendererAPI->GetAPI() == pig::RendererAPI::API::DirectX11);
 		CHECK(!rendererAPI->GetData().m_Initialized); //Not initialized until first frame;
 		CHECK(rendererAPI->GetData().m_MainRenderTargetView == nullptr);
 		CHECK(rendererAPI->GetData().m_ClearColor[0] == 1.f);
@@ -132,28 +132,26 @@ namespace CatchTestsetFail
 		CHECK(rendererAPI->GetData().m_ClearColor[2] == 1.f);
 		CHECK(rendererAPI->GetData().m_ClearColor[3] == 1.f);
 
-		pigeon::RenderCommand::SetClearColor({ 0.1f, 0.2f, 0.3f, 0.4f });
+		pig::RenderCommand::SetClearColor({ 0.1f, 0.2f, 0.3f, 0.4f });
 
 		CHECK(rendererAPI->GetData().m_ClearColor[0] == 0.1f);
 		CHECK(rendererAPI->GetData().m_ClearColor[1] == 0.2f);
 		CHECK(rendererAPI->GetData().m_ClearColor[2] == 0.3f);
 		CHECK(rendererAPI->GetData().m_ClearColor[3] == 0.4f);
 
-		pigeon::Renderer::BeginScene();
+		pig::Renderer::BeginScene();
 
 		CHECK(rendererAPI->GetData().m_Initialized);
 		CHECK(rendererAPI->GetData().m_MainRenderTargetView != nullptr);
-		pigeon::Renderer::Submit(0);
-		pigeon::Renderer::EndScene();
-
-		delete app;
+		pig::Renderer::Submit(0);
+		pig::Renderer::EndScene();
 	}
 
 	TEST_CASE("app.Renderer::Dx11ContextTest")
 	{
-		TestApp* app = static_cast<TestApp*>(pigeon::CreateApplication());
+		pig::S_Ptr<pig::Application> app = pig::CreateApplication();
 
-		pigeon::Dx11Context* dx11Context = static_cast<pigeon::Dx11Context*>(app->GetWindow().GetGraphicsContext());
+		pig::Dx11Context* dx11Context = static_cast<pig::Dx11Context*>(app->GetWindow().GetGraphicsContext());
 		CHECK(dx11Context->GetData().m_HWnd != nullptr);
 		CHECK(dx11Context->GetHeight() == 720);
 		CHECK(dx11Context->GetWidth() == 1280);
@@ -166,7 +164,7 @@ namespace CatchTestsetFail
 		CHECK(dx11Context->NeedsResize());
 		CHECK(dx11Context->GetHeight() == 720);
 		CHECK(dx11Context->GetWidth() == 1280);
-		pigeon::Renderer::BeginScene();
+		pig::Renderer::BeginScene();
 		CHECK(!dx11Context->NeedsResize());
 		CHECK(dx11Context->GetHeight() == 456);
 		CHECK(dx11Context->GetWidth() == 123);
@@ -176,20 +174,19 @@ namespace CatchTestsetFail
 		CHECK(dx11Context->GetPd3dDevice() == nullptr);
 		CHECK(dx11Context->GetPd3dDeviceContext() == nullptr);
 		CHECK(dx11Context->GetSwapChain() == nullptr);
-		delete app;
 	}
 
 	TEST_CASE("app.Renderer::Dx11Buffers")
 	{
-		TestApp* app = static_cast<TestApp*>(pigeon::CreateApplication());
+		pig::S_Ptr<pig::Application> app = pig::CreateApplication();
 
-		pigeon::Dx11Context* dx11Context = static_cast<pigeon::Dx11Context*>(app->GetWindow().GetGraphicsContext());
+		pig::Dx11Context* dx11Context = static_cast<pig::Dx11Context*>(app->GetWindow().GetGraphicsContext());
 
 
 		SECTION("Vertex buffer")
 		{
-			pigeon::VertexBuffer* vertexBuffer = pigeon::VertexBuffer::Create(s_OurVertices, sizeof(s_OurVertices));
-			pigeon::Dx11VertexBuffer* dxVB = static_cast<pigeon::Dx11VertexBuffer*>(vertexBuffer);
+			pig::VertexBuffer* vertexBuffer = pig::VertexBuffer::Create(s_OurVertices, sizeof(s_OurVertices));
+			pig::Dx11VertexBuffer* dxVB = static_cast<pig::Dx11VertexBuffer*>(vertexBuffer);
 			CHECK(dxVB->GetData().m_Buffer != nullptr);
 			dxVB->Bind();
 			dxVB->Unbind();
@@ -197,8 +194,8 @@ namespace CatchTestsetFail
 		}
 		SECTION("Index buffer")
 		{
-			pigeon::IndexBuffer* indexBuffer = pigeon::IndexBuffer::Create(s_Indices, sizeof(s_Indices) / sizeof(uint32_t));
-			pigeon::Dx11IndexBuffer* dxIB = static_cast<pigeon::Dx11IndexBuffer*>(indexBuffer);
+			pig::IndexBuffer* indexBuffer = pig::IndexBuffer::Create(s_Indices, sizeof(s_Indices) / sizeof(uint32_t));
+			pig::Dx11IndexBuffer* dxIB = static_cast<pig::Dx11IndexBuffer*>(indexBuffer);
 			CHECK(dxIB->GetData().m_Buffer != nullptr);
 			CHECK(dxIB->GetCount() == 3);
 			dxIB->Bind();
@@ -208,21 +205,21 @@ namespace CatchTestsetFail
 		SECTION("Constant buffer")
 		{
 			CBDataInvalid dataInvalid;
-			pigeon::Dx11ConstantBuffer<CBDataInvalid>* constantBufferInvalid = new pigeon::Dx11ConstantBuffer<CBDataInvalid>(&dataInvalid);
+			pig::Dx11ConstantBuffer<CBDataInvalid>* constantBufferInvalid = new pig::Dx11ConstantBuffer<CBDataInvalid>(&dataInvalid);
 			CHECK(constantBufferInvalid->GetData().m_Buffer == nullptr); //Error creating, invalid alignment
 
 			CBData0 data;
-			pigeon::Dx11ConstantBuffer<CBData0>* constantBuffer = new pigeon::Dx11ConstantBuffer<CBData0>(&data);
+			pig::Dx11ConstantBuffer<CBData0>* constantBuffer = new pig::Dx11ConstantBuffer<CBData0>(&data);
 			CHECK(constantBuffer->GetData().m_Buffer != nullptr);
 			constantBuffer->Bind(0);
 
 			CBData1 data1;
-			pigeon::Dx11ConstantBuffer<CBData1>* constantBuffer1 = new pigeon::Dx11ConstantBuffer<CBData1>(&data1);
+			pig::Dx11ConstantBuffer<CBData1>* constantBuffer1 = new pig::Dx11ConstantBuffer<CBData1>(&data1);
 			CHECK(constantBuffer1->GetData().m_Buffer != nullptr);
 			constantBuffer1->Bind(0);
 
 			CBData2 data2;
-			pigeon::Dx11ConstantBuffer<CBData2>* constantBuffer2 = new pigeon::Dx11ConstantBuffer<CBData2>(&data2);
+			pig::Dx11ConstantBuffer<CBData2>* constantBuffer2 = new pig::Dx11ConstantBuffer<CBData2>(&data2);
 			CHECK(constantBuffer2->GetData().m_Buffer != nullptr);
 			constantBuffer2->Bind(0);
 
@@ -231,25 +228,23 @@ namespace CatchTestsetFail
 			delete constantBuffer1;
 			delete constantBuffer2;
 		}
-
-		delete app;
 	}
 
 	TEST_CASE("app.Renderer::Dx11Shader")
 	{
-		TestApp* app = static_cast<TestApp*>(pigeon::CreateApplication());
+		pig::S_Ptr<pig::Application> app = pig::CreateApplication();
 
-		pigeon::Dx11Context* dx11Context = static_cast<pigeon::Dx11Context*>(app->GetWindow().GetGraphicsContext());
+		pig::Dx11Context* dx11Context = static_cast<pig::Dx11Context*>(app->GetWindow().GetGraphicsContext());
 
-		pigeon::Shader* shader;
+		pig::Shader* shader;
 
-		pigeon::BufferLayout buffLayout = {
-			{ pigeon::ShaderDataType::Float3, "POSITION" },
-			{ pigeon::ShaderDataType::Float4, "COLOR" }
+		pig::BufferLayout buffLayout = {
+			{ pig::ShaderDataType::Float3, "POSITION" },
+			{ pig::ShaderDataType::Float4, "COLOR" }
 		};
 
-		shader = pigeon::Shader::Create(s_VsCode, s_PsCode, buffLayout);
-		pigeon::Dx11Shader* dxShader = static_cast<pigeon::Dx11Shader*>(shader);
+		shader = pig::Shader::Create(s_VsCode, s_PsCode, buffLayout);
+		pig::Dx11Shader* dxShader = static_cast<pig::Dx11Shader*>(shader);
 
 		CHECK(dxShader->GetData().m_InputLayout != nullptr);
 		CHECK(dxShader->GetData().m_PixelShader != nullptr);
@@ -265,8 +260,6 @@ namespace CatchTestsetFail
 		shader->UploadUniformFloat4("u_Unknown", s_TestVec4);
 
 		dxShader->Unbind();
-
-		delete app;
 	}
 
 	TEST_CASE("Renderer::OrthographicCamera")
@@ -279,7 +272,7 @@ namespace CatchTestsetFail
 		const float rot1 = 1.5f;
 		const float rot2 = -4.5f;
 
-		pigeon::OrthographicCamera camera(ortoValues.x, ortoValues.y, ortoValues.z, ortoValues.w);
+		pig::OrthographicCamera camera(ortoValues.x, ortoValues.y, ortoValues.z, ortoValues.w);
 		CHECK(camera.GetPosition() == pos0);
 		CHECK(camera.GetRotation() == rot0);
 		glm::mat4 projMat = camera.GetProjectionMatrix();

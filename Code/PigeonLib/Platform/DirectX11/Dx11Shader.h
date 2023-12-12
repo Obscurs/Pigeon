@@ -6,7 +6,7 @@
 #include <d3d11.h>
 #include <DirectXMath.h>
 
-namespace pigeon
+namespace pig
 {
 	class Dx11Shader : public Shader
 	{

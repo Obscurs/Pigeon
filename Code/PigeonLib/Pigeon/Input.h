@@ -2,7 +2,7 @@
 
 #include "Pigeon/Core.h"
 
-namespace pigeon 
+namespace pig 
 {
 	class PIGEON_API Input
 	{

@@ -4,7 +4,7 @@
 #include "Pigeon/Core/Timestep.h"
 #include "Pigeon/Events/Event.h"
 
-namespace pigeon 
+namespace pig 
 {
 	class PIGEON_API Layer
 	{

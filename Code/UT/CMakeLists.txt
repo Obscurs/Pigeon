@@ -55,6 +55,8 @@ elseif(UNIX)
     target_compile_definitions(UT PRIVATE PG_PLATFORM_UNIX)
 endif()
 
+target_precompile_headers(UT PRIVATE "${PROJECT_SOURCE_DIR}/Code/PigeonLib/pch.h")
+
 target_link_libraries (
     UT PRIVATE PigeonLib
     spdlog.lib

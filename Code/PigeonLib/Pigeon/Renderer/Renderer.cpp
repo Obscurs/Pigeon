@@ -1,20 +1,17 @@
 #include "pch.h"
 #include "Renderer.h"
 
-namespace pigeon 
+void pig::Renderer::BeginScene()
 {
-	void Renderer::BeginScene()
-	{
-		RenderCommand::Begin();
-	}
+	pig::RenderCommand::Begin();
+}
 
-	void Renderer::EndScene()
-	{
-		RenderCommand::End();
-	}
+void pig::Renderer::EndScene()
+{
+	pig::RenderCommand::End();
+}
 
-	void Renderer::Submit(unsigned int count)
-	{
-		RenderCommand::DrawIndexed(count);
-	}
+void pig::Renderer::Submit(unsigned int count)
+{
+	pig::RenderCommand::DrawIndexed(count);
 }

@@ -5,30 +5,26 @@
 
 #include "Platform/DirectX11/Dx11Buffer.h"
 
-namespace pigeon 
+pig::VertexBuffer* pig::VertexBuffer::Create(float* vertices, uint32_t size)
 {
-	VertexBuffer* VertexBuffer::Create(float* vertices, uint32_t size)
+	switch (pig::Renderer::GetAPI())
 	{
-		switch (Renderer::GetAPI())
-		{
-		case RendererAPI::API::None:    PG_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
-		case RendererAPI::API::DirectX11:  return new Dx11VertexBuffer(vertices, size);
-		}
-
-		PG_CORE_ASSERT(false, "Unknown RendererAPI!");
-		return nullptr;
+	case pig::RendererAPI::API::None:    PG_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
+	case pig::RendererAPI::API::DirectX11:  return new pig::Dx11VertexBuffer(vertices, size);
 	}
 
-	IndexBuffer* IndexBuffer::Create(uint32_t* indices, uint32_t size)
-	{
-		switch (Renderer::GetAPI())
-		{
-		case RendererAPI::API::None:    PG_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
-		case RendererAPI::API::DirectX11:  return new Dx11IndexBuffer(indices, size);
-		}
+	PG_CORE_ASSERT(false, "Unknown RendererAPI!");
+	return nullptr;
+}
 
-		PG_CORE_ASSERT(false, "Unknown RendererAPI!");
-		return nullptr;
+pig::IndexBuffer* pig::IndexBuffer::Create(uint32_t* indices, uint32_t size)
+{
+	switch (pig::Renderer::GetAPI())
+	{
+	case pig::RendererAPI::API::None:    PG_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
+	case pig::RendererAPI::API::DirectX11:  return new pig::Dx11IndexBuffer(indices, size);
 	}
 
+	PG_CORE_ASSERT(false, "Unknown RendererAPI!");
+	return nullptr;
 }

@@ -3,7 +3,7 @@
 #include <string>
 #include <glm/glm.hpp>
 
-namespace pigeon 
+namespace pig 
 {
 	enum class ShaderDataType
 	{

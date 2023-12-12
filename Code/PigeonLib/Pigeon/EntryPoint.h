@@ -2,17 +2,16 @@
 
 #ifdef PG_PLATFORM_WINDOWS
 
-extern pigeon::Application* pigeon::CreateApplication();
+extern pig::S_Ptr<pig::Application> pig::CreateApplication();
 
 #ifndef TESTS_ENABLED
 int main(int argc, char** argv)
 {
-	pigeon::Log::Init();
+	pig::Log::Init();
 	PG_CORE_WARN("Initialized Log!");
 
-	auto app = pigeon::CreateApplication();
+	auto app = pig::CreateApplication();
 	app->Run();
-	delete app;
 }
 #endif
 

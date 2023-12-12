@@ -39,10 +39,6 @@ file(GLOB PLATFORM_DX
     "Platform/DirectX11/Dx11Shader.cpp"
 )
 
-file(GLOB PLATFORM_TEST
-    "Platform/UTMockup/UTWindow.cpp"
-)
-
 file(GLOB_RECURSE SRC
     "Pigeon/*.cpp"
     "Pigeon/*.h"

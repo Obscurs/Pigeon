@@ -2,7 +2,7 @@
 
 #include "Event.h"
 
-namespace pigeon {
+namespace pig {
 
 	class PIGEON_API MouseMovedEvent : public Event
 	{
