@@ -21,7 +21,7 @@ namespace pig
 	public:
 		struct Data
 		{
-			ImGuiLayer* m_ImGuiLayer;
+			pig::S_Ptr<ImGuiLayer> m_ImGuiLayer;
 			std::unique_ptr<Window> m_Window;
 			bool m_Running = true;
 			bool m_Initialized = false;
@@ -53,8 +53,8 @@ namespace pig
 		void Run();
 #endif
 		void OnEvent(Event& e);
-		void PushLayer(Layer* layer);
-		void PushOverlay(Layer* layer);
+		void PushLayer(pig::S_Ptr<Layer> layer);
+		void PushOverlay(pig::S_Ptr<Layer> layer);
 
 		inline Window& GetWindow() { return *m_Data.m_Window; }
 

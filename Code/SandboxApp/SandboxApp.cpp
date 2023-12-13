@@ -195,6 +195,6 @@ public:
 pig::S_Ptr<pig::Application> pig::CreateApplication()
 {
 	pig::S_Ptr<pig::Application> sandbox = Sandbox::Create();
-	sandbox->PushLayer(new ExampleLayer());
+	sandbox->PushLayer(std::make_shared<ExampleLayer>());
 	return sandbox;
 }

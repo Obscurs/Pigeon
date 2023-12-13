@@ -94,7 +94,7 @@ namespace CatchTestsetFail
 	{
 		pig::S_Ptr<pig::Application> app = pig::CreateApplication();
 
-		TestLayer* testLayer = new TestLayer();
+		pig::S_Ptr<TestLayer> testLayer = std::make_shared<TestLayer>();
 		app->PushLayer(testLayer);
 		pig::WindowsWindow& appWindow = static_cast<pig::WindowsWindow&>(app->GetWindow());
 

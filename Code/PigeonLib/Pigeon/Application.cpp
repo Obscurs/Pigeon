@@ -23,13 +23,13 @@ pig::Application::~Application()
 	s_Instance = nullptr;
 }
 
-void pig::Application::PushLayer(pig::Layer* layer)
+void pig::Application::PushLayer(pig::S_Ptr<pig::Layer> layer)
 {
 	m_Data.m_LayerStack.PushLayer(layer);
 	layer->OnAttach();
 }
 
-void pig::Application::PushOverlay(pig::Layer* layer)
+void pig::Application::PushOverlay(pig::S_Ptr<pig::Layer> layer)
 {
 	m_Data.m_LayerStack.PushOverlay(layer);
 	layer->OnAttach();
@@ -67,7 +67,7 @@ void pig::Application::Init()
 	m_Data.m_Window = std::unique_ptr<Window>(Window::Create());
 	m_Data.m_Window->SetEventCallback(BIND_EVENT_FN(OnEvent));
 
-	m_Data.m_ImGuiLayer = new ImGuiLayer();
+	m_Data.m_ImGuiLayer = std::make_shared<ImGuiLayer>();
 	PushOverlay(m_Data.m_ImGuiLayer);
 
 	m_Data.m_Initialized = true;
@@ -79,19 +79,19 @@ void pig::Application::Update()
 	pig::Timestep timestep = std::chrono::duration<float>(currentTime - m_Data.m_LastFrameTime).count();
 	m_Data.m_LastFrameTime = currentTime;
 
-	for (pig::Layer* layer : m_Data.m_LayerStack)
+	for (pig::S_Ptr<pig::Layer> layer : m_Data.m_LayerStack)
 		layer->Begin();
 
-	for (pig::Layer* layer : m_Data.m_LayerStack)
+	for (pig::S_Ptr<pig::Layer> layer : m_Data.m_LayerStack)
 		layer->OnUpdate(timestep);
 
 	if (m_Data.m_ImGuiLayer->IsAttached())
 	{
-		for (pig::Layer* layer : m_Data.m_LayerStack)
+		for (pig::S_Ptr<pig::Layer> layer : m_Data.m_LayerStack)
 			layer->OnImGuiRender();
 	}
 
-	for (pig::Layer* layer : m_Data.m_LayerStack)
+	for (pig::S_Ptr<pig::Layer> layer : m_Data.m_LayerStack)
 		layer->End();
 
 	m_Data.m_Window->OnUpdate();

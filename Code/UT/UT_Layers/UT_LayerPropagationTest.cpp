@@ -69,9 +69,9 @@ namespace CatchTestsetFail
 		const pig::LayerStack::Data& layerStackData = app->GetData().m_LayerStack.GetData();
 		CHECK(layerStackData.m_LayerInsertIndex == 0);
 		CHECK(layerStackData.m_Layers.size() == 1);
-		TestLayerEventPropagate* testLayerPropagate1 = new TestLayerEventPropagate();
-		TestLayerEventPropagate* testLayerPropagate2 = new TestLayerEventPropagate();
-		TestLayerEventNoPropagate* testLayerNoPropagate1 = new TestLayerEventNoPropagate();
+		pig::S_Ptr<TestLayerEventPropagate> testLayerPropagate1 = std::make_shared<TestLayerEventPropagate>();
+		pig::S_Ptr<TestLayerEventPropagate> testLayerPropagate2 = std::make_shared < TestLayerEventPropagate>();
+		pig::S_Ptr<TestLayerEventNoPropagate> testLayerNoPropagate1 = std::make_shared < TestLayerEventNoPropagate>();
 
 		CHECK(!testLayerPropagate1->m_ReceivedEvent);
 		CHECK(!testLayerPropagate2->m_ReceivedEvent);

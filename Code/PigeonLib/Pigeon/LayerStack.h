@@ -12,7 +12,7 @@ namespace pig
 	public:
 		struct Data
 		{
-			std::vector<Layer*> m_Layers;
+			std::vector<pig::S_Ptr<Layer>> m_Layers;
 			unsigned int m_LayerInsertIndex = 0;
 		};
 
@@ -24,13 +24,13 @@ namespace pig
 		const Data& GetData() const { return m_Data; }
 #endif
 
-		void PushLayer(Layer* layer);
-		void PushOverlay(Layer* overlay);
-		void PopLayer(Layer* layer);
-		void PopOverlay(Layer* overlay);
+		void PushLayer(pig::S_Ptr<Layer> layer);
+		void PushOverlay(pig::S_Ptr<Layer> overlay);
+		void PopLayer(pig::S_Ptr<Layer> layer);
+		void PopOverlay(pig::S_Ptr<Layer> overlay);
 
-		std::vector<Layer*>::iterator begin() { return m_Data.m_Layers.begin(); }
-		std::vector<Layer*>::iterator end() { return m_Data.m_Layers.end(); }
+		std::vector<pig::S_Ptr<Layer>>::iterator begin() { return m_Data.m_Layers.begin(); }
+		std::vector<pig::S_Ptr<Layer>>::iterator end() { return m_Data.m_Layers.end(); }
 	private:
 		Data m_Data;
 	};
