@@ -7,15 +7,16 @@
 void pig::Dx11RendererAPI::CreateRenderTarget()
 {
 	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
-	ID3D11Texture2D* pBackBuffer;
-	context->GetSwapChain()->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
-	context->GetPd3dDevice()->CreateRenderTargetView(pBackBuffer, nullptr, &m_Data.m_MainRenderTargetView);
-	pBackBuffer->Release();
+	pig::RAII_PtrRelease<ID3D11Texture2D> pBackBuffer;
+	context->GetSwapChain()->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer.value));
+	ID3D11RenderTargetView* renderView;
+	context->GetPd3dDevice()->CreateRenderTargetView(pBackBuffer.value, nullptr, &renderView);
+	m_Data.m_MainRenderTargetView.reset(renderView);
 }
 
 void pig::Dx11RendererAPI::CleanupRenderTarget()
 {
-	if (m_Data.m_MainRenderTargetView) { m_Data.m_MainRenderTargetView->Release(); m_Data.m_MainRenderTargetView = nullptr; }
+	if (m_Data.m_MainRenderTargetView) { m_Data.m_MainRenderTargetView.reset(); }
 }
 
 void pig::Dx11RendererAPI::SetClearColor(const glm::vec4& color)
@@ -43,7 +44,7 @@ void pig::Dx11RendererAPI::Begin()
 		CreateRenderTarget();
 	}
 
-	context->GetPd3dDeviceContext()->OMSetRenderTargets(1, &m_Data.m_MainRenderTargetView, nullptr);
+	context->GetPd3dDeviceContext()->OMSetRenderTargets(1, pig::U_PtrToPtr<ID3D11RenderTargetView, pig::ReleaseDeleter>(m_Data.m_MainRenderTargetView), nullptr);
 	Clear();
 
 	D3D11_VIEWPORT viewport;
@@ -67,7 +68,7 @@ void pig::Dx11RendererAPI::End()
 void pig::Dx11RendererAPI::Clear()
 {
 	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
-	context->GetPd3dDeviceContext()->ClearRenderTargetView(m_Data.m_MainRenderTargetView, m_Data.m_ClearColor);
+	context->GetPd3dDeviceContext()->ClearRenderTargetView(m_Data.m_MainRenderTargetView.get(), m_Data.m_ClearColor);
 }
 
 void pig::Dx11RendererAPI::DrawIndexed(unsigned int count)

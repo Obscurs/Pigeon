@@ -53,9 +53,9 @@ void pig::Dx11Context::ResizeBuffers()
 
 void pig::Dx11Context::CleanupDeviceD3D()
 {
-	if (m_Data.m_PSwapChain) { m_Data.m_PSwapChain->Release(); m_Data.m_PSwapChain = nullptr; }
-	if (m_Data.m_Pd3dDeviceContext) { m_Data.m_Pd3dDeviceContext->Release(); m_Data.m_Pd3dDeviceContext = nullptr; }
-	if (m_Data.m_Pd3dDevice) { m_Data.m_Pd3dDevice->Release(); m_Data.m_Pd3dDevice = nullptr; }
+	if (m_Data.m_PSwapChain) { m_Data.m_PSwapChain.reset(); }
+	if (m_Data.m_Pd3dDeviceContext) { m_Data.m_Pd3dDeviceContext.reset(); }
+	if (m_Data.m_Pd3dDevice) { m_Data.m_Pd3dDevice.reset(); }
 	m_Data.m_HWnd = nullptr;
 }
 
@@ -82,11 +82,19 @@ bool pig::Dx11Context::CreateDeviceD3D(HWND hWnd)
 	//createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
 	D3D_FEATURE_LEVEL featureLevel;
 	const D3D_FEATURE_LEVEL featureLevelArray[2] = { D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_0, };
-	HRESULT res = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, createDeviceFlags, featureLevelArray, 2, D3D11_SDK_VERSION, &sd, &m_Data.m_PSwapChain, &m_Data.m_Pd3dDevice, &featureLevel, &m_Data.m_Pd3dDeviceContext);
+	
+	ID3D11Device* pd3dDevice = nullptr;
+	ID3D11DeviceContext* pd3dDeviceContext = nullptr;
+	IDXGISwapChain* pSwapChain = nullptr;
+
+	HRESULT res = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, createDeviceFlags, featureLevelArray, 2, D3D11_SDK_VERSION, &sd, &pSwapChain, &pd3dDevice, &featureLevel, &pd3dDeviceContext);
 	if (res == DXGI_ERROR_UNSUPPORTED) // Try high-performance WARP software driver if hardware is not available.
-		res = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_WARP, nullptr, createDeviceFlags, featureLevelArray, 2, D3D11_SDK_VERSION, &sd, &m_Data.m_PSwapChain, &m_Data.m_Pd3dDevice, &featureLevel, &m_Data.m_Pd3dDeviceContext);
+		res = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_WARP, nullptr, createDeviceFlags, featureLevelArray, 2, D3D11_SDK_VERSION, &sd, &pSwapChain, &pd3dDevice, &featureLevel, &pd3dDeviceContext);
 	if (res != S_OK)
 		return false;
 
+	m_Data.m_PSwapChain.reset(pSwapChain);
+	m_Data.m_Pd3dDeviceContext.reset(pd3dDeviceContext);
+	m_Data.m_Pd3dDevice.reset(pd3dDevice);
 	return true;
 }

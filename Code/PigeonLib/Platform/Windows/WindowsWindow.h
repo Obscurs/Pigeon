@@ -48,7 +48,7 @@ namespace pig
 		bool IsVSync() const override { return false; };
 
 		inline virtual void* GetNativeWindow() const { return m_Window; }
-		inline virtual void* GetGraphicsContext() const { return m_Context; }
+		inline virtual void* GetGraphicsContext() const { return m_Context.get(); }
 
 #ifdef TESTS_ENABLED
 		static void SendFakeEvent(EventType type, WPARAM wParam, LPARAM lParam);
@@ -70,7 +70,7 @@ namespace pig
 		static void ProcessWindowResizeEvent(LPARAM lParam);
 		static bool ProcessWindowDestroyEvent();
 
-		GraphicsContext* m_Context = nullptr;
+		pig::U_Ptr<GraphicsContext> m_Context = nullptr;
 		HWND m_Window = nullptr;
 
 		static WindowData m_WindowData;

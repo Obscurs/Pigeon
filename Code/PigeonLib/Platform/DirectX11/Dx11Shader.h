@@ -13,9 +13,9 @@ namespace pig
 	public:
 		struct Data
 		{
-			ID3D11InputLayout* m_InputLayout = nullptr;
-			ID3D11VertexShader* m_VertexShader = nullptr;
-			ID3D11PixelShader* m_PixelShader = nullptr;
+			pig::U_Ptr<ID3D11InputLayout, pig::ReleaseDeleter> m_InputLayout = nullptr;
+			pig::U_Ptr<ID3D11VertexShader, pig::ReleaseDeleter> m_VertexShader = nullptr;
+			pig::U_Ptr<ID3D11PixelShader, pig::ReleaseDeleter> m_PixelShader = nullptr;
 		};
 #ifdef TESTS_ENABLED
 		const Data& GetData() const { return m_Data; }

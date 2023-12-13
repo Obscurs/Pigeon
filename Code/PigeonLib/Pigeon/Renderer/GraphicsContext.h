@@ -9,7 +9,7 @@ namespace pig
 	class GraphicsContext
 	{
 	public:
-		static GraphicsContext* Create(const WindowsWindow* window);
+		static pig::U_Ptr<GraphicsContext> Create(const WindowsWindow* window);
 
 		virtual void Shutdown() = 0;
 		virtual void Init() = 0;

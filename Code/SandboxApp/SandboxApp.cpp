@@ -73,15 +73,15 @@ namespace
 			m_Camera(-1.6f, 1.6f, -0.9f, 0.9f),
 			m_CameraPosition(0.0f)
 		{
-			m_VertexBuffer.reset(pig::VertexBuffer::Create(s_OurVertices, sizeof(s_OurVertices)));
-			m_IndexBuffer.reset(pig::IndexBuffer::Create(s_Indices, sizeof(s_Indices) / sizeof(uint32_t)));
+			m_VertexBuffer = std::move(pig::VertexBuffer::Create(s_OurVertices, sizeof(s_OurVertices)));
+			m_IndexBuffer = std::move(pig::IndexBuffer::Create(s_Indices, sizeof(s_Indices) / sizeof(uint32_t)));
 
 			pig::BufferLayout buffLayout = {
 				{ pig::ShaderDataType::Float3, "POSITION" },
 				{ pig::ShaderDataType::Float4, "COLOR" }
 			};
 
-			m_Shader.reset(pig::Shader::Create(s_VsCode, s_PsCode, buffLayout));
+			m_Shader = std::move(pig::Shader::Create(s_VsCode, s_PsCode, buffLayout));
 		}
 
 		~ExampleLayer()
@@ -167,9 +167,9 @@ namespace
 			glm::mat4 ViewProjectionMatrix;
 		};
 
-		std::unique_ptr<pig::VertexBuffer> m_VertexBuffer;
-		std::unique_ptr<pig::IndexBuffer> m_IndexBuffer;
-		std::unique_ptr<pig::Shader> m_Shader;
+		std::unique_ptr<pig::VertexBuffer> m_VertexBuffer = nullptr;
+		std::unique_ptr<pig::IndexBuffer> m_IndexBuffer = nullptr;
+		std::unique_ptr<pig::Shader> m_Shader = nullptr;
 
 		pig::OrthographicCamera m_Camera;
 		glm::vec3 m_CameraPosition;

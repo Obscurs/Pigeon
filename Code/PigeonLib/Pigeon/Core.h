@@ -29,9 +29,43 @@
 
 namespace pig
 {
-	template<typename T>
-	using U_Ptr = std::unique_ptr<T>;
+	template<typename T, typename Deleter = std::default_delete<T>>
+	using U_Ptr = std::unique_ptr<T, Deleter>;
+
+	//TODO? Move this funcs elsewhere
+	struct ReleaseDeleter {
+		template<typename T>
+		void operator()(T* ptr) const {
+			if (ptr) ptr->Release();
+		}
+	};
+
+	template<typename T, typename Deleter = std::default_delete<T>>
+	std::function<T** (std::unique_ptr<T, Deleter>&)> U_PtrToPtr = [](std::unique_ptr<T, Deleter>& uniquePtr) {
+		static T* rawPtr = nullptr;
+		rawPtr = uniquePtr.get();
+		return &rawPtr;
+		};
+
+	template <typename T>
+	class RAII_Ptr {
+	public:
+		RAII_Ptr() : value(nullptr) {}
+		RAII_Ptr(T* val) : value(val) {}
+		~RAII_Ptr() { if(value) delete value;}
+		T* value;
+	};
+
+	template <typename T>
+	class RAII_PtrRelease {
+	public:
+		RAII_PtrRelease() : value(nullptr) {}
+		RAII_PtrRelease(T* val) : value(val) {}
+		~RAII_PtrRelease() { if (value) value->Release(); }
+		T* value;
+	};
 
 	template<typename T>
 	using S_Ptr = std::shared_ptr<T>;
+	
 }

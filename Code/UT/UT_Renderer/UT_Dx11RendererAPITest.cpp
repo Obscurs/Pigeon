@@ -123,7 +123,7 @@ namespace CatchTestsetFail
 	{
 		pig::S_Ptr<pig::Application> app = pig::CreateApplication();
 
-		const pig::Dx11RendererAPI* rendererAPI = static_cast<const pig::Dx11RendererAPI*>(pig::RenderCommand::GetRenderAPI());
+		const pig::S_Ptr<pig::Dx11RendererAPI> rendererAPI = std::dynamic_pointer_cast<pig::Dx11RendererAPI>(pig::RenderCommand::GetRenderAPI());
 		CHECK(rendererAPI->GetAPI() == pig::RendererAPI::API::DirectX11);
 		CHECK(!rendererAPI->GetData().m_Initialized); //Not initialized until first frame;
 		CHECK(rendererAPI->GetData().m_MainRenderTargetView == nullptr);
@@ -185,48 +185,41 @@ namespace CatchTestsetFail
 
 		SECTION("Vertex buffer")
 		{
-			pig::VertexBuffer* vertexBuffer = pig::VertexBuffer::Create(s_OurVertices, sizeof(s_OurVertices));
-			pig::Dx11VertexBuffer* dxVB = static_cast<pig::Dx11VertexBuffer*>(vertexBuffer);
+			pig::U_Ptr<pig::VertexBuffer> vertexBuffer = std::move(pig::VertexBuffer::Create(s_OurVertices, sizeof(s_OurVertices)));
+			pig::Dx11VertexBuffer* dxVB = static_cast<pig::Dx11VertexBuffer*>(vertexBuffer.get());
 			CHECK(dxVB->GetData().m_Buffer != nullptr);
 			dxVB->Bind();
 			dxVB->Unbind();
-			delete vertexBuffer;
 		}
 		SECTION("Index buffer")
 		{
-			pig::IndexBuffer* indexBuffer = pig::IndexBuffer::Create(s_Indices, sizeof(s_Indices) / sizeof(uint32_t));
-			pig::Dx11IndexBuffer* dxIB = static_cast<pig::Dx11IndexBuffer*>(indexBuffer);
+			pig::U_Ptr<pig::IndexBuffer> indexBuffer = std::move(pig::IndexBuffer::Create(s_Indices, sizeof(s_Indices) / sizeof(uint32_t)));
+			pig::Dx11IndexBuffer* dxIB = static_cast<pig::Dx11IndexBuffer*>(indexBuffer.get());
 			CHECK(dxIB->GetData().m_Buffer != nullptr);
 			CHECK(dxIB->GetCount() == 3);
 			dxIB->Bind();
 			dxIB->Unbind();
-			delete indexBuffer;
 		}
 		SECTION("Constant buffer")
 		{
 			CBDataInvalid dataInvalid;
-			pig::Dx11ConstantBuffer<CBDataInvalid>* constantBufferInvalid = new pig::Dx11ConstantBuffer<CBDataInvalid>(&dataInvalid);
+			pig::U_Ptr<pig::Dx11ConstantBuffer<CBDataInvalid>> constantBufferInvalid = std::make_unique<pig::Dx11ConstantBuffer<CBDataInvalid>>(&dataInvalid);
 			CHECK(constantBufferInvalid->GetData().m_Buffer == nullptr); //Error creating, invalid alignment
 
 			CBData0 data;
-			pig::Dx11ConstantBuffer<CBData0>* constantBuffer = new pig::Dx11ConstantBuffer<CBData0>(&data);
+			pig::U_Ptr<pig::Dx11ConstantBuffer<CBData0>> constantBuffer = std::make_unique<pig::Dx11ConstantBuffer<CBData0>>(&data);
 			CHECK(constantBuffer->GetData().m_Buffer != nullptr);
 			constantBuffer->Bind(0);
 
 			CBData1 data1;
-			pig::Dx11ConstantBuffer<CBData1>* constantBuffer1 = new pig::Dx11ConstantBuffer<CBData1>(&data1);
+			pig::U_Ptr<pig::Dx11ConstantBuffer<CBData1>> constantBuffer1 =std::make_unique<pig::Dx11ConstantBuffer<CBData1>>(&data1);
 			CHECK(constantBuffer1->GetData().m_Buffer != nullptr);
 			constantBuffer1->Bind(0);
 
 			CBData2 data2;
-			pig::Dx11ConstantBuffer<CBData2>* constantBuffer2 = new pig::Dx11ConstantBuffer<CBData2>(&data2);
+			pig::U_Ptr<pig::Dx11ConstantBuffer<CBData2>> constantBuffer2 = std::make_unique<pig::Dx11ConstantBuffer<CBData2>>(&data2);
 			CHECK(constantBuffer2->GetData().m_Buffer != nullptr);
 			constantBuffer2->Bind(0);
-
-			delete constantBufferInvalid;
-			delete constantBuffer;
-			delete constantBuffer1;
-			delete constantBuffer2;
 		}
 	}
 
@@ -236,15 +229,13 @@ namespace CatchTestsetFail
 
 		pig::Dx11Context* dx11Context = static_cast<pig::Dx11Context*>(app->GetWindow().GetGraphicsContext());
 
-		pig::Shader* shader;
-
 		pig::BufferLayout buffLayout = {
 			{ pig::ShaderDataType::Float3, "POSITION" },
 			{ pig::ShaderDataType::Float4, "COLOR" }
 		};
 
-		shader = pig::Shader::Create(s_VsCode, s_PsCode, buffLayout);
-		pig::Dx11Shader* dxShader = static_cast<pig::Dx11Shader*>(shader);
+		pig::U_Ptr<pig::Shader> shader = std::move(pig::Shader::Create(s_VsCode, s_PsCode, buffLayout));
+		pig::Dx11Shader* dxShader = static_cast<pig::Dx11Shader*>(shader.get());
 
 		CHECK(dxShader->GetData().m_InputLayout != nullptr);
 		CHECK(dxShader->GetData().m_PixelShader != nullptr);
@@ -318,7 +309,6 @@ namespace CatchTestsetFail
 		CHECK(projMat == glm::ortho(ortoValues.x, ortoValues.y, ortoValues.z, ortoValues.w, -1.0f, 1.0f));
 		CHECK(viewMat == inverseTransform);
 		CHECK(projViewMat == glm::ortho(ortoValues.x, ortoValues.y, ortoValues.z, ortoValues.w, -1.0f, 1.0f) * inverseTransform);
-
 	}
 } // End namespace: CatchTestsetFail
 

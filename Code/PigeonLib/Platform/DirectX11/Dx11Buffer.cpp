@@ -20,14 +20,14 @@ pig::Dx11VertexBuffer::Dx11VertexBuffer(float* vertices, uint32_t size)
 	initData.pSysMem = vertices;
 
 	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
-	context->GetPd3dDevice()->CreateBuffer(&bd, &initData, &m_Data.m_Buffer);
+	ID3D11Buffer* buffer = nullptr;
+	context->GetPd3dDevice()->CreateBuffer(&bd, &initData, &buffer);
+	m_Data.m_Buffer.reset(buffer);
 }
 
 pig::Dx11VertexBuffer::~Dx11VertexBuffer()
 {
 	Unbind();
-	if (m_Data.m_Buffer)
-		m_Data.m_Buffer->Release();
 }
 
 void pig::Dx11VertexBuffer::Bind() const
@@ -35,7 +35,8 @@ void pig::Dx11VertexBuffer::Bind() const
 	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
 	const UINT offset = 0;
 	const UINT stride = sizeof(float) * 7;
-	context->GetPd3dDeviceContext()->IASetVertexBuffers(0, 1, &m_Data.m_Buffer, &stride, &offset);
+	ID3D11Buffer* buffer = m_Data.m_Buffer.get();
+	context->GetPd3dDeviceContext()->IASetVertexBuffers(0, 1, &buffer, &stride, &offset);
 }
 
 void pig::Dx11VertexBuffer::Unbind() const
@@ -64,20 +65,20 @@ pig::Dx11IndexBuffer::Dx11IndexBuffer(uint32_t* indices, uint32_t count)
 	iinitData.pSysMem = indices;
 
 	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
-	context->GetPd3dDevice()->CreateBuffer(&ibd, &iinitData, &m_Data.m_Buffer);
+	ID3D11Buffer* buffer = nullptr;
+	context->GetPd3dDevice()->CreateBuffer(&ibd, &iinitData, &buffer);
+	m_Data.m_Buffer.reset(buffer);
 }
 
 pig::Dx11IndexBuffer::~Dx11IndexBuffer()
 {
 	Unbind();
-	if (m_Data.m_Buffer)
-		m_Data.m_Buffer->Release();
 }
 
 void pig::Dx11IndexBuffer::Bind() const
 {
 	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
-	context->GetPd3dDeviceContext()->IASetIndexBuffer(m_Data.m_Buffer, DXGI_FORMAT_R32_UINT, 0);
+	context->GetPd3dDeviceContext()->IASetIndexBuffer(m_Data.m_Buffer.get(), DXGI_FORMAT_R32_UINT, 0);
 }
 
 void pig::Dx11IndexBuffer::Unbind() const

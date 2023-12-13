@@ -14,9 +14,9 @@ static bool s_WindowInitialized = false;
 
 pig::WindowsWindow::WindowData pig::WindowsWindow::m_WindowData;
 
-pig::Window* pig::Window::Create(const pig::WindowProps& props)
+pig::U_Ptr<pig::Window> pig::Window::Create(const pig::WindowProps& props)
 {
-	return new pig::WindowsWindow(props);
+	return std::make_unique<pig::WindowsWindow>(props);
 }
 
 pig::WindowsWindow::WindowsWindow(const pig::WindowProps& props)
@@ -65,7 +65,7 @@ void pig::WindowsWindow::Init(const pig::WindowProps& props)
 		// You might want to convert it to a human-readable error message.
 	}
 
-	m_Context = pig::GraphicsContext::Create(this);
+	m_Context = std::move(pig::GraphicsContext::Create(this));
 	m_Context->Init();
 	m_Context->SetSize(props.Width, props.Height);
 

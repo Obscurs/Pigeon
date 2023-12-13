@@ -11,7 +11,7 @@ namespace pig
 	public:
 		struct Data
 		{
-			ID3D11RenderTargetView* m_MainRenderTargetView = nullptr;
+			pig::U_Ptr<ID3D11RenderTargetView, pig::ReleaseDeleter> m_MainRenderTargetView = nullptr;
 
 			float m_ClearColor[4] = { 1.f, 1.f, 1.f, 1.f };
 			bool m_Initialized = false;

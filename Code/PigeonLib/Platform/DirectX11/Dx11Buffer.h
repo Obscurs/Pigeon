@@ -10,7 +10,7 @@ namespace pig
 	public:
 		struct Data
 		{
-			ID3D11Buffer* m_Buffer = nullptr;
+			pig::U_Ptr<ID3D11Buffer, pig::ReleaseDeleter> m_Buffer = nullptr;
 		};
 
 		Dx11VertexBuffer(float* vertices, uint32_t size);
@@ -32,7 +32,7 @@ namespace pig
 	public:
 		struct Data
 		{
-			ID3D11Buffer* m_Buffer = nullptr;
+			pig::U_Ptr<ID3D11Buffer, pig::ReleaseDeleter> m_Buffer = nullptr;
 			uint32_t m_Count;
 		};
 
@@ -57,7 +57,7 @@ namespace pig
 	public:
 		struct Data
 		{
-			ID3D11Buffer* m_Buffer = nullptr;
+			pig::U_Ptr<ID3D11Buffer, pig::ReleaseDeleter> m_Buffer = nullptr;
 		};
 
 		Dx11ConstantBuffer(T* data)
@@ -72,13 +72,11 @@ namespace pig
 			initData.pSysMem = data;
 
 			auto context = static_cast<Dx11Context*>(Application::Get().GetWindow().GetGraphicsContext());
-			context->GetPd3dDevice()->CreateBuffer(&bd, &initData, &m_Data.m_Buffer);
+			ID3D11Buffer* buffer = nullptr;
+			context->GetPd3dDevice()->CreateBuffer(&bd, &initData, &buffer);
+			m_Data.m_Buffer.reset(buffer);
 		}
-		~Dx11ConstantBuffer()
-		{
-			if (m_Data.m_Buffer)
-				m_Data.m_Buffer->Release();
-		}
+		~Dx11ConstantBuffer() = default;
 
 #ifdef TESTS_ENABLED
 		const Data& GetData() const { return m_Data; }
@@ -87,7 +85,8 @@ namespace pig
 		void Bind(UINT slot)
 		{
 			auto context = static_cast<Dx11Context*>(Application::Get().GetWindow().GetGraphicsContext());
-			context->GetPd3dDeviceContext()->VSSetConstantBuffers(slot, 1, &m_Data.m_Buffer);
+			ID3D11Buffer* buffer = m_Data.m_Buffer.get();
+			context->GetPd3dDeviceContext()->VSSetConstantBuffers(slot, 1, &buffer);
 		}
 
 	private:

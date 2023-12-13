@@ -43,7 +43,7 @@ namespace pig {
 		virtual void* GetNativeWindow() const = 0;
 		virtual void* GetGraphicsContext() const = 0;
 
-		static Window* Create(const WindowProps& props = WindowProps());
+		static pig::U_Ptr<Window> Create(const WindowProps& props = WindowProps());
 	};
 
 }

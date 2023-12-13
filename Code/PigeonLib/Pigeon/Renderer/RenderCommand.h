@@ -8,7 +8,7 @@ namespace pig
 	{
 	public:
 #ifdef TESTS_ENABLED
-		static const RendererAPI* GetRenderAPI() { return s_RendererAPI; }
+		static const pig::S_Ptr<RendererAPI> GetRenderAPI() { return s_RendererAPI; }
 #endif
 
 		inline static void SetClearColor(const glm::vec4& color)
@@ -36,7 +36,7 @@ namespace pig
 			s_RendererAPI->DrawIndexed(count);
 		}
 	private:
-		static RendererAPI* s_RendererAPI;
+		static pig::S_Ptr<RendererAPI> s_RendererAPI;
 	};
 
 }

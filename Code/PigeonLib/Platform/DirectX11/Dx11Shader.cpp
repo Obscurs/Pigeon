@@ -68,60 +68,51 @@ namespace
 
 pig::Dx11Shader::Dx11Shader(const char* vertexSrc, const char* fragmentSrc, const pig::BufferLayout& buffLayout)
 {
-	bool success = true;
-	ID3D10Blob* errorBlob;
-	ID3D10Blob* vsBlob;
-	ID3D10Blob* psBlob;
+	pig::RAII_PtrRelease<ID3D10Blob> errorBlob;
+	pig::RAII_PtrRelease<ID3D10Blob> vsBlob;
+	pig::RAII_PtrRelease<ID3D10Blob> psBlob;
 	// Compile vertex shader
-	if (FAILED(D3DCompile(vertexSrc, strlen(vertexSrc), nullptr, nullptr, nullptr, "main", "vs_5_0", 0, 0, &vsBlob, &errorBlob))) {
+	if (FAILED(D3DCompile(vertexSrc, strlen(vertexSrc), nullptr, nullptr, nullptr, "main", "vs_5_0", 0, 0, &vsBlob.value, &errorBlob.value))) {
 		// Handle errors
-		if (errorBlob) {
-			OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-			errorBlob->Release();
-			success = false;
+		if (errorBlob.value) {
+			OutputDebugStringA((char*)errorBlob.value->GetBufferPointer());
+			PG_CORE_ERROR("Failed to compile shaders!");
+			return;
 		}
-		// Handle further error
 	}
 
 	// Compile pixel shader
-	if (FAILED(D3DCompile(fragmentSrc, strlen(fragmentSrc), nullptr, nullptr, nullptr, "main", "ps_5_0", 0, 0, &psBlob, &errorBlob))) {
+	if (FAILED(D3DCompile(fragmentSrc, strlen(fragmentSrc), nullptr, nullptr, nullptr, "main", "ps_5_0", 0, 0, &psBlob.value, &errorBlob.value))) {
 		// Handle errors
-		if (errorBlob) {
-			OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-			errorBlob->Release();
-			success = false;
+		if (errorBlob.value) {
+			OutputDebugStringA((char*)errorBlob.value->GetBufferPointer());
+			PG_CORE_ERROR("Failed to compile shaders!");
+			return;
 		}
-		// Handle further error
-	}
-	if (success)
-	{
-		auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
-		ID3D11Device* device = context->GetPd3dDevice();
-
-		device->CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, &m_Data.m_VertexShader);
-		device->CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), nullptr, &m_Data.m_PixelShader);
-
-		SetLayout(buffLayout);
-
-		std::vector<D3D11_INPUT_ELEMENT_DESC> layoutDesc;
-		BufferLayoutToDx11InputDesc(buffLayout, layoutDesc);
-
-		device->CreateInputLayout(layoutDesc.data(), layoutDesc.size(), vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &m_Data.m_InputLayout);
 	}
 
-	vsBlob->Release();
-	psBlob->Release();
+	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
+	ID3D11Device* device = context->GetPd3dDevice();
 
-	PG_CORE_ASSERT(success, "Failed to compile shaders!");
+	ID3D11VertexShader* vs = nullptr;
+	ID3D11PixelShader* ps = nullptr;
+	device->CreateVertexShader(vsBlob.value->GetBufferPointer(), vsBlob.value->GetBufferSize(), nullptr, &vs);
+	m_Data.m_VertexShader.reset(vs);
+	device->CreatePixelShader(psBlob.value->GetBufferPointer(), psBlob.value->GetBufferSize(), nullptr, &ps);
+	m_Data.m_PixelShader.reset(ps);
+	SetLayout(buffLayout);
+
+	std::vector<D3D11_INPUT_ELEMENT_DESC> layoutDesc;
+	BufferLayoutToDx11InputDesc(buffLayout, layoutDesc);
+
+	ID3D11InputLayout* layout = nullptr;
+	device->CreateInputLayout(layoutDesc.data(), layoutDesc.size(), vsBlob.value->GetBufferPointer(), vsBlob.value->GetBufferSize(), &layout);
+	m_Data.m_InputLayout.reset(layout);
 }
 
 pig::Dx11Shader::~Dx11Shader()
 {
 	Unbind();
-
-	if (m_Data.m_InputLayout) { m_Data.m_InputLayout->Release(); m_Data.m_InputLayout = nullptr; }
-	if (m_Data.m_VertexShader) { m_Data.m_VertexShader->Release(); m_Data.m_VertexShader = nullptr; }
-	if (m_Data.m_PixelShader) { m_Data.m_PixelShader->Release(); m_Data.m_PixelShader = nullptr; }
 }
 
 /*glm::mat4 Dx11Shader::ConvertDXMatrixToGLM(const DirectX::XMMATRIX& dxMatrix)
@@ -158,10 +149,10 @@ void pig::Dx11Shader::Bind() const
 	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
 	ID3D11DeviceContext* deviceContext = context->GetPd3dDeviceContext();
 
-	deviceContext->IASetInputLayout(m_Data.m_InputLayout);
+	deviceContext->IASetInputLayout(m_Data.m_InputLayout.get());
 	// Set the vertex and pixel shaders
-	deviceContext->VSSetShader(m_Data.m_VertexShader, nullptr, 0);
-	deviceContext->PSSetShader(m_Data.m_PixelShader, nullptr, 0);
+	deviceContext->VSSetShader(m_Data.m_VertexShader.get(), nullptr, 0);
+	deviceContext->PSSetShader(m_Data.m_PixelShader.get(), nullptr, 0);
 }
 
 void pig::Dx11Shader::Unbind() const
