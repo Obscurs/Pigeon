@@ -24,6 +24,7 @@ file(GLOB RENDERER
     "Pigeon/Renderer/Renderer.cpp"
     "Pigeon/Renderer/RendererAPI.cpp"
     "Pigeon/Renderer/Shader.cpp"
+    "Pigeon/Renderer/Texture.cpp"
 
 )
 
@@ -37,6 +38,11 @@ file(GLOB PLATFORM_DX
     "Platform/DirectX11/Dx11Context.cpp"
     "Platform/DirectX11/Dx11RendererAPI.cpp"
     "Platform/DirectX11/Dx11Shader.cpp"
+    "Platform/DirectX11/Dx11Texture.cpp"
+)
+
+file(GLOB VENDOR
+    "vendor/stb_image/stb_image.cpp"
 )
 
 file(GLOB_RECURSE SRC
@@ -44,6 +50,8 @@ file(GLOB_RECURSE SRC
     "Pigeon/*.h"
     "Platform/*.cpp"
     "Platform/*.h"
+    "vendor/stb_image/*.cpp"
+    "vendor/stb_image/*.h"
 )
 
 source_group("" FILES ${ROOT})
@@ -51,6 +59,7 @@ source_group("Pigeon" FILES ${PG})
 source_group("Pigeon\\ImGui" FILES ${PGIMGUI})
 source_group("Pigeon\\Renderer" FILES ${RENDERER})
 source_group("Platform\\DirectX11" FILES ${PLATFORM_DX})
+source_group("vendor" FILES ${VENDOR})
 # Properties->C/C++->General->Additional Include Directories
 include_directories (
     "${PROJECT_SOURCE_DIR}/Code/PigeonLib"
