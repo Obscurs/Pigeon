@@ -23,7 +23,7 @@ namespace pig
 		std::string m_Path;
 		uint32_t m_Width, m_Height;
 		
-		ComPtr<ID3D11Texture2D> m_Texture;
 		ComPtr<ID3D11ShaderResourceView> m_TextureView;
+		ID3D11SamplerState* m_SamplerState;
 	};
 }

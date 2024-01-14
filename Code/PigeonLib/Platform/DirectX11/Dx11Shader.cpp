@@ -10,10 +10,33 @@
 
 namespace
 {
+	struct IntBufferType
+	{
+		int data;
+		int padding[3] = { 0, 0, 0 }; // Padding to align to 16 bytes
+	};
+
+	struct FloatBufferType
+	{
+		float data;
+		float padding[3] = { 0.f, 0.f, 0.f }; // Padding to align to 16 bytes
+	};
+
+	struct Vector2BufferType
+	{
+		DirectX::XMFLOAT2 data;
+		float padding[2] = { 0.f, 0.f}; // Padding to align to 16 bytes
+	};
+
 	struct Vector3BufferType
 	{
-		DirectX::XMFLOAT3 myVector;
-		float padding; // Padding to align to 16 bytes
+		DirectX::XMFLOAT3 data;
+		float padding = 0.f; // Padding to align to 16 bytes
+	};
+
+	struct Vector4BufferType
+	{
+		DirectX::XMFLOAT4 data;
 	};
 
 	static unsigned int GetConstantBufferSlot(std::string name)
@@ -76,7 +99,7 @@ pig::Dx11Shader::Dx11Shader(const char* vertexSrc, const char* fragmentSrc, cons
 		// Handle errors
 		if (errorBlob.value) {
 			OutputDebugStringA((char*)errorBlob.value->GetBufferPointer());
-			PG_CORE_ERROR("Failed to compile shaders!");
+			PG_CORE_ERROR("Failed to compile vertex shaders!");
 			return;
 		}
 	}
@@ -86,7 +109,7 @@ pig::Dx11Shader::Dx11Shader(const char* vertexSrc, const char* fragmentSrc, cons
 		// Handle errors
 		if (errorBlob.value) {
 			OutputDebugStringA((char*)errorBlob.value->GetBufferPointer());
-			PG_CORE_ERROR("Failed to compile shaders!");
+			PG_CORE_ERROR("Failed to compile fragment shaders!");
 			return;
 		}
 	}
@@ -167,24 +190,44 @@ void pig::Dx11Shader::Unbind() const
 
 void pig::Dx11Shader::UploadUniformInt(const std::string& name, int value) const
 {
-	//TODO
+	IntBufferType vectorData;
+	vectorData.data = value;
+
+	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
+	ID3D11DeviceContext* deviceContext = context->GetPd3dDeviceContext();
+
+	pig::Dx11ConstantBuffer<IntBufferType> buffer(&vectorData);
+	buffer.Bind(GetConstantBufferSlot(name));
 }
 
 void pig::Dx11Shader::UploadUniformFloat(const std::string& name, float value) const
 {
-	//TODO
+	FloatBufferType vectorData;
+	vectorData.data = value;
+
+	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
+	ID3D11DeviceContext* deviceContext = context->GetPd3dDeviceContext();
+
+	pig::Dx11ConstantBuffer<FloatBufferType> buffer(&vectorData);
+	buffer.Bind(GetConstantBufferSlot(name));
 }
 
 void pig::Dx11Shader::UploadUniformFloat2(const std::string& name, const glm::vec2& value) const
 {
-	//TODO
+	Vector2BufferType vectorData;
+	vectorData.data = DirectX::XMFLOAT2(value.x, value.y);
+
+	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
+	ID3D11DeviceContext* deviceContext = context->GetPd3dDeviceContext();
+
+	pig::Dx11ConstantBuffer<Vector2BufferType> buffer(&vectorData);
+	buffer.Bind(GetConstantBufferSlot(name));
 }
 
 void pig::Dx11Shader::UploadUniformFloat3(const std::string& name, const glm::vec3& value) const
 {
 	Vector3BufferType vectorData;
-	vectorData.myVector = DirectX::XMFLOAT3(value.x, value.y, value.z);
-	vectorData.padding = 0.0f; // Set padding to a defined value
+	vectorData.data = DirectX::XMFLOAT3(value.x, value.y, value.z);
 
 	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
 	ID3D11DeviceContext* deviceContext = context->GetPd3dDeviceContext();
@@ -195,12 +238,24 @@ void pig::Dx11Shader::UploadUniformFloat3(const std::string& name, const glm::ve
 
 void pig::Dx11Shader::UploadUniformFloat4(const std::string& name, const glm::vec4& value) const
 {
-	//TODO
+	Vector4BufferType vectorData;
+	vectorData.data = DirectX::XMFLOAT4(value.x, value.y, value.z, value.w);
+
+	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
+	ID3D11DeviceContext* deviceContext = context->GetPd3dDeviceContext();
+
+	pig::Dx11ConstantBuffer<Vector4BufferType> buffer(&vectorData);
+	buffer.Bind(GetConstantBufferSlot(name));
 }
 
 void pig::Dx11Shader::UploadUniformMat3(const std::string& name, const glm::mat3& matrix) const
 {
-	//TODO
+	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
+	ID3D11DeviceContext* deviceContext = context->GetPd3dDeviceContext();
+
+	DirectX::XMMATRIX mat = ConvertGLMMatrixToDX(matrix);
+	pig::Dx11ConstantBuffer<DirectX::XMMATRIX> buffer(&mat);
+	buffer.Bind(GetConstantBufferSlot(name));
 }
 
 void pig::Dx11Shader::UploadUniformMat4(const std::string& name, const glm::mat4& matrix) const

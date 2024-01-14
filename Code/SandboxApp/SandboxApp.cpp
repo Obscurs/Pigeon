@@ -6,6 +6,7 @@
 #include "imgui/imgui.h"
 
 #include "Pigeon/Renderer/OrthographicCamera.h"
+#include "Pigeon/Renderer/Texture.h"
 namespace
 {
 	char* s_VsCode =
@@ -56,6 +57,55 @@ namespace
 		"    return input.Col; // Output the interpolated color\n"
 		"};";
 
+	std::string s_TextureVsCode = R"(
+		cbuffer MatrixBuffer : register(b0)
+		{
+			matrix u_ViewProjection;
+		};
+
+		cbuffer MatrixBuffer : register(b1)
+		{
+			matrix u_Transform;
+		};
+
+		struct VS_INPUT
+		{
+			float3 a_Position : POSITION;
+			float2 a_TexCoord : TEXCOORD;
+		};
+
+		struct PS_INPUT
+		{
+			float4 Position : SV_POSITION;
+			float2 TexCoord : TEXCOORD;
+		};
+
+		PS_INPUT main(VS_INPUT input)
+		{
+			PS_INPUT output;
+			output.TexCoord = input.a_TexCoord;
+			output.Position = mul(float4(input.a_Position, 1.f), u_Transform);
+			output.Position = mul(output.Position, u_ViewProjection);
+			return output;
+		}
+	)";
+
+	std::string s_TexturePsCode = R"(
+		Texture2D u_Texture : register(t0);
+		SamplerState u_Sampler : register(s0);
+
+		struct PS_INPUT
+		{
+			float4 Position : SV_POSITION;
+			float2 TexCoord : TEXCOORD;
+		};
+
+		float4 main(PS_INPUT input) : SV_TARGET
+		{
+			return u_Texture.Sample(u_Sampler, input.TexCoord);
+		}
+	)";
+
 
 	/*float s_OurVertices[3 * 7] = {
 		 0.0f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
@@ -90,11 +140,14 @@ namespace
 			};
 
 			m_Shader = std::move(pig::Shader::Create(s_VsCode, s_PsCode, buffLayout));
+			m_ShaderTexture = std::move(pig::Shader::Create(s_TextureVsCode.c_str(), s_TexturePsCode.c_str(), buffLayout));
+			m_Texture = pig::Texture2D::Create("Assets/Textures/chess.png");
 		}
 
 		~ExampleLayer()
 		{
 			m_Shader.reset();
+			m_ShaderTexture.reset();
 
 			m_VertexBuffer.reset();
 			m_IndexBuffer.reset();
@@ -126,25 +179,42 @@ namespace
 			m_Camera.SetRotation(m_CameraRotation);
 
 			pig::Renderer::BeginScene();
+
 			m_SceneData.ViewProjectionMatrix = m_Camera.GetViewProjectionMatrix();
 
 			m_VertexBuffer->Bind();
 			m_IndexBuffer->Bind();
-			m_Shader->Bind();
-			m_Shader->UploadUniformMat4("u_ViewProjection", m_SceneData.ViewProjectionMatrix);
-			m_Shader->UploadUniformFloat3("u_Color", m_SquareColor);
 
-			glm::mat4 scale = glm::scale(glm::mat4(1.f), glm::vec3(0.07f));
-			for (int y = -10; y < 10; y++)
+			//DRAW GRID
 			{
-				for (int x = -10; x < 10; x++)
+				m_Shader->Bind();
+				m_Shader->UploadUniformMat4("u_ViewProjection", m_SceneData.ViewProjectionMatrix);
+				m_Shader->UploadUniformFloat3("u_Color", m_SquareColor);
+
+				glm::mat4 scale = glm::scale(glm::mat4(1.f), glm::vec3(0.07f));
+				for (int y = -10; y < 10; y++)
 				{
-					glm::vec3 pos(x *0.11f, y * 0.11f, 0.f);
-					glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos) * scale;
-					m_Shader->UploadUniformMat4("u_Transform", transform);
-					pig::Renderer::Submit(6);
+					for (int x = -10; x < 10; x++)
+					{
+						glm::vec3 pos(x * 0.11f, y * 0.11f, 0.f);
+						glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos) * scale;
+						m_Shader->UploadUniformMat4("u_Transform", transform);
+						pig::Renderer::Submit(6);
+					}
 				}
 			}
+			//DRAW TEXTURE
+			{
+				m_ShaderTexture->Bind();
+				m_ShaderTexture->UploadUniformMat4("u_ViewProjection", m_SceneData.ViewProjectionMatrix);
+				glm::vec3 pos(0.f, 0.f, 0.f);
+				glm::mat4 scale = glm::scale(glm::mat4(1.f), glm::vec3(1.f));
+				glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos) * scale;
+				m_ShaderTexture->UploadUniformMat4("u_Transform", transform);
+				m_Texture->Bind(0);
+				pig::Renderer::Submit(6);
+			}
+
 			pig::Renderer::EndScene();
 
 			//if (pigeon::Input::IsKeyPressed(PG_KEY_TAB))
@@ -178,6 +248,9 @@ namespace
 		std::unique_ptr<pig::VertexBuffer> m_VertexBuffer = nullptr;
 		std::unique_ptr<pig::IndexBuffer> m_IndexBuffer = nullptr;
 		std::unique_ptr<pig::Shader> m_Shader = nullptr;
+
+		std::unique_ptr<pig::Shader> m_ShaderTexture = nullptr;
+		pig::U_Ptr<pig::Texture2D> m_Texture;
 
 		pig::OrthographicCamera m_Camera;
 		glm::vec3 m_CameraPosition;
