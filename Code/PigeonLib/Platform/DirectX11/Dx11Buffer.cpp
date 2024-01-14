@@ -8,7 +8,7 @@
 // VertexBuffer /////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 
-pig::Dx11VertexBuffer::Dx11VertexBuffer(float* vertices, uint32_t size)
+pig::Dx11VertexBuffer::Dx11VertexBuffer(float* vertices, uint32_t size, uint32_t stride)
 {
 	D3D11_BUFFER_DESC bd = { 0 };
 	bd.Usage = D3D11_USAGE_DEFAULT;
@@ -23,6 +23,7 @@ pig::Dx11VertexBuffer::Dx11VertexBuffer(float* vertices, uint32_t size)
 	ID3D11Buffer* buffer = nullptr;
 	context->GetPd3dDevice()->CreateBuffer(&bd, &initData, &buffer);
 	m_Data.m_Buffer.reset(buffer);
+	m_Data.m_Stride = stride;
 }
 
 pig::Dx11VertexBuffer::~Dx11VertexBuffer()
@@ -34,7 +35,7 @@ void pig::Dx11VertexBuffer::Bind() const
 {
 	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
 	const UINT offset = 0;
-	const UINT stride = sizeof(float) * 7;
+	const UINT stride = m_Data.m_Stride;
 	ID3D11Buffer* buffer = m_Data.m_Buffer.get();
 	context->GetPd3dDeviceContext()->IASetVertexBuffers(0, 1, &buffer, &stride, &offset);
 }
@@ -57,7 +58,7 @@ pig::Dx11IndexBuffer::Dx11IndexBuffer(uint32_t* indices, uint32_t count)
 	m_Data.m_Count = count;
 	D3D11_BUFFER_DESC ibd = { 0 };
 	ibd.Usage = D3D11_USAGE_DEFAULT;
-	ibd.ByteWidth = sizeof(DWORD) * 3; // Number of indices
+	ibd.ByteWidth = sizeof(DWORD) * count; // Number of indices
 	ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	ibd.CPUAccessFlags = 0;
 

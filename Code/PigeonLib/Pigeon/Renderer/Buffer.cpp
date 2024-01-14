@@ -5,12 +5,12 @@
 
 #include "Platform/DirectX11/Dx11Buffer.h"
 
-pig::U_Ptr<pig::VertexBuffer> pig::VertexBuffer::Create(float* vertices, uint32_t size)
+pig::U_Ptr<pig::VertexBuffer> pig::VertexBuffer::Create(float* vertices, uint32_t size, uint32_t stride)
 {
 	switch (pig::Renderer::GetAPI())
 	{
 	case pig::RendererAPI::API::None:    PG_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
-	case pig::RendererAPI::API::DirectX11:  return std::make_unique<pig::Dx11VertexBuffer>(vertices, size);
+	case pig::RendererAPI::API::DirectX11:  return std::make_unique<pig::Dx11VertexBuffer>(vertices, size, stride);
 	}
 
 	PG_CORE_ASSERT(false, "Unknown RendererAPI!");

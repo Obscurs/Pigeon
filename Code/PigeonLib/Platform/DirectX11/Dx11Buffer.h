@@ -11,9 +11,10 @@ namespace pig
 		struct Data
 		{
 			pig::U_Ptr<ID3D11Buffer, pig::ReleaseDeleter> m_Buffer = nullptr;
+			UINT m_Stride = 0;
 		};
 
-		Dx11VertexBuffer(float* vertices, uint32_t size);
+		Dx11VertexBuffer(float* vertices, uint32_t size, uint32_t stride);
 		virtual ~Dx11VertexBuffer();
 
 #ifdef TESTS_ENABLED

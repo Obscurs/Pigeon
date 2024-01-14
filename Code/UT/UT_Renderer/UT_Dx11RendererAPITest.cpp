@@ -185,7 +185,7 @@ namespace CatchTestsetFail
 
 		SECTION("Vertex buffer")
 		{
-			pig::U_Ptr<pig::VertexBuffer> vertexBuffer = std::move(pig::VertexBuffer::Create(s_OurVertices, sizeof(s_OurVertices)));
+			pig::U_Ptr<pig::VertexBuffer> vertexBuffer = std::move(pig::VertexBuffer::Create(s_OurVertices, sizeof(s_OurVertices), sizeof(float) * 7));
 			pig::Dx11VertexBuffer* dxVB = static_cast<pig::Dx11VertexBuffer*>(vertexBuffer.get());
 			CHECK(dxVB->GetData().m_Buffer != nullptr);
 			dxVB->Bind();

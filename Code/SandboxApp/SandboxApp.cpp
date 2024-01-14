@@ -28,7 +28,7 @@ namespace
 		"struct VS_INPUT\n"
 		"{\n"
 		"	float3 Pos : POSITION;\n"
-		"	float4 Col : COLOR;\n"
+		"	float2 TexCoords : TEXCOORD;\n"
 		"};\n"
 		"struct PS_INPUT\n"
 		"{\n"
@@ -57,13 +57,21 @@ namespace
 		"};";
 
 
-	float s_OurVertices[3 * 7] = {
+	/*float s_OurVertices[3 * 7] = {
 		 0.0f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
 		 0.45f, -0.5, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
 		 -0.45f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f
+	};*/
+
+	float s_SquareVertices[5 * 4] = {
+		-0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
+		-0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
+		 0.5f,  0.5f, 0.0f, 1.0f, 1.0f,
+		 0.5f, -0.5f, 0.0f, 1.0f, 0.0f
 	};
 
-	uint32_t s_Indices[3] = { 0, 1, 2 };
+	//uint32_t s_Indices[3] = { 0, 1, 2 };
+	uint32_t s_SuareIndices[6] = { 0, 1, 2, 2, 3, 0 };
 
 	class ExampleLayer : public pig::Layer
 	{
@@ -73,12 +81,12 @@ namespace
 			m_Camera(-1.6f, 1.6f, -0.9f, 0.9f),
 			m_CameraPosition(0.0f)
 		{
-			m_VertexBuffer = std::move(pig::VertexBuffer::Create(s_OurVertices, sizeof(s_OurVertices)));
-			m_IndexBuffer = std::move(pig::IndexBuffer::Create(s_Indices, sizeof(s_Indices) / sizeof(uint32_t)));
+			m_VertexBuffer = std::move(pig::VertexBuffer::Create(s_SquareVertices, sizeof(s_SquareVertices), sizeof(float) * 5));
+			m_IndexBuffer = std::move(pig::IndexBuffer::Create(s_SuareIndices, sizeof(s_SuareIndices) / sizeof(uint32_t)));
 
 			pig::BufferLayout buffLayout = {
 				{ pig::ShaderDataType::Float3, "POSITION" },
-				{ pig::ShaderDataType::Float4, "COLOR" }
+				{ pig::ShaderDataType::Float2, "TEXCOORD" }
 			};
 
 			m_Shader = std::move(pig::Shader::Create(s_VsCode, s_PsCode, buffLayout));
@@ -126,7 +134,7 @@ namespace
 			m_Shader->UploadUniformMat4("u_ViewProjection", m_SceneData.ViewProjectionMatrix);
 			m_Shader->UploadUniformFloat3("u_Color", m_SquareColor);
 
-			glm::mat4 scale = glm::scale(glm::mat4(1.f), glm::vec3(0.1f));
+			glm::mat4 scale = glm::scale(glm::mat4(1.f), glm::vec3(0.07f));
 			for (int y = -10; y < 10; y++)
 			{
 				for (int x = -10; x < 10; x++)
@@ -134,7 +142,7 @@ namespace
 					glm::vec3 pos(x *0.11f, y * 0.11f, 0.f);
 					glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos) * scale;
 					m_Shader->UploadUniformMat4("u_Transform", transform);
-					pig::Renderer::Submit(3);
+					pig::Renderer::Submit(6);
 				}
 			}
 			pig::Renderer::EndScene();
