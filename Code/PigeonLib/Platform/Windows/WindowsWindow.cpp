@@ -60,7 +60,7 @@ void pig::WindowsWindow::Init(const pig::WindowProps& props)
 	);
 	if (!m_Window) {
 		DWORD errorCode = GetLastError();
-		PG_CORE_ERROR("error creating window, error code %d", int(errorCode));
+		PG_CORE_ASSERT(false, "error creating window, error code %d", int(errorCode));
 		// Now you can use errorCode to understand the issue.
 		// You might want to convert it to a human-readable error message.
 	}
@@ -330,7 +330,8 @@ void pig::WindowsWindow::ProcessWindowResizeEvent(LPARAM lParam)
 bool pig::WindowsWindow::ProcessWindowDestroyEvent()
 {
 	pig::WindowCloseEvent event;
-	m_WindowData.EventCallback(event);
+	if (m_WindowData.EventCallback)
+		m_WindowData.EventCallback(event);
 	PostQuitMessage(0);
 	return false;
 }

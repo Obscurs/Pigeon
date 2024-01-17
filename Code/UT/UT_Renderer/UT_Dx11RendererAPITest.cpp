@@ -8,6 +8,7 @@
 #include "Utils/TestApp.h"
 
 #include <Pigeon/Renderer/OrthographicCamera.h>
+#include <Pigeon/Renderer/Texture.h>
 
 #include <Platform/DirectX11/Dx11Buffer.h>
 #include <Platform/DirectX11/Dx11Context.h>
@@ -48,6 +49,54 @@ namespace
 		"    return input.Col; // Output the interpolated color\n"
 		"};";
 
+	std::string s_TextureVsCode = R"(
+		cbuffer MatrixBuffer : register(b0)
+		{
+			matrix u_ViewProjection;
+		};
+
+		cbuffer MatrixBuffer : register(b1)
+		{
+			matrix u_Transform;
+		};
+
+		struct VS_INPUT
+		{
+			float3 a_Position : POSITION;
+			float2 a_TexCoord : TEXCOORDS;
+		};
+
+		struct PS_INPUT
+		{
+			float4 Position : SV_POSITION;
+			float2 TexCoord : TEXCOORDS;
+		};
+
+		PS_INPUT main(VS_INPUT input)
+		{
+			PS_INPUT output;
+			output.TexCoord = input.a_TexCoord;
+			output.Position = mul(float4(input.a_Position, 1.f), u_Transform);
+			output.Position = mul(output.Position, u_ViewProjection);
+			return output;
+		}
+	)";
+
+	std::string s_TexturePsCode = R"(
+		Texture2D u_Texture : register(t0);
+		SamplerState u_Sampler : register(s0);
+
+		struct PS_INPUT
+		{
+			float4 Position : SV_POSITION;
+			float2 TexCoord : TEXCOORDS;
+		};
+
+		float4 main(PS_INPUT input) : SV_TARGET
+		{
+			return u_Texture.Sample(u_Sampler, input.TexCoord);
+		}
+	)";
 
 	float s_OurVertices[3 * 7] = {
 		 0.0f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
@@ -228,13 +277,27 @@ namespace CatchTestsetFail
 		pig::S_Ptr<pig::Application> app = pig::CreateApplication();
 
 		pig::Dx11Context* dx11Context = static_cast<pig::Dx11Context*>(app->GetWindow().GetGraphicsContext());
+		
+		pig::BufferLayout buffLayout;
+		pig::U_Ptr<pig::Shader> shader;
+		SECTION("position and color")
+		{
+			buffLayout = {
+				{ pig::ShaderDataType::Float3, "POSITION" },
+				{ pig::ShaderDataType::Float4, "COLOR" }
+			};
+			shader = std::move(pig::Shader::Create(s_VsCode, s_PsCode, buffLayout));
+		}
 
-		pig::BufferLayout buffLayout = {
-			{ pig::ShaderDataType::Float3, "POSITION" },
-			{ pig::ShaderDataType::Float4, "COLOR" }
-		};
+		SECTION("position and texture")
+		{
+			buffLayout = {
+				{ pig::ShaderDataType::Float3, "POSITION" },
+				{ pig::ShaderDataType::Float2, "TEXCOORDS" }
+			};
+			shader = std::move(pig::Shader::Create(s_TextureVsCode.c_str(), s_TexturePsCode.c_str(), buffLayout));
+		}
 
-		pig::U_Ptr<pig::Shader> shader = std::move(pig::Shader::Create(s_VsCode, s_PsCode, buffLayout));
 		pig::Dx11Shader* dxShader = static_cast<pig::Dx11Shader*>(shader.get());
 
 		CHECK(dxShader->GetData().m_InputLayout != nullptr);
@@ -242,15 +305,21 @@ namespace CatchTestsetFail
 		CHECK(dxShader->GetData().m_VertexShader != nullptr);
 		dxShader->Bind();
 		shader->UploadUniformMat4("u_ViewProjection", s_TestMat);
-		shader->UploadUniformMat4("u_Unknown", s_TestMat);
-		shader->UploadUniformMat3("u_Unknown", s_TestMat3);
-		shader->UploadUniformInt("u_Unknown", s_TestInt);
-		shader->UploadUniformFloat("u_Unknown", s_TestFloat);
-		shader->UploadUniformFloat2("u_Unknown", s_TestVec2);
-		shader->UploadUniformFloat3("u_Unknown", s_TestVec3);
-		shader->UploadUniformFloat4("u_Unknown", s_TestVec4);
+		shader->UploadUniformMat4("u_Transform", s_TestMat);
+		shader->UploadUniformMat3("u_Color", s_TestMat3);
+		shader->UploadUniformInt("u_Color", s_TestInt);
+		shader->UploadUniformFloat("u_Color", s_TestFloat);
+		shader->UploadUniformFloat2("u_Color", s_TestVec2);
+		shader->UploadUniformFloat3("u_Color", s_TestVec3);
+		shader->UploadUniformFloat4("u_Color", s_TestVec4);
 
 		dxShader->Unbind();
+	}
+
+	TEST_CASE("Renderer::Texture")
+	{
+		pig::U_Ptr<pig::Texture2D> texture = pig::Texture2D::Create("Assets/Test/SampleTexture.png");
+		texture->Bind(0);
 	}
 
 	TEST_CASE("Renderer::OrthographicCamera")

@@ -55,7 +55,7 @@ namespace
 		}
 		else
 		{
-			PG_CORE_ERROR("uniform not defined");
+			PG_CORE_ASSERT(false, "uniform not defined");
 		}
 		return 0;
 	}
@@ -99,7 +99,7 @@ pig::Dx11Shader::Dx11Shader(const char* vertexSrc, const char* fragmentSrc, cons
 		// Handle errors
 		if (errorBlob.value) {
 			OutputDebugStringA((char*)errorBlob.value->GetBufferPointer());
-			PG_CORE_ERROR("Failed to compile vertex shaders!");
+			PG_CORE_ASSERT(false, "Failed to compile vertex shaders!");
 			return;
 		}
 	}
@@ -109,7 +109,7 @@ pig::Dx11Shader::Dx11Shader(const char* vertexSrc, const char* fragmentSrc, cons
 		// Handle errors
 		if (errorBlob.value) {
 			OutputDebugStringA((char*)errorBlob.value->GetBufferPointer());
-			PG_CORE_ERROR("Failed to compile fragment shaders!");
+			PG_CORE_ASSERT(false, "Failed to compile fragment shaders!");
 			return;
 		}
 	}
