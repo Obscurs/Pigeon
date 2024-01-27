@@ -96,9 +96,8 @@ pig::Dx11Texture2D::Dx11Texture2D(const std::string& path)
 
     device->CreateSamplerState(&sampDesc, &m_SamplerState);
 
-    if (dataProcessed) {
+    if (dataProcessed) 
         delete[] dataProcessed;
-    }
 }
 
 pig::Dx11Texture2D::~Dx11Texture2D()
