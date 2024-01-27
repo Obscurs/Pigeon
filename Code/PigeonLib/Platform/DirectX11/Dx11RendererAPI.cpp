@@ -4,6 +4,48 @@
 
 #include "Platform/DirectX11/Dx11Context.h"
 
+void pig::Dx11RendererAPI::Init()
+{
+    auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
+
+    ID3D11BlendState* pBlendState;
+    ID3D11DepthStencilState* pDepthStencilState;
+    // Create the blending setup
+    {
+        D3D11_BLEND_DESC desc;
+        ZeroMemory(&desc, sizeof(desc));
+        desc.AlphaToCoverageEnable = false;
+        desc.RenderTarget[0].BlendEnable = true;
+        desc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+        desc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+        desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+        desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+        desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+        desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+        desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+        context->GetPd3dDevice()->CreateBlendState(&desc, &pBlendState);
+    }
+
+    // Create depth-stencil State
+    {
+        D3D11_DEPTH_STENCIL_DESC desc;
+        ZeroMemory(&desc, sizeof(desc));
+        desc.DepthEnable = false;
+        desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+        desc.DepthFunc = D3D11_COMPARISON_ALWAYS;
+        desc.StencilEnable = false;
+        desc.FrontFace.StencilFailOp = desc.FrontFace.StencilDepthFailOp = desc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+        desc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+        desc.BackFace = desc.FrontFace;
+        context->GetPd3dDevice()->CreateDepthStencilState(&desc, &pDepthStencilState);
+    }
+
+    // Setup blend state
+    const float blend_factor[4] = {0.f, 0.f, 0.f, 0.f};
+    context->GetPd3dDeviceContext()->OMSetBlendState(pBlendState, blend_factor, 0xffffffff);
+    context->GetPd3dDeviceContext()->OMSetDepthStencilState(pDepthStencilState, 0);
+}
+
 void pig::Dx11RendererAPI::CreateRenderTarget()
 {
 	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());

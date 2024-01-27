@@ -6,6 +6,7 @@
 #include "Pigeon/Events/ApplicationEvent.h"
 #include "Pigeon/ImGui/ImGuiLayer.h"
 #include "Pigeon/Log.h"
+#include "Pigeon/Renderer/Renderer.h"
 
 #include <chrono>
 
@@ -66,6 +67,8 @@ void pig::Application::Init()
 {
 	m_Data.m_Window = std::move(Window::Create());
 	m_Data.m_Window->SetEventCallback(BIND_EVENT_FN(OnEvent));
+
+	pig::Renderer::Init();
 
 	m_Data.m_ImGuiLayer = std::make_shared<ImGuiLayer>();
 	PushOverlay(m_Data.m_ImGuiLayer);

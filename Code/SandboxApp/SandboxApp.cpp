@@ -141,7 +141,8 @@ namespace
 
 			m_Shader = std::move(pig::Shader::Create(s_VsCode, s_PsCode, buffLayout));
 			m_ShaderTexture = std::move(pig::Shader::Create(s_TextureVsCode.c_str(), s_TexturePsCode.c_str(), buffLayout));
-			m_Texture = pig::Texture2D::Create("Assets/Textures/chess.png");
+			m_Texture = pig::Texture2D::Create("Assets/Textures/Checkerboard.png");
+			m_TextureAlpha = pig::Texture2D::Create("Assets/Textures/alphaTest.png");
 		}
 
 		~ExampleLayer()
@@ -213,6 +214,9 @@ namespace
 				m_ShaderTexture->UploadUniformMat4("u_Transform", transform);
 				m_Texture->Bind(0);
 				pig::Renderer::Submit(6);
+
+				m_TextureAlpha->Bind(0);
+				pig::Renderer::Submit(6);
 			}
 
 			pig::Renderer::EndScene();
@@ -251,6 +255,7 @@ namespace
 
 		std::unique_ptr<pig::Shader> m_ShaderTexture = nullptr;
 		pig::U_Ptr<pig::Texture2D> m_Texture;
+		pig::U_Ptr<pig::Texture2D> m_TextureAlpha;
 
 		pig::OrthographicCamera m_Camera;
 		glm::vec3 m_CameraPosition;

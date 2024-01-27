@@ -21,6 +21,8 @@ namespace pig
 		const Data& GetData() const { return m_Data; }
 #endif
 		virtual void SetClearColor(const glm::vec4& color) override;
+
+		virtual void Init() override;
 		virtual void Begin() override;
 		virtual void End() override;
 		virtual void Clear() override;

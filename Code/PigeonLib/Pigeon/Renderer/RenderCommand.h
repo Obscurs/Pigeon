@@ -11,6 +11,11 @@ namespace pig
 		static const pig::S_Ptr<RendererAPI> GetRenderAPI() { return s_RendererAPI; }
 #endif
 
+		inline static void Init()
+		{
+			s_RendererAPI->Init();
+		}
+
 		inline static void SetClearColor(const glm::vec4& color)
 		{
 			s_RendererAPI->SetClearColor(color);

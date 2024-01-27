@@ -1,6 +1,11 @@
 #include "pch.h"
 #include "Renderer.h"
 
+void pig::Renderer::Init()
+{
+	pig::RenderCommand::Init();
+}
+
 void pig::Renderer::BeginScene()
 {
 	pig::RenderCommand::Begin();
