@@ -49,55 +49,6 @@ namespace
 		"    return input.Col; // Output the interpolated color\n"
 		"};";
 
-	std::string s_TextureVsCode = R"(
-		cbuffer MatrixBuffer : register(b0)
-		{
-			matrix u_ViewProjection;
-		};
-
-		cbuffer MatrixBuffer : register(b1)
-		{
-			matrix u_Transform;
-		};
-
-		struct VS_INPUT
-		{
-			float3 a_Position : POSITION;
-			float2 a_TexCoord : TEXCOORDS;
-		};
-
-		struct PS_INPUT
-		{
-			float4 Position : SV_POSITION;
-			float2 TexCoord : TEXCOORDS;
-		};
-
-		PS_INPUT main(VS_INPUT input)
-		{
-			PS_INPUT output;
-			output.TexCoord = input.a_TexCoord;
-			output.Position = mul(float4(input.a_Position, 1.f), u_Transform);
-			output.Position = mul(output.Position, u_ViewProjection);
-			return output;
-		}
-	)";
-
-	std::string s_TexturePsCode = R"(
-		Texture2D u_Texture : register(t0);
-		SamplerState u_Sampler : register(s0);
-
-		struct PS_INPUT
-		{
-			float4 Position : SV_POSITION;
-			float2 TexCoord : TEXCOORDS;
-		};
-
-		float4 main(PS_INPUT input) : SV_TARGET
-		{
-			return u_Texture.Sample(u_Sampler, input.TexCoord);
-		}
-	)";
-
 	float s_OurVertices[3 * 7] = {
 		 0.0f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
 		 0.45f, -0.5, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
@@ -289,13 +240,13 @@ namespace CatchTestsetFail
 			shader = std::move(pig::Shader::Create(s_VsCode, s_PsCode, buffLayout));
 		}
 
-		SECTION("position and texture")
+		SECTION("position and texture from file")
 		{
 			buffLayout = {
 				{ pig::ShaderDataType::Float3, "POSITION" },
 				{ pig::ShaderDataType::Float2, "TEXCOORDS" }
 			};
-			shader = std::move(pig::Shader::Create(s_TextureVsCode.c_str(), s_TexturePsCode.c_str(), buffLayout));
+			shader = std::move(pig::Shader::Create("Assets/Test/UTTestShader.shader", buffLayout));
 		}
 
 		pig::Dx11Shader* dxShader = static_cast<pig::Dx11Shader*>(shader.get());

@@ -20,8 +20,9 @@ namespace pig
 #ifdef TESTS_ENABLED
 		const Data& GetData() const { return m_Data; }
 #endif
-		//static glm::mat4 ConvertDXMatrixToGLM(const DirectX::XMMATRIX& dxMatrix);
 		static DirectX::XMMATRIX ConvertGLMMatrixToDX(const glm::mat4& glmMatrix);
+
+		Dx11Shader(const std::string& filepath, const BufferLayout& buffLayout);
 		Dx11Shader(const char* vertexSrc, const char* fragmentSrc, const BufferLayout& buffLayout);
 		~Dx11Shader();
 
@@ -37,6 +38,11 @@ namespace pig
 
 		virtual void UploadUniformMat3(const std::string& name, const glm::mat3& matrix) const override;
 		virtual void UploadUniformMat4(const std::string& name, const glm::mat4& matrix) const override;
+
+	private:
+		std::string ReadFile(const std::string& filepath);
+		std::unordered_map<unsigned int, std::string> PreProcess(const std::string& source);
+		void Compile(const std::unordered_map<unsigned int, std::string>& shaderSources, const BufferLayout& buffLayout);
 
 	private:
 		Data m_Data;

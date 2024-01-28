@@ -111,6 +111,7 @@ namespace pig
 		virtual void Bind() const = 0;
 		virtual void Unbind() const = 0;
 
+		static pig::U_Ptr<Shader> Create(const std::string& filepath, const pig::BufferLayout& buffLayout);
 		static pig::U_Ptr<Shader> Create(const char* vertexSrc, const char* fragmentSrc, const BufferLayout& buffLayout);
 
 		virtual void UploadUniformInt(const std::string& name, int value) const = 0;

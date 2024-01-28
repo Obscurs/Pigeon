@@ -2,7 +2,8 @@
 #include "Dx11Shader.h"
 
 #include <D3DCompiler.h>
-
+#include <fstream>
+ 
 #include "Pigeon/Application.h"
 
 #include "Platform/DirectX11/Dx11Buffer.h"
@@ -10,6 +11,14 @@
 
 namespace
 {
+	enum EShaderType
+	{
+		UNKNOWNT_TYPE
+		, VERTEX_SHADER
+		, FRAGMENT_SHADER
+	};
+
+
 	struct IntBufferType
 	{
 		int data;
@@ -80,6 +89,18 @@ namespace
 		return DXGI_FORMAT_UNKNOWN;
 	}
 
+	static EShaderType ShaderTypeFromString(const std::string& type)
+	{
+		// Create an empty vertex shader handle
+		if (type == "vertex")
+			return VERTEX_SHADER;
+		if (type == "fragment" || type == "pixel")
+			return FRAGMENT_SHADER;
+
+		PG_CORE_ASSERT(false, "Unknown shader type!");
+		return UNKNOWNT_TYPE;
+	}
+
 	static void BufferLayoutToDx11InputDesc(const pig::BufferLayout& bufferLayout, std::vector<D3D11_INPUT_ELEMENT_DESC>& layoutDesc)
 	{
 		for (const pig::BufferElement& elem : bufferLayout)
@@ -89,13 +110,80 @@ namespace
 	}
 }
 
+pig::Dx11Shader::Dx11Shader(const std::string& filepath, const pig::BufferLayout& buffLayout)
+{
+	std::string source = ReadFile(filepath);
+	auto shaderSources = PreProcess(source);
+	Compile(shaderSources, buffLayout);
+}
+
 pig::Dx11Shader::Dx11Shader(const char* vertexSrc, const char* fragmentSrc, const pig::BufferLayout& buffLayout)
+{
+	std::unordered_map<unsigned int, std::string> sources;
+	sources[EShaderType::VERTEX_SHADER] = vertexSrc;
+	sources[EShaderType::FRAGMENT_SHADER] = fragmentSrc;
+	Compile(sources, buffLayout);
+}
+
+pig::Dx11Shader::~Dx11Shader()
+{
+	Unbind();
+}
+
+std::string pig::Dx11Shader::ReadFile(const std::string& filepath)
+{
+	std::string result;
+	std::ifstream in(filepath, std::ios::in, std::ios::binary);
+	if (in)
+	{
+		in.seekg(0, std::ios::end);
+		result.resize(in.tellg());
+		in.seekg(0, std::ios::beg);
+		in.read(&result[0], result.size());
+		in.close();
+		;
+	}
+	else
+	{
+		PG_CORE_ERROR("Could not open file '{0}'", filepath);
+	}
+	return result;
+}
+std::unordered_map<unsigned int, std::string> pig::Dx11Shader::PreProcess(const std::string& source)
+{
+	std::unordered_map<unsigned int, std::string> shaderSources;
+
+	const char* typeToken = "#type";
+	size_t typeTokenLength = strlen(typeToken);
+	size_t pos = source.find(typeToken, 0);
+	while (pos != std::string::npos)
+	{
+		size_t eol = source.find_first_of("\r\n", pos);
+		PG_CORE_ASSERT(eol != std::string::npos, "Syntax error");
+		size_t begin = pos + typeTokenLength + 1;
+		std::string type = source.substr(begin, eol - begin);
+		PG_CORE_ASSERT(ShaderTypeFromString(type), "Invalid shader type specified");
+
+		size_t nextLinePos = source.find_first_not_of("\r\n", eol);
+		pos = source.find(typeToken, nextLinePos);
+		shaderSources[ShaderTypeFromString(type)] = source.substr(nextLinePos, pos - (nextLinePos == std::string::npos ? source.size() - 1 : nextLinePos));
+	}
+	return shaderSources;
+}
+void pig::Dx11Shader::Compile(const std::unordered_map<unsigned int, std::string>& shaderSources, const BufferLayout& buffLayout)
 {
 	pig::RAII_PtrRelease<ID3D10Blob> errorBlob;
 	pig::RAII_PtrRelease<ID3D10Blob> vsBlob;
 	pig::RAII_PtrRelease<ID3D10Blob> psBlob;
+
+	PG_CORE_ASSERT(shaderSources.find((unsigned int)EShaderType::VERTEX_SHADER) != shaderSources.end(), "Vertex Shader is missing!");
+	PG_CORE_ASSERT(shaderSources.find((unsigned int)EShaderType::FRAGMENT_SHADER) != shaderSources.end(), "Fragment Shader is missing!");
+	
+	const std::string& vertexSrc = shaderSources.at((unsigned int)EShaderType::VERTEX_SHADER);
+	const std::string& fragmentSrc = shaderSources.at((unsigned int)EShaderType::FRAGMENT_SHADER);
+
 	// Compile vertex shader
-	if (FAILED(D3DCompile(vertexSrc, strlen(vertexSrc), nullptr, nullptr, nullptr, "main", "vs_5_0", 0, 0, &vsBlob.value, &errorBlob.value))) {
+	if (FAILED(D3DCompile(vertexSrc.c_str(), vertexSrc.size(), nullptr, nullptr, nullptr, "main", "vs_5_0", 0, 0, &vsBlob.value, &errorBlob.value))) {
 		// Handle errors
 		if (errorBlob.value) {
 			OutputDebugStringA((char*)errorBlob.value->GetBufferPointer());
@@ -105,7 +193,7 @@ pig::Dx11Shader::Dx11Shader(const char* vertexSrc, const char* fragmentSrc, cons
 	}
 
 	// Compile pixel shader
-	if (FAILED(D3DCompile(fragmentSrc, strlen(fragmentSrc), nullptr, nullptr, nullptr, "main", "ps_5_0", 0, 0, &psBlob.value, &errorBlob.value))) {
+	if (FAILED(D3DCompile(fragmentSrc.c_str(), fragmentSrc.size(), nullptr, nullptr, nullptr, "main", "ps_5_0", 0, 0, &psBlob.value, &errorBlob.value))) {
 		// Handle errors
 		if (errorBlob.value) {
 			OutputDebugStringA((char*)errorBlob.value->GetBufferPointer());
@@ -131,11 +219,6 @@ pig::Dx11Shader::Dx11Shader(const char* vertexSrc, const char* fragmentSrc, cons
 	ID3D11InputLayout* layout = nullptr;
 	device->CreateInputLayout(layoutDesc.data(), layoutDesc.size(), vsBlob.value->GetBufferPointer(), vsBlob.value->GetBufferSize(), &layout);
 	m_Data.m_InputLayout.reset(layout);
-}
-
-pig::Dx11Shader::~Dx11Shader()
-{
-	Unbind();
 }
 
 /*glm::mat4 Dx11Shader::ConvertDXMatrixToGLM(const DirectX::XMMATRIX& dxMatrix)

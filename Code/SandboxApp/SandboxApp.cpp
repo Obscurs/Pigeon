@@ -9,110 +9,6 @@
 #include "Pigeon/Renderer/Texture.h"
 namespace
 {
-	char* s_VsCode =
-		"	cbuffer MatrixBuffer : register(b0)\n"
-		"{ \n"
-		"	matrix u_ViewProjection; \n"
-		"}; \n"
-
-		"	cbuffer MatrixBuffer : register(b1)\n"
-		"{ \n"
-		"	matrix u_Transform; \n"
-		"}; \n"
-
-		"	cbuffer VectorBuffer : register(b2)\n"
-		"{ \n"
-		"	float3 u_Color; \n"
-		"   float padding; \n"
-		"}; \n"
-
-		"struct VS_INPUT\n"
-		"{\n"
-		"	float3 Pos : POSITION;\n"
-		"	float2 TexCoords : TEXCOORD;\n"
-		"};\n"
-		"struct PS_INPUT\n"
-		"{\n"
-		"	float4 Pos : SV_POSITION; \n"
-		"	float4 Col : COLOR; \n"
-		"};\n"
-		"PS_INPUT main(VS_INPUT input)\n"
-		"{\n"
-		"	PS_INPUT output;\n"
-		"	output.Pos = mul(float4(input.Pos, 1.f), u_Transform); // Pass position to rasterizer\n"
-		"	output.Pos = mul(output.Pos, u_ViewProjection); // Pass position to rasterizer\n"
-		"	output.Col = float4(u_Color.x, u_Color.y, u_Color.z, 1.0f); // Pass color to pixel shader\n"
-		"	return output;\n"
-		"};";
-
-	// Simple pixel shader
-	char* s_PsCode =
-		"struct PS_INPUT\n"
-		"{\n"
-		"	float4 Pos : SV_POSITION;\n"
-		"	float4 Col : COLOR;\n"
-		"};\n"
-		"float4 main(PS_INPUT input) : SV_TARGET\n"
-		"{\n"
-		"    return input.Col; // Output the interpolated color\n"
-		"};";
-
-	std::string s_TextureVsCode = R"(
-		cbuffer MatrixBuffer : register(b0)
-		{
-			matrix u_ViewProjection;
-		};
-
-		cbuffer MatrixBuffer : register(b1)
-		{
-			matrix u_Transform;
-		};
-
-		struct VS_INPUT
-		{
-			float3 a_Position : POSITION;
-			float2 a_TexCoord : TEXCOORD;
-		};
-
-		struct PS_INPUT
-		{
-			float4 Position : SV_POSITION;
-			float2 TexCoord : TEXCOORD;
-		};
-
-		PS_INPUT main(VS_INPUT input)
-		{
-			PS_INPUT output;
-			output.TexCoord = input.a_TexCoord;
-			output.Position = mul(float4(input.a_Position, 1.f), u_Transform);
-			output.Position = mul(output.Position, u_ViewProjection);
-			return output;
-		}
-	)";
-
-	std::string s_TexturePsCode = R"(
-		Texture2D u_Texture : register(t0);
-		SamplerState u_Sampler : register(s0);
-
-		struct PS_INPUT
-		{
-			float4 Position : SV_POSITION;
-			float2 TexCoord : TEXCOORD;
-		};
-
-		float4 main(PS_INPUT input) : SV_TARGET
-		{
-			return u_Texture.Sample(u_Sampler, input.TexCoord);
-		}
-	)";
-
-
-	/*float s_OurVertices[3 * 7] = {
-		 0.0f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-		 0.45f, -0.5, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-		 -0.45f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f
-	};*/
-
 	float s_SquareVertices[5 * 4] = {
 		-0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
 		-0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
@@ -120,7 +16,6 @@ namespace
 		 0.5f, -0.5f, 0.0f, 1.0f, 0.0f
 	};
 
-	//uint32_t s_Indices[3] = { 0, 1, 2 };
 	uint32_t s_SuareIndices[6] = { 0, 1, 2, 2, 3, 0 };
 
 	class ExampleLayer : public pig::Layer
@@ -139,8 +34,9 @@ namespace
 				{ pig::ShaderDataType::Float2, "TEXCOORD" }
 			};
 
-			m_Shader = std::move(pig::Shader::Create(s_VsCode, s_PsCode, buffLayout));
-			m_ShaderTexture = std::move(pig::Shader::Create(s_TextureVsCode.c_str(), s_TexturePsCode.c_str(), buffLayout));
+			m_Shader = std::move(pig::Shader::Create("Assets/Shaders/TestShader.shader", buffLayout));
+			m_ShaderTexture = std::move(pig::Shader::Create("Assets/Shaders/TextureShader.shader", buffLayout));
+
 			m_Texture = pig::Texture2D::Create("Assets/Textures/Checkerboard.png");
 			m_TextureAlpha = pig::Texture2D::Create("Assets/Textures/alphaTest.png");
 		}
