@@ -35,7 +35,7 @@ namespace
 			};
 
 			m_Shader = std::move(pig::Shader::Create("Assets/Shaders/TestShader.shader", buffLayout));
-			m_ShaderTexture = std::move(pig::Shader::Create("Assets/Shaders/TextureShader.shader", buffLayout));
+			auto textureShader = m_ShaderLibrary.Load("Assets/Shaders/TextureShader.shader", buffLayout);
 
 			m_Texture = pig::Texture2D::Create("Assets/Textures/Checkerboard.png");
 			m_TextureAlpha = pig::Texture2D::Create("Assets/Textures/alphaTest.png");
@@ -44,7 +44,6 @@ namespace
 		~ExampleLayer()
 		{
 			m_Shader.reset();
-			m_ShaderTexture.reset();
 
 			m_VertexBuffer.reset();
 			m_IndexBuffer.reset();
@@ -102,12 +101,14 @@ namespace
 			}
 			//DRAW TEXTURE
 			{
-				m_ShaderTexture->Bind();
-				m_ShaderTexture->UploadUniformMat4("u_ViewProjection", m_SceneData.ViewProjectionMatrix);
+				auto textureShader = m_ShaderLibrary.Get("TextureShader");
+
+				textureShader->Bind();
+				textureShader->UploadUniformMat4("u_ViewProjection", m_SceneData.ViewProjectionMatrix);
 				glm::vec3 pos(0.f, 0.f, 0.f);
 				glm::mat4 scale = glm::scale(glm::mat4(1.f), glm::vec3(1.f));
 				glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos) * scale;
-				m_ShaderTexture->UploadUniformMat4("u_Transform", transform);
+				textureShader->UploadUniformMat4("u_Transform", transform);
 				m_Texture->Bind(0);
 				pig::Renderer::Submit(6);
 
@@ -145,11 +146,13 @@ namespace
 			glm::mat4 ViewProjectionMatrix;
 		};
 
-		std::unique_ptr<pig::VertexBuffer> m_VertexBuffer = nullptr;
-		std::unique_ptr<pig::IndexBuffer> m_IndexBuffer = nullptr;
-		std::unique_ptr<pig::Shader> m_Shader = nullptr;
+		pig::U_Ptr<pig::VertexBuffer> m_VertexBuffer = nullptr;
+		pig::U_Ptr<pig::IndexBuffer> m_IndexBuffer = nullptr;
 
-		std::unique_ptr<pig::Shader> m_ShaderTexture = nullptr;
+		pig::ShaderLibrary m_ShaderLibrary;
+
+		pig::S_Ptr<pig::Shader> m_Shader = nullptr;
+
 		pig::U_Ptr<pig::Texture2D> m_Texture;
 		pig::U_Ptr<pig::Texture2D> m_TextureAlpha;
 

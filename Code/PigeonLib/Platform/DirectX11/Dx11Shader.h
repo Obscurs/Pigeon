@@ -16,6 +16,8 @@ namespace pig
 			pig::U_Ptr<ID3D11InputLayout, pig::ReleaseDeleter> m_InputLayout = nullptr;
 			pig::U_Ptr<ID3D11VertexShader, pig::ReleaseDeleter> m_VertexShader = nullptr;
 			pig::U_Ptr<ID3D11PixelShader, pig::ReleaseDeleter> m_PixelShader = nullptr;
+
+			std::string m_Name;
 		};
 #ifdef TESTS_ENABLED
 		const Data& GetData() const { return m_Data; }
@@ -23,11 +25,13 @@ namespace pig
 		static DirectX::XMMATRIX ConvertGLMMatrixToDX(const glm::mat4& glmMatrix);
 
 		Dx11Shader(const std::string& filepath, const BufferLayout& buffLayout);
-		Dx11Shader(const char* vertexSrc, const char* fragmentSrc, const BufferLayout& buffLayout);
+		Dx11Shader(const std::string& name, const char* vertexSrc, const char* fragmentSrc, const BufferLayout& buffLayout);
 		~Dx11Shader();
 
 		virtual void Bind() const override;
 		virtual void Unbind() const override;
+
+		virtual const std::string& GetName() const override { return m_Data.m_Name; }
 
 		virtual void UploadUniformInt(const std::string& name, int value) const override;
 

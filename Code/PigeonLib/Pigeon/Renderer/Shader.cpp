@@ -6,25 +6,63 @@
 
 #include "Platform/DirectX11/Dx11Shader.h"
 
-pig::U_Ptr<pig::Shader> pig::Shader::Create(const std::string& filepath, const pig::BufferLayout& buffLayout)
+pig::S_Ptr<pig::Shader> pig::Shader::Create(const std::string& filepath, const pig::BufferLayout& buffLayout)
 {
 	switch (Renderer::GetAPI())
 	{
 	case pig::RendererAPI::API::None:    PG_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
-	case pig::RendererAPI::API::DirectX11: return std::make_unique<pig::Dx11Shader>(filepath, buffLayout);
+	case pig::RendererAPI::API::DirectX11: return std::make_shared<pig::Dx11Shader>(filepath, buffLayout);
 	}
 
 	PG_CORE_ASSERT(false, "Unknown RendererAPI!");
 	return nullptr;
 }
 
-pig::U_Ptr<pig::Shader> pig::Shader::Create(const char* vertexSrc, const char* fragmentSrc, const pig::BufferLayout& buffLayout)
+pig::S_Ptr<pig::Shader> pig::Shader::Create(const std::string& name, const char* vertexSrc, const char* fragmentSrc, const pig::BufferLayout& buffLayout)
 {
 	switch (pig::Renderer::GetAPI())
 	{
 	case pig::RendererAPI::API::None:    PG_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
-	case pig::RendererAPI::API::DirectX11:  return std::make_unique<pig::Dx11Shader>(vertexSrc, fragmentSrc, buffLayout);
+	case pig::RendererAPI::API::DirectX11:  return std::make_shared<pig::Dx11Shader>(name, vertexSrc, fragmentSrc, buffLayout);
 	}
 	PG_CORE_ASSERT(false, "Unknown RendererAPI!");
 	return nullptr;
 }
+
+void pig::ShaderLibrary::Add(const std::string& name, const pig::S_Ptr<pig::Shader>& shader)
+{
+	PG_CORE_ASSERT(!Exists(name), "Shader already exists!");
+	m_Shaders[name] = shader;
+}
+
+void pig::ShaderLibrary::Add(const pig::S_Ptr<pig::Shader>& shader)
+{
+	auto& name = shader->GetName();
+	Add(name, shader);
+}
+
+pig::S_Ptr<pig::Shader> pig::ShaderLibrary::Load(const std::string& filepath, const pig::BufferLayout& buffLayout)
+{
+	auto shader = pig::Shader::Create(filepath, buffLayout);
+	Add(shader);
+	return shader;
+}
+
+pig::S_Ptr<pig::Shader> pig::ShaderLibrary::Load(const std::string& name, const std::string& filepath, const pig::BufferLayout& buffLayout)
+{
+	auto shader = pig::Shader::Create(filepath, buffLayout);
+	Add(name, shader);
+	return shader;
+}
+
+pig::S_Ptr<pig::Shader> pig::ShaderLibrary::Get(const std::string& name)
+{
+	PG_CORE_ASSERT(Exists(name), "Shader not found!");
+	return m_Shaders[name];
+}
+
+bool pig::ShaderLibrary::Exists(const std::string& name) const
+{
+	return m_Shaders.find(name) != m_Shaders.end();
+}
+

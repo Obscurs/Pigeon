@@ -115,14 +115,22 @@ pig::Dx11Shader::Dx11Shader(const std::string& filepath, const pig::BufferLayout
 	std::string source = ReadFile(filepath);
 	auto shaderSources = PreProcess(source);
 	Compile(shaderSources, buffLayout);
+
+	// Extract name from filepath
+	auto lastSlash = filepath.find_last_of("/\\");
+	lastSlash = lastSlash == std::string::npos ? 0 : lastSlash + 1;
+	auto lastDot = filepath.rfind('.');
+	auto count = lastDot == std::string::npos ? filepath.size() - lastSlash : lastDot - lastSlash;
+	m_Data.m_Name = filepath.substr(lastSlash, count);
 }
 
-pig::Dx11Shader::Dx11Shader(const char* vertexSrc, const char* fragmentSrc, const pig::BufferLayout& buffLayout)
+pig::Dx11Shader::Dx11Shader(const std::string& name, const char* vertexSrc, const char* fragmentSrc, const pig::BufferLayout& buffLayout)
 {
 	std::unordered_map<unsigned int, std::string> sources;
 	sources[EShaderType::VERTEX_SHADER] = vertexSrc;
 	sources[EShaderType::FRAGMENT_SHADER] = fragmentSrc;
 	Compile(sources, buffLayout);
+	m_Data.m_Name = name;
 }
 
 pig::Dx11Shader::~Dx11Shader()
@@ -133,7 +141,7 @@ pig::Dx11Shader::~Dx11Shader()
 std::string pig::Dx11Shader::ReadFile(const std::string& filepath)
 {
 	std::string result;
-	std::ifstream in(filepath, std::ios::in, std::ios::binary);
+	std::ifstream in(filepath, std::ios::in | std::ios::binary);
 	if (in)
 	{
 		in.seekg(0, std::ios::end);

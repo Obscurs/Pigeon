@@ -230,14 +230,17 @@ namespace CatchTestsetFail
 		pig::Dx11Context* dx11Context = static_cast<pig::Dx11Context*>(app->GetWindow().GetGraphicsContext());
 		
 		pig::BufferLayout buffLayout;
-		pig::U_Ptr<pig::Shader> shader;
+		pig::S_Ptr<pig::Shader> shader;
+
+		pig::ShaderLibrary shaderLibrary;
+
 		SECTION("position and color")
 		{
 			buffLayout = {
 				{ pig::ShaderDataType::Float3, "POSITION" },
 				{ pig::ShaderDataType::Float4, "COLOR" }
 			};
-			shader = std::move(pig::Shader::Create(s_VsCode, s_PsCode, buffLayout));
+			shader = std::move(pig::Shader::Create("test", s_VsCode, s_PsCode, buffLayout));
 		}
 
 		SECTION("position and texture from file")
@@ -247,6 +250,17 @@ namespace CatchTestsetFail
 				{ pig::ShaderDataType::Float2, "TEXCOORDS" }
 			};
 			shader = std::move(pig::Shader::Create("Assets/Test/UTTestShader.shader", buffLayout));
+		}
+
+		SECTION("position and texture from file using shaderlib")
+		{
+			buffLayout = {
+				{ pig::ShaderDataType::Float3, "POSITION" },
+				{ pig::ShaderDataType::Float2, "TEXCOORDS" }
+			};
+			shader = std::move(shaderLibrary.Load("Assets/Test/UTTestShader.shader", buffLayout));
+
+			shader = shaderLibrary.Get("UTTestShader");
 		}
 
 		pig::Dx11Shader* dxShader = static_cast<pig::Dx11Shader*>(shader.get());
