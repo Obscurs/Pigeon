@@ -23,12 +23,6 @@ namespace CatchTestsetFail
 		CHECK(!window.IsVSync());
 		CHECK(window.GetHeight() == 720);
 		CHECK(window.GetWidth() == 1280);
-
-		window.SetSize(100, 200);
-
-		//SetSize not applied since it will be done only when renderer frame begins
-		CHECK(window.GetHeight() == 720);
-		CHECK(window.GetWidth() == 1280);
 		
 		CHECK(!s_EventReceived);
 		window.SetEventCallback(TestOnEvent);

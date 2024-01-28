@@ -4,13 +4,14 @@ file(GLOB ROOT
 
 file(GLOB PG
     "Pigeon/Application.cpp"
-    "Pigeon/Layer.cpp"
-    "Pigeon/LayerStack.cpp"
-    "Pigeon/Log.cpp"
     "Pigeon/Core.h"
     "Pigeon/Core/Timestep.h"
     "Pigeon/EntryPoint.h"
     "Pigeon/Input.h"
+    "Pigeon/Layer.cpp"
+    "Pigeon/LayerStack.cpp"
+    "Pigeon/Log.cpp"
+    "Pigeon/OrthographicCameraController.cpp"
 )
 
 file(GLOB PGIMGUI

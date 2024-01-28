@@ -27,6 +27,7 @@ namespace pig
 			bool m_Initialized = false;
 			std::chrono::steady_clock::time_point m_LastFrameTime;
 			LayerStack m_LayerStack;
+			bool m_Minimized = false;
 		};
 
 		static pig::S_Ptr<Application> Create()

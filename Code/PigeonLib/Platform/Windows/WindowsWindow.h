@@ -35,7 +35,6 @@ namespace pig
 		WindowsWindow(const WindowProps& props);
 		virtual ~WindowsWindow();
 
-		void SetSize(unsigned int width, unsigned int height) override;
 		void OnUpdate() override;
 
 		void Shutdown() override;

@@ -8,6 +8,7 @@
 #include "Pigeon/Layer.h"
 #include "Pigeon/Log.h"
 #include "Pigeon/MouseButtonCodes.h"
+#include "Pigeon/OrthographicCameraController.h"
 
 // ---Renderer------------------------
 #include "Pigeon/Renderer/Renderer.h"

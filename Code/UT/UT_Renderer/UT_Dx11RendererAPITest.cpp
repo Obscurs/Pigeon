@@ -344,5 +344,21 @@ namespace CatchTestsetFail
 		CHECK(viewMat == inverseTransform);
 		CHECK(projViewMat == glm::ortho(ortoValues.x, ortoValues.y, ortoValues.z, ortoValues.w, -1.0f, 1.0f) * inverseTransform);
 	}
+	TEST_CASE("Renderer::OrthographicCameraController")
+	{
+		const glm::vec3 pos0(0.f, 0.f, 0.f);
+		const float rot0 = 0.f;
+
+		pig::OrthographicCameraController cameraController(0.5f);
+		cameraController.GetCamera().SetPosition(pos0);
+		cameraController.GetCamera().SetRotation(rot0);
+		CHECK(cameraController.GetCamera().GetPosition() == pos0);
+		CHECK(cameraController.GetCamera().GetRotation() == rot0);
+
+		cameraController.SetZoomLevel(3.5f);
+		CHECK(cameraController.GetZoomLevel() == 3.5f);
+
+		CHECK(false);//ARNAU TODO Events and other m_Data variables
+	}
 } // End namespace: CatchTestsetFail
 

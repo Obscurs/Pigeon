@@ -31,11 +31,6 @@ pig::WindowsWindow::~WindowsWindow()
 	Shutdown();
 }
 
-void pig::WindowsWindow::SetSize(unsigned int width, unsigned int height)
-{
-	m_Context->SetSize(width, height);
-}
-
 void pig::WindowsWindow::Init(const pig::WindowProps& props)
 {
 	WNDCLASS wc = {};

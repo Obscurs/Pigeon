@@ -61,6 +61,12 @@ void pig::Dx11RendererAPI::CleanupRenderTarget()
 	if (m_Data.m_MainRenderTargetView) { m_Data.m_MainRenderTargetView.reset(); }
 }
 
+void pig::Dx11RendererAPI::SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
+{
+	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
+	context->SetSize(width, height);
+}
+
 void pig::Dx11RendererAPI::SetClearColor(const glm::vec4& color)
 {
 	m_Data.m_ClearColor[0] = color.r;

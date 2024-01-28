@@ -3,6 +3,8 @@
 #include <cstdlib>
 #include <variant>
 
+#include <minwindef.h>
+
 #include "Utils/TestApp.h"
 
 #include <Pigeon/Events/KeyEvent.h>
@@ -82,7 +84,6 @@ namespace
 		void OnEvent(pig::Event& event) override
 		{
 			m_ExpectedEvent = StoreToVariant(event);
-
 		}
 		ExpectedEventResult m_ExpectedEvent = false;
 	};
@@ -258,7 +259,11 @@ namespace CatchTestsetFail
 		}
 		SECTION("Application resize Events")
 		{
-			appWindow.SendFakeEvent(pig::WindowsWindow::EventType::SIZE, wParam, lParam);
+			wParam = 1337;
+			lParam = 7331;
+
+			LPARAM param = MAKELONG(wParam, lParam);
+			appWindow.SendFakeEvent(pig::WindowsWindow::EventType::SIZE, wParam, param);
 			pig::WindowResizeEvent event = GetEventValue<pig::WindowResizeEvent>(testLayer->m_ExpectedEvent);
 			CHECK(event.GetEventType() == pig::EventType::WindowResize);
 			CHECK(!event.IsInCategory(pig::EventCategory::EventCategoryInput));
@@ -266,6 +271,22 @@ namespace CatchTestsetFail
 			CHECK(event.IsInCategory(pig::EventCategory::EventCategoryApplication));
 			CHECK(!event.IsInCategory(pig::EventCategory::EventCategoryMouse));
 			CHECK(!event.IsInCategory(pig::EventCategory::EventCategoryMouseButton));
+		}
+		SECTION("Application resize Events (minimize)")
+		{
+			LPARAM param;
+			SECTION("width is 0")
+			{
+				param = MAKELONG(0, 7331);
+			}
+			SECTION("height is 0")
+			{
+				param = MAKELONG(1337, 0);
+			}
+			
+			appWindow.SendFakeEvent(pig::WindowsWindow::EventType::SIZE, wParam, param);
+			const bool hasEvent = GetEventValue<bool>(testLayer->m_ExpectedEvent);
+			CHECK(!hasEvent);
 		}
 	}
 } // End namespace: CatchTestsetFail

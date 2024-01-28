@@ -44,11 +44,14 @@ void pig::Application::OnEvent(pig::Event& e)
 		dispatcher.Dispatch<pig::WindowCloseEvent>(BIND_EVENT_FN(OnWindowClose));
 		dispatcher.Dispatch<pig::WindowResizeEvent>(BIND_EVENT_FN(OnWindowResize));
 
-		for (auto it = m_Data.m_LayerStack.end(); it != m_Data.m_LayerStack.begin(); )
+		if (!m_Data.m_Minimized)
 		{
-			(*--it)->OnEvent(e);
-			if (e.Handled)
-				break;
+			for (auto it = m_Data.m_LayerStack.end(); it != m_Data.m_LayerStack.begin(); )
+			{
+				(*--it)->OnEvent(e);
+				if (e.Handled)
+					break;
+			}
 		}
 	}
 }
@@ -108,7 +111,15 @@ bool pig::Application::OnWindowClose(pig::WindowCloseEvent& e)
 
 bool pig::Application::OnWindowResize(pig::WindowResizeEvent& e)
 {
+	if (e.GetWidth() == 0 || e.GetHeight() == 0)
+	{
+		m_Data.m_Minimized = true;
+		return false;
+	}
+
+	m_Data.m_Minimized = false;
+
 	PG_CORE_ASSERT(m_Data.m_Window, "Window not initialized");
-	m_Data.m_Window->SetSize(e.GetWidth(), e.GetHeight());
+	Renderer::OnWindowResize(e.GetWidth(), e.GetHeight());
 	return false;
 }

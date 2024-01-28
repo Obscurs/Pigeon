@@ -23,8 +23,7 @@ namespace
 	public:
 		ExampleLayer()
 			: Layer("Example"),
-			m_Camera(-1.6f, 1.6f, -0.9f, 0.9f),
-			m_CameraPosition(0.0f)
+			m_CameraController(1280.0f / 720.0f)
 		{
 			m_VertexBuffer = std::move(pig::VertexBuffer::Create(s_SquareVertices, sizeof(s_SquareVertices), sizeof(float) * 5));
 			m_IndexBuffer = std::move(pig::IndexBuffer::Create(s_SuareIndices, sizeof(s_SuareIndices) / sizeof(uint32_t)));
@@ -51,32 +50,14 @@ namespace
 
 		void OnUpdate(pig::Timestep ts) override
 		{
-			pig::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1.f });
-
-			if (pig::Input::IsKeyPressed(PG_KEY_LEFT))
-				m_CameraPosition.x -= m_CameraMoveSpeed * ts;
-			else if (pig::Input::IsKeyPressed(PG_KEY_RIGHT))
-				m_CameraPosition.x += m_CameraMoveSpeed * ts;
-
-			if (pig::Input::IsKeyPressed(PG_KEY_UP))
-				m_CameraPosition.y += m_CameraMoveSpeed * ts;
-			else if (pig::Input::IsKeyPressed(PG_KEY_DOWN))
-				m_CameraPosition.y -= m_CameraMoveSpeed * ts;
-
-			if (pig::Input::IsKeyPressed(PG_KEY_A))
-				m_CameraRotation += m_CameraRotationSpeed * ts;
-			if (pig::Input::IsKeyPressed(PG_KEY_D))
-				m_CameraRotation -= m_CameraRotationSpeed * ts;
+			m_CameraController.OnUpdate(ts);
 
 			pig::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
 			pig::RenderCommand::Clear();
 
-			m_Camera.SetPosition(m_CameraPosition);
-			m_Camera.SetRotation(m_CameraRotation);
-
 			pig::Renderer::BeginScene();
 
-			m_SceneData.ViewProjectionMatrix = m_Camera.GetViewProjectionMatrix();
+			m_SceneData.ViewProjectionMatrix = m_CameraController.GetCamera().GetViewProjectionMatrix();
 
 			m_VertexBuffer->Bind();
 			m_IndexBuffer->Bind();
@@ -131,6 +112,7 @@ namespace
 
 		void OnEvent(pig::Event& event) override
 		{
+			m_CameraController.OnEvent(event);
 			/*if (event.GetEventType() == pigeon::EventType::KeyPressed)
 			{
 				pigeon::KeyPressedEvent& e = (pigeon::KeyPressedEvent&)event;
@@ -156,12 +138,7 @@ namespace
 		pig::U_Ptr<pig::Texture2D> m_Texture;
 		pig::U_Ptr<pig::Texture2D> m_TextureAlpha;
 
-		pig::OrthographicCamera m_Camera;
-		glm::vec3 m_CameraPosition;
-		float m_CameraMoveSpeed = 5.0f;
-
-		float m_CameraRotation = 0.0f;
-		float m_CameraRotationSpeed = 180.0f;
+		pig::OrthographicCameraController m_CameraController;
 
 		glm::vec3 m_SquareColor = { 0.2f, 0.3f, 0.8f };
 
