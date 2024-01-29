@@ -15,6 +15,8 @@
 #include <Platform/DirectX11/Dx11RendererAPI.h>
 #include <Platform/DirectX11/Dx11Shader.h>
 
+#define FLOAT_EQ(x, y) (std::fabs((x) - (y)) < 1e-6)
+
 namespace
 {
 	// Simple vertex shader
@@ -346,19 +348,90 @@ namespace CatchTestsetFail
 	}
 	TEST_CASE("Renderer::OrthographicCameraController")
 	{
-		const glm::vec3 pos0(0.f, 0.f, 0.f);
-		const float rot0 = 0.f;
+		SECTION("Keyboard events")
+		{
+			//UNTESTED FOR NOW, do not have any input events helper
+		}
+		SECTION("Mouse events")
+		{
+			SECTION("Mouse scrolled")
+			{
+				pig::OrthographicCameraController cameraController(0.5f);
 
-		pig::OrthographicCameraController cameraController(0.5f);
-		cameraController.GetCamera().SetPosition(pos0);
-		cameraController.GetCamera().SetRotation(rot0);
-		CHECK(cameraController.GetCamera().GetPosition() == pos0);
-		CHECK(cameraController.GetCamera().GetRotation() == rot0);
+				cameraController.SetZoomLevel(3.5f);
+				CHECK(cameraController.GetZoomLevel() == 3.5f);
 
-		cameraController.SetZoomLevel(3.5f);
-		CHECK(cameraController.GetZoomLevel() == 3.5f);
+				CHECK(cameraController.GetData().m_AspectRatio == 0.5f);
+				CHECK(cameraController.GetData().m_Rotation == false);
+				CHECK(cameraController.GetData().m_CameraRotation == 0.f);
+				CHECK(cameraController.GetData().m_CameraTranslationSpeed == 5.f);
+				CHECK(cameraController.GetData().m_CameraRotationSpeed == 180.f);
 
-		CHECK(false);//ARNAU TODO Events and other m_Data variables
+				cameraController.OnUpdate(5);
+
+				CHECK(cameraController.GetData().m_AspectRatio == 0.5f);
+				CHECK(cameraController.GetData().m_Rotation == false);
+				CHECK(cameraController.GetData().m_CameraRotation == 0.f);
+				CHECK(cameraController.GetData().m_CameraTranslationSpeed == 3.5f);
+				CHECK(cameraController.GetData().m_CameraRotationSpeed == 180.f);
+
+				const glm::vec3 pos0(0.f, 0.f, 0.f);
+				const float rot0 = 0.f;
+
+				pig::MouseScrolledEvent event(123.f, 456.f);
+
+				cameraController.OnEvent(event);
+				cameraController.OnUpdate(5);
+				
+				CHECK(cameraController.GetCamera().GetPosition() == pos0);
+				CHECK(cameraController.GetCamera().GetRotation() == rot0);
+				CHECK(cameraController.GetZoomLevel() == 0.25f);
+				CHECK(cameraController.GetData().m_AspectRatio == 0.5f);
+				CHECK(cameraController.GetData().m_Rotation == false);
+				CHECK(cameraController.GetData().m_CameraRotation == 0.f);
+				CHECK(cameraController.GetData().m_CameraTranslationSpeed == 0.25f);
+				CHECK(cameraController.GetData().m_CameraRotationSpeed == 180.f);
+
+				pig::OrthographicCamera cameraTest(-0.125f, 0.125f, -0.25f, 0.25f);
+				const pig::OrthographicCamera& controllerCamera = cameraController.GetCamera();
+				CHECK(cameraTest.GetData().m_Position == controllerCamera.GetData().m_Position);
+				CHECK(cameraTest.GetData().m_Rotation == controllerCamera.GetData().m_Rotation);
+				CHECK(cameraTest.GetData().m_ViewMatrix == controllerCamera.GetData().m_ViewMatrix);
+				CHECK(cameraTest.GetData().m_ViewProjectionMatrix == controllerCamera.GetData().m_ViewProjectionMatrix);
+				CHECK(cameraTest.GetData().m_ProjectionMatrix == controllerCamera.GetData().m_ProjectionMatrix);
+			}
+			SECTION("Window Resized")
+			{
+				pig::OrthographicCameraController cameraController(0.123f);
+				CHECK(cameraController.GetZoomLevel() == 1.0f);
+				cameraController.SetZoomLevel(4.f);
+
+				pig::WindowResizeEvent event(100.f, 1000.f);
+				cameraController.OnEvent(event);
+				cameraController.OnUpdate(10);
+
+				const glm::vec3 pos0(0.f, 0.f, 0.f);
+				const float rot0 = 0.f;
+
+				CHECK(cameraController.GetCamera().GetPosition() == pos0);
+				CHECK(cameraController.GetCamera().GetRotation() == rot0);
+				CHECK(cameraController.GetZoomLevel() == 4.f);
+				CHECK(cameraController.GetData().m_AspectRatio == 0.1f);
+				CHECK(cameraController.GetData().m_Rotation == false);
+				CHECK(cameraController.GetData().m_CameraRotation == 0.f);
+				CHECK(cameraController.GetData().m_CameraTranslationSpeed == 4.f);
+				CHECK(cameraController.GetData().m_CameraRotationSpeed == 180.f);
+
+				pig::OrthographicCamera cameraTest(-0.4f, 0.4f, -4.f, 4.f);
+				const pig::OrthographicCamera& controllerCamera = cameraController.GetCamera();
+				CHECK(cameraTest.GetData().m_Position == controllerCamera.GetData().m_Position);
+				CHECK(cameraTest.GetData().m_Rotation == controllerCamera.GetData().m_Rotation);
+				CHECK(cameraTest.GetData().m_ViewMatrix == controllerCamera.GetData().m_ViewMatrix);
+				CHECK(cameraTest.GetData().m_ViewProjectionMatrix == controllerCamera.GetData().m_ViewProjectionMatrix);
+				CHECK(cameraTest.GetData().m_ProjectionMatrix == controllerCamera.GetData().m_ProjectionMatrix);
+			}
+		}
+		
 	}
 } // End namespace: CatchTestsetFail
 
