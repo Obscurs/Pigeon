@@ -7,6 +7,8 @@
 
 #include "Pigeon/Renderer/OrthographicCamera.h"
 #include "Pigeon/Renderer/Texture.h"
+
+#include "Sandbox2D.h"
 namespace
 {
 	float s_SquareVertices[5 * 4] = {
@@ -143,7 +145,6 @@ namespace
 		glm::vec3 m_SquareColor = { 0.2f, 0.3f, 0.8f };
 
 		SceneData m_SceneData;
-		std::chrono::steady_clock::time_point m_LastFrameTime;
 	};
 }
 
@@ -157,6 +158,7 @@ public:
 pig::S_Ptr<pig::Application> pig::CreateApplication()
 {
 	pig::S_Ptr<pig::Application> sandbox = Sandbox::Create();
-	sandbox->PushLayer(std::make_shared<ExampleLayer>());
+	//sandbox->PushLayer(std::make_shared<ExampleLayer>());
+	sandbox->PushLayer(std::make_shared<sbx::Sandbox2D>());
 	return sandbox;
 }

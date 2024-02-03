@@ -1,5 +1,6 @@
 file(GLOB SRCS
     "SandboxApp.cpp"
+    "Sandbox2D.cpp"
 )
 
 source_group("" FILES ${SRCS})
