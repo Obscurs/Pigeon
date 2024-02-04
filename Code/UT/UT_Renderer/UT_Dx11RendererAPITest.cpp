@@ -52,6 +52,10 @@ namespace
 		"    return input.Col; // Output the interpolated color\n"
 		"};";
 
+	char* s_Layout =
+		"type Float3 POSITION\n"
+		"type Float4 COLOR\n";
+
 	float s_OurVertices[3 * 7] = {
 		 0.0f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
 		 0.45f, -0.5, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
@@ -273,29 +277,17 @@ namespace CatchTestsetFail
 
 		SECTION("position and color")
 		{
-			buffLayout = {
-				{ pig::ShaderDataType::Float3, "POSITION" },
-				{ pig::ShaderDataType::Float4, "COLOR" }
-			};
-			shader = std::move(pig::Shader::Create("test", s_VsCode, s_PsCode, buffLayout));
+			shader = std::move(pig::Shader::Create("test", s_VsCode, s_PsCode, s_Layout));
 		}
 
 		SECTION("position and texture from file")
 		{
-			buffLayout = {
-				{ pig::ShaderDataType::Float3, "POSITION" },
-				{ pig::ShaderDataType::Float2, "TEXCOORDS" }
-			};
-			shader = std::move(pig::Shader::Create("Assets/Test/UTTestShader.shader", buffLayout));
+			shader = std::move(pig::Shader::Create("Assets/Test/UTTestShader.shader"));
 		}
 
 		SECTION("position and texture from file using shaderlib")
 		{
-			buffLayout = {
-				{ pig::ShaderDataType::Float3, "POSITION" },
-				{ pig::ShaderDataType::Float2, "TEXCOORDS" }
-			};
-			shader = std::move(shaderLibrary.Load("Assets/Test/UTTestShader.shader", buffLayout));
+			shader = std::move(shaderLibrary.Load("Assets/Test/UTTestShader.shader"));
 
 			shader = shaderLibrary.Get("UTTestShader");
 		}

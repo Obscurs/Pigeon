@@ -21,15 +21,8 @@ void pig::Renderer2D::Init()
 	s_Data.m_VertexBuffer = std::move(pig::VertexBuffer::Create(s_SquareVertices, sizeof(s_SquareVertices), sizeof(float) * 5));
 	s_Data.m_IndexBuffer = std::move(pig::IndexBuffer::Create(s_SuareIndices, sizeof(s_SuareIndices) / sizeof(uint32_t)));
 
-	//ARNAU TODO read from shader file
-	pig::BufferLayout buffLayout = 
-	{
-		{ pig::ShaderDataType::Float3, "POSITION" },
-		{ pig::ShaderDataType::Float2, "TEXCOORD" }
-	};
-
 	//ARNAU TODO SINGLE SHADER
-	s_Data.m_Shader = std::move(pig::Shader::Create("Assets/Shaders/FlatColQuad.shader", buffLayout));
+	s_Data.m_Shader = std::move(pig::Shader::Create("Assets/Shaders/FlatColQuad.shader"));
 }
 
 void pig::Renderer2D::Clear(const glm::vec4& color)

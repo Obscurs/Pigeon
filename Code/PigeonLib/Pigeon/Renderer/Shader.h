@@ -81,6 +81,12 @@ namespace pig
 			CalculateOffsetsAndStride();
 		}
 
+		BufferLayout(const std::vector<BufferElement>& elements)
+			: m_Elements(elements)
+		{
+			CalculateOffsetsAndStride();
+		}
+
 		inline uint32_t GetStride() const { return m_Stride; }
 		inline const std::vector<BufferElement>& GetElements() const { return m_Elements; }
 
@@ -115,8 +121,8 @@ namespace pig
 
 		virtual const std::string& GetName() const = 0;
 
-		static pig::S_Ptr<Shader> Create(const std::string& filepath, const pig::BufferLayout& buffLayout);
-		static pig::S_Ptr<Shader> Create(const std::string& name, const char* vertexSrc, const char* fragmentSrc, const BufferLayout& buffLayout);
+		static pig::S_Ptr<Shader> Create(const std::string& filepath);
+		static pig::S_Ptr<Shader> Create(const std::string& name, const char* vertexSrc, const char* fragmentSrc, const char* buffLayout);
 
 		virtual void UploadUniformInt(const std::string& name, int value) const = 0;
 
@@ -140,8 +146,8 @@ namespace pig
 	public:
 		void Add(const std::string& name, const pig::S_Ptr<Shader>& shader);
 		void Add(const pig::S_Ptr<Shader>& shader);
-		pig::S_Ptr<Shader> Load(const std::string& filepath, const pig::BufferLayout& buffLayout);
-		pig::S_Ptr<Shader> Load(const std::string& name, const std::string& filepath, const pig::BufferLayout& buffLayout);
+		pig::S_Ptr<Shader> Load(const std::string& filepath);
+		pig::S_Ptr<Shader> Load(const std::string& name, const std::string& filepath);
 
 		pig::S_Ptr<Shader> Get(const std::string& name);
 

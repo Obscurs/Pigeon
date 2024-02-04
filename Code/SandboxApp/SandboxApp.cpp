@@ -30,13 +30,8 @@ namespace
 			m_VertexBuffer = std::move(pig::VertexBuffer::Create(s_SquareVertices, sizeof(s_SquareVertices), sizeof(float) * 5));
 			m_IndexBuffer = std::move(pig::IndexBuffer::Create(s_SuareIndices, sizeof(s_SuareIndices) / sizeof(uint32_t)));
 
-			pig::BufferLayout buffLayout = {
-				{ pig::ShaderDataType::Float3, "POSITION" },
-				{ pig::ShaderDataType::Float2, "TEXCOORD" }
-			};
-
-			m_Shader = std::move(pig::Shader::Create("Assets/Shaders/TestShader.shader", buffLayout));
-			auto textureShader = m_ShaderLibrary.Load("Assets/Shaders/TextureShader.shader", buffLayout);
+			m_Shader = std::move(pig::Shader::Create("Assets/Shaders/TestShader.shader"));
+			auto textureShader = m_ShaderLibrary.Load("Assets/Shaders/TextureShader.shader");
 
 			m_Texture = pig::Texture2D::Create("Assets/Textures/Checkerboard.png");
 			m_TextureAlpha = pig::Texture2D::Create("Assets/Textures/alphaTest.png");

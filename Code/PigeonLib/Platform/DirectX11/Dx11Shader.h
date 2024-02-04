@@ -24,8 +24,8 @@ namespace pig
 #endif
 		static DirectX::XMMATRIX ConvertGLMMatrixToDX(const glm::mat4& glmMatrix);
 
-		Dx11Shader(const std::string& filepath, const BufferLayout& buffLayout);
-		Dx11Shader(const std::string& name, const char* vertexSrc, const char* fragmentSrc, const BufferLayout& buffLayout);
+		Dx11Shader(const std::string& filepath);
+		Dx11Shader(const std::string& name, const char* vertexSrc, const char* fragmentSrc, const char* buffLayout);
 		~Dx11Shader();
 
 		virtual void Bind() const override;
@@ -46,7 +46,7 @@ namespace pig
 	private:
 		std::string ReadFile(const std::string& filepath);
 		std::unordered_map<unsigned int, std::string> PreProcess(const std::string& source);
-		void Compile(const std::unordered_map<unsigned int, std::string>& shaderSources, const BufferLayout& buffLayout);
+		void Compile(const std::unordered_map<unsigned int, std::string>& shaderSources);
 
 	private:
 		Data m_Data;

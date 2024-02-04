@@ -1,3 +1,8 @@
+#type layout
+
+type Float3 POSITION
+type Float2 TEXCOORD
+
 #type vertex
 
 cbuffer MatrixBuffer : register(b0)

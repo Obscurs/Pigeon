@@ -11,13 +11,22 @@
 
 namespace
 {
-	enum EShaderType
+	enum class EShaderType
 	{
-		UNKNOWNT_TYPE
+		UNKNOWNT_TYPE = 0
 		, VERTEX_SHADER
 		, FRAGMENT_SHADER
+		, LAYOUT
 	};
 
+	enum class ELayoutType
+	{
+		UNKNOWNT_TYPE = 0
+		, Float4
+		, Float3
+		, Float2
+		, Float
+	};
 
 	struct IntBufferType
 	{
@@ -93,12 +102,30 @@ namespace
 	{
 		// Create an empty vertex shader handle
 		if (type == "vertex")
-			return VERTEX_SHADER;
+			return EShaderType::VERTEX_SHADER;
 		if (type == "fragment" || type == "pixel")
-			return FRAGMENT_SHADER;
+			return EShaderType::FRAGMENT_SHADER;
+		if (type == "layout")
+			return EShaderType::LAYOUT;
 
 		PG_CORE_ASSERT(false, "Unknown shader type!");
-		return UNKNOWNT_TYPE;
+		return EShaderType::UNKNOWNT_TYPE;
+	}
+
+	static ELayoutType LayoutTypeFromString(const std::string& type)
+	{
+		// Create an empty vertex shader handle
+		if (type == "Float4")
+			return ELayoutType::Float4;
+		if (type == "Float3")
+			return ELayoutType::Float3;
+		if (type == "Float2")
+			return ELayoutType::Float2;
+		if (type == "Float")
+			return ELayoutType::Float;
+
+		PG_CORE_ASSERT(false, "Unknown shader type!");
+		return ELayoutType::UNKNOWNT_TYPE;
 	}
 
 	static void BufferLayoutToDx11InputDesc(const pig::BufferLayout& bufferLayout, std::vector<D3D11_INPUT_ELEMENT_DESC>& layoutDesc)
@@ -108,13 +135,64 @@ namespace
 			layoutDesc.push_back({ elem.Name.c_str(), 0, ShaderDataTypeToDx11BaseType(elem.Type), 0, elem.Offset, D3D11_INPUT_PER_VERTEX_DATA, 0 });
 		}
 	}
+
+	pig::BufferElement ParseBufferElement(const ELayoutType& typeSrc, const std::string& identifierSrc)
+	{
+		switch (typeSrc)
+		{
+		case ELayoutType::Float4:
+			return { pig::ShaderDataType::Float4, identifierSrc };
+		case ELayoutType::Float3:
+			return { pig::ShaderDataType::Float3, identifierSrc };
+		case ELayoutType::Float2:
+			return { pig::ShaderDataType::Float2, identifierSrc };
+		case ELayoutType::Float:
+		default:
+			return { pig::ShaderDataType::Float, identifierSrc };
+		}
+	}
+
+	static pig::BufferLayout ParseLayoutFromString(const std::string& source)
+	{
+		std::vector<pig::BufferElement> elements;
+
+		const char* typeToken = "type";
+		const size_t typeTokenLength = strlen(typeToken);
+		size_t pos = source.find(typeToken, 0);
+		while (pos != std::string::npos)
+		{
+			const size_t typeEndPos = source.find_first_of(" ", pos + typeTokenLength + 1);
+			const size_t eol = source.find_first_of("\r\n", pos);
+			PG_CORE_ASSERT(eol != std::string::npos, "Syntax error");
+			const size_t begin = pos + typeTokenLength + 1;
+			const std::string type = source.substr(begin, typeEndPos - begin);
+			const std::string name = source.substr(typeEndPos + 1, eol - (typeEndPos + 1));
+
+			PG_CORE_ASSERT(name.size() > 0, "Invalid identifier for layout type");
+
+			const ELayoutType layoutType = LayoutTypeFromString(type);
+			PG_CORE_ASSERT(layoutType != ELayoutType::UNKNOWNT_TYPE, "Invalid shader type specified");
+
+			if (layoutType != ELayoutType::UNKNOWNT_TYPE)
+			{
+				elements.push_back(ParseBufferElement(layoutType, name));
+			}
+			
+			const size_t nextLinePos = source.find_first_not_of("\r\n", eol);
+			pos = source.find(typeToken, nextLinePos);
+		}
+
+		PG_CORE_ASSERT(elements.size() > 0, "Layout is empty");
+
+		return pig::BufferLayout(elements);
+	}
 }
 
-pig::Dx11Shader::Dx11Shader(const std::string& filepath, const pig::BufferLayout& buffLayout)
+pig::Dx11Shader::Dx11Shader(const std::string& filepath)
 {
 	std::string source = ReadFile(filepath);
 	auto shaderSources = PreProcess(source);
-	Compile(shaderSources, buffLayout);
+	Compile(shaderSources);
 
 	// Extract name from filepath
 	auto lastSlash = filepath.find_last_of("/\\");
@@ -124,12 +202,13 @@ pig::Dx11Shader::Dx11Shader(const std::string& filepath, const pig::BufferLayout
 	m_Data.m_Name = filepath.substr(lastSlash, count);
 }
 
-pig::Dx11Shader::Dx11Shader(const std::string& name, const char* vertexSrc, const char* fragmentSrc, const pig::BufferLayout& buffLayout)
+pig::Dx11Shader::Dx11Shader(const std::string& name, const char* vertexSrc, const char* fragmentSrc, const char* buffLayout)
 {
 	std::unordered_map<unsigned int, std::string> sources;
-	sources[EShaderType::VERTEX_SHADER] = vertexSrc;
-	sources[EShaderType::FRAGMENT_SHADER] = fragmentSrc;
-	Compile(sources, buffLayout);
+	sources[static_cast<int>(EShaderType::VERTEX_SHADER)] = vertexSrc;
+	sources[static_cast<int>(EShaderType::FRAGMENT_SHADER)] = fragmentSrc;
+	sources[static_cast<int>(EShaderType::LAYOUT)] = buffLayout;
+	Compile(sources);
 	m_Data.m_Name = name;
 }
 
@@ -170,15 +249,16 @@ std::unordered_map<unsigned int, std::string> pig::Dx11Shader::PreProcess(const 
 		PG_CORE_ASSERT(eol != std::string::npos, "Syntax error");
 		size_t begin = pos + typeTokenLength + 1;
 		std::string type = source.substr(begin, eol - begin);
-		PG_CORE_ASSERT(ShaderTypeFromString(type), "Invalid shader type specified");
+		PG_CORE_ASSERT(ShaderTypeFromString(type) != EShaderType::UNKNOWNT_TYPE, "Invalid shader type specified");
 
 		size_t nextLinePos = source.find_first_not_of("\r\n", eol);
 		pos = source.find(typeToken, nextLinePos);
-		shaderSources[ShaderTypeFromString(type)] = source.substr(nextLinePos, pos - (nextLinePos == std::string::npos ? source.size() - 1 : nextLinePos));
+		shaderSources[static_cast<int>(ShaderTypeFromString(type))] = source.substr(nextLinePos, pos - (nextLinePos == std::string::npos ? source.size() - 1 : nextLinePos));
 	}
 	return shaderSources;
 }
-void pig::Dx11Shader::Compile(const std::unordered_map<unsigned int, std::string>& shaderSources, const BufferLayout& buffLayout)
+
+void pig::Dx11Shader::Compile(const std::unordered_map<unsigned int, std::string>& shaderSources)
 {
 	pig::RAII_PtrRelease<ID3D10Blob> errorBlob;
 	pig::RAII_PtrRelease<ID3D10Blob> vsBlob;
@@ -186,9 +266,13 @@ void pig::Dx11Shader::Compile(const std::unordered_map<unsigned int, std::string
 
 	PG_CORE_ASSERT(shaderSources.find((unsigned int)EShaderType::VERTEX_SHADER) != shaderSources.end(), "Vertex Shader is missing!");
 	PG_CORE_ASSERT(shaderSources.find((unsigned int)EShaderType::FRAGMENT_SHADER) != shaderSources.end(), "Fragment Shader is missing!");
+	PG_CORE_ASSERT(shaderSources.find((unsigned int)EShaderType::LAYOUT) != shaderSources.end(), "Shader Layout is missing!");
 	
 	const std::string& vertexSrc = shaderSources.at((unsigned int)EShaderType::VERTEX_SHADER);
 	const std::string& fragmentSrc = shaderSources.at((unsigned int)EShaderType::FRAGMENT_SHADER);
+	const std::string& layoutSrc = shaderSources.at((unsigned int)EShaderType::LAYOUT);
+
+	const BufferLayout buffLayout = ParseLayoutFromString(layoutSrc);
 
 	// Compile vertex shader
 	if (FAILED(D3DCompile(vertexSrc.c_str(), vertexSrc.size(), nullptr, nullptr, nullptr, "main", "vs_5_0", 0, 0, &vsBlob.value, &errorBlob.value))) {
