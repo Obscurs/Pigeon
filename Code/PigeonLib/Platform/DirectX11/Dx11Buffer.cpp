@@ -8,7 +8,7 @@
 // VertexBuffer /////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 
-pig::Dx11VertexBuffer::Dx11VertexBuffer(float* vertices, uint32_t size, uint32_t stride)
+pig::Dx11VertexBuffer::Dx11VertexBuffer(const float* vertices, uint32_t size, uint32_t stride)
 {
 	D3D11_BUFFER_DESC bd = { 0 };
 	bd.Usage = D3D11_USAGE_DEFAULT;
@@ -53,7 +53,7 @@ void pig::Dx11VertexBuffer::Unbind() const
 // IndexBuffer //////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 
-pig::Dx11IndexBuffer::Dx11IndexBuffer(uint32_t* indices, uint32_t count)
+pig::Dx11IndexBuffer::Dx11IndexBuffer(const uint32_t* indices, uint32_t count)
 {
 	m_Data.m_Count = count;
 	D3D11_BUFFER_DESC ibd = { 0 };

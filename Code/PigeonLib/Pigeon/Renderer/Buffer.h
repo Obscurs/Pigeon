@@ -1,6 +1,6 @@
 #pragma once
 
-namespace pig 
+namespace pig
 {
 	class VertexBuffer
 	{
@@ -10,7 +10,7 @@ namespace pig
 		virtual void Bind() const = 0;
 		virtual void Unbind() const = 0;
 
-		static pig::U_Ptr<VertexBuffer> Create(float* vertices, uint32_t size, uint32_t stride);
+		static pig::U_Ptr<VertexBuffer> Create(const float* vertices, uint32_t size, uint32_t stride);
 	};
 
 	class IndexBuffer
@@ -23,7 +23,7 @@ namespace pig
 
 		virtual uint32_t GetCount() const = 0;
 
-		static pig::U_Ptr<IndexBuffer> Create(uint32_t* indices, uint32_t size);
+		static pig::U_Ptr<IndexBuffer> Create(const uint32_t* indices, uint32_t size);
 	};
 
 }

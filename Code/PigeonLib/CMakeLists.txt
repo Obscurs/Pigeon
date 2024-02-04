@@ -23,6 +23,7 @@ file(GLOB RENDERER
     "Pigeon/Renderer/OrthographicCamera.cpp"
     "Pigeon/Renderer/RenderCommand.cpp"
     "Pigeon/Renderer/Renderer.cpp"
+    "Pigeon/Renderer/Renderer2D.cpp"
     "Pigeon/Renderer/RendererAPI.cpp"
     "Pigeon/Renderer/Shader.cpp"
     "Pigeon/Renderer/Texture.cpp"

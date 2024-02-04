@@ -14,7 +14,7 @@ namespace pig
 			UINT m_Stride = 0;
 		};
 
-		Dx11VertexBuffer(float* vertices, uint32_t size, uint32_t stride);
+		Dx11VertexBuffer(const float* vertices, uint32_t size, uint32_t stride);
 		virtual ~Dx11VertexBuffer();
 
 #ifdef TESTS_ENABLED
@@ -37,7 +37,7 @@ namespace pig
 			uint32_t m_Count;
 		};
 
-		Dx11IndexBuffer(uint32_t* indices, uint32_t count);
+		Dx11IndexBuffer(const uint32_t* indices, uint32_t count);
 		virtual ~Dx11IndexBuffer();
 
 #ifdef TESTS_ENABLED

@@ -8,6 +8,7 @@
 #include "Utils/TestApp.h"
 
 #include <Pigeon/Renderer/OrthographicCamera.h>
+#include <Pigeon/Renderer/Renderer2D.h>
 #include <Pigeon/Renderer/Texture.h>
 
 #include <Platform/DirectX11/Dx11Buffer.h>
@@ -147,6 +148,40 @@ namespace CatchTestsetFail
 		CHECK(rendererAPI->GetData().m_MainRenderTargetView != nullptr);
 		pig::Renderer::Submit(0);
 		pig::Renderer::EndScene();
+	}
+
+	TEST_CASE("Renderer::Renderer2D")
+	{
+		pig::S_Ptr<pig::Application> app = pig::CreateApplication();
+
+		const pig::S_Ptr<pig::Dx11RendererAPI> rendererAPI = std::dynamic_pointer_cast<pig::Dx11RendererAPI>(pig::RenderCommand::GetRenderAPI());
+		pig::OrthographicCameraController cameraController(1280.0f / 720.0f);
+		
+		SECTION("Empty call")
+		{
+			const pig::Renderer2D::Data& data = pig::Renderer2D::GetData();
+			CHECK(!data.m_Camera);
+			CHECK(data.m_Shader);
+			CHECK(data.m_VertexBuffer);
+			CHECK(data.m_IndexBuffer);
+
+			pig::Renderer2D::Clear({0.f, 0.f, 0.f, 1.f});
+			pig::Renderer2D::BeginScene(cameraController);
+			CHECK(data.m_Camera);
+			pig::Renderer2D::EndScene();
+			CHECK(!data.m_Camera);
+		}
+		SECTION("Draw quad")
+		{
+			pig::Renderer2D::BeginScene(cameraController);
+
+			glm::vec3 pos(4.f, 5.f, 6.f);
+			glm::vec3 col(7.f, 8.f, 9.f);
+			glm::vec3 scale(1.f, 2.f, 3.f);
+			pig::Renderer2D::DrawQuad(pos, scale, col);
+
+			pig::Renderer2D::EndScene();
+		}
 	}
 
 	TEST_CASE("app.Renderer::Dx11ContextTest")
@@ -431,7 +466,6 @@ namespace CatchTestsetFail
 				CHECK(cameraTest.GetData().m_ProjectionMatrix == controllerCamera.GetData().m_ProjectionMatrix);
 			}
 		}
-		
 	}
 } // End namespace: CatchTestsetFail
 

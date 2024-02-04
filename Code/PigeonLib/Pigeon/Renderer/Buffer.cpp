@@ -5,7 +5,7 @@
 
 #include "Platform/DirectX11/Dx11Buffer.h"
 
-pig::U_Ptr<pig::VertexBuffer> pig::VertexBuffer::Create(float* vertices, uint32_t size, uint32_t stride)
+pig::U_Ptr<pig::VertexBuffer> pig::VertexBuffer::Create(const float* vertices, uint32_t size, uint32_t stride)
 {
 	switch (pig::Renderer::GetAPI())
 	{
@@ -17,7 +17,7 @@ pig::U_Ptr<pig::VertexBuffer> pig::VertexBuffer::Create(float* vertices, uint32_
 	return nullptr;
 }
 
-pig::U_Ptr<pig::IndexBuffer> pig::IndexBuffer::Create(uint32_t* indices, uint32_t size)
+pig::U_Ptr<pig::IndexBuffer> pig::IndexBuffer::Create(const uint32_t* indices, uint32_t size)
 {
 	switch (pig::Renderer::GetAPI())
 	{

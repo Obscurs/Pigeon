@@ -5,81 +5,38 @@
 
 #include "imgui/imgui.h"
 
-#include "Pigeon/Renderer/Renderer.h"
-#include "Pigeon/Renderer/RenderCommand.h"
+#include "Pigeon/Renderer/Renderer2D.h"
 
-namespace
+sbx::Sandbox2D::Sandbox2D(): pig::Layer("Sandbox2D"), m_CameraController(1280.0f / 720.0f)
 {
-	float s_SquareVertices[5 * 4] = {
-		-0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
-		-0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
-		 0.5f,  0.5f, 0.0f, 1.0f, 1.0f,
-		 0.5f, -0.5f, 0.0f, 1.0f, 0.0f
-	};
+	m_ColorQuad1 = glm::vec3(0.f, 1.f, 0.f);
+	m_PosQuad1 = glm::vec3(0.f, 0.f, 0.f);
+	m_ScaleQuad1 = glm::vec3(1.f, 1.f, 1.f);
 
-	uint32_t s_SuareIndices[6] = { 0, 1, 2, 2, 3, 0 };
-}
-
-sbx::Sandbox2D::Sandbox2D(): 
-	pig::Layer("Sandbox2D"),
-	m_CameraController(1280.0f / 720.0f)
-{
-	m_VertexBuffer = std::move(pig::VertexBuffer::Create(s_SquareVertices, sizeof(s_SquareVertices), sizeof(float) * 5));
-	m_IndexBuffer = std::move(pig::IndexBuffer::Create(s_SuareIndices, sizeof(s_SuareIndices) / sizeof(uint32_t)));
-
-	//ARNAU TODO read from shader file
-	pig::BufferLayout buffLayout = {
-		{ pig::ShaderDataType::Float3, "POSITION" },
-		{ pig::ShaderDataType::Float2, "TEXCOORD" }
-	};
-
-	//ARNAU TODO SINGLE SHADER
-	m_Shader = std::move(pig::Shader::Create("Assets/Shaders/FlatColQuad.shader", buffLayout));
-
-	//ARNAU TODO? Spritesheet
-	//m_Texture = pig::Texture2D::Create("Assets/Textures/Checkerboard.png");
-}
-
-sbx::Sandbox2D::~Sandbox2D()
-{
-	m_Shader.reset();
-
-	m_VertexBuffer.reset();
-	m_IndexBuffer.reset();
+	m_ColorQuad2 = glm::vec3(0.f, 1.f, 1.f);
+	m_PosQuad2 = glm::vec3(1.f, 1.f, 0.f);
+	m_ScaleQuad2 = glm::vec3(0.5f, 1.5f, 1.f);
 }
 
 void sbx::Sandbox2D::OnUpdate(pig::Timestep ts)
 {
 	m_CameraController.OnUpdate(ts);
 
-	pig::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
-	pig::RenderCommand::Clear();
+	pig::Renderer2D::Clear({ 0.3f, 0.3f, 0.3f, 1.f });
+	pig::Renderer2D::BeginScene(m_CameraController);
 
-	pig::Renderer::BeginScene();
-
-	m_SceneData.ViewProjectionMatrix = m_CameraController.GetCamera().GetViewProjectionMatrix();
-
-	m_VertexBuffer->Bind();
-	m_IndexBuffer->Bind();
-
-	m_Shader->Bind();
-	m_Shader->UploadUniformMat4("u_ViewProjection", m_SceneData.ViewProjectionMatrix);
-	m_Shader->UploadUniformFloat3("u_Color", m_SquareColor);
-
-	m_Shader->UploadUniformMat4("u_ViewProjection", m_SceneData.ViewProjectionMatrix);
-	glm::vec3 pos(0.f, 0.f, 0.f);
-	glm::mat4 scale = glm::scale(glm::mat4(1.f), glm::vec3(1.f));
-	glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos) * scale;
-	m_Shader->UploadUniformMat4("u_Transform", transform);
-	pig::Renderer::Submit(6);
-
-	pig::Renderer::EndScene();
+	pig::Renderer2D::DrawQuad(m_PosQuad1, m_ScaleQuad1, m_ColorQuad1);
+	pig::Renderer2D::DrawQuad(m_PosQuad2, m_ScaleQuad2, m_ColorQuad2);
+	pig::Renderer2D::EndScene();
 }
 
 void sbx::Sandbox2D::OnImGuiRender()
 {
 	ImGui::Begin("Settings");
-	ImGui::ColorEdit3("Square Color", glm::value_ptr(m_SquareColor));
+	ImGui::ColorEdit3("Quad2 Color", glm::value_ptr(m_ColorQuad2));
+	ImGui::InputFloat3("Quad2 Position", glm::value_ptr(m_PosQuad2));
+	ImGui::InputFloat3("Quad2 Scale", glm::value_ptr(m_ScaleQuad2));
+
 	ImGui::End();
 }
 
