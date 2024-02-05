@@ -21,5 +21,6 @@ namespace pig
 	{
 	public:
 		static pig::U_Ptr<Texture2D> Create(const std::string& path);
+		static pig::U_Ptr<Texture2D> Create(unsigned int width, unsigned int height, unsigned int channels, const unsigned char* data);
 	};
 }

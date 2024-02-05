@@ -312,8 +312,38 @@ namespace CatchTestsetFail
 
 	TEST_CASE("Renderer::Texture")
 	{
-		pig::U_Ptr<pig::Texture2D> texture = pig::Texture2D::Create("Assets/Test/SampleTexture.png");
-		texture->Bind(0);
+		SECTION("File Texture")
+		{
+			pig::U_Ptr<pig::Texture2D> texture = pig::Texture2D::Create("Assets/Test/SampleTexture.png");
+			texture->Bind(0);
+			CHECK(texture->GetHeight() == 64);
+			CHECK(texture->GetWidth() == 64);
+		}
+		SECTION("Data Texture")
+		{
+			const unsigned int width = 128;
+			const unsigned int height = 64;
+			SECTION("RGB")
+			{
+				const unsigned int channels = 3;
+				std::vector<unsigned char> data(width * height * channels, 255);
+				pig::U_Ptr<pig::Texture2D> texture = pig::Texture2D::Create(width, height, channels, data.data());
+				texture->Bind(0);
+				CHECK(texture->GetHeight() == 64);
+				CHECK(texture->GetWidth() == 128);
+			}
+			SECTION("RGBA")
+			{
+				const unsigned int channels = 4;
+				std::vector<unsigned char> data(width * height * channels, 255);
+				pig::U_Ptr<pig::Texture2D> texture = pig::Texture2D::Create(width, height, channels, data.data());
+				texture->Bind(0);
+				CHECK(texture->GetHeight() == 64);
+				CHECK(texture->GetWidth() == 128);
+			}
+
+		}
+		
 	}
 
 	TEST_CASE("Renderer::OrthographicCamera")
