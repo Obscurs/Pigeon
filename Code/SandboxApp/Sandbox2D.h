@@ -33,6 +33,8 @@ namespace sbx
 		glm::vec3 m_ColorQuad2;
 		glm::vec3 m_PosQuad2;
 		glm::vec3 m_ScaleQuad2;
+
+		pig::U_Ptr<pig::Texture2D> m_Texture;
 	};
 }
 

@@ -168,6 +168,7 @@ namespace CatchTestsetFail
 			CHECK(data.m_Shader);
 			CHECK(data.m_VertexBuffer);
 			CHECK(data.m_IndexBuffer);
+			CHECK(data.m_WhiteTexture);
 
 			pig::Renderer2D::Clear({0.f, 0.f, 0.f, 1.f});
 			pig::Renderer2D::BeginScene(cameraController);
@@ -183,6 +184,19 @@ namespace CatchTestsetFail
 			glm::vec3 col(7.f, 8.f, 9.f);
 			glm::vec3 scale(1.f, 2.f, 3.f);
 			pig::Renderer2D::DrawQuad(pos, scale, col);
+
+			pig::Renderer2D::EndScene();
+		}
+		SECTION("Draw textured quad")
+		{
+			pig::U_Ptr<pig::Texture2D> texture = pig::Texture2D::Create("Assets/Test/SampleTexture.png");
+
+			pig::Renderer2D::BeginScene(cameraController);
+
+			glm::vec3 pos(4.f, 5.f, 6.f);
+			glm::vec3 col(7.f, 8.f, 9.f);
+			glm::vec3 scale(1.f, 2.f, 3.f);
+			pig::Renderer2D::DrawQuad(pos, scale, *texture);
 
 			pig::Renderer2D::EndScene();
 		}
@@ -341,9 +355,7 @@ namespace CatchTestsetFail
 				CHECK(texture->GetHeight() == 64);
 				CHECK(texture->GetWidth() == 128);
 			}
-
 		}
-		
 	}
 
 	TEST_CASE("Renderer::OrthographicCamera")
