@@ -23,7 +23,12 @@ namespace pig
 			pig::U_Ptr<pig::Texture2D> m_WhiteTexture = nullptr;
 
 			const pig::OrthographicCameraController* m_Camera = nullptr;
+			
+			unsigned int m_VertexCount = 0;
+			unsigned int m_IndexCount = 0;
 		};
+
+		static void Destroy();
 
 		static void Init();
 
@@ -39,6 +44,8 @@ namespace pig
 		static const Data& GetData() { return s_Data; }
 #endif
 	private:
+		static void Flush();
+
 		static void Submit(unsigned int count);
 
 		static Data s_Data;

@@ -24,7 +24,8 @@ namespace pig
 		virtual void Bind() const override;
 		virtual void Unbind() const override;
 
-	private:
+		virtual void AppendVertices(const float* vertices, unsigned int count, unsigned int countOffset) override;
+
 		Data m_Data;
 	};
 
@@ -46,6 +47,8 @@ namespace pig
 
 		virtual void Bind() const override;
 		virtual void Unbind() const override;
+
+		virtual void AppendIndices(const uint32_t* indices, unsigned int count, unsigned int countOffset) override;
 
 		virtual uint32_t GetCount() const { return m_Data.m_Count; }
 	private:

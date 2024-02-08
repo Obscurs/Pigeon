@@ -9,8 +9,8 @@
 
 sbx::Sandbox2D::Sandbox2D(): pig::Layer("Sandbox2D"), m_CameraController(1280.0f / 720.0f)
 {
-	m_ColorQuad1 = glm::vec3(0.f, 1.f, 0.f);
-	m_PosQuad1 = glm::vec3(0.f, 0.f, 0.f);
+	m_ColorQuad1 = glm::vec3(0.f, 1.f, 0.0f);
+	m_PosQuad1 = glm::vec3(0.01f, 0.01f, 0.0f);
 	m_ScaleQuad1 = glm::vec3(1.f, 1.f, 1.f);
 
 	m_ColorQuad2 = glm::vec3(0.f, 1.f, 1.f);

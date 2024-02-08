@@ -11,6 +11,8 @@ namespace pig
 		virtual void Unbind() const = 0;
 
 		static pig::U_Ptr<VertexBuffer> Create(const float* vertices, uint32_t size, uint32_t stride);
+
+		virtual void AppendVertices(const float* vertices, unsigned int count, unsigned int countOffset) = 0;
 	};
 
 	class IndexBuffer
@@ -24,6 +26,8 @@ namespace pig
 		virtual uint32_t GetCount() const = 0;
 
 		static pig::U_Ptr<IndexBuffer> Create(const uint32_t* indices, uint32_t size);
+
+		virtual void AppendIndices(const uint32_t* indices, unsigned int count, unsigned int countOffset) = 0;
 	};
 
 }

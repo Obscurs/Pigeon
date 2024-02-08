@@ -26,6 +26,7 @@ namespace
 		, Float3
 		, Float2
 		, Float
+		, Int
 	};
 
 	struct IntBufferType
@@ -123,6 +124,8 @@ namespace
 			return ELayoutType::Float2;
 		if (type == "Float")
 			return ELayoutType::Float;
+		if (type == "Int")
+			return ELayoutType::Int;
 
 		PG_CORE_ASSERT(false, "Unknown shader type!");
 		return ELayoutType::UNKNOWNT_TYPE;
@@ -147,8 +150,10 @@ namespace
 		case ELayoutType::Float2:
 			return { pig::ShaderDataType::Float2, identifierSrc };
 		case ELayoutType::Float:
-		default:
 			return { pig::ShaderDataType::Float, identifierSrc };
+		case ELayoutType::Int:
+		default:
+			return { pig::ShaderDataType::Int, identifierSrc };
 		}
 	}
 

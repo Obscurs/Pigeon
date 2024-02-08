@@ -71,10 +71,8 @@ void pig::Application::Init()
 {
 	m_Data.m_Window = std::move(Window::Create());
 	m_Data.m_Window->SetEventCallback(BIND_EVENT_FN(OnEvent));
-
 	pig::Renderer::Init();
 	pig::Renderer2D::Init();
-
 	m_Data.m_ImGuiLayer = std::make_shared<ImGuiLayer>();
 	PushOverlay(m_Data.m_ImGuiLayer);
 
@@ -107,6 +105,7 @@ void pig::Application::Update()
 
 bool pig::Application::OnWindowClose(pig::WindowCloseEvent& e)
 {
+	pig::Renderer2D::Destroy();
 	m_Data.m_Running = false;
 	return false;
 }

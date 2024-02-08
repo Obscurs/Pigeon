@@ -200,6 +200,21 @@ namespace CatchTestsetFail
 
 			pig::Renderer2D::EndScene();
 		}
+		SECTION("Batch rendering")
+		{
+			const pig::Renderer2D::Data& data = pig::Renderer2D::GetData();
+			
+			glm::vec3 pos(4.f, 5.f, 6.f);
+			glm::vec3 col(7.f, 8.f, 9.f);
+			glm::vec3 scale(1.f, 2.f, 3.f);
+
+			pig::Renderer2D::Clear({ 0.f, 0.f, 0.f, 1.f });
+			pig::Renderer2D::BeginScene(cameraController);
+			pig::Renderer2D::DrawQuad(pos, scale, col);
+			CHECK(data.m_VertexCount == 4);
+			
+			pig::Renderer2D::EndScene();
+		}
 	}
 
 	TEST_CASE("app.Renderer::Dx11ContextTest")
@@ -243,6 +258,12 @@ namespace CatchTestsetFail
 			pig::U_Ptr<pig::VertexBuffer> vertexBuffer = std::move(pig::VertexBuffer::Create(s_OurVertices, sizeof(s_OurVertices), sizeof(float) * 7));
 			pig::Dx11VertexBuffer* dxVB = static_cast<pig::Dx11VertexBuffer*>(vertexBuffer.get());
 			CHECK(dxVB->GetData().m_Buffer != nullptr);
+
+			SECTION("Append vertices")
+			{
+				vertexBuffer->AppendVertices(s_OurVertices, 3, 0);
+			}
+
 			dxVB->Bind();
 			dxVB->Unbind();
 		}
@@ -252,6 +273,12 @@ namespace CatchTestsetFail
 			pig::Dx11IndexBuffer* dxIB = static_cast<pig::Dx11IndexBuffer*>(indexBuffer.get());
 			CHECK(dxIB->GetData().m_Buffer != nullptr);
 			CHECK(dxIB->GetCount() == 3);
+
+			SECTION("Append indices")
+			{
+				indexBuffer->AppendIndices(s_Indices, 3, 0);
+			}
+
 			dxIB->Bind();
 			dxIB->Unbind();
 		}
