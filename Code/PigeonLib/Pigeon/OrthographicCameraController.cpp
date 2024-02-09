@@ -41,8 +41,8 @@ void pig::OrthographicCameraController::OnUpdate(Timestep ts)
 void pig::OrthographicCameraController::OnEvent(Event& e)
 {
 	EventDispatcher dispatcher(e);
-	dispatcher.Dispatch<MouseScrolledEvent>(PG_BIND_EVENT_FN(OrthographicCameraController::OnMouseScrolled));
-	dispatcher.Dispatch<WindowResizeEvent>(PG_BIND_EVENT_FN(OrthographicCameraController::OnWindowResized));
+	dispatcher.Dispatch<MouseScrolledEvent>(pig::BindEventFn<&OrthographicCameraController::OnMouseScrolled, OrthographicCameraController>(this));
+	dispatcher.Dispatch<WindowResizeEvent>(pig::BindEventFn<&OrthographicCameraController::OnWindowResized, OrthographicCameraController>(this));
 }
 
 bool pig::OrthographicCameraController::OnMouseScrolled(MouseScrolledEvent& e)

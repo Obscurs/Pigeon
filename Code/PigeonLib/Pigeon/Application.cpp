@@ -40,8 +40,8 @@ void pig::Application::OnEvent(pig::Event& e)
 	if (m_Data.m_Initialized)
 	{
 		pig::EventDispatcher dispatcher(e);
-		dispatcher.Dispatch<pig::WindowCloseEvent>(BindEventFn<&Application::OnWindowClose>());
-		dispatcher.Dispatch<pig::WindowResizeEvent>(BindEventFn<&Application::OnWindowResize>());
+		dispatcher.Dispatch<pig::WindowCloseEvent>(pig::BindEventFn<&Application::OnWindowClose, Application>(this));
+		dispatcher.Dispatch<pig::WindowResizeEvent>(pig::BindEventFn<&Application::OnWindowResize, Application>(this));
 
 		if (!m_Data.m_Minimized)
 		{
@@ -68,7 +68,7 @@ void pig::Application::Run()
 void pig::Application::Init()
 {
 	m_Data.m_Window = std::move(Window::Create());
-	m_Data.m_Window->SetEventCallback(BindEventFn<&Application::OnEvent>());
+	m_Data.m_Window->SetEventCallback(pig::BindEventFn<&Application::OnEvent, Application>(this));
 	pig::Renderer::Init();
 	pig::Renderer2D::Init();
 	m_Data.m_ImGuiLayer = std::make_shared<ImGuiLayer>();
