@@ -52,26 +52,15 @@ namespace pig {
 
 	class EventDispatcher
 	{
-		template<typename T>
-		using EventFn = std::function<bool(T&)>;
 	public:
-		EventDispatcher(Event& event)
-			: m_Event(event)
-		{
-		}
-
 		template<typename T>
-		bool Dispatch(EventFn<T> func)
+		static bool Dispatch(const Event& event, std::function<bool(const T&)> func) 
 		{
-			if (m_Event.GetEventType() == T::GetStaticType())
+			if (event.GetEventType() == T::GetStaticType()) 
 			{
-				m_Event.Handled = func(*(T*)&m_Event);
-				return true;
+				return func(static_cast<const T&>(event));
 			}
-			return false;
 		}
-	private:
-		Event& m_Event;
 	};
 
 	inline std::ostream& operator<<(std::ostream& os, const Event& e)

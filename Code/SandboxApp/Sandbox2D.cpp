@@ -43,7 +43,7 @@ void sbx::Sandbox2D::OnImGuiRender()
 	ImGui::End();
 }
 
-void sbx::Sandbox2D::OnEvent(pig::Event& event)
+void sbx::Sandbox2D::OnEvent(const pig::Event& event)
 {
 	m_CameraController.OnEvent(event);
 }

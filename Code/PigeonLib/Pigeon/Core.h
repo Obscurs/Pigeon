@@ -67,16 +67,16 @@ namespace pig
 	using S_Ptr = std::shared_ptr<T>;
 
 	template <auto EventFn, typename EventHandler>
-	auto BindEventFn(EventHandler* handler)
+	auto BindEventFn(EventHandler* handler) 
 	{
-		return [handler](auto& event) -> decltype(auto)
+		return [handler](const auto& event) -> decltype(auto)
 		{
 			if constexpr (std::is_same_v<decltype(std::invoke(EventFn, handler, event)), void>)
 			{
 				std::invoke(EventFn, handler, event);
 				return;
 			}
-			else
+			else 
 			{
 				return std::invoke(EventFn, handler, event);
 			}

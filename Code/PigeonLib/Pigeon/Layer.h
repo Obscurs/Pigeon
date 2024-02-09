@@ -16,7 +16,7 @@ namespace pig
 		virtual void OnDetach() {}
 		virtual void OnUpdate(Timestep ts) {}
 		virtual void OnImGuiRender() {}
-		virtual void OnEvent(Event& event) {}
+		virtual void OnEvent(const Event& event) {}
 
 		virtual void Begin() {};
 		virtual void End() {};

@@ -107,7 +107,7 @@ namespace
 			ImGui::End();
 		}
 
-		void OnEvent(pig::Event& event) override
+		void OnEvent(const pig::Event& event) override
 		{
 			m_CameraController.OnEvent(event);
 			/*if (event.GetEventType() == pigeon::EventType::KeyPressed)
