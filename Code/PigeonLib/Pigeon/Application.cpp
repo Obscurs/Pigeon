@@ -35,13 +35,12 @@ void pig::Application::PushOverlay(pig::S_Ptr<pig::Layer> layer)
 	layer->OnAttach();
 }
 
-void pig::Application::OnEvent(pig::Event& e)
+void pig::Application::OnEvent(const pig::Event& e)
 {
 	if (m_Data.m_Initialized)
 	{
-		pig::EventDispatcher dispatcher(e);
-		dispatcher.Dispatch<pig::WindowCloseEvent>(pig::BindEventFn<&Application::OnWindowClose, Application>(this));
-		dispatcher.Dispatch<pig::WindowResizeEvent>(pig::BindEventFn<&Application::OnWindowResize, Application>(this));
+		pig::EventDispatcher::Dispatch<pig::WindowCloseEvent>(e, pig::BindEventFn<&Application::OnWindowClose>(this));
+		pig::EventDispatcher::Dispatch<pig::WindowResizeEvent>(e, pig::BindEventFn<&Application::OnWindowResize>(this));
 
 		if (!m_Data.m_Minimized)
 		{
@@ -101,14 +100,14 @@ void pig::Application::Update()
 	m_Data.m_Window->OnUpdate();
 }
 
-bool pig::Application::OnWindowClose(pig::WindowCloseEvent& e)
+bool pig::Application::OnWindowClose(const pig::WindowCloseEvent& e)
 {
 	pig::Renderer2D::Destroy();
 	m_Data.m_Running = false;
 	return false;
 }
 
-bool pig::Application::OnWindowResize(pig::WindowResizeEvent& e)
+bool pig::Application::OnWindowResize(const pig::WindowResizeEvent& e)
 {
 	if (e.GetWidth() == 0 || e.GetHeight() == 0)
 	{
