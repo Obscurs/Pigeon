@@ -44,15 +44,6 @@ namespace pig
 			return s_Instance->Get();
 		}
 
-		template<auto EventFn>
-		auto BindEventFn() 
-		{
-			return [this](auto&&... args) -> decltype(auto) 
-			{
-				return std::invoke(EventFn, this, std::forward<decltype(args)>(args)...);
-			};
-		}
-
 		Application() = default;
 		virtual ~Application();
 
