@@ -11,8 +11,6 @@
 
 #include <chrono>
 
-#define BIND_EVENT_FN(x) std::bind(&pig::Application::x, this, std::placeholders::_1)
-
 pig::U_Ptr<pig::Application> pig::Application::s_Instance = nullptr;
 
 pig::Application::~Application()
@@ -37,8 +35,8 @@ void pig::Application::OnEvent(pig::Event& e)
 	if (m_Data.m_Initialized)
 	{
 		pig::EventDispatcher dispatcher(e);
-		dispatcher.Dispatch<pig::WindowCloseEvent>(BIND_EVENT_FN(OnWindowClose));
-		dispatcher.Dispatch<pig::WindowResizeEvent>(BIND_EVENT_FN(OnWindowResize));
+		dispatcher.Dispatch<pig::WindowCloseEvent>(BindEventFn<&Application::OnWindowClose>());
+		dispatcher.Dispatch<pig::WindowResizeEvent>(BindEventFn<&Application::OnWindowResize>());
 
 		if (!m_Data.m_Minimized)
 		{
@@ -79,7 +77,7 @@ void pig::Application::Shutdown()
 void pig::Application::Init()
 {
 	m_Data.m_Window = std::move(Window::Create());
-	m_Data.m_Window->SetEventCallback(BIND_EVENT_FN(OnEvent));
+	m_Data.m_Window->SetEventCallback(BindEventFn<&Application::OnEvent>());
 	pig::Renderer::Init();
 	pig::Renderer2D::Init();
 	m_Data.m_ImGuiLayer = std::make_shared<ImGuiLayer>();
