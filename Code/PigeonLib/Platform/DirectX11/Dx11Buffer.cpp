@@ -57,7 +57,7 @@ void pig::Dx11VertexBuffer::AppendVertices(const float* vertices, unsigned int c
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	
 	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
-	HRESULT hr = context->GetPd3dDeviceContext()->Map(m_Data.m_Buffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	HRESULT hr = context->GetPd3dDeviceContext()->Map(m_Data.m_Buffer.get(), 0, D3D11_MAP_WRITE_NO_OVERWRITE, 0, &mappedResource);
 	if (SUCCEEDED(hr))
 	{
 		BYTE* destData = reinterpret_cast<BYTE*>(mappedResource.pData) + countOffset * m_Data.m_Stride;
@@ -117,7 +117,7 @@ void pig::Dx11IndexBuffer::AppendIndices(const uint32_t* indices, unsigned int c
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 
 	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
-	HRESULT hr = context->GetPd3dDeviceContext()->Map(m_Data.m_Buffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	HRESULT hr = context->GetPd3dDeviceContext()->Map(m_Data.m_Buffer.get(), 0, D3D11_MAP_WRITE_NO_OVERWRITE, 0, &mappedResource);
 	if (SUCCEEDED(hr))
 	{
 		BYTE* destData = reinterpret_cast<BYTE*>(mappedResource.pData) + countOffset * sizeof(int);
