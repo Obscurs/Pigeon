@@ -15,7 +15,7 @@ namespace pig
 		};
 
 		Dx11VertexBuffer(const float* vertices, uint32_t size, uint32_t stride);
-		virtual ~Dx11VertexBuffer();
+		virtual ~Dx11VertexBuffer() = default;
 
 #ifdef TESTS_ENABLED
 		const Data& GetData() const { return m_Data; }
@@ -39,7 +39,7 @@ namespace pig
 		};
 
 		Dx11IndexBuffer(const uint32_t* indices, uint32_t count);
-		virtual ~Dx11IndexBuffer();
+		virtual ~Dx11IndexBuffer() = default;
 
 #ifdef TESTS_ENABLED
 		const Data& GetData() const { return m_Data; }

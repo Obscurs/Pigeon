@@ -128,7 +128,7 @@ namespace CatchTestsetFail
 {
 	TEST_CASE("app.Renderer::Dx11RendererAPITest")
 	{
-		pig::S_Ptr<pig::Application> app = pig::CreateApplication();
+		pig::Application& app = pig::CreateApplication();
 
 		const pig::S_Ptr<pig::Dx11RendererAPI> rendererAPI = std::dynamic_pointer_cast<pig::Dx11RendererAPI>(pig::RenderCommand::GetRenderAPI());
 		CHECK(rendererAPI->GetAPI() == pig::RendererAPI::API::DirectX11);
@@ -156,7 +156,7 @@ namespace CatchTestsetFail
 
 	TEST_CASE("Renderer::Renderer2D")
 	{
-		pig::S_Ptr<pig::Application> app = pig::CreateApplication();
+		pig::Application& app = pig::CreateApplication();
 
 		const pig::S_Ptr<pig::Dx11RendererAPI> rendererAPI = std::dynamic_pointer_cast<pig::Dx11RendererAPI>(pig::RenderCommand::GetRenderAPI());
 		pig::OrthographicCameraController cameraController(1280.0f / 720.0f);
@@ -219,9 +219,9 @@ namespace CatchTestsetFail
 
 	TEST_CASE("app.Renderer::Dx11ContextTest")
 	{
-		pig::S_Ptr<pig::Application> app = pig::CreateApplication();
+		pig::Application& app = pig::CreateApplication();
 
-		pig::Dx11Context* dx11Context = static_cast<pig::Dx11Context*>(app->GetWindow().GetGraphicsContext());
+		pig::Dx11Context* dx11Context = static_cast<pig::Dx11Context*>(app.GetWindow().GetGraphicsContext());
 		CHECK(dx11Context->GetData().m_HWnd != nullptr);
 		CHECK(dx11Context->GetHeight() == 720);
 		CHECK(dx11Context->GetWidth() == 1280);
@@ -248,10 +248,9 @@ namespace CatchTestsetFail
 
 	TEST_CASE("app.Renderer::Dx11Buffers")
 	{
-		pig::S_Ptr<pig::Application> app = pig::CreateApplication();
+		pig::Application& app = pig::CreateApplication();
 
-		pig::Dx11Context* dx11Context = static_cast<pig::Dx11Context*>(app->GetWindow().GetGraphicsContext());
-
+		pig::Dx11Context* dx11Context = static_cast<pig::Dx11Context*>(app.GetWindow().GetGraphicsContext());
 
 		SECTION("Vertex buffer")
 		{
@@ -307,9 +306,9 @@ namespace CatchTestsetFail
 
 	TEST_CASE("app.Renderer::Dx11Shader")
 	{
-		pig::S_Ptr<pig::Application> app = pig::CreateApplication();
+		pig::Application& app = pig::CreateApplication();
 
-		pig::Dx11Context* dx11Context = static_cast<pig::Dx11Context*>(app->GetWindow().GetGraphicsContext());
+		pig::Dx11Context* dx11Context = static_cast<pig::Dx11Context*>(app.GetWindow().GetGraphicsContext());
 		
 		pig::BufferLayout buffLayout;
 		pig::S_Ptr<pig::Shader> shader;
@@ -353,6 +352,8 @@ namespace CatchTestsetFail
 
 	TEST_CASE("Renderer::Texture")
 	{
+		pig::Application& app = pig::CreateApplication();
+
 		SECTION("File Texture")
 		{
 			pig::U_Ptr<pig::Texture2D> texture = pig::Texture2D::Create("Assets/Test/SampleTexture.png");
@@ -387,6 +388,7 @@ namespace CatchTestsetFail
 
 	TEST_CASE("Renderer::OrthographicCamera")
 	{
+		pig::Application& app = pig::CreateApplication();
 		const glm::vec4 ortoValues(-0.5f, 0.5f, -0.5f, 0.5f);
 		const glm::vec3 pos0(0.f, 0.f, 0.f);
 		const glm::vec3 pos1(-1.f, 2.f, 3.f);
@@ -444,6 +446,7 @@ namespace CatchTestsetFail
 	}
 	TEST_CASE("Renderer::OrthographicCameraController")
 	{
+		pig::Application& app = pig::CreateApplication();
 		SECTION("Keyboard events")
 		{
 			//UNTESTED FOR NOW, do not have any input events helper

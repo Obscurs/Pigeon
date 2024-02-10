@@ -13,16 +13,11 @@
 
 #define BIND_EVENT_FN(x) std::bind(&pig::Application::x, this, std::placeholders::_1)
 
-pig::S_Ptr<pig::Application> pig::Application::s_Instance = nullptr;
+pig::U_Ptr<pig::Application> pig::Application::s_Instance = nullptr;
 
 pig::Application::~Application()
 {
-	m_Data.m_ImGuiLayer->OnDetach();
-	m_Data.m_LayerStack.PopOverlay(m_Data.m_ImGuiLayer);
-	m_Data.m_LayerStack.Shutdown();
-
-	m_Data.m_Window.reset();
-	s_Instance = nullptr;
+	Shutdown();
 }
 
 void pig::Application::PushLayer(pig::S_Ptr<pig::Layer> layer)
@@ -66,6 +61,20 @@ void pig::Application::Run()
 	}
 }
 #endif
+
+void pig::Application::Shutdown()
+{
+	if (s_Instance)
+	{
+		m_Data.m_ImGuiLayer->OnDetach();
+		m_Data.m_LayerStack.PopOverlay(m_Data.m_ImGuiLayer);
+		m_Data.m_LayerStack.Shutdown();
+
+		pig::Renderer2D::Destroy();
+		m_Data.m_Window.reset();
+		s_Instance = nullptr;
+	}
+}
 
 void pig::Application::Init()
 {

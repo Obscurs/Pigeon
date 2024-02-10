@@ -43,6 +43,7 @@ PS_INPUT main(VS_INPUT input)
 
 Texture2D u_Texture : register(t0);
 Texture2D u_Texture2 : register(t1);
+//Texture2DArray u_Textures : register(t0);
 SamplerState u_Sampler : register(s0);
 
 struct PS_INPUT
@@ -63,4 +64,5 @@ float4 main(PS_INPUT input) : SV_TARGET
 	{
 		return u_Texture2.Sample(u_Sampler, input.TexCoord) * input.Color;
 	}
+	//return u_Textures.Sample(u_Sampler, float3(input.TexCoord, 1)) * input.Color;
 }

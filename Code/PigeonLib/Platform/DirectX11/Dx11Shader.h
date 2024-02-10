@@ -26,7 +26,7 @@ namespace pig
 
 		Dx11Shader(const std::string& filepath);
 		Dx11Shader(const std::string& name, const char* vertexSrc, const char* fragmentSrc, const char* buffLayout);
-		~Dx11Shader();
+		~Dx11Shader() = default;
 
 		virtual void Bind() const override;
 		virtual void Unbind() const override;

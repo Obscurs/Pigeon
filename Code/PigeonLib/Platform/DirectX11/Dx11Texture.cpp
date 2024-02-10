@@ -126,3 +126,17 @@ void pig::Dx11Texture2D::Bind(uint32_t slot) const
 }
 
 
+pig::Dx11Texture2DArray::Dx11Texture2DArray(unsigned int count)
+{
+	PG_CORE_ASSERT(false, "NOT IMPLEMENTED");
+}
+
+void pig::Dx11Texture2DArray::Append(const std::string& path)
+{
+	PG_CORE_ASSERT(false, "NOT IMPLEMENTED");
+}
+
+void pig::Dx11Texture2DArray::Bind(uint32_t slot) const
+{
+	PG_CORE_ASSERT(false, "NOT IMPLEMENTED");
+}

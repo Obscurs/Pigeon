@@ -30,18 +30,18 @@ namespace pig
 			bool m_Minimized = false;
 		};
 
-		static pig::S_Ptr<Application> Create()
+		static Application& Create()
 		{
 			if (s_Instance)
 			{
-				s_Instance.reset();
+				s_Instance->Shutdown();
 			}
 			if (!s_Instance)
 			{
-				s_Instance = std::make_shared<Application>();
+				s_Instance = std::make_unique<Application>();
 				s_Instance->Init();
 			}
-			return s_Instance;
+			return s_Instance->Get();
 		}
 
 		Application() = default;
@@ -61,6 +61,7 @@ namespace pig
 
 		inline static Application& Get() { return *s_Instance; }
 	private:
+		void Shutdown();
 		void Init();
 
 		void Update();
@@ -70,9 +71,9 @@ namespace pig
 
 		Data m_Data;
 	private:
-		static pig::S_Ptr<Application> s_Instance;
+		static pig::U_Ptr<Application> s_Instance;
 	};
 
 	// To be defined in CLIENT
-	pig::S_Ptr<Application> CreateApplication();
+	Application& CreateApplication();
 }

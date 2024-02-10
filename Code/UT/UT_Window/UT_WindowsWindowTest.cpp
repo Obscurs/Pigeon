@@ -16,8 +16,8 @@ namespace CatchTestsetFail
 {
 	TEST_CASE("app.Window::WindowsWindowTest")
 	{
-		pig::S_Ptr<pig::Application> app = pig::CreateApplication();
-		pig::WindowsWindow& window = static_cast<pig::WindowsWindow&>(app->GetWindow());
+		pig::Application& app = pig::CreateApplication();
+		pig::WindowsWindow& window = static_cast<pig::WindowsWindow&>(app.GetWindow());
 		CHECK(window.GetNativeWindow() != nullptr);
 		CHECK(window.GetGraphicsContext() != nullptr);
 		CHECK(!window.IsVSync());

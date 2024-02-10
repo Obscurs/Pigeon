@@ -34,11 +34,6 @@ pig::Dx11VertexBuffer::Dx11VertexBuffer(const float* vertices, uint32_t size, ui
 	}
 }
 
-pig::Dx11VertexBuffer::~Dx11VertexBuffer()
-{
-	Unbind();
-}
-
 void pig::Dx11VertexBuffer::Bind() const
 {
 	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
@@ -103,11 +98,6 @@ pig::Dx11IndexBuffer::Dx11IndexBuffer(const uint32_t* indices, uint32_t count)
 	{
 		PG_CORE_ASSERT(false, "Failed to create index buffer");
 	}
-}
-
-pig::Dx11IndexBuffer::~Dx11IndexBuffer()
-{
-	Unbind();
 }
 
 void pig::Dx11IndexBuffer::Bind() const

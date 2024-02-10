@@ -217,11 +217,6 @@ pig::Dx11Shader::Dx11Shader(const std::string& name, const char* vertexSrc, cons
 	m_Data.m_Name = name;
 }
 
-pig::Dx11Shader::~Dx11Shader()
-{
-	Unbind();
-}
-
 std::string pig::Dx11Shader::ReadFile(const std::string& filepath)
 {
 	std::string result;

@@ -150,10 +150,10 @@ public:
 	~Sandbox() = default;
 };
 
-pig::S_Ptr<pig::Application> pig::CreateApplication()
+pig::Application& pig::CreateApplication()
 {
-	pig::S_Ptr<pig::Application> sandbox = Sandbox::Create();
+	pig::Application& sandbox = Sandbox::Create();
 	//sandbox->PushLayer(std::make_shared<ExampleLayer>());
-	sandbox->PushLayer(std::make_shared<sbx::Sandbox2D>());
+	sandbox.PushLayer(std::make_shared<sbx::Sandbox2D>());
 	return sandbox;
 }

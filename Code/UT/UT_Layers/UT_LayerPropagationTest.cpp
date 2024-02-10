@@ -61,12 +61,12 @@ namespace CatchTestsetFail
 {
 	TEST_CASE("app.Layers::Propagation")
 	{
-		pig::S_Ptr<pig::Application> app = pig::CreateApplication();
-		pig::WindowsWindow& appWindow = static_cast<pig::WindowsWindow&>(app->GetWindow());
+		pig::Application& app = pig::CreateApplication();
+		pig::WindowsWindow& appWindow = static_cast<pig::WindowsWindow&>(app.GetWindow());
 		int wParam = 123;
 		int lParam = 456;
 
-		const pig::LayerStack::Data& layerStackData = app->GetData().m_LayerStack.GetData();
+		const pig::LayerStack::Data& layerStackData = app.GetData().m_LayerStack.GetData();
 		CHECK(layerStackData.m_LayerInsertIndex == 0);
 		CHECK(layerStackData.m_Layers.size() == 1);
 		pig::S_Ptr<TestLayerEventPropagate> testLayerPropagate1 = std::make_shared<TestLayerEventPropagate>();
@@ -85,7 +85,7 @@ namespace CatchTestsetFail
 
 		SECTION("Test layer event reception")
 		{
-			app->PushLayer(testLayerPropagate1);
+			app.PushLayer(testLayerPropagate1);
 
 			CHECK(layerStackData.m_LayerInsertIndex == 1);
 			CHECK(layerStackData.m_Layers.size() == 2);
@@ -98,12 +98,12 @@ namespace CatchTestsetFail
 			CHECK(testLayerPropagate1->m_ReceivedEvent);
 			CHECK(!testLayerPropagate2->m_ReceivedEvent);
 			CHECK(!testLayerNoPropagate1->m_ReceivedEvent);
-			app->TestUpdate();
+			app.TestUpdate();
 			CHECK(!testLayerPropagate1->m_ReceivedEvent);
 
 			SECTION("Two propagatorLayers")
 			{
-				app->PushLayer(testLayerPropagate2);
+				app.PushLayer(testLayerPropagate2);
 				CHECK(layerStackData.m_LayerInsertIndex == 2);
 				CHECK(layerStackData.m_Layers.size() == 3);
 
@@ -112,7 +112,7 @@ namespace CatchTestsetFail
 				CHECK(testLayerPropagate2->m_ReceivedEvent);
 				CHECK(!testLayerNoPropagate1->m_ReceivedEvent);
 
-				app->TestUpdate();
+				app.TestUpdate();
 				CHECK(!testLayerPropagate1->m_ReceivedEvent);
 				CHECK(!testLayerPropagate2->m_ReceivedEvent);
 			}
@@ -121,9 +121,9 @@ namespace CatchTestsetFail
 		{
 			SECTION("Two propagatorLayers and one no propagator at the beggining")
 			{
-				app->PushLayer(testLayerPropagate1);
-				app->PushLayer(testLayerPropagate2);
-				app->PushLayer(testLayerNoPropagate1);
+				app.PushLayer(testLayerPropagate1);
+				app.PushLayer(testLayerPropagate2);
+				app.PushLayer(testLayerNoPropagate1);
 				CHECK(layerStackData.m_LayerInsertIndex == 3);
 				CHECK(layerStackData.m_Layers.size() == 4);
 
@@ -132,16 +132,16 @@ namespace CatchTestsetFail
 				CHECK(!testLayerPropagate2->m_ReceivedEvent);
 				CHECK(testLayerNoPropagate1->m_ReceivedEvent);
 
-				app->TestUpdate();
+				app.TestUpdate();
 				CHECK(!testLayerPropagate1->m_ReceivedEvent);
 				CHECK(!testLayerPropagate2->m_ReceivedEvent);
 				CHECK(!testLayerNoPropagate1->m_ReceivedEvent);
 			}
 			SECTION("Two propagatorLayers and one no propagator at the end")
 			{
-				app->PushLayer(testLayerNoPropagate1);
-				app->PushLayer(testLayerPropagate1);
-				app->PushLayer(testLayerPropagate2);
+				app.PushLayer(testLayerNoPropagate1);
+				app.PushLayer(testLayerPropagate1);
+				app.PushLayer(testLayerPropagate2);
 				CHECK(layerStackData.m_LayerInsertIndex == 3);
 				CHECK(layerStackData.m_Layers.size() == 4);
 
@@ -150,16 +150,16 @@ namespace CatchTestsetFail
 				CHECK(testLayerPropagate2->m_ReceivedEvent);
 				CHECK(testLayerNoPropagate1->m_ReceivedEvent);
 
-				app->TestUpdate();
+				app.TestUpdate();
 				CHECK(!testLayerPropagate1->m_ReceivedEvent);
 				CHECK(!testLayerPropagate2->m_ReceivedEvent);
 				CHECK(!testLayerNoPropagate1->m_ReceivedEvent);
 			}
 			SECTION("Two propagatorLayers and one no propagator at the middle")
 			{
-				app->PushLayer(testLayerPropagate1);
-				app->PushLayer(testLayerNoPropagate1);
-				app->PushLayer(testLayerPropagate2);
+				app.PushLayer(testLayerPropagate1);
+				app.PushLayer(testLayerNoPropagate1);
+				app.PushLayer(testLayerPropagate2);
 				CHECK(layerStackData.m_LayerInsertIndex == 3);
 				CHECK(layerStackData.m_Layers.size() == 4);
 
@@ -168,7 +168,7 @@ namespace CatchTestsetFail
 				CHECK(testLayerPropagate2->m_ReceivedEvent);
 				CHECK(testLayerNoPropagate1->m_ReceivedEvent);
 
-				app->TestUpdate();
+				app.TestUpdate();
 				CHECK(!testLayerPropagate1->m_ReceivedEvent);
 				CHECK(!testLayerPropagate2->m_ReceivedEvent);
 				CHECK(!testLayerNoPropagate1->m_ReceivedEvent);
