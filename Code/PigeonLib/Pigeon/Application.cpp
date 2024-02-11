@@ -11,8 +11,6 @@
 
 #include <chrono>
 
-#define BIND_EVENT_FN(x) std::bind(&pig::Application::x, this, std::placeholders::_1)
-
 pig::U_Ptr<pig::Application> pig::Application::s_Instance = nullptr;
 
 pig::Application::~Application()
@@ -32,21 +30,22 @@ void pig::Application::PushOverlay(pig::S_Ptr<pig::Layer> layer)
 	layer->OnAttach();
 }
 
-void pig::Application::OnEvent(pig::Event& e)
+void pig::Application::OnEvent(const pig::Event& e)
 {
 	if (m_Data.m_Initialized)
 	{
-		pig::EventDispatcher dispatcher(e);
-		dispatcher.Dispatch<pig::WindowCloseEvent>(BIND_EVENT_FN(OnWindowClose));
-		dispatcher.Dispatch<pig::WindowResizeEvent>(BIND_EVENT_FN(OnWindowResize));
+		pig::EventDispatcher::Dispatch<pig::WindowCloseEvent>(e, pig::BindEventFn<&Application::OnWindowClose, Application>(this));
+		pig::EventDispatcher::Dispatch<pig::WindowResizeEvent>(e, pig::BindEventFn<&Application::OnWindowResize, Application>(this));
 
 		if (!m_Data.m_Minimized)
 		{
-			for (auto it = m_Data.m_LayerStack.end(); it != m_Data.m_LayerStack.begin(); )
+			for (auto it = m_Data.m_LayerStack.rbegin(); it != m_Data.m_LayerStack.rend(); it++)
 			{
-				(*--it)->OnEvent(e);
-				if (e.Handled)
+				bool handled = (*it)->OnEvent(e);
+				if (handled)
+				{
 					break;
+				}
 			}
 		}
 	}
@@ -79,7 +78,7 @@ void pig::Application::Shutdown()
 void pig::Application::Init()
 {
 	m_Data.m_Window = std::move(Window::Create());
-	m_Data.m_Window->SetEventCallback(BIND_EVENT_FN(OnEvent));
+	m_Data.m_Window->SetEventCallback(pig::BindEventFn<&Application::OnEvent, Application>(this));
 	pig::Renderer::Init();
 	pig::Renderer2D::Init();
 	m_Data.m_ImGuiLayer = std::make_shared<ImGuiLayer>();
@@ -112,14 +111,14 @@ void pig::Application::Update()
 	m_Data.m_Window->OnUpdate();
 }
 
-bool pig::Application::OnWindowClose(pig::WindowCloseEvent& e)
+bool pig::Application::OnWindowClose(const pig::WindowCloseEvent& e)
 {
 	pig::Renderer2D::Destroy();
 	m_Data.m_Running = false;
 	return false;
 }
 
-bool pig::Application::OnWindowResize(pig::WindowResizeEvent& e)
+bool pig::Application::OnWindowResize(const pig::WindowResizeEvent& e)
 {
 	if (e.GetWidth() == 0 || e.GetHeight() == 0)
 	{

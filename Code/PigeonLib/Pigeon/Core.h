@@ -25,8 +25,6 @@
 
 #define BIT(x) (1 << x)
 
-#define PG_BIND_EVENT_FN(fn) std::bind(&fn, this, std::placeholders::_1)
-
 namespace pig
 {
 	template<typename T, typename Deleter = std::default_delete<T>>
@@ -68,6 +66,12 @@ namespace pig
 		T* value;
 	};
 
-
-	
+	template <auto EventFn, typename EventHandler>
+	auto BindEventFn(EventHandler* handler) 
+	{
+		return [handler](auto&&... args) -> decltype(auto)
+		{
+			return std::invoke(EventFn, handler, std::forward<decltype(args)>(args)...);
+		};
+	}
 }

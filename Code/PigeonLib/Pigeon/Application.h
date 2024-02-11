@@ -53,7 +53,7 @@ namespace pig
 #else
 		void Run();
 #endif
-		void OnEvent(Event& e);
+		void OnEvent(const Event& e);
 		void PushLayer(pig::S_Ptr<Layer> layer);
 		void PushOverlay(pig::S_Ptr<Layer> layer);
 
@@ -66,8 +66,8 @@ namespace pig
 
 		void Update();
 
-		bool OnWindowClose(WindowCloseEvent& e);
-		bool OnWindowResize(WindowResizeEvent& e);
+		bool OnWindowClose(const WindowCloseEvent& e);
+		bool OnWindowResize(const WindowResizeEvent& e);
 
 		Data m_Data;
 	private:

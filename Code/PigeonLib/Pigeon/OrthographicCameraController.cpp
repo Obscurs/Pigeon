@@ -38,14 +38,14 @@ void pig::OrthographicCameraController::OnUpdate(Timestep ts)
 	m_Data.m_CameraTranslationSpeed = m_Data.m_ZoomLevel;
 }
 
-void pig::OrthographicCameraController::OnEvent(Event& e)
+bool pig::OrthographicCameraController::OnEvent(const Event& e)
 {
-	EventDispatcher dispatcher(e);
-	dispatcher.Dispatch<MouseScrolledEvent>(PG_BIND_EVENT_FN(OrthographicCameraController::OnMouseScrolled));
-	dispatcher.Dispatch<WindowResizeEvent>(PG_BIND_EVENT_FN(OrthographicCameraController::OnWindowResized));
+	return
+		pig::EventDispatcher::Dispatch<MouseScrolledEvent>(e, pig::BindEventFn<&OrthographicCameraController::OnMouseScrolled, OrthographicCameraController>(this)) ||
+		pig::EventDispatcher::Dispatch<WindowResizeEvent>(e, pig::BindEventFn<&OrthographicCameraController::OnWindowResized, OrthographicCameraController>(this));
 }
 
-bool pig::OrthographicCameraController::OnMouseScrolled(MouseScrolledEvent& e)
+bool pig::OrthographicCameraController::OnMouseScrolled(const MouseScrolledEvent& e)
 {
 	m_Data.m_ZoomLevel -= e.GetYOffset() * 0.25f;
 	m_Data.m_ZoomLevel = std::max(m_Data.m_ZoomLevel, 0.25f);
@@ -53,7 +53,7 @@ bool pig::OrthographicCameraController::OnMouseScrolled(MouseScrolledEvent& e)
 	return false;
 }
 
-bool pig::OrthographicCameraController::OnWindowResized(WindowResizeEvent& e)
+bool pig::OrthographicCameraController::OnWindowResized(const WindowResizeEvent& e)
 {
 	m_Data.m_AspectRatio = (float)e.GetWidth() / (float)e.GetHeight();
 	m_Data.m_Camera.SetProjection(-m_Data.m_AspectRatio * m_Data.m_ZoomLevel, m_Data.m_AspectRatio * m_Data.m_ZoomLevel, -m_Data.m_ZoomLevel, m_Data.m_ZoomLevel);

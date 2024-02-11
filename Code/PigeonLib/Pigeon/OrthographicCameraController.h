@@ -32,7 +32,7 @@ namespace pig
 #endif
 
 		void OnUpdate(Timestep ts);
-		void OnEvent(Event& e);
+		bool OnEvent(const Event& e);
 
 		const OrthographicCamera& GetCamera() const { return m_Data.m_Camera; }
 
@@ -40,8 +40,8 @@ namespace pig
 		void SetZoomLevel(float level) { m_Data.m_ZoomLevel = level; }
 
 	private:
-		bool OnMouseScrolled(MouseScrolledEvent& e);
-		bool OnWindowResized(WindowResizeEvent& e);
+		bool OnMouseScrolled(const MouseScrolledEvent& e);
+		bool OnWindowResized(const WindowResizeEvent& e);
 	private:
 		Data m_Data;
 	};
