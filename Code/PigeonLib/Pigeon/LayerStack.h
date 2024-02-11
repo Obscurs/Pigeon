@@ -31,6 +31,9 @@ namespace pig
 
 		std::vector<pig::S_Ptr<Layer>>::iterator begin() { return m_Data.m_Layers.begin(); }
 		std::vector<pig::S_Ptr<Layer>>::iterator end() { return m_Data.m_Layers.end(); }
+
+		std::vector<pig::S_Ptr<Layer>>::reverse_iterator rbegin() { return m_Data.m_Layers.rbegin(); }
+		std::vector<pig::S_Ptr<Layer>>::reverse_iterator rend() { return m_Data.m_Layers.rend(); }
 	private:
 		Data m_Data;
 	};

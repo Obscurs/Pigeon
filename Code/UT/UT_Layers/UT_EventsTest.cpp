@@ -33,33 +33,33 @@ namespace
 		return std::get<T>(eventResult);
 	}
 	
-	ExpectedEventResult StoreToVariant(pig::Event& ev)
+	ExpectedEventResult StoreToVariant(const pig::Event& ev)
 	{
-		if (auto e = dynamic_cast<pig::KeyPressedEvent*>(&ev)) {
+		if (auto e = dynamic_cast<const pig::KeyPressedEvent*>(&ev)) {
 			return *e;
 		}
-		else if (auto e = dynamic_cast<pig::KeyReleasedEvent*>(&ev)) {
+		else if (auto e = dynamic_cast<const pig::KeyReleasedEvent*>(&ev)) {
 			return *e;
 		}
-		else if (auto e = dynamic_cast<pig::KeyTypedEvent*>(&ev)) {
+		else if (auto e = dynamic_cast<const pig::KeyTypedEvent*>(&ev)) {
 			return *e;
 		}
-		else if (auto e = dynamic_cast<pig::WindowResizeEvent*>(&ev)) {
+		else if (auto e = dynamic_cast<const pig::WindowResizeEvent*>(&ev)) {
 			return *e;
 		}
-		else if (auto e = dynamic_cast<pig::WindowCloseEvent*>(&ev)) {
+		else if (auto e = dynamic_cast<const pig::WindowCloseEvent*>(&ev)) {
 			return *e;
 		}
-		else if (auto e = dynamic_cast<pig::MouseMovedEvent*>(&ev)) {
+		else if (auto e = dynamic_cast<const pig::MouseMovedEvent*>(&ev)) {
 			return *e;
 		}
-		else if (auto e = dynamic_cast<pig::MouseScrolledEvent*>(&ev)) {
+		else if (auto e = dynamic_cast<const pig::MouseScrolledEvent*>(&ev)) {
 			return *e;
 		}
-		else if (auto e = dynamic_cast<pig::MouseButtonPressedEvent*>(&ev)) {
+		else if (auto e = dynamic_cast<const pig::MouseButtonPressedEvent*>(&ev)) {
 			return *e;
 		}
-		else if (auto e = dynamic_cast<pig::MouseButtonReleasedEvent*>(&ev)) {
+		else if (auto e = dynamic_cast<const pig::MouseButtonReleasedEvent*>(&ev)) {
 			return *e;
 		}
 		else
@@ -81,9 +81,10 @@ namespace
 			m_ExpectedEvent = false;
 		}
 
-		void OnEvent(pig::Event& event) override
+		bool OnEvent(const pig::Event& event) override
 		{
 			m_ExpectedEvent = StoreToVariant(event);
+			return true;
 		}
 		ExpectedEventResult m_ExpectedEvent = false;
 	};

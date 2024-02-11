@@ -39,11 +39,13 @@ void pig::Application::OnEvent(const pig::Event& e)
 
 		if (!m_Data.m_Minimized)
 		{
-			for (auto it = m_Data.m_LayerStack.end(); it != m_Data.m_LayerStack.begin(); )
+			for (auto it = m_Data.m_LayerStack.rbegin(); it != m_Data.m_LayerStack.rend(); it++)
 			{
-				(*--it)->OnEvent(e);
-				if (e.Handled)
+				bool handled = (*it)->OnEvent(e);
+				if (handled)
+				{
 					break;
+				}
 			}
 		}
 	}

@@ -46,8 +46,6 @@ namespace pig {
 		{
 			return GetCategoryFlags() & category;
 		}
-
-		bool Handled = false;
 	};
 
 	class EventDispatcher
@@ -60,6 +58,7 @@ namespace pig {
 			{
 				return func(static_cast<const T&>(event));
 			}
+			return false;
 		}
 	};
 

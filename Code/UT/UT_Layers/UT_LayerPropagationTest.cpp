@@ -23,14 +23,14 @@ namespace
 			m_ReceivedEvent = false;
 		}
 
-		void OnEvent(pig::Event& event) override
+		bool OnEvent(const pig::Event& event) override
 		{
-
 			//THIS IS TO TEST LAYER PROPAGATION
-			if (auto e = dynamic_cast<pig::KeyPressedEvent*>(&event)) {
+			if (auto e = dynamic_cast<const pig::KeyPressedEvent*>(&event)) {
 				m_ReceivedEvent = true;
-				event.Handled = true;
+				return true;
 			}
+			return false;
 		}
 		bool m_ReceivedEvent = false;
 	};
@@ -47,11 +47,12 @@ namespace
 			m_ReceivedEvent = false;
 		}
 
-		void OnEvent(pig::Event& event) override
+		bool OnEvent(const pig::Event& event) override
 		{
-			if (auto e = dynamic_cast<pig::KeyPressedEvent*>(&event)) {
+			if (auto e = dynamic_cast<const pig::KeyPressedEvent*>(&event)) {
 				m_ReceivedEvent = true;
 			}
+			return false;
 		}
 		bool m_ReceivedEvent = false;
 	};
