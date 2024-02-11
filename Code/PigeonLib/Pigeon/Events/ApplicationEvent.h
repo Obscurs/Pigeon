@@ -4,7 +4,9 @@
 
 namespace pig {
 
-	class PIGEON_API WindowResizeEvent : public Event
+	class PIGEON_API WindowResizeEvent : 
+		public EventClassCategory<EventCategoryApplication>,
+		public EventClassType<EventType::WindowResize>
 	{
 	public:
 		WindowResizeEvent(unsigned int width, unsigned int height)
@@ -20,19 +22,16 @@ namespace pig {
 			return ss.str();
 		}
 
-		EVENT_CLASS_TYPE(WindowResize)
-		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 	private:
 		unsigned int m_Width, m_Height;
 	};
 
-	class PIGEON_API WindowCloseEvent : public Event
+	class PIGEON_API WindowCloseEvent : 
+		public EventClassType<EventType::WindowClose>,
+		public EventClassCategory<EventCategoryApplication>
 	{
 	public:
 		WindowCloseEvent() {}
-
-		EVENT_CLASS_TYPE(WindowClose)
-		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 	};
 
 	/*class PIGEON_API AppTickEvent : public Event

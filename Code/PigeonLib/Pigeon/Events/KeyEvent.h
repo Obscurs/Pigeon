@@ -4,12 +4,12 @@
 
 namespace pig {
 
-	class PIGEON_API KeyEvent : public Event
+	class PIGEON_API KeyEvent :
+		public EventClassCategory< EventCategoryKeyboard | EventCategoryInput >
 	{
 	public:
 		inline int GetKeyCode() const { return m_KeyCode; }
 
-		EVENT_CLASS_CATEGORY(EventCategoryKeyboard | EventCategoryInput)
 	protected:
 		KeyEvent(int keycode)
 			: m_KeyCode(keycode) {}
@@ -17,7 +17,9 @@ namespace pig {
 		int m_KeyCode;
 	};
 
-	class PIGEON_API KeyPressedEvent : public KeyEvent
+	class PIGEON_API KeyPressedEvent : 
+		public KeyEvent,
+		public EventClassType<EventType::KeyPressed>
 	{
 	public:
 		KeyPressedEvent(int keycode, int repeatCount)
@@ -32,12 +34,13 @@ namespace pig {
 			return ss.str();
 		}
 
-		EVENT_CLASS_TYPE(KeyPressed)
 	private:
 		int m_RepeatCount;
 	};
 
-	class PIGEON_API KeyReleasedEvent : public KeyEvent
+	class PIGEON_API KeyReleasedEvent : 
+		public KeyEvent,
+		public EventClassType<EventType::KeyReleased>
 	{
 	public:
 		KeyReleasedEvent(int keycode)
@@ -49,11 +52,11 @@ namespace pig {
 			ss << "KeyReleasedEvent: " << m_KeyCode;
 			return ss.str();
 		}
-
-		EVENT_CLASS_TYPE(KeyReleased)
 	};
 
-	class PIGEON_API KeyTypedEvent : public KeyEvent
+	class PIGEON_API KeyTypedEvent : 
+		public KeyEvent,
+		public EventClassType<EventType::KeyTyped>
 	{
 	public:
 		KeyTypedEvent(int keycode)
@@ -65,7 +68,5 @@ namespace pig {
 			ss << "KeyTypedEvent: " << m_KeyCode;
 			return ss.str();
 		}
-
-		EVENT_CLASS_TYPE(KeyTyped)
 	};
 }

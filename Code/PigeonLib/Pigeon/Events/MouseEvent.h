@@ -4,7 +4,9 @@
 
 namespace pig {
 
-	class PIGEON_API MouseMovedEvent : public Event
+	class PIGEON_API MouseMovedEvent : 
+		public EventClassCategory<EventCategoryMouse | EventCategoryInput>,
+		public EventClassType<EventType::MouseMoved>
 	{
 	public:
 		MouseMovedEvent(float x, float y)
@@ -20,13 +22,13 @@ namespace pig {
 			return ss.str();
 		}
 
-		EVENT_CLASS_TYPE(MouseMoved)
-		EVENT_CLASS_CATEGORY(EventCategoryMouse | EventCategoryInput)
 	private:
 		float m_MouseX, m_MouseY;
 	};
 
-	class PIGEON_API MouseScrolledEvent : public Event
+	class PIGEON_API MouseScrolledEvent : 
+		public EventClassCategory<EventCategoryMouse | EventCategoryInput>,
+		public EventClassType<EventType::MouseScrolled>
 	{
 	public:
 		MouseScrolledEvent(float xOffset, float yOffset)
@@ -42,18 +44,16 @@ namespace pig {
 			return ss.str();
 		}
 
-		EVENT_CLASS_TYPE(MouseScrolled)
-		EVENT_CLASS_CATEGORY(EventCategoryMouse | EventCategoryInput)
 	private:
 		float m_XOffset, m_YOffset;
 	};
 
-	class PIGEON_API MouseButtonEvent : public Event
+	class PIGEON_API MouseButtonEvent : 
+		public EventClassCategory< EventCategoryMouse | EventCategoryInput | EventCategoryMouseButton >
 	{
 	public:
 		inline int GetMouseButton() const { return m_Button; }
 
-		EVENT_CLASS_CATEGORY(EventCategoryMouse | EventCategoryInput | EventCategoryMouseButton)
 	protected:
 		MouseButtonEvent(int button)
 			: m_Button(button) {}
@@ -61,7 +61,9 @@ namespace pig {
 		int m_Button;
 	};
 
-	class PIGEON_API MouseButtonPressedEvent : public MouseButtonEvent
+	class PIGEON_API MouseButtonPressedEvent : 
+		public MouseButtonEvent,
+		public EventClassType<EventType::MouseButtonPressed>
 	{
 	public:
 		MouseButtonPressedEvent(int button)
@@ -73,11 +75,11 @@ namespace pig {
 			ss << "MouseButtonPressedEvent: " << m_Button;
 			return ss.str();
 		}
-
-		EVENT_CLASS_TYPE(MouseButtonPressed)
 	};
 
-	class PIGEON_API MouseButtonReleasedEvent : public MouseButtonEvent
+	class PIGEON_API MouseButtonReleasedEvent : 
+		public MouseButtonEvent, 
+		public EventClassType<EventType::MouseButtonReleased>
 	{
 	public:
 		MouseButtonReleasedEvent(int button)
@@ -89,8 +91,6 @@ namespace pig {
 			ss << "MouseButtonReleasedEvent: " << m_Button;
 			return ss.str();
 		}
-
-		EVENT_CLASS_TYPE(MouseButtonReleased)
 	};
 
 }

@@ -34,8 +34,8 @@ void pig::Application::OnEvent(const pig::Event& e)
 {
 	if (m_Data.m_Initialized)
 	{
-		pig::EventDispatcher::Dispatch<pig::WindowCloseEvent>(e, pig::BindEventFn<&Application::OnWindowClose>(this));
-		pig::EventDispatcher::Dispatch<pig::WindowResizeEvent>(e, pig::BindEventFn<&Application::OnWindowResize>(this));
+		pig::EventDispatcher::Dispatch<pig::WindowCloseEvent>(e, pig::BindEventFn<&Application::OnWindowClose, Application>(this));
+		pig::EventDispatcher::Dispatch<pig::WindowResizeEvent>(e, pig::BindEventFn<&Application::OnWindowResize, Application>(this));
 
 		if (!m_Data.m_Minimized)
 		{

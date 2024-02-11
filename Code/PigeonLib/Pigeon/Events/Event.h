@@ -18,6 +18,35 @@ namespace pig {
 		MouseButtonPressed, MouseButtonReleased, MouseMoved, MouseScrolled
 	};
 
+	static const std::unordered_map<EventType, std::string> EventTypeToString = 
+	{
+		{EventType::None, "None"},
+		{EventType::WindowClose, "WindowClose"},
+		{EventType::WindowResize, "WindowResize"},
+		{EventType::WindowFocus, "WindowFocus"},
+		{EventType::WindowLostFocus, "WindowLostFocus"},
+		{EventType::WindowMoved, "WindowMoved"},
+		{EventType::AppTick, "AppTick"},
+		{EventType::AppUpdate, "AppUpdate"},
+		{EventType::AppRender, "AppRender"},
+		{EventType::KeyPressed, "KeyPressed"},
+		{EventType::KeyReleased, "KeyReleased"},
+		{EventType::KeyTyped, "KeyTyped"},
+		{EventType::MouseButtonPressed, "MouseButtonPressed"},
+		{EventType::MouseButtonReleased, "MouseButtonReleased"},
+		{EventType::MouseMoved, "MouseMoved"},
+		{EventType::MouseScrolled, "MouseScrolled"}
+	};
+
+	template<EventType Type>
+	class EventClassType : public virtual pig::Event
+	{
+	public:
+		static EventType GetStaticType() { return Type; }
+		EventType GetEventType() const override { return GetStaticType(); }
+		virtual std::string GetName() const override { return EventTypeToString.at(Type); }
+	};
+
 	enum EventCategory
 	{
 		None = 0,
@@ -28,35 +57,38 @@ namespace pig {
 		EventCategoryMouseButton    = BIT(4)
 	};
 
-#define EVENT_CLASS_TYPE(type) static EventType GetStaticType() { return EventType::##type; }\
-								virtual EventType GetEventType() const override { return GetStaticType(); }\
-								virtual const char* GetName() const override { return #type; }
-
-#define EVENT_CLASS_CATEGORY(category) virtual int GetCategoryFlags() const override { return category; }
+	template<int Category>
+	class EventClassCategory : public virtual pig::Event
+	{
+	public:
+		int GetCategoryFlags() const override { return Category; };
+	};
 
 	class PIGEON_API Event
 	{
 	public:
-		virtual EventType GetEventType() const = 0;
-		virtual const char* GetName() const = 0;
-		virtual int GetCategoryFlags() const = 0;
-		virtual std::string ToString() const { return GetName(); }
+		virtual ~Event() = default;
 
-		inline bool IsInCategory(EventCategory category)
-		{
-			return GetCategoryFlags() & category;
-		}
+		virtual EventType GetEventType() const = 0;
+		virtual std::string GetName() const = 0;
+		virtual std::string ToString() const { return GetName(); }
+		virtual int GetCategoryFlags() const { return EventCategory::None; };
+		inline bool IsInCategory(EventCategory category) { return GetCategoryFlags() & category; };
 	};
 
-	class EventDispatcher
+	class EventDispatcher 
 	{
 	public:
 		template<typename T>
-		static bool Dispatch(const Event& event, std::function<bool(const T&)> func) 
+		static bool Dispatch(const Event& event, std::function<bool(const T&)> func)
 		{
 			if (event.GetEventType() == T::GetStaticType()) 
 			{
-				return func(static_cast<const T&>(event));
+				const T* derivedEvent = dynamic_cast<const T*>(&event);
+				if (derivedEvent)
+				{
+					return func(*derivedEvent);
+				}
 			}
 			return false;
 		}
