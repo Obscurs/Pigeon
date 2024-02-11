@@ -38,10 +38,11 @@ void pig::OrthographicCameraController::OnUpdate(Timestep ts)
 	m_Data.m_CameraTranslationSpeed = m_Data.m_ZoomLevel;
 }
 
-void pig::OrthographicCameraController::OnEvent(const Event& e)
+bool pig::OrthographicCameraController::OnEvent(const Event& e)
 {
-	pig::EventDispatcher::Dispatch<MouseScrolledEvent>(e, pig::BindEventFn<&OrthographicCameraController::OnMouseScrolled, OrthographicCameraController>(this));
-	pig::EventDispatcher::Dispatch<WindowResizeEvent>(e, pig::BindEventFn<&OrthographicCameraController::OnWindowResized, OrthographicCameraController>(this));
+	return
+		pig::EventDispatcher::Dispatch<MouseScrolledEvent>(e, pig::BindEventFn<&OrthographicCameraController::OnMouseScrolled, OrthographicCameraController>(this)) ||
+		pig::EventDispatcher::Dispatch<WindowResizeEvent>(e, pig::BindEventFn<&OrthographicCameraController::OnWindowResized, OrthographicCameraController>(this));
 }
 
 bool pig::OrthographicCameraController::OnMouseScrolled(const MouseScrolledEvent& e)

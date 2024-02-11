@@ -17,7 +17,7 @@ namespace sbx
 		void OnUpdate(pig::Timestep ts) override;
 
 		virtual void OnImGuiRender() override;
-		void OnEvent(const pig::Event& event) override;
+		bool OnEvent(const pig::Event& event) override;
 
 	private:
 

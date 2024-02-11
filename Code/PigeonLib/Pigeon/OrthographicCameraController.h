@@ -32,7 +32,7 @@ namespace pig
 #endif
 
 		void OnUpdate(Timestep ts);
-		void OnEvent(const Event& e);
+		bool OnEvent(const Event& e);
 
 		const OrthographicCamera& GetCamera() const { return m_Data.m_Camera; }
 
