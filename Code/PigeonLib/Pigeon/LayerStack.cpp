@@ -9,10 +9,9 @@ pig::LayerStack::~LayerStack()
 void pig::LayerStack::Shutdown()
 {
 	for (pig::S_Ptr<Layer> layer : m_Data.m_Layers)
+	{
 		layer->OnDetach();
-	for (pig::S_Ptr<Layer> layer : m_Data.m_Layers)
-		layer = nullptr;
-
+	}
 	m_Data.m_Layers.clear();
 }
 

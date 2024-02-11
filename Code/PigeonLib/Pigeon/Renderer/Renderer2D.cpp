@@ -214,10 +214,6 @@ void pig::Renderer2D::Submit(unsigned int count)
 
 void pig::Renderer2D::Destroy()
 {
-	s_Data.m_VertexBuffer.reset();
-	s_Data.m_IndexBuffer.reset();
-	s_Data.m_Shader.reset();
 	s_Data.m_BatchMap.clear();
-
 	s_Data.m_TextureMap.clear();
 }
