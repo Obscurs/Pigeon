@@ -125,15 +125,15 @@ namespace
 			glm::mat4 ViewProjectionMatrix;
 		};
 
-		pig::U_Ptr<pig::VertexBuffer> m_VertexBuffer = nullptr;
-		pig::U_Ptr<pig::IndexBuffer> m_IndexBuffer = nullptr;
+		pig::S_Ptr<pig::VertexBuffer> m_VertexBuffer = nullptr;
+		pig::S_Ptr<pig::IndexBuffer> m_IndexBuffer = nullptr;
 
 		pig::ShaderLibrary m_ShaderLibrary;
 
 		pig::S_Ptr<pig::Shader> m_Shader = nullptr;
 
-		pig::U_Ptr<pig::Texture2D> m_Texture;
-		pig::U_Ptr<pig::Texture2D> m_TextureAlpha;
+		pig::S_Ptr<pig::Texture2D> m_Texture;
+		pig::S_Ptr<pig::Texture2D> m_TextureAlpha;
 
 		pig::OrthographicCameraController m_CameraController;
 

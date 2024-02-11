@@ -69,7 +69,7 @@ namespace pig
 		static void ProcessWindowResizeEvent(LPARAM lParam);
 		static bool ProcessWindowDestroyEvent();
 
-		pig::U_Ptr<GraphicsContext> m_Context = nullptr;
+		pig::S_Ptr<GraphicsContext> m_Context = nullptr;
 		HWND m_Window = nullptr;
 
 		static WindowData m_WindowData;

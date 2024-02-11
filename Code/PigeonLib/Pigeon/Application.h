@@ -22,7 +22,7 @@ namespace pig
 		struct Data
 		{
 			pig::S_Ptr<ImGuiLayer> m_ImGuiLayer;
-			pig::U_Ptr<Window> m_Window;
+			pig::S_Ptr<Window> m_Window;
 			bool m_Running = true;
 			bool m_Initialized = false;
 			std::chrono::steady_clock::time_point m_LastFrameTime;

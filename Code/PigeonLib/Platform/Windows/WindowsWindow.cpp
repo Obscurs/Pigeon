@@ -14,7 +14,7 @@ static bool s_WindowInitialized = false;
 
 pig::WindowsWindow::WindowData pig::WindowsWindow::m_WindowData;
 
-pig::U_Ptr<pig::Window> pig::Window::Create(const pig::WindowProps& props)
+pig::S_Ptr<pig::Window> pig::Window::Create(const pig::WindowProps& props)
 {
 	return std::make_unique<pig::WindowsWindow>(props);
 }

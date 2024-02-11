@@ -126,7 +126,7 @@ namespace
 
 namespace CatchTestsetFail
 {
-	TEST_CASE("app.Renderer::Dx11RendererAPITest")
+	TEST_CASE("app.Platform::Dx11RendererAPITest")
 	{
 		pig::Application& app = pig::CreateApplication();
 
@@ -154,11 +154,10 @@ namespace CatchTestsetFail
 		pig::Renderer::EndScene();
 	}
 
-	TEST_CASE("Renderer::Renderer2D")
+	TEST_CASE("app.Renderer::Renderer2D")
 	{
 		pig::Application& app = pig::CreateApplication();
 
-		const pig::S_Ptr<pig::Dx11RendererAPI> rendererAPI = std::dynamic_pointer_cast<pig::Dx11RendererAPI>(pig::RenderCommand::GetRenderAPI());
 		pig::OrthographicCameraController cameraController(1280.0f / 720.0f);
 		
 		SECTION("Empty call")
@@ -168,7 +167,7 @@ namespace CatchTestsetFail
 			CHECK(data.m_Shader);
 			CHECK(data.m_VertexBuffer);
 			CHECK(data.m_IndexBuffer);
-			CHECK(data.m_WhiteTexture);
+			CHECK(data.m_TextureMap.size() == 1);
 
 			pig::Renderer2D::Clear({0.f, 0.f, 0.f, 1.f});
 			pig::Renderer2D::BeginScene(cameraController);
@@ -189,14 +188,14 @@ namespace CatchTestsetFail
 		}
 		SECTION("Draw textured quad")
 		{
-			pig::U_Ptr<pig::Texture2D> texture = pig::Texture2D::Create("Assets/Test/SampleTexture.png");
+			pig::Renderer2D::AddTexture("Assets/Test/SampleTexture.png", "SampleTexture");
 
 			pig::Renderer2D::BeginScene(cameraController);
 
 			glm::vec3 pos(4.f, 5.f, 6.f);
 			glm::vec3 col(7.f, 8.f, 9.f);
 			glm::vec3 scale(1.f, 2.f, 3.f);
-			pig::Renderer2D::DrawQuad(pos, scale, *texture);
+			pig::Renderer2D::DrawQuad(pos, scale, "SampleTexture");
 
 			pig::Renderer2D::EndScene();
 		}
@@ -204,20 +203,140 @@ namespace CatchTestsetFail
 		{
 			const pig::Renderer2D::Data& data = pig::Renderer2D::GetData();
 			
-			glm::vec3 pos(4.f, 5.f, 6.f);
-			glm::vec3 col(7.f, 8.f, 9.f);
-			glm::vec3 scale(1.f, 2.f, 3.f);
+			glm::vec3 pos1(4.f, 5.f, 6.f);
+			glm::vec3 col1(7.f, 8.f, 9.f);
+			glm::vec3 scale1(1.f, 2.f, 3.f);
+
+			glm::vec3 pos2(1.f, 2.f, 1.f);
+			glm::vec3 col2(4.f, 2.f, 1.f);
+			glm::vec3 scale2(2.f, 1.f, 2.f);
+
+			glm::vec3 pos3(4.f, 6.f, 1.f);
+			glm::vec3 col3(2.f, 3.f, 4.f);
+			glm::vec3 scale3(8.f, 1.f, 2.f);
+
+			const unsigned int texWidht = 128;
+			const unsigned int texHeight = 64;
+			const unsigned int texChannels = 3;
+			std::vector<unsigned char> texData(texWidht * texHeight * texChannels, 255);
+
+			CHECK(data.m_TextureMap.size() == 1);
+			pig::Renderer2D::AddTexture("Assets/Test/SampleTexture.png", "SampleTexture1");
+			pig::Renderer2D::AddTexture("Assets/Test/SampleTexture2.png", "SampleTexture2");
+			pig::Renderer2D::AddTexture(texWidht, texHeight, texChannels, texData.data(), "SampleTexture3");
+			CHECK(data.m_TextureMap.size() == 4);
+			CHECK(data.m_TextureMap.find("SampleTexture2") != data.m_TextureMap.end());
 
 			pig::Renderer2D::Clear({ 0.f, 0.f, 0.f, 1.f });
 			pig::Renderer2D::BeginScene(cameraController);
-			pig::Renderer2D::DrawQuad(pos, scale, col);
-			CHECK(data.m_VertexCount == 4);
+
+			pig::Renderer2D::DrawQuad(pos1, scale1, col1);
+			pig::Renderer2D::DrawQuad(pos1, scale1, "SampleTexture1");
+			pig::Renderer2D::DrawQuad(pos2, scale2, "SampleTexture1");
+			pig::Renderer2D::DrawQuad(pos2, scale2, col2);
+			pig::Renderer2D::DrawQuad(pos1, scale1, "SampleTexture2");
+			pig::Renderer2D::DrawQuad(pos3, scale3, "SampleTexture2");
+			pig::Renderer2D::DrawQuad(pos3, scale3, "SampleTexture1");
+			pig::Renderer2D::DrawQuad(pos1, scale1, "SampleTexture3");
+			pig::Renderer2D::DrawQuad(pos2, scale1, "SampleTexture3");
+			pig::Renderer2D::DrawQuad(pos1, scale3, "SampleTexture2");
+			pig::Renderer2D::DrawQuad(pos3, scale3, col3);
+
+			SECTION("Multiple textures")
+			{
+				REQUIRE(data.m_BatchMap.find("") != data.m_BatchMap.end());
+				REQUIRE(data.m_BatchMap.find("SampleTexture1") != data.m_BatchMap.end());
+				REQUIRE(data.m_BatchMap.find("SampleTexture2") != data.m_BatchMap.end());
+				REQUIRE(data.m_BatchMap.find("SampleTexture3") != data.m_BatchMap.end());
+				const pig::Renderer2D::Data::BatchData& texBatch1 = data.m_BatchMap.at("");
+				const pig::Renderer2D::Data::BatchData& texBatch2 = data.m_BatchMap.at("SampleTexture1");
+				const pig::Renderer2D::Data::BatchData& texBatch3 = data.m_BatchMap.at("SampleTexture2");
+				const pig::Renderer2D::Data::BatchData& texBatch4 = data.m_BatchMap.at("SampleTexture3");
+
+				CHECK(texBatch1.m_IndexCount == 18);
+				CHECK(texBatch1.m_VertexCount == 12);
+				CHECK(texBatch2.m_IndexCount == 18);
+				CHECK(texBatch2.m_VertexCount == 12);
+				CHECK(texBatch3.m_IndexCount == 18);
+				CHECK(texBatch3.m_VertexCount == 12);
+				CHECK(texBatch4.m_IndexCount == 12);
+				CHECK(texBatch4.m_VertexCount == 8);
+
+				CHECK(texBatch1.m_VertexBuffer[0] == 3.5f);
+				CHECK(texBatch1.m_IndexBuffer[0] == 0.f);
+				CHECK(texBatch2.m_VertexBuffer[3] == 1.f);
+				CHECK(texBatch2.m_IndexBuffer[5] == 0.f);
+				CHECK(texBatch3.m_VertexBuffer[4] == 1.f);
+				CHECK(texBatch3.m_IndexBuffer[6] == 4.f);
+				CHECK(texBatch4.m_VertexBuffer[7] == 0.f);
+				CHECK(texBatch4.m_IndexBuffer[11] == 4.f);
+			}
+			SECTION("Going over max count")
+			{
+				for (unsigned int i = 3; i < pig::Renderer2D::BATCH_MAX_COUNT; ++i)
+				{
+					pig::Renderer2D::DrawQuad(pos1, scale1, col1);
+				}
+
+				{
+					REQUIRE(data.m_BatchMap.find("") != data.m_BatchMap.end());
+					REQUIRE(data.m_BatchMap.find("SampleTexture1") != data.m_BatchMap.end());
+					REQUIRE(data.m_BatchMap.find("SampleTexture2") != data.m_BatchMap.end());
+					REQUIRE(data.m_BatchMap.find("SampleTexture3") != data.m_BatchMap.end());
+					const pig::Renderer2D::Data::BatchData& texBatch1 = data.m_BatchMap.at("");
+					const pig::Renderer2D::Data::BatchData& texBatch2 = data.m_BatchMap.at("SampleTexture1");
+					const pig::Renderer2D::Data::BatchData& texBatch3 = data.m_BatchMap.at("SampleTexture2");
+					const pig::Renderer2D::Data::BatchData& texBatch4 = data.m_BatchMap.at("SampleTexture3");
+					CHECK(texBatch1.m_IndexCount == pig::Renderer2D::BATCH_MAX_COUNT * pig::Renderer2D::QUAD_INDEX_COUNT);
+					CHECK(texBatch1.m_VertexCount == pig::Renderer2D::BATCH_MAX_COUNT * pig::Renderer2D::QUAD_VERTEX_COUNT);
+					CHECK(texBatch2.m_IndexCount == 18);
+					CHECK(texBatch2.m_VertexCount == 12);
+					CHECK(texBatch3.m_IndexCount == 18);
+					CHECK(texBatch3.m_VertexCount == 12);
+					CHECK(texBatch4.m_IndexCount == 12);
+					CHECK(texBatch4.m_VertexCount == 8);
+				}
+
+				pig::Renderer2D::DrawQuad(pos3, scale3, "SampleTexture1");
+
+				{
+					REQUIRE(data.m_BatchMap.find("") != data.m_BatchMap.end());
+					REQUIRE(data.m_BatchMap.find("SampleTexture1") != data.m_BatchMap.end());
+					REQUIRE(data.m_BatchMap.find("SampleTexture2") != data.m_BatchMap.end());
+					REQUIRE(data.m_BatchMap.find("SampleTexture3") != data.m_BatchMap.end());
+					const pig::Renderer2D::Data::BatchData& texBatch1 = data.m_BatchMap.at("");
+					const pig::Renderer2D::Data::BatchData& texBatch2 = data.m_BatchMap.at("SampleTexture1");
+					const pig::Renderer2D::Data::BatchData& texBatch3 = data.m_BatchMap.at("SampleTexture2");
+					const pig::Renderer2D::Data::BatchData& texBatch4 = data.m_BatchMap.at("SampleTexture3");
+					CHECK(texBatch1.m_IndexCount == pig::Renderer2D::BATCH_MAX_COUNT * pig::Renderer2D::QUAD_INDEX_COUNT);
+					CHECK(texBatch1.m_VertexCount == pig::Renderer2D::BATCH_MAX_COUNT * pig::Renderer2D::QUAD_VERTEX_COUNT);
+					CHECK(texBatch2.m_IndexCount == 24);
+					CHECK(texBatch2.m_VertexCount == 16);
+					CHECK(texBatch3.m_IndexCount == 18);
+					CHECK(texBatch3.m_VertexCount == 12);
+					CHECK(texBatch4.m_IndexCount == 12);
+					CHECK(texBatch4.m_VertexCount == 8);
+				}
+
+				pig::Renderer2D::DrawQuad(pos1, scale1, col1);
+
+				{
+					REQUIRE(data.m_BatchMap.find("") != data.m_BatchMap.end());
+					CHECK(data.m_BatchMap.find("SampleTexture1") == data.m_BatchMap.end());
+					REQUIRE(data.m_BatchMap.find("SampleTexture2") == data.m_BatchMap.end());
+					REQUIRE(data.m_BatchMap.find("SampleTexture3") == data.m_BatchMap.end());
+					const pig::Renderer2D::Data::BatchData& texBatch1 = data.m_BatchMap.at("");
+
+					CHECK(texBatch1.m_IndexCount == 6);
+					CHECK(texBatch1.m_VertexCount == 4);
+				}
+			}
 			
 			pig::Renderer2D::EndScene();
 		}
 	}
 
-	TEST_CASE("app.Renderer::Dx11ContextTest")
+	TEST_CASE("app.Platform::Dx11ContextTest")
 	{
 		pig::Application& app = pig::CreateApplication();
 
@@ -246,7 +365,7 @@ namespace CatchTestsetFail
 		CHECK(dx11Context->GetSwapChain() == nullptr);
 	}
 
-	TEST_CASE("app.Renderer::Dx11Buffers")
+	TEST_CASE("app.Platform::Dx11Buffers")
 	{
 		pig::Application& app = pig::CreateApplication();
 
@@ -254,7 +373,7 @@ namespace CatchTestsetFail
 
 		SECTION("Vertex buffer")
 		{
-			pig::U_Ptr<pig::VertexBuffer> vertexBuffer = std::move(pig::VertexBuffer::Create(s_OurVertices, sizeof(s_OurVertices), sizeof(float) * 7));
+			pig::S_Ptr<pig::VertexBuffer> vertexBuffer = std::move(pig::VertexBuffer::Create(s_OurVertices, sizeof(s_OurVertices), sizeof(float) * 7));
 			pig::Dx11VertexBuffer* dxVB = static_cast<pig::Dx11VertexBuffer*>(vertexBuffer.get());
 			CHECK(dxVB->GetData().m_Buffer != nullptr);
 
@@ -262,13 +381,17 @@ namespace CatchTestsetFail
 			{
 				vertexBuffer->AppendVertices(s_OurVertices, 3, 0);
 			}
+			SECTION("Set vertices")
+			{
+				vertexBuffer->SetVertices(s_OurVertices, 3, 0);
+			}
 
 			dxVB->Bind();
 			dxVB->Unbind();
 		}
 		SECTION("Index buffer")
 		{
-			pig::U_Ptr<pig::IndexBuffer> indexBuffer = std::move(pig::IndexBuffer::Create(s_Indices, sizeof(s_Indices) / sizeof(uint32_t)));
+			pig::S_Ptr<pig::IndexBuffer> indexBuffer = std::move(pig::IndexBuffer::Create(s_Indices, sizeof(s_Indices) / sizeof(uint32_t)));
 			pig::Dx11IndexBuffer* dxIB = static_cast<pig::Dx11IndexBuffer*>(indexBuffer.get());
 			CHECK(dxIB->GetData().m_Buffer != nullptr);
 			CHECK(dxIB->GetCount() == 3);
@@ -276,6 +399,10 @@ namespace CatchTestsetFail
 			SECTION("Append indices")
 			{
 				indexBuffer->AppendIndices(s_Indices, 3, 0);
+			}
+			SECTION("Set indices")
+			{
+				indexBuffer->SetIndices(s_Indices, 3, 0);
 			}
 
 			dxIB->Bind();
@@ -304,7 +431,7 @@ namespace CatchTestsetFail
 		}
 	}
 
-	TEST_CASE("app.Renderer::Dx11Shader")
+	TEST_CASE("app.Platform::Dx11Shader")
 	{
 		pig::Application& app = pig::CreateApplication();
 
@@ -350,13 +477,13 @@ namespace CatchTestsetFail
 		dxShader->Unbind();
 	}
 
-	TEST_CASE("Renderer::Texture")
+	TEST_CASE("app.Renderer::Texture")
 	{
 		pig::Application& app = pig::CreateApplication();
 
 		SECTION("File Texture")
 		{
-			pig::U_Ptr<pig::Texture2D> texture = pig::Texture2D::Create("Assets/Test/SampleTexture.png");
+			pig::S_Ptr<pig::Texture2D> texture = std::move(pig::Texture2D::Create("Assets/Test/SampleTexture.png"));
 			texture->Bind(0);
 			CHECK(texture->GetHeight() == 64);
 			CHECK(texture->GetWidth() == 64);
@@ -369,7 +496,7 @@ namespace CatchTestsetFail
 			{
 				const unsigned int channels = 3;
 				std::vector<unsigned char> data(width * height * channels, 255);
-				pig::U_Ptr<pig::Texture2D> texture = pig::Texture2D::Create(width, height, channels, data.data());
+				pig::S_Ptr<pig::Texture2D> texture = pig::Texture2D::Create(width, height, channels, data.data());
 				texture->Bind(0);
 				CHECK(texture->GetHeight() == 64);
 				CHECK(texture->GetWidth() == 128);
@@ -378,7 +505,7 @@ namespace CatchTestsetFail
 			{
 				const unsigned int channels = 4;
 				std::vector<unsigned char> data(width * height * channels, 255);
-				pig::U_Ptr<pig::Texture2D> texture = pig::Texture2D::Create(width, height, channels, data.data());
+				pig::S_Ptr<pig::Texture2D> texture = pig::Texture2D::Create(width, height, channels, data.data());
 				texture->Bind(0);
 				CHECK(texture->GetHeight() == 64);
 				CHECK(texture->GetWidth() == 128);
@@ -386,7 +513,7 @@ namespace CatchTestsetFail
 		}
 	}
 
-	TEST_CASE("Renderer::OrthographicCamera")
+	TEST_CASE("app.Renderer::OrthographicCamera")
 	{
 		pig::Application& app = pig::CreateApplication();
 		const glm::vec4 ortoValues(-0.5f, 0.5f, -0.5f, 0.5f);
@@ -444,7 +571,7 @@ namespace CatchTestsetFail
 		CHECK(viewMat == inverseTransform);
 		CHECK(projViewMat == glm::ortho(ortoValues.x, ortoValues.y, ortoValues.z, ortoValues.w, -1.0f, 1.0f) * inverseTransform);
 	}
-	TEST_CASE("Renderer::OrthographicCameraController")
+	TEST_CASE("app.Renderer::OrthographicCameraController")
 	{
 		pig::Application& app = pig::CreateApplication();
 		SECTION("Keyboard events")
