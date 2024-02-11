@@ -63,10 +63,7 @@ void pig::Application::Run()
 
 void pig::Application::Shutdown()
 {	
-	m_Data.m_ImGuiLayer->OnDetach();
-	m_Data.m_LayerStack.PopOverlay(m_Data.m_ImGuiLayer);
 	m_Data.m_LayerStack.Shutdown();
-
 	pig::Renderer2D::Destroy();
 }
 

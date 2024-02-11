@@ -12,6 +12,7 @@ void pig::LayerStack::Shutdown()
 	{
 		layer->OnDetach();
 	}
+	m_Data.m_Layers.clear();
 }
 
 void pig::LayerStack::PushLayer(pig::S_Ptr<pig::Layer> layer)
