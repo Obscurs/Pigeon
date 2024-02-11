@@ -17,7 +17,7 @@ sbx::Sandbox2D::Sandbox2D(): pig::Layer("Sandbox2D"), m_CameraController(1280.0f
 	m_PosQuad2 = glm::vec3(1.f, 1.f, 0.f);
 	m_ScaleQuad2 = glm::vec3(0.5f, 1.5f, 1.f);
 
-	m_Texture = pig::Texture2D::Create("Assets/Textures/Checkerboard.png");
+	pig::Renderer2D::AddTexture("Assets/Textures/Checkerboard.png", "Checkerboard");
 }
 
 void sbx::Sandbox2D::OnUpdate(pig::Timestep ts)
@@ -28,7 +28,7 @@ void sbx::Sandbox2D::OnUpdate(pig::Timestep ts)
 	pig::Renderer2D::BeginScene(m_CameraController);
 
 	pig::Renderer2D::DrawQuad(m_PosQuad1, m_ScaleQuad1, m_ColorQuad1);
-	pig::Renderer2D::DrawQuad(m_PosQuad2, m_ScaleQuad2, *m_Texture);
+	pig::Renderer2D::DrawQuad(m_PosQuad2, m_ScaleQuad2, "Checkerboard");
 	
 	pig::Renderer2D::EndScene();
 }

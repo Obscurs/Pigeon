@@ -27,7 +27,7 @@ namespace pig
 		const Data& GetData() const { return m_Data; }
 #endif 
 
-		virtual ~Dx11Texture2D();
+		virtual ~Dx11Texture2D() = default;
 
 		virtual uint32_t GetWidth() const override { return m_Data.m_Width; }
 		virtual uint32_t GetHeight() const override { return m_Data.m_Height; }

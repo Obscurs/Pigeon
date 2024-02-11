@@ -52,6 +52,24 @@ void pig::Dx11VertexBuffer::Unbind() const
 	context->GetPd3dDeviceContext()->IASetVertexBuffers(0, 1, &nullBuffer, &stride, &offset);
 }
 
+void pig::Dx11VertexBuffer::SetVertices(const float* vertices, unsigned int count, unsigned int countOffset)
+{
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+
+	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
+	HRESULT hr = context->GetPd3dDeviceContext()->Map(m_Data.m_Buffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	if (SUCCEEDED(hr))
+	{
+		BYTE* destData = reinterpret_cast<BYTE*>(mappedResource.pData) + countOffset * m_Data.m_Stride;
+		memcpy(destData, vertices, count * m_Data.m_Stride);
+		context->GetPd3dDeviceContext()->Unmap(m_Data.m_Buffer.get(), 0);
+	}
+	else
+	{
+		PG_CORE_ASSERT(false, "Could not append vertexs");
+	}
+}
+
 void pig::Dx11VertexBuffer::AppendVertices(const float* vertices, unsigned int count, unsigned int countOffset)
 {
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -112,6 +130,23 @@ void pig::Dx11IndexBuffer::Unbind() const
 	context->GetPd3dDeviceContext()->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
 }
 
+void pig::Dx11IndexBuffer::SetIndices(const uint32_t* indices, unsigned int count, unsigned int countOffset)
+{
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+
+	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
+	HRESULT hr = context->GetPd3dDeviceContext()->Map(m_Data.m_Buffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	if (SUCCEEDED(hr))
+	{
+		BYTE* destData = reinterpret_cast<BYTE*>(mappedResource.pData) + countOffset * sizeof(int);
+		memcpy(destData, indices, count * sizeof(int));
+		context->GetPd3dDeviceContext()->Unmap(m_Data.m_Buffer.get(), 0);
+	}
+	else
+	{
+		PG_CORE_ASSERT(false, "Could not append vertexs");
+	}
+}
 void pig::Dx11IndexBuffer::AppendIndices(const uint32_t* indices, unsigned int count, unsigned int countOffset)
 {
 	D3D11_MAPPED_SUBRESOURCE mappedResource;

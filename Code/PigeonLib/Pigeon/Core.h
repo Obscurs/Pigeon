@@ -32,6 +32,9 @@ namespace pig
 	template<typename T, typename Deleter = std::default_delete<T>>
 	using U_Ptr = std::unique_ptr<T, Deleter>;
 
+	template<typename T>
+	using S_Ptr = std::shared_ptr<T>;
+
 	//TODO? Move this funcs elsewhere
 	struct ReleaseDeleter {
 		template<typename T>
@@ -65,7 +68,6 @@ namespace pig
 		T* value;
 	};
 
-	template<typename T>
-	using S_Ptr = std::shared_ptr<T>;
+
 	
 }

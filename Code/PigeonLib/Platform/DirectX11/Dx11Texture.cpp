@@ -112,11 +112,6 @@ void pig::Dx11Texture2D::CreateTextue(unsigned int width, unsigned int height, u
 	device->CreateSamplerState(&sampDesc, &m_Data.m_SamplerState);
 }
 
-pig::Dx11Texture2D::~Dx11Texture2D()
-{
-
-}
-
 void pig::Dx11Texture2D::Bind(uint32_t slot) const
 {
     auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
