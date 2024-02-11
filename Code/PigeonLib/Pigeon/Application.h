@@ -32,15 +32,8 @@ namespace pig
 
 		static Application& Create()
 		{
-			if (s_Instance)
-			{
-				s_Instance->Shutdown();
-			}
-			if (!s_Instance)
-			{
-				s_Instance = std::make_unique<Application>();
-				s_Instance->Init();
-			}
+			s_Instance = std::make_unique<Application>();
+			s_Instance->Init();
 			return s_Instance->Get();
 		}
 

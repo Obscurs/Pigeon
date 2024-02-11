@@ -62,17 +62,13 @@ void pig::Application::Run()
 #endif
 
 void pig::Application::Shutdown()
-{
-	if (s_Instance)
-	{
-		m_Data.m_ImGuiLayer->OnDetach();
-		m_Data.m_LayerStack.PopOverlay(m_Data.m_ImGuiLayer);
-		m_Data.m_LayerStack.Shutdown();
+{	
+	m_Data.m_ImGuiLayer->OnDetach();
+	m_Data.m_LayerStack.PopOverlay(m_Data.m_ImGuiLayer);
+	m_Data.m_LayerStack.Shutdown();
 
-		pig::Renderer2D::Destroy();
-		m_Data.m_Window.reset();
-		s_Instance = nullptr;
-	}
+	pig::Renderer2D::Destroy();
+	m_Data.m_Window.reset();
 }
 
 void pig::Application::Init()
