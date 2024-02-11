@@ -68,7 +68,6 @@ void pig::Application::Shutdown()
 	m_Data.m_LayerStack.Shutdown();
 
 	pig::Renderer2D::Destroy();
-	m_Data.m_Window.reset();
 }
 
 void pig::Application::Init()
