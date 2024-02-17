@@ -22,6 +22,16 @@ namespace pig
 
 		struct Data
 		{
+			~Data()
+			{
+				m_VertexBuffer = nullptr;
+				m_IndexBuffer = nullptr;
+				m_Shader = nullptr;
+				m_Camera = nullptr;
+				m_TextureMap.clear();
+				m_BatchMap.clear();
+			}
+
 			struct BatchData
 			{
 				float m_VertexBuffer[VERTEX_ATRIB_COUNT * QUAD_VERTEX_COUNT * pig::Renderer2D::BATCH_MAX_COUNT];
