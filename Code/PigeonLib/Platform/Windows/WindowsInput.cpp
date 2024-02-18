@@ -4,8 +4,9 @@
 #include "Pigeon/Application.h"
 #include "Platform/Windows/WindowsWindow.h"
 
-pig::Input* pig::Input::s_Instance = new pig::WindowsInput();
-
+#ifndef TESTS_ENABLED
+pig::S_Ptr<pig::Input> pig::Input::s_Instance = std::make_shared<pig::WindowsInput>();
+#endif
 bool pig::WindowsInput::IsKeyPressedImpl(int keycode)
 {
 	return (GetAsyncKeyState(keycode) & 0x8000) != 0;

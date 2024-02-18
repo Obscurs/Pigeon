@@ -8,6 +8,8 @@
 #include <Pigeon/Events/ApplicationEvent.h>
 #include <Pigeon/Events/MouseEvent.h>
 
+#include <Platform/Testing/TestingWindow.h>
+
 namespace
 {
 	class TestLayerEventNoPropagate : public pig::Layer
@@ -60,16 +62,16 @@ namespace
 
 namespace CatchTestsetFail
 {
-	TEST_CASE("app.Layers::Propagation")
+	TEST_CASE("Core.Layers::Propagation")
 	{
 		pig::Application& app = pig::CreateApplication();
-		pig::WindowsWindow& appWindow = static_cast<pig::WindowsWindow&>(app.GetWindow());
-		int wParam = 123;
-		int lParam = 456;
-
+		pig::TestingWindow& appWindow = static_cast<pig::TestingWindow&>(app.GetWindow());
+		int eventKeyCode = 123;
+		int eventRepeat = 0;
+		pig::KeyPressedEvent eventSent1(eventKeyCode, eventRepeat);
 		const pig::LayerStack::Data& layerStackData = app.GetData().m_LayerStack.GetData();
 		CHECK(layerStackData.m_LayerInsertIndex == 0);
-		CHECK(layerStackData.m_Layers.size() == 1);
+		CHECK(layerStackData.m_Layers.size() == 0);
 		pig::S_Ptr<TestLayerEventPropagate> testLayerPropagate1 = std::make_shared<TestLayerEventPropagate>();
 		pig::S_Ptr<TestLayerEventPropagate> testLayerPropagate2 = std::make_shared < TestLayerEventPropagate>();
 		pig::S_Ptr<TestLayerEventNoPropagate> testLayerNoPropagate1 = std::make_shared < TestLayerEventNoPropagate>();
@@ -78,7 +80,7 @@ namespace CatchTestsetFail
 		CHECK(!testLayerPropagate2->m_ReceivedEvent);
 		CHECK(!testLayerNoPropagate1->m_ReceivedEvent);
 
-		appWindow.SendFakeEvent(pig::WindowsWindow::EventType::KEYDOWN, wParam, lParam);
+		appWindow.TESTING_TriggerEvent(&eventSent1);
 
 		CHECK(!testLayerPropagate1->m_ReceivedEvent);
 		CHECK(!testLayerPropagate2->m_ReceivedEvent);
@@ -89,13 +91,13 @@ namespace CatchTestsetFail
 			app.PushLayer(testLayerPropagate1);
 
 			CHECK(layerStackData.m_LayerInsertIndex == 1);
-			CHECK(layerStackData.m_Layers.size() == 2);
+			CHECK(layerStackData.m_Layers.size() == 1);
 
 			CHECK(!testLayerPropagate1->m_ReceivedEvent);
 			CHECK(!testLayerPropagate2->m_ReceivedEvent);
 			CHECK(!testLayerNoPropagate1->m_ReceivedEvent);
 
-			appWindow.SendFakeEvent(pig::WindowsWindow::EventType::KEYDOWN, wParam, lParam);
+			appWindow.TESTING_TriggerEvent(&eventSent1);
 			CHECK(testLayerPropagate1->m_ReceivedEvent);
 			CHECK(!testLayerPropagate2->m_ReceivedEvent);
 			CHECK(!testLayerNoPropagate1->m_ReceivedEvent);
@@ -106,9 +108,9 @@ namespace CatchTestsetFail
 			{
 				app.PushLayer(testLayerPropagate2);
 				CHECK(layerStackData.m_LayerInsertIndex == 2);
-				CHECK(layerStackData.m_Layers.size() == 3);
+				CHECK(layerStackData.m_Layers.size() == 2);
 
-				appWindow.SendFakeEvent(pig::WindowsWindow::EventType::KEYDOWN, wParam, lParam);
+				appWindow.TESTING_TriggerEvent(&eventSent1);
 				CHECK(testLayerPropagate1->m_ReceivedEvent);
 				CHECK(testLayerPropagate2->m_ReceivedEvent);
 				CHECK(!testLayerNoPropagate1->m_ReceivedEvent);
@@ -126,9 +128,9 @@ namespace CatchTestsetFail
 				app.PushLayer(testLayerPropagate2);
 				app.PushLayer(testLayerNoPropagate1);
 				CHECK(layerStackData.m_LayerInsertIndex == 3);
-				CHECK(layerStackData.m_Layers.size() == 4);
+				CHECK(layerStackData.m_Layers.size() == 3);
 
-				appWindow.SendFakeEvent(pig::WindowsWindow::EventType::KEYDOWN, wParam, lParam);
+				appWindow.TESTING_TriggerEvent(&eventSent1);
 				CHECK(!testLayerPropagate1->m_ReceivedEvent);
 				CHECK(!testLayerPropagate2->m_ReceivedEvent);
 				CHECK(testLayerNoPropagate1->m_ReceivedEvent);
@@ -144,9 +146,9 @@ namespace CatchTestsetFail
 				app.PushLayer(testLayerPropagate1);
 				app.PushLayer(testLayerPropagate2);
 				CHECK(layerStackData.m_LayerInsertIndex == 3);
-				CHECK(layerStackData.m_Layers.size() == 4);
+				CHECK(layerStackData.m_Layers.size() == 3);
 
-				appWindow.SendFakeEvent(pig::WindowsWindow::EventType::KEYDOWN, wParam, lParam);
+				appWindow.TESTING_TriggerEvent(&eventSent1);
 				CHECK(testLayerPropagate1->m_ReceivedEvent);
 				CHECK(testLayerPropagate2->m_ReceivedEvent);
 				CHECK(testLayerNoPropagate1->m_ReceivedEvent);
@@ -162,9 +164,9 @@ namespace CatchTestsetFail
 				app.PushLayer(testLayerNoPropagate1);
 				app.PushLayer(testLayerPropagate2);
 				CHECK(layerStackData.m_LayerInsertIndex == 3);
-				CHECK(layerStackData.m_Layers.size() == 4);
+				CHECK(layerStackData.m_Layers.size() == 3);
 
-				appWindow.SendFakeEvent(pig::WindowsWindow::EventType::KEYDOWN, wParam, lParam);
+				appWindow.TESTING_TriggerEvent(&eventSent1);
 				CHECK(!testLayerPropagate1->m_ReceivedEvent);
 				CHECK(testLayerPropagate2->m_ReceivedEvent);
 				CHECK(testLayerNoPropagate1->m_ReceivedEvent);

@@ -23,7 +23,7 @@ void pig::OrthographicCameraController::OnUpdate(Timestep ts)
 	else if (Input::IsKeyPressed(PG_KEY_S))
 		m_Data.m_CameraPosition.y -= m_Data.m_CameraTranslationSpeed * ts;
 
-	if (m_Data.m_Rotation)
+	/*if (m_Data.m_Rotation)
 	{
 		if (Input::IsKeyPressed(PG_KEY_Q))
 			m_Data.m_CameraRotation += m_Data.m_CameraRotationSpeed * ts;
@@ -31,7 +31,7 @@ void pig::OrthographicCameraController::OnUpdate(Timestep ts)
 			m_Data.m_CameraRotation -= m_Data.m_CameraRotationSpeed * ts;
 
 		m_Data.m_Camera.SetRotation(m_Data.m_CameraRotation);
-	}
+	}*/
 
 	m_Data.m_Camera.SetPosition(m_Data.m_CameraPosition);
 

@@ -2,8 +2,8 @@
 
 #include "Event.h"
 
-namespace pig {
-
+namespace pig 
+{
 	class PIGEON_API WindowResizeEvent : 
 		public EventClassCategory<EventCategoryApplication>,
 		public EventClassType<EventType::WindowResize>

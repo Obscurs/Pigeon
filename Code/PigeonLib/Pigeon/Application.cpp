@@ -73,9 +73,10 @@ void pig::Application::Init()
 	m_Data.m_Window->SetEventCallback(pig::BindEventFn<&Application::OnEvent, Application>(this));
 	pig::Renderer::Init();
 	pig::Renderer2D::Init();
+#ifndef TESTS_ENABLED
 	m_Data.m_ImGuiLayer = std::make_shared<ImGuiLayer>();
 	PushOverlay(m_Data.m_ImGuiLayer);
-
+#endif
 	m_Data.m_Initialized = true;
 }
 
@@ -90,13 +91,13 @@ void pig::Application::Update()
 
 	for (pig::S_Ptr<pig::Layer> layer : m_Data.m_LayerStack)
 		layer->OnUpdate(timestep);
-
+#ifndef TESTS_ENABLED
 	if (m_Data.m_ImGuiLayer->IsAttached())
 	{
 		for (pig::S_Ptr<pig::Layer> layer : m_Data.m_LayerStack)
 			layer->OnImGuiRender();
 	}
-
+#endif
 	for (pig::S_Ptr<pig::Layer> layer : m_Data.m_LayerStack)
 		layer->End();
 

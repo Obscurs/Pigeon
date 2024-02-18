@@ -5,6 +5,7 @@
 #include "Pigeon/Application.h"
 
 #include "Platform/DirectX11/Dx11Shader.h"
+#include "Platform/Testing/TestingShader.h"
 
 pig::S_Ptr<pig::Shader> pig::Shader::Create(const std::string& filepath)
 {
@@ -12,6 +13,7 @@ pig::S_Ptr<pig::Shader> pig::Shader::Create(const std::string& filepath)
 	{
 	case pig::RendererAPI::API::None:    PG_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
 	case pig::RendererAPI::API::DirectX11: return std::make_shared<pig::Dx11Shader>(filepath);
+	case pig::RendererAPI::API::Testing: return std::make_shared<pig::TestingShader>(filepath);
 	}
 
 	PG_CORE_ASSERT(false, "Unknown RendererAPI!");
@@ -24,6 +26,7 @@ pig::S_Ptr<pig::Shader> pig::Shader::Create(const std::string& name, const char*
 	{
 	case pig::RendererAPI::API::None:    PG_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
 	case pig::RendererAPI::API::DirectX11:  return std::make_shared<pig::Dx11Shader>(name, vertexSrc, fragmentSrc, buffLayout);
+	case pig::RendererAPI::API::Testing:  return std::make_shared<pig::TestingShader>(name, vertexSrc, fragmentSrc, buffLayout);
 	}
 	PG_CORE_ASSERT(false, "Unknown RendererAPI!");
 	return nullptr;

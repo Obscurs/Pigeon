@@ -8,11 +8,9 @@ namespace pig
 	class WindowsWindow : public Window
 	{
 	public:
-		struct WindowData
+		struct WindowsData
 		{
-			const char* m_Title = "Windows Window";
 			HINSTANCE m_HInstance;
-			EventCallbackFn EventCallback;
 		};
 
 		enum class EventType
@@ -42,16 +40,11 @@ namespace pig
 		unsigned int GetHeight() const override;
 
 		// Window attributes
-		inline void SetEventCallback(const EventCallbackFn& callback) override { m_WindowData.EventCallback = callback; }
 		void SetVSync(bool enabled) override {};
 		bool IsVSync() const override { return false; };
 
-		inline virtual void* GetNativeWindow() const { return m_Window; }
-		inline virtual void* GetGraphicsContext() const { return m_Context.get(); }
-
-#ifdef TESTS_ENABLED
-		static void SendFakeEvent(EventType type, WPARAM wParam, LPARAM lParam);
-#endif
+		inline virtual void* GetNativeWindow() const override { return m_Window; }
+		inline virtual void* GetGraphicsContext() const override { return m_Context.get(); }
 
 	private:
 		static std::optional<int> ProcessMessages();
@@ -72,6 +65,6 @@ namespace pig
 		pig::S_Ptr<GraphicsContext> m_Context = nullptr;
 		HWND m_Window = nullptr;
 
-		static WindowData m_WindowData;
+		static WindowsData m_WindowsData;
 	};
 }

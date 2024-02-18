@@ -1,28 +1,30 @@
 #include "pch.h"
 #include "WindowsWindow.h"
 
-#include "imgui/imgui.h"
+#include <imgui/imgui.h>
 
-#include "Pigeon/Events/ApplicationEvent.h"
-#include "Pigeon/Events/MouseEvent.h"
-#include "Pigeon/Events/KeyEvent.h"
+#include <Pigeon/Events/ApplicationEvent.h>
+#include <Pigeon/Events/MouseEvent.h>
+#include <Pigeon/Events/KeyEvent.h>
 
 // Forward declare message handler from imgui_impl_win32.cpp
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 static bool s_WindowInitialized = false;
 
-pig::WindowsWindow::WindowData pig::WindowsWindow::m_WindowData;
-
+#ifndef TESTS_ENABLED
+pig::Window::Data pig::Window::m_Data;
 pig::S_Ptr<pig::Window> pig::Window::Create(const pig::WindowProps& props)
 {
 	return std::make_unique<pig::WindowsWindow>(props);
 }
+#endif
+pig::WindowsWindow::WindowsData pig::WindowsWindow::m_WindowsData;
 
 pig::WindowsWindow::WindowsWindow(const pig::WindowProps& props)
 {
-	m_WindowData.m_Title = props.Title.c_str();
-	m_WindowData.m_HInstance = GetModuleHandle(nullptr);
+	m_Data.m_Title = props.Title.c_str();
+	m_WindowsData.m_HInstance = GetModuleHandle(nullptr);
 	Init(props);
 }
 
@@ -35,8 +37,8 @@ void pig::WindowsWindow::Init(const pig::WindowProps& props)
 {
 	WNDCLASS wc = {};
 	wc.lpfnWndProc = WindowProc;
-	wc.hInstance = m_WindowData.m_HInstance;
-	wc.lpszClassName = m_WindowData.m_Title;
+	wc.hInstance = m_WindowsData.m_HInstance;
+	wc.lpszClassName = m_Data.m_Title;
 
 	RegisterClass(&wc);
 
@@ -48,10 +50,10 @@ void pig::WindowsWindow::Init(const pig::WindowProps& props)
 	AdjustWindowRect(&winRect, WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU, false);
 
 	m_Window = CreateWindow(
-		m_WindowData.m_Title, m_WindowData.m_Title,
+		m_Data.m_Title, m_Data.m_Title,
 		WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU,
 		CW_USEDEFAULT, CW_USEDEFAULT, winRect.right - winRect.left, winRect.bottom - winRect.top,
-		nullptr, nullptr, m_WindowData.m_HInstance, this
+		nullptr, nullptr, m_WindowsData.m_HInstance, this
 	);
 	if (!m_Window) {
 		DWORD errorCode = GetLastError();
@@ -84,12 +86,12 @@ void pig::WindowsWindow::Shutdown()
 	}
 	if (m_Window)
 	{
-		UnregisterClass(m_WindowData.m_Title, m_WindowData.m_HInstance);
+		UnregisterClass(m_Data.m_Title, m_WindowsData.m_HInstance);
 		DestroyWindow(m_Window);
 		m_Window = nullptr;
 	}
-
-	m_WindowData = pig::WindowsWindow::WindowData();
+	m_Data = pig::Window::Data();
+	m_WindowsData = pig::WindowsWindow::WindowsData();
 }
 
 
@@ -125,57 +127,6 @@ std::optional<int> pig::WindowsWindow::ProcessMessages()
 
 	return {};
 }
-
-#ifdef TESTS_ENABLED
-void pig::WindowsWindow::SendFakeEvent(EventType type, WPARAM wParam, LPARAM lParam)
-{
-	UINT msg = 0;
-	switch(type)
-	{
-	case EventType::DESTROY:
-		msg = WM_DESTROY;
-		break;
-	case EventType::SIZE:
-		msg = WM_SIZE;
-		break;
-	case EventType::MOUSEMOVE:
-		msg = WM_MOUSEMOVE;
-		break;
-	case EventType::MOUSEWHEEL:
-		msg = WM_MOUSEWHEEL;
-		break;
-	case EventType::MOUSELBUTTONDOWN:
-		msg = WM_LBUTTONDOWN;
-		break;
-	case EventType::MOUSERBUTTONDOWN:
-		msg = WM_RBUTTONDOWN;
-		break;
-	case EventType::MOUSEMBUTTONDOWN:
-		msg = WM_MBUTTONDOWN;
-		break;
-	case EventType::MOUSELBUTTONUP:
-		msg = WM_LBUTTONUP;
-		break;
-	case EventType::MOUSERBUTTONUP:
-		msg = WM_RBUTTONUP;
-		break;
-	case EventType::MOUSEMBUTTONUP:
-		msg = WM_MBUTTONUP;
-		break;
-	case EventType::KEYDOWN:
-		msg = WM_KEYDOWN;
-		break;
-	case EventType::KEYUP:
-		msg = WM_KEYUP;
-		break;
-	case EventType::CHAR:
-		msg = WM_CHAR;
-		break;
-	}
-	PG_CORE_ASSERT(msg, "Event type not implemented (%d)", static_cast<int>(type));
-	ProcessEvent(msg, wParam, lParam);
-}
-#endif
 
 LRESULT __stdcall pig::WindowsWindow::WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -223,13 +174,13 @@ bool pig::WindowsWindow::ProcessEvent(UINT msg, WPARAM wParam, LPARAM lParam)
 void pig::WindowsWindow::ProcessCharPressedEvent(WPARAM wParam)
 {
 	pig::KeyTypedEvent event(static_cast<int>(wParam));
-	m_WindowData.EventCallback(event);
+	m_Data.EventCallback(event);
 }
 
 void pig::WindowsWindow::ProcessKeyUpEvent(WPARAM wParam)
 {
 	pig::KeyReleasedEvent event(static_cast<int>(wParam));
-	m_WindowData.EventCallback(event);
+	m_Data.EventCallback(event);
 }
 
 void pig::WindowsWindow::ProcessKeyDownEvent(LPARAM lParam, WPARAM wParam)
@@ -239,12 +190,12 @@ void pig::WindowsWindow::ProcessKeyDownEvent(LPARAM lParam, WPARAM wParam)
 	if (!isRepeat) {
 		// Key has been pressed (not a repeat)
 		pig::KeyPressedEvent event(static_cast<int>(wParam), 0);
-		m_WindowData.EventCallback(event);
+		m_Data.EventCallback(event);
 	}
 	else
 	{
 		pig::KeyPressedEvent event(static_cast<int>(wParam), 1);
-		m_WindowData.EventCallback(event);
+		m_Data.EventCallback(event);
 	}
 }
 
@@ -255,37 +206,37 @@ void pig::WindowsWindow::ProcessMouseButtonEvent(UINT msg)
 	case WM_LBUTTONDOWN:
 	{
 		pig::MouseButtonPressedEvent event(0);
-		m_WindowData.EventCallback(event);
+		m_Data.EventCallback(event);
 		break;
 	}
 	case WM_RBUTTONDOWN:
 	{
 		pig::MouseButtonPressedEvent event(1);
-		m_WindowData.EventCallback(event);
+		m_Data.EventCallback(event);
 		break;
 	}
 	case WM_MBUTTONDOWN:
 	{
 		pig::MouseButtonPressedEvent event(2);
-		m_WindowData.EventCallback(event);
+		m_Data.EventCallback(event);
 		break;
 	}
 	case WM_LBUTTONUP:
 	{
 		pig::MouseButtonReleasedEvent event(0);
-		m_WindowData.EventCallback(event);
+		m_Data.EventCallback(event);
 		break;
 	}
 	case WM_RBUTTONUP:
 	{
 		pig::MouseButtonReleasedEvent event(1);
-		m_WindowData.EventCallback(event);
+		m_Data.EventCallback(event);
 		break;
 	}
 	case WM_MBUTTONUP:
 	{
 		pig::MouseButtonReleasedEvent event(2);
-		m_WindowData.EventCallback(event);
+		m_Data.EventCallback(event);
 		break;
 	}
 	}
@@ -298,7 +249,7 @@ void pig::WindowsWindow::ProcessMouseWheelEvent(WPARAM wParam)
 	float xOffset = 0.0f;
 
 	pig::MouseScrolledEvent event((float)xOffset, (float)yOffset);
-	m_WindowData.EventCallback(event);
+	m_Data.EventCallback(event);
 }
 
 void pig::WindowsWindow::ProcessMouseMoveEvent(LPARAM lParam)
@@ -307,7 +258,7 @@ void pig::WindowsWindow::ProcessMouseMoveEvent(LPARAM lParam)
 	int y = HIWORD(lParam);
 	// Do something with x and y, like creating a mouse event and dispatching it.
 	pig::MouseMovedEvent event((float)x, (float)y);
-	m_WindowData.EventCallback(event);
+	m_Data.EventCallback(event);
 }
 
 void pig::WindowsWindow::ProcessWindowResizeEvent(LPARAM lParam)
@@ -318,15 +269,15 @@ void pig::WindowsWindow::ProcessWindowResizeEvent(LPARAM lParam)
 
 	// Now create a WindowResizeEvent and dispatch it
 	pig::WindowResizeEvent event(width, height);
-	if (m_WindowData.EventCallback) 
-		m_WindowData.EventCallback(event);
+	if (m_Data.EventCallback)
+		m_Data.EventCallback(event);
 }
 
 bool pig::WindowsWindow::ProcessWindowDestroyEvent()
 {
 	pig::WindowCloseEvent event;
-	if (m_WindowData.EventCallback)
-		m_WindowData.EventCallback(event);
+	if (m_Data.EventCallback)
+		m_Data.EventCallback(event);
 	PostQuitMessage(0);
 	return false;
 }

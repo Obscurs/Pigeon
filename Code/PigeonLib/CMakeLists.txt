@@ -43,6 +43,16 @@ file(GLOB PLATFORM_DX
     "Platform/DirectX11/Dx11Texture.cpp"
 )
 
+file(GLOB PLATFORM_TESTING
+    "Platform/Testing/TestingBuffer.cpp"
+    "Platform/Testing/TestingContext.cpp"
+    "Platform/Testing/TestingInput.cpp"
+    "Platform/Testing/TestingRendererAPI.cpp"
+    "Platform/Testing/TestingShader.cpp"
+    "Platform/Testing/TestingTexture.cpp"
+    "Platform/Testing/TestingWindow.cpp"
+)
+
 file(GLOB VENDOR
     "vendor/stb_image/stb_image.cpp"
 )
@@ -61,6 +71,7 @@ source_group("Pigeon" FILES ${PG})
 source_group("Pigeon\\ImGui" FILES ${PGIMGUI})
 source_group("Pigeon\\Renderer" FILES ${RENDERER})
 source_group("Platform\\DirectX11" FILES ${PLATFORM_DX})
+source_group("Platform\\Testing" FILES ${PLATFORM_TESTING})
 source_group("vendor" FILES ${VENDOR})
 # Properties->C/C++->General->Additional Include Directories
 include_directories (

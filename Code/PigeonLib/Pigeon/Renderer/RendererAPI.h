@@ -9,7 +9,7 @@ namespace pig
 	public:
 		enum class API
 		{
-			None = 0, DirectX11 = 1
+			None = 0, DirectX11 = 1, Testing = 2
 		};
 	public:
 		virtual void SetClearColor(const glm::vec4& color) = 0;

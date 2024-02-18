@@ -27,6 +27,12 @@ namespace pig {
 	public:
 		using EventCallbackFn = std::function<void(Event&)>;
 
+		struct Data
+		{
+			const char* m_Title = "Windows Window";
+			EventCallbackFn EventCallback;
+		};
+
 		virtual ~Window() {}
 
 		virtual void OnUpdate() = 0;
@@ -35,7 +41,8 @@ namespace pig {
 		virtual unsigned int GetHeight() const = 0;
 
 		// Window attributes
-		virtual void SetEventCallback(const EventCallbackFn& callback) = 0;
+
+		inline void SetEventCallback(const EventCallbackFn& callback) { m_Data.EventCallback = callback; }
 		virtual void SetVSync(bool enabled) = 0;
 		virtual bool IsVSync() const = 0;
 
@@ -43,6 +50,8 @@ namespace pig {
 		virtual void* GetGraphicsContext() const = 0;
 
 		static pig::S_Ptr<Window> Create(const WindowProps& props = WindowProps());
+	protected:
+		static Data m_Data;
 	};
 
 }

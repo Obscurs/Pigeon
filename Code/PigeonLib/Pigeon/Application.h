@@ -21,7 +21,9 @@ namespace pig
 	public:
 		struct Data
 		{
+#ifndef TESTS_ENABLED
 			pig::S_Ptr<ImGuiLayer> m_ImGuiLayer;
+#endif
 			pig::S_Ptr<Window> m_Window;
 			bool m_Running = true;
 			bool m_Initialized = false;

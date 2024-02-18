@@ -6,6 +6,7 @@
 #include <minwindef.h>
 
 #include "Utils/TestApp.h"
+#include <Platform/Testing/TestingWindow.h>
 
 #include <Pigeon/Events/KeyEvent.h>
 #include <Pigeon/Events/ApplicationEvent.h>
@@ -68,7 +69,7 @@ namespace
 			CHECK(false); //type not implemented?
 		}
 	}
-
+	
 	class TestLayer : public pig::Layer
 	{
 	public:
@@ -92,22 +93,26 @@ namespace
 
 namespace CatchTestsetFail
 {
-	TEST_CASE("app.Layers::EventsTest")
+	TEST_CASE("Core.Layers::Events")
 	{
 		pig::Application& app = pig::CreateApplication();
 
 		pig::S_Ptr<TestLayer> testLayer = std::make_shared<TestLayer>();
 		app.PushLayer(testLayer);
-		pig::WindowsWindow& appWindow = static_cast<pig::WindowsWindow&>(app.GetWindow());
 
-		int wParam = 123;
-		int lParam = 456;
+
+		pig::TestingWindow& appWindow = static_cast<pig::TestingWindow&>(app.GetWindow());
+
 		SECTION("Key pressed events")
 		{
-			appWindow.SendFakeEvent(pig::WindowsWindow::EventType::KEYDOWN, wParam, lParam);
+			int eventKeyCode = 123;
+			int eventRepeat = 0;
+			pig::KeyPressedEvent eventSent1(eventKeyCode, eventRepeat);
+			appWindow.TESTING_TriggerEvent(&eventSent1);
+
 			pig::KeyPressedEvent event = GetEventValue<pig::KeyPressedEvent>(testLayer->m_ExpectedEvent);
 			CHECK(event.GetEventType() == pig::EventType::KeyPressed);
-			CHECK(event.GetKeyCode() == wParam);
+			CHECK(event.GetKeyCode() == eventKeyCode);
 			CHECK(!event.GetRepeatCount());
 			CHECK(event.IsInCategory(pig::EventCategory::EventCategoryInput));
 			CHECK(event.IsInCategory(pig::EventCategory::EventCategoryKeyboard));
@@ -115,28 +120,32 @@ namespace CatchTestsetFail
 			CHECK(!event.IsInCategory(pig::EventCategory::EventCategoryMouse));
 			CHECK(!event.IsInCategory(pig::EventCategory::EventCategoryMouseButton));
 				
-			wParam = 123;
-			lParam = 0;
-			appWindow.SendFakeEvent(pig::WindowsWindow::EventType::KEYDOWN, wParam, lParam);
+			eventKeyCode = 123;
+			eventRepeat = 0;
+			pig::KeyPressedEvent eventSent2(eventKeyCode, eventRepeat);
+			appWindow.TESTING_TriggerEvent(&eventSent2);
 			event = GetEventValue<pig::KeyPressedEvent>(testLayer->m_ExpectedEvent);
 			CHECK(event.GetEventType() == pig::EventType::KeyPressed);
-			CHECK(event.GetKeyCode() == wParam);
+			CHECK(event.GetKeyCode() == eventKeyCode);
 			CHECK(!event.GetRepeatCount());
 
-			wParam = 678;
-			lParam = 0x40000000;
-			appWindow.SendFakeEvent(pig::WindowsWindow::EventType::KEYDOWN, wParam, lParam);
+			eventKeyCode = 678;
+			eventRepeat = 0x40000000;
+			pig::KeyPressedEvent eventSent3(eventKeyCode, eventRepeat);
+			appWindow.TESTING_TriggerEvent(&eventSent3);
 			event = GetEventValue<pig::KeyPressedEvent>(testLayer->m_ExpectedEvent);
 			CHECK(event.GetEventType() == pig::EventType::KeyPressed);
-			CHECK(event.GetKeyCode() == wParam);
+			CHECK(event.GetKeyCode() == eventKeyCode);
 			CHECK(event.GetRepeatCount());
 		}
 		SECTION("Key released events")
 		{
-			appWindow.SendFakeEvent(pig::WindowsWindow::EventType::KEYUP, wParam, lParam);
+			const int eventKeyCode = 123;
+			pig::KeyReleasedEvent eventSent(eventKeyCode);
+			appWindow.TESTING_TriggerEvent(&eventSent);
 			pig::KeyReleasedEvent event = GetEventValue<pig::KeyReleasedEvent>(testLayer->m_ExpectedEvent);
 			CHECK(event.GetEventType() == pig::EventType::KeyReleased);
-			CHECK(event.GetKeyCode() == wParam);
+			CHECK(event.GetKeyCode() == eventKeyCode);
 			CHECK(event.IsInCategory(pig::EventCategory::EventCategoryInput));
 			CHECK(event.IsInCategory(pig::EventCategory::EventCategoryKeyboard));
 			CHECK(!event.IsInCategory(pig::EventCategory::EventCategoryApplication));
@@ -145,10 +154,13 @@ namespace CatchTestsetFail
 		}
 		SECTION("Key char events")
 		{
-			appWindow.SendFakeEvent(pig::WindowsWindow::EventType::CHAR, wParam, lParam);
+			const int eventKeyCode = 123;
+			pig::KeyTypedEvent eventSent(eventKeyCode);
+			appWindow.TESTING_TriggerEvent(&eventSent);
+
 			pig::KeyTypedEvent event = GetEventValue<pig::KeyTypedEvent>(testLayer->m_ExpectedEvent);
 			CHECK(event.GetEventType() == pig::EventType::KeyTyped);
-			CHECK(event.GetKeyCode() == wParam);
+			CHECK(event.GetKeyCode() == eventKeyCode);
 			CHECK(event.IsInCategory(pig::EventCategory::EventCategoryInput));
 			CHECK(event.IsInCategory(pig::EventCategory::EventCategoryKeyboard));
 			CHECK(!event.IsInCategory(pig::EventCategory::EventCategoryApplication));
@@ -157,7 +169,11 @@ namespace CatchTestsetFail
 		}
 		SECTION("Mouse scroll events")
 		{
-			appWindow.SendFakeEvent(pig::WindowsWindow::EventType::MOUSEWHEEL, wParam, lParam);
+			const float offsetX = 123.f;
+			const float offsetY = 456.f;
+			pig::MouseScrolledEvent eventSent(offsetX, offsetY);
+			appWindow.TESTING_TriggerEvent(&eventSent);
+
 			pig::MouseScrolledEvent event = GetEventValue<pig::MouseScrolledEvent>(testLayer->m_ExpectedEvent);
 			CHECK(event.GetEventType() == pig::EventType::MouseScrolled);
 			CHECK(event.IsInCategory(pig::EventCategory::EventCategoryInput));
@@ -168,7 +184,11 @@ namespace CatchTestsetFail
 		}
 		SECTION("Mouse move events")
 		{
-			appWindow.SendFakeEvent(pig::WindowsWindow::EventType::MOUSEMOVE, wParam, lParam);
+			const float offsetX = 123.f;
+			const float offsetY = 456.f;
+			pig::MouseMovedEvent eventSent(offsetX, offsetY);
+			appWindow.TESTING_TriggerEvent(&eventSent);
+
 			pig::MouseMovedEvent event = GetEventValue<pig::MouseMovedEvent>(testLayer->m_ExpectedEvent);
 			CHECK(event.GetEventType() == pig::EventType::MouseMoved);
 			CHECK(event.IsInCategory(pig::EventCategory::EventCategoryInput));
@@ -179,7 +199,10 @@ namespace CatchTestsetFail
 		}
 		SECTION("Mouse button down events")
 		{
-			appWindow.SendFakeEvent(pig::WindowsWindow::EventType::MOUSELBUTTONDOWN, wParam, lParam);
+			const int keyButton = 123;
+			pig::MouseButtonPressedEvent eventSent(keyButton);
+			appWindow.TESTING_TriggerEvent(&eventSent);
+
 			pig::MouseButtonPressedEvent event = GetEventValue<pig::MouseButtonPressedEvent>(testLayer->m_ExpectedEvent);
 			CHECK(event.GetEventType() == pig::EventType::MouseButtonPressed);
 			CHECK(event.IsInCategory(pig::EventCategory::EventCategoryInput));
@@ -187,23 +210,14 @@ namespace CatchTestsetFail
 			CHECK(!event.IsInCategory(pig::EventCategory::EventCategoryApplication));
 			CHECK(event.IsInCategory(pig::EventCategory::EventCategoryMouse));
 			CHECK(event.IsInCategory(pig::EventCategory::EventCategoryMouseButton));
-			CHECK(event.GetMouseButton() == 0);
-
-			appWindow.SendFakeEvent(pig::WindowsWindow::EventType::MOUSELBUTTONDOWN, wParam, lParam);
-			event = GetEventValue<pig::MouseButtonPressedEvent>(testLayer->m_ExpectedEvent);
-			CHECK(event.GetMouseButton() == 0);
-
-			appWindow.SendFakeEvent(pig::WindowsWindow::EventType::MOUSERBUTTONDOWN, wParam, lParam);
-			event = GetEventValue<pig::MouseButtonPressedEvent>(testLayer->m_ExpectedEvent);
-			CHECK(event.GetMouseButton() == 1);
-
-			appWindow.SendFakeEvent(pig::WindowsWindow::EventType::MOUSEMBUTTONDOWN, wParam, lParam);
-			event = GetEventValue<pig::MouseButtonPressedEvent>(testLayer->m_ExpectedEvent);
-			CHECK(event.GetMouseButton() == 2);
+			CHECK(event.GetMouseButton() == keyButton);
 		}
 		SECTION("Mouse button up events")
 		{
-			appWindow.SendFakeEvent(pig::WindowsWindow::EventType::MOUSELBUTTONUP, wParam, lParam);
+			const int keyButton = 123;
+			pig::MouseButtonReleasedEvent eventSent(keyButton);
+			appWindow.TESTING_TriggerEvent(&eventSent);
+
 			pig::MouseButtonReleasedEvent event = GetEventValue<pig::MouseButtonReleasedEvent>(testLayer->m_ExpectedEvent);
 			CHECK(event.GetEventType() == pig::EventType::MouseButtonReleased);
 			CHECK(event.IsInCategory(pig::EventCategory::EventCategoryInput));
@@ -211,23 +225,14 @@ namespace CatchTestsetFail
 			CHECK(!event.IsInCategory(pig::EventCategory::EventCategoryApplication));
 			CHECK(event.IsInCategory(pig::EventCategory::EventCategoryMouse));
 			CHECK(event.IsInCategory(pig::EventCategory::EventCategoryMouseButton));
-			CHECK(event.GetMouseButton() == 0);
-
-			appWindow.SendFakeEvent(pig::WindowsWindow::EventType::MOUSELBUTTONUP, wParam, lParam);
-			event = GetEventValue<pig::MouseButtonReleasedEvent>(testLayer->m_ExpectedEvent);
-			CHECK(event.GetMouseButton() == 0);
-
-			appWindow.SendFakeEvent(pig::WindowsWindow::EventType::MOUSERBUTTONUP, wParam, lParam);
-			event = GetEventValue<pig::MouseButtonReleasedEvent>(testLayer->m_ExpectedEvent);
-			CHECK(event.GetMouseButton() == 1);
-
-			appWindow.SendFakeEvent(pig::WindowsWindow::EventType::MOUSEMBUTTONUP, wParam, lParam);
-			event = GetEventValue<pig::MouseButtonReleasedEvent>(testLayer->m_ExpectedEvent);
-			CHECK(event.GetMouseButton() == 2);
+			CHECK(event.GetMouseButton() == keyButton);
 		}
 		SECTION("Mix Events")
 		{
-			appWindow.SendFakeEvent(pig::WindowsWindow::EventType::MOUSELBUTTONUP, wParam, lParam);
+			const int keyButton1 = 123;
+			pig::MouseButtonReleasedEvent eventSent1(keyButton1);
+			appWindow.TESTING_TriggerEvent(&eventSent1);
+
 			pig::MouseButtonReleasedEvent event = GetEventValue<pig::MouseButtonReleasedEvent>(testLayer->m_ExpectedEvent);
 			CHECK(event.GetEventType() == pig::EventType::MouseButtonReleased);
 			CHECK(event.IsInCategory(pig::EventCategory::EventCategoryInput));
@@ -235,12 +240,15 @@ namespace CatchTestsetFail
 			CHECK(!event.IsInCategory(pig::EventCategory::EventCategoryApplication));
 			CHECK(event.IsInCategory(pig::EventCategory::EventCategoryMouse));
 			CHECK(event.IsInCategory(pig::EventCategory::EventCategoryMouseButton));
-			CHECK(event.GetMouseButton() == 0);
+			CHECK(event.GetMouseButton() == keyButton1);
 
-			appWindow.SendFakeEvent(pig::WindowsWindow::EventType::CHAR, wParam, lParam);
+			const int keyButton2 = 456;
+			pig::KeyTypedEvent eventSent2(keyButton2);
+			appWindow.TESTING_TriggerEvent(&eventSent2);
+
 			pig::KeyTypedEvent event2 = GetEventValue<pig::KeyTypedEvent>(testLayer->m_ExpectedEvent);
 			CHECK(event2.GetEventType() == pig::EventType::KeyTyped);
-			CHECK(event2.GetKeyCode() == wParam);
+			CHECK(event2.GetKeyCode() == keyButton2);
 			CHECK(event2.IsInCategory(pig::EventCategory::EventCategoryInput));
 			CHECK(event2.IsInCategory(pig::EventCategory::EventCategoryKeyboard));
 			CHECK(!event2.IsInCategory(pig::EventCategory::EventCategoryApplication));
@@ -249,7 +257,9 @@ namespace CatchTestsetFail
 		}
 		SECTION("Application close Events")
 		{
-			appWindow.SendFakeEvent(pig::WindowsWindow::EventType::DESTROY, wParam, lParam);
+			pig::WindowCloseEvent eventSent1;
+			appWindow.TESTING_TriggerEvent(&eventSent1);
+
 			pig::WindowCloseEvent event = GetEventValue<pig::WindowCloseEvent>(testLayer->m_ExpectedEvent);
 			CHECK(event.GetEventType() == pig::EventType::WindowClose);
 			CHECK(!event.IsInCategory(pig::EventCategory::EventCategoryInput));
@@ -260,11 +270,10 @@ namespace CatchTestsetFail
 		}
 		SECTION("Application resize Events")
 		{
-			wParam = 1337;
-			lParam = 7331;
-
-			LPARAM param = MAKELONG(wParam, lParam);
-			appWindow.SendFakeEvent(pig::WindowsWindow::EventType::SIZE, wParam, param);
+			const int width = 1337;
+			const int height = 7331;
+			pig::WindowResizeEvent eventSent1(width, height);
+			appWindow.TESTING_TriggerEvent(&eventSent1);
 			pig::WindowResizeEvent event = GetEventValue<pig::WindowResizeEvent>(testLayer->m_ExpectedEvent);
 			CHECK(event.GetEventType() == pig::EventType::WindowResize);
 			CHECK(!event.IsInCategory(pig::EventCategory::EventCategoryInput));
@@ -278,14 +287,19 @@ namespace CatchTestsetFail
 			LPARAM param;
 			SECTION("width is 0")
 			{
-				param = MAKELONG(0, 7331);
+				const int width = 1337;
+				const int height = 0;
+				pig::WindowResizeEvent eventSent1(width, height);
+				appWindow.TESTING_TriggerEvent(&eventSent1);
 			}
 			SECTION("height is 0")
 			{
-				param = MAKELONG(1337, 0);
+				const int width = 0;
+				const int height = 7331;
+				pig::WindowResizeEvent eventSent1(width, height);
+				appWindow.TESTING_TriggerEvent(&eventSent1);
 			}
 			
-			appWindow.SendFakeEvent(pig::WindowsWindow::EventType::SIZE, wParam, param);
 			const bool hasEvent = GetEventValue<bool>(testLayer->m_ExpectedEvent);
 			CHECK(!hasEvent);
 		}
