@@ -6,6 +6,7 @@
 #include "imgui/imgui.h"
 
 #include "Pigeon/Renderer/Renderer2D.h"
+#include "Pigeon/Renderer/Sprite.h"
 
 sbx::Sandbox2D::Sandbox2D(): pig::Layer("Sandbox2D"), m_CameraController(1280.0f / 720.0f)
 {
@@ -18,6 +19,7 @@ sbx::Sandbox2D::Sandbox2D(): pig::Layer("Sandbox2D"), m_CameraController(1280.0f
 	m_ScaleQuad2 = glm::vec3(0.5f, 1.5f, 1.f);
 
 	pig::Renderer2D::AddTexture("Assets/Textures/Checkerboard.png", "Checkerboard");
+	
 }
 
 void sbx::Sandbox2D::OnUpdate(pig::Timestep ts)
@@ -28,8 +30,10 @@ void sbx::Sandbox2D::OnUpdate(pig::Timestep ts)
 	pig::Renderer2D::BeginScene(m_CameraController);
 
 	pig::Renderer2D::DrawQuad(m_PosQuad1, m_ScaleQuad1, m_ColorQuad1);
-	pig::Renderer2D::DrawQuad(m_PosQuad2, m_ScaleQuad2, "Checkerboard");
+	//pig::Renderer2D::DrawQuad(m_PosQuad2, m_ScaleQuad2, "Checkerboard");
 	
+	pig::Sprite sprite(m_PosQuad2, m_ScaleQuad2, glm::vec2(128, 256), glm::vec2(256, 0), "Checkerboard");
+	pig::Renderer2D::DrawSprite(sprite);
 	pig::Renderer2D::EndScene();
 }
 

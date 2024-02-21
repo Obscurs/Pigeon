@@ -26,6 +26,7 @@ file(GLOB RENDERER
     "Pigeon/Renderer/Renderer2D.cpp"
     "Pigeon/Renderer/RendererAPI.cpp"
     "Pigeon/Renderer/Shader.cpp"
+    "Pigeon/Renderer/Sprite.cpp"
     "Pigeon/Renderer/Texture.cpp"
 
 )
@@ -46,6 +47,7 @@ file(GLOB PLATFORM_DX
 file(GLOB PLATFORM_TESTING
     "Platform/Testing/TestingBuffer.cpp"
     "Platform/Testing/TestingContext.cpp"
+    "Platform/Testing/TestingHelper.cpp"
     "Platform/Testing/TestingInput.cpp"
     "Platform/Testing/TestingRendererAPI.cpp"
     "Platform/Testing/TestingShader.cpp"

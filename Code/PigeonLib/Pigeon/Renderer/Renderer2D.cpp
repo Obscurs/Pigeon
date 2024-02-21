@@ -23,7 +23,7 @@ namespace
 
 	struct VertexData
 	{
-		VertexData(const glm::vec3& pos, const glm::vec3& scale, const glm::vec4& color, const float* vertexBase, int textureId)
+		VertexData(const glm::vec3& pos, const glm::vec3& scale, const glm::vec4& color, const float* vertexBase, int textureId, const glm::vec2& texCoords)
 		{
 			m_Data[0] = vertexBase[0] * scale.x + pos.x;
 			m_Data[1] = vertexBase[1] * scale.y + pos.y;
@@ -32,8 +32,8 @@ namespace
 			m_Data[4] = color.g;
 			m_Data[5] = color.b;
 			m_Data[6] = color.a;
-			m_Data[7] = vertexBase[7];
-			m_Data[8] = vertexBase[8];
+			m_Data[7] = texCoords.x;
+			m_Data[8] = texCoords.y;
 			m_Data[9] = textureId;
 		}
 
@@ -43,12 +43,12 @@ namespace
 	};
 	struct QuadData
 	{
-		QuadData(const glm::vec3& pos, const glm::vec3& scale, const glm::vec4& color, unsigned int offsetIndices, int textureId)
+		QuadData(const glm::vec3& pos, const glm::vec3& scale, const glm::vec4& color, unsigned int offsetIndices, int textureId, const glm::vec4& texCoordsRect)
 		{
-			memcpy(m_SquareVertices, VertexData(pos, scale, color, &s_SquareVertices[0], textureId).m_Data, pig::Renderer2D::VERTEX_ATRIB_COUNT * sizeof(float));
-			memcpy(&m_SquareVertices[pig::Renderer2D::VERTEX_ATRIB_COUNT], VertexData(pos, scale, color, &s_SquareVertices[pig::Renderer2D::VERTEX_ATRIB_COUNT], textureId).m_Data, pig::Renderer2D::VERTEX_ATRIB_COUNT * sizeof(float));
-			memcpy(&m_SquareVertices[pig::Renderer2D::VERTEX_ATRIB_COUNT*2], VertexData(pos, scale, color, &s_SquareVertices[pig::Renderer2D::VERTEX_ATRIB_COUNT*2], textureId).m_Data, pig::Renderer2D::VERTEX_ATRIB_COUNT * sizeof(float));
-			memcpy(&m_SquareVertices[pig::Renderer2D::VERTEX_ATRIB_COUNT*3], VertexData(pos, scale, color, &s_SquareVertices[pig::Renderer2D::VERTEX_ATRIB_COUNT*3], textureId).m_Data, pig::Renderer2D::VERTEX_ATRIB_COUNT * sizeof(float));
+			memcpy(m_SquareVertices, VertexData(pos, scale, color, &s_SquareVertices[0], textureId, glm::vec2(texCoordsRect.x, texCoordsRect.y)).m_Data, pig::Renderer2D::VERTEX_ATRIB_COUNT * sizeof(float));
+			memcpy(&m_SquareVertices[pig::Renderer2D::VERTEX_ATRIB_COUNT], VertexData(pos, scale, color, &s_SquareVertices[pig::Renderer2D::VERTEX_ATRIB_COUNT], textureId, glm::vec2(texCoordsRect.x, texCoordsRect.w)).m_Data, pig::Renderer2D::VERTEX_ATRIB_COUNT * sizeof(float));
+			memcpy(&m_SquareVertices[pig::Renderer2D::VERTEX_ATRIB_COUNT*2], VertexData(pos, scale, color, &s_SquareVertices[pig::Renderer2D::VERTEX_ATRIB_COUNT*2], textureId, glm::vec2(texCoordsRect.z, texCoordsRect.w)).m_Data, pig::Renderer2D::VERTEX_ATRIB_COUNT * sizeof(float));
+			memcpy(&m_SquareVertices[pig::Renderer2D::VERTEX_ATRIB_COUNT*3], VertexData(pos, scale, color, &s_SquareVertices[pig::Renderer2D::VERTEX_ATRIB_COUNT*3], textureId, glm::vec2(texCoordsRect.z, texCoordsRect.y)).m_Data, pig::Renderer2D::VERTEX_ATRIB_COUNT * sizeof(float));
 
 			m_SquareIndices[0] = s_SuareIndices[0] + offsetIndices;
 			m_SquareIndices[1] = s_SuareIndices[1] + offsetIndices;
@@ -106,6 +106,12 @@ void pig::Renderer2D::EndScene()
 	s_Data.m_Camera = nullptr;
 }
 
+const pig::Texture2D* pig::Renderer2D::GetTexture(const std::string& handle)
+{
+	const auto it = s_Data.m_TextureMap.find(handle);
+	return it != s_Data.m_TextureMap.end() ? it->second.get() : nullptr;
+}
+
 void pig::Renderer2D::AddTexture(const std::string& path, const std::string& handle)
 {
 	if (!handle.empty())
@@ -132,35 +138,20 @@ void pig::Renderer2D::AddTexture(unsigned int width, unsigned int height, unsign
 
 void pig::Renderer2D::DrawQuad(const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& col)
 {
-	if (s_Data.m_TextureMap.find("") != s_Data.m_TextureMap.end())
-	{
-		pig::Renderer2D::Data::BatchData& texBatch = s_Data.m_BatchMap[""];
+	DrawQuad(pos, scale, col, "", glm::vec4(0.f, 0.f, 1.f, 1.f));
+}
 
-		if (texBatch.m_IndexCount == BATCH_MAX_COUNT * QUAD_INDEX_COUNT)
-		{
-			Flush();
-			DrawQuad(pos, scale, col);
-		}
-		else
-		{
-			QuadData quad(pos, scale, glm::vec4(col, 1.f), texBatch.m_VertexCount, 0);
-			const unsigned int vertexBufferOffset = texBatch.m_VertexCount * VERTEX_ATRIB_COUNT;
-			const unsigned int indexBufferOffset = texBatch.m_IndexCount;
-
-			memcpy(&texBatch.m_VertexBuffer[vertexBufferOffset], quad.m_SquareVertices, VERTEX_STRIDE);
-			memcpy(&texBatch.m_IndexBuffer[indexBufferOffset], quad.m_SquareIndices, INDEX_STRIDE);
-
-			texBatch.m_IndexCount += 6;
-			texBatch.m_VertexCount += 4;
-		}
-	}
-	else
-	{
-		PG_CORE_ASSERT(false, "White texture not fount in renderer2d batch map");
-	}
+void pig::Renderer2D::DrawSprite(const pig::Sprite& sprite)
+{
+	DrawQuad(sprite.GetPosition(), glm::vec3(sprite.GetScale(), 1.0f), glm::vec3(1.f), sprite.GetTextureID(), sprite.GetTexCoordsRect());
 }
 
 void pig::Renderer2D::DrawQuad(const glm::vec3& pos, const glm::vec3& scale, const std::string& handle)
+{
+	DrawQuad(pos, scale, glm::vec3(1.f), handle, glm::vec4(0.f, 0.f, 1.f, 1.f));
+}
+
+void pig::Renderer2D::DrawQuad(const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& col, const std::string& handle, glm::vec4 texRect)
 {
 	if (s_Data.m_TextureMap.find(handle) != s_Data.m_TextureMap.end())
 	{
@@ -173,7 +164,7 @@ void pig::Renderer2D::DrawQuad(const glm::vec3& pos, const glm::vec3& scale, con
 		}
 		else
 		{
-			QuadData quad(pos, scale, glm::vec4(1.f), texBatch.m_VertexCount, 0);
+			QuadData quad(pos, scale, glm::vec4(col, 1.f), texBatch.m_VertexCount, 0, texRect);
 			const unsigned int vertexBufferOffset = texBatch.m_VertexCount * VERTEX_ATRIB_COUNT;
 			const unsigned int indexBufferOffset = texBatch.m_IndexCount;
 

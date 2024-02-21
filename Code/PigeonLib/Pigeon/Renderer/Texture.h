@@ -9,12 +9,20 @@ namespace pig
 	class Texture
 	{
 	public:
+		struct Data
+		{
+			uint32_t m_Width = 0;
+			uint32_t m_Height = 0;
+		};
 		virtual ~Texture() = default;
 
-		virtual uint32_t GetWidth() const = 0;
-		virtual uint32_t GetHeight() const = 0;
+		virtual uint32_t GetWidth() const { return m_Data.m_Width; }
+		virtual uint32_t GetHeight() const { return m_Data.m_Height; }
 
 		virtual void Bind(uint32_t slot = 0) const = 0;
+
+	protected:
+		Data m_Data;
 	};
 
 	class Texture2D : public Texture

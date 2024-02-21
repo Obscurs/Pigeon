@@ -13,10 +13,10 @@ namespace pig
 
 		virtual ~TestingTexture2D() = default;
 
-		virtual uint32_t GetWidth() const override { return 0; }
-		virtual uint32_t GetHeight() const override { return 0; }
-
 		virtual void Bind(uint32_t slot = 0) const override;
+
+		static uint32_t s_ExpectedWidth;
+		static uint32_t s_ExpectedHeight;
 	};
 	
 	class TestingTexture2DArray : public Texture2DArray

@@ -95,7 +95,7 @@ void pig::Dx11Texture2D::CreateTextue(unsigned int width, unsigned int height, u
 	srvDesc.Texture2D.MostDetailedMip = 0;
 	srvDesc.Texture2D.MipLevels = 1;
 
-	hr = device->CreateShaderResourceView(pTexture, &srvDesc, &m_Data.m_TextureView);
+	hr = device->CreateShaderResourceView(pTexture, &srvDesc, &m_DxData.m_TextureView);
 	PG_CORE_ASSERT(!FAILED(hr), "Failed to create shader resource view!");
 	pTexture->Release();
 
@@ -109,15 +109,15 @@ void pig::Dx11Texture2D::CreateTextue(unsigned int width, unsigned int height, u
 	sampDesc.MinLOD = 0;
 	sampDesc.MaxLOD = 0;
 
-	device->CreateSamplerState(&sampDesc, &m_Data.m_SamplerState);
+	device->CreateSamplerState(&sampDesc, &m_DxData.m_SamplerState);
 }
 
 void pig::Dx11Texture2D::Bind(uint32_t slot) const
 {
     auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
     ID3D11DeviceContext* deviceContext = context->GetPd3dDeviceContext();
-    deviceContext->PSSetShaderResources(slot, 1, m_Data.m_TextureView.GetAddressOf());
-    deviceContext->PSSetSamplers(slot, 1, &m_Data.m_SamplerState);
+    deviceContext->PSSetShaderResources(slot, 1, m_DxData.m_TextureView.GetAddressOf());
+    deviceContext->PSSetSamplers(slot, 1, &m_DxData.m_SamplerState);
 }
 
 

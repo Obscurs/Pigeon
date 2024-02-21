@@ -5,6 +5,7 @@
 #include "Pigeon/OrthographicCameraController.h"
 #include "Pigeon/Renderer/Buffer.h"
 #include "Pigeon/Renderer/Shader.h"
+#include "Pigeon/Renderer/Sprite.h"
 #include "Pigeon/Renderer/Texture.h"
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -61,16 +62,20 @@ namespace pig
 		static void BeginScene(const pig::OrthographicCameraController& cameraController);
 		static void EndScene();
 
+		static const pig::Texture2D* GetTexture(const std::string& handle);
 		static void AddTexture(const std::string& path, const std::string& handle);
 		static void AddTexture(unsigned int width, unsigned int height, unsigned int channels, const unsigned char* data, const std::string& handle);
 
 		static void DrawQuad(const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& col);
 		static void DrawQuad(const glm::vec3& pos, const glm::vec3& scale, const std::string& handle);
 
+		static void DrawSprite(const pig::Sprite& sprite);
+
 #ifdef TESTS_ENABLED
 		static const Data& GetData() { return s_Data; }
 #endif
 	private:
+		static void DrawQuad(const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& col, const std::string& handle, glm::vec4 texRect);
 		static void Flush();
 
 		static void Submit(unsigned int count);
