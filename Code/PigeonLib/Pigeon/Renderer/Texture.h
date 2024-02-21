@@ -28,6 +28,8 @@ namespace pig
 	class Texture2D : public Texture
 	{
 	public:
+		virtual glm::vec4 GetTexCoordsRect(glm::vec2 pixelsOffset, glm::vec2 pixelsSize) const = 0;
+
 		static pig::S_Ptr<Texture2D> Create(const std::string& path);
 		static pig::S_Ptr<Texture2D> Create(unsigned int width, unsigned int height, unsigned int channels, const unsigned char* data);
 	};

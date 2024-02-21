@@ -80,16 +80,18 @@ namespace CatchTestsetFail
 
 			glm::vec2 offsetNormalized(offset.x / textureWidth, offset.y / textureHeight);
 			glm::vec2 sizeNormalized(spriteSize.x / textureWidth, spriteSize.y / textureHeight);
-			pig::Sprite sprite(pos, scale, spriteSize, offset, textureName);
+
+			const pig::Texture2D* texture = pig::Renderer2D::GetTexture(textureName);
+			glm::vec4 texCoordsRect = texture->GetTexCoordsRect(offset, spriteSize);
+			
+			pig::Sprite sprite(pos, scale, texCoordsRect, textureName);
 			const pig::Sprite::Data& spriteData = sprite.GetData();
 			CHECK(spriteData.m_Position == pos);
 			CHECK(spriteData.m_Scale == scale);
-			CHECK(spriteData.m_SpriteSize == spriteSize);
-			CHECK(spriteData.m_Offset == offset);
+			CHECK(spriteData.m_TexCoordsRect == texCoordsRect);
 			CHECK(spriteData.m_TextureID == textureName);
 			CHECK(sprite.GetTextureID() == textureName);
-			CHECK(sprite.GetSpriteSize() == spriteSize);
-			CHECK(sprite.GetTexCoordsRect() == glm::vec4(0.25f, 0.5f, 0.375f, 0.75f));
+			CHECK(sprite.GetTexCoordsRect() == texCoordsRect);
 
 			const glm::vec3 pos2(1.2f, 2.3f, 3.4f);
 			sprite.SetPosition(pos2);
@@ -100,11 +102,6 @@ namespace CatchTestsetFail
 			sprite.SetScale(scale2);
 			CHECK(spriteData.m_Scale == scale2);
 			CHECK(sprite.GetScale() == scale2);
-
-			const glm::vec2 offset2(4.2f, 5.3f);
-			sprite.SetOffset(offset2);
-			CHECK(spriteData.m_Offset == offset2);
-			CHECK(sprite.GetOffset() == offset2);
 
 			//Actual sprite draw
 			pig::Renderer2D::BeginScene(cameraController);

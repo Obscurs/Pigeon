@@ -5,6 +5,14 @@
 uint32_t pig::TestingTexture2D::s_ExpectedWidth = 0;
 uint32_t pig::TestingTexture2D::s_ExpectedHeight = 0;
 
+glm::vec4 pig::TestingTexture2D::GetTexCoordsRect(glm::vec2 pixelsOffset, glm::vec2 pixelsSize) const
+{
+	glm::vec2 offsetNormalized(pixelsOffset.x / s_ExpectedWidth, pixelsOffset.y / s_ExpectedHeight);
+	glm::vec2 sizeNormalized(pixelsSize.x / s_ExpectedWidth, pixelsSize.y / s_ExpectedHeight);
+
+	return glm::vec4(offsetNormalized.x, offsetNormalized.y, offsetNormalized.x + sizeNormalized.x, offsetNormalized.y + sizeNormalized.y);
+}
+
 pig::TestingTexture2D::TestingTexture2D(const std::string& path)
 {
 	m_Data.m_Height = s_ExpectedHeight;

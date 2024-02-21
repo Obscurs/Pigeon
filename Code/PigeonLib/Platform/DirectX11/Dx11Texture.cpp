@@ -28,6 +28,14 @@ namespace
 	};
 }
 
+glm::vec4 pig::Dx11Texture2D::GetTexCoordsRect(glm::vec2 pixelsOffset, glm::vec2 pixelsSize) const
+{
+	const glm::vec2 offsetNormalized(pixelsOffset.x / m_Data.m_Width, pixelsOffset.y / m_Data.m_Height);
+	const glm::vec2 sizeNormalized(pixelsSize.x / m_Data.m_Width, pixelsSize.y / m_Data.m_Height);
+
+	return glm::vec4(offsetNormalized.x, offsetNormalized.y + sizeNormalized.y, offsetNormalized.x + sizeNormalized.x, offsetNormalized.y);
+}
+
 pig::Dx11Texture2D::Dx11Texture2D(const std::string& path)
 {
 	int width, height, channels;

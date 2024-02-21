@@ -16,7 +16,7 @@ sbx::Sandbox2D::Sandbox2D(): pig::Layer("Sandbox2D"), m_CameraController(1280.0f
 
 	m_ColorQuad2 = glm::vec3(0.f, 1.f, 1.f);
 	m_PosQuad2 = glm::vec3(1.f, 1.f, 0.f);
-	m_ScaleQuad2 = glm::vec3(0.5f, 1.5f, 1.f);
+	m_ScaleQuad2 = glm::vec3(0.5f, 1.0f, 1.f);
 
 	pig::Renderer2D::AddTexture("Assets/Textures/Checkerboard.png", "Checkerboard");
 	
@@ -31,9 +31,12 @@ void sbx::Sandbox2D::OnUpdate(pig::Timestep ts)
 
 	pig::Renderer2D::DrawQuad(m_PosQuad1, m_ScaleQuad1, m_ColorQuad1);
 	//pig::Renderer2D::DrawQuad(m_PosQuad2, m_ScaleQuad2, "Checkerboard");
-	
-	pig::Sprite sprite(m_PosQuad2, m_ScaleQuad2, glm::vec2(128, 256), glm::vec2(256, 0), "Checkerboard");
+
+	const pig::Texture2D* texture = pig::Renderer2D::GetTexture("Checkerboard");
+	const glm::vec4 texCoordsRect = texture->GetTexCoordsRect(glm::vec2(256, 640), glm::vec2(128, 256));
+	pig::Sprite sprite(m_PosQuad2, m_ScaleQuad2, texCoordsRect, "Checkerboard");
 	pig::Renderer2D::DrawSprite(sprite);
+
 	pig::Renderer2D::EndScene();
 }
 

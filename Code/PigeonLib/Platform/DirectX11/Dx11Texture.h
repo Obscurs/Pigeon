@@ -18,6 +18,8 @@ namespace pig
 			ID3D11SamplerState* m_SamplerState;
 		};
 
+		virtual glm::vec4 GetTexCoordsRect(glm::vec2 pixelsOffset, glm::vec2 pixelsSize) const override;
+
 		Dx11Texture2D(const std::string& path);
 		Dx11Texture2D(unsigned int width, unsigned int height, unsigned int channels, const unsigned char* data);
 

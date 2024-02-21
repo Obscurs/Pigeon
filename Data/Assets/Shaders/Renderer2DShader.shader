@@ -31,7 +31,7 @@ struct PS_INPUT
 PS_INPUT main(VS_INPUT input)
 {
 	PS_INPUT output;
-	output.TexCoord = float2(input.a_TexCoord.x, 1.0 - input.a_TexCoord.y);
+	output.TexCoord = input.a_TexCoord;
 	output.Position = float4(input.a_Position, 1.f);
 	output.Position = mul(output.Position, u_ViewProjection);
 	output.Color = input.a_Color;
