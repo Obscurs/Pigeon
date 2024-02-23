@@ -28,7 +28,19 @@ file(GLOB RENDERER
     "Pigeon/Renderer/Shader.cpp"
     "Pigeon/Renderer/Sprite.cpp"
     "Pigeon/Renderer/Texture.cpp"
+)
 
+file(GLOB ECS_WORLD
+    "Pigeon/ECS/System.h"
+    "Pigeon/ECS/World.cpp"
+)
+
+file(GLOB ECS_SYSTEMS
+    "Pigeon/ECS/Systems/TestSystem.cpp"
+)
+
+file(GLOB ECS_COMPONENTS
+    "Pigeon/ECS/Components/TestComponent.h"
 )
 
 file(GLOB PLATFORM_WIN
@@ -64,6 +76,10 @@ file(GLOB_RECURSE SRC
     "Pigeon/*.h"
     "Platform/*.cpp"
     "Platform/*.h"
+    "ECS/*.cpp"
+    "ECS/*.h"
+    "ECS/Systems/*.cpp"
+    "ECS/Components/*.h"
     "vendor/stb_image/*.cpp"
     "vendor/stb_image/*.h"
 )
@@ -73,11 +89,14 @@ source_group("Pigeon" FILES ${PG})
 source_group("Pigeon\\ImGui" FILES ${PGIMGUI})
 source_group("Pigeon\\Renderer" FILES ${RENDERER})
 source_group("Platform\\DirectX11" FILES ${PLATFORM_DX})
-source_group("Platform\\Testing" FILES ${PLATFORM_TESTING})
+source_group("Pigeon\\ECS" FILES ${ECS_WORLD})
+source_group("Pigeon\\ECS\\Systems" FILES ${ECS_SYSTEMS})
+source_group("Pigeon\\ECS\\Components" FILES ${ECS_COMPONENTS})
 source_group("vendor" FILES ${VENDOR})
 # Properties->C/C++->General->Additional Include Directories
 include_directories (
     "${PROJECT_SOURCE_DIR}/Code/PigeonLib"
+    "${PROJECT_SOURCE_DIR}/3rdParty/entt"
     "${PROJECT_SOURCE_DIR}/3rdParty/spdlog-1.12.0/include"
     "${PROJECT_SOURCE_DIR}/3rdParty/glm"
     "${PROJECT_SOURCE_DIR}/3rdParty/imgui"

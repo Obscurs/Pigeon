@@ -20,6 +20,7 @@ include_directories (
     "${PROJECT_SOURCE_DIR}/Code/PigeonLib/PigeonLib.dir/Test"
     "${PROJECT_SOURCE_DIR}/Code/UT"
     "${PROJECT_SOURCE_DIR}/3rdParty/"
+    "${PROJECT_SOURCE_DIR}/3rdParty/entt"
     "${PROJECT_SOURCE_DIR}/3rdParty/glm"
     "${PROJECT_SOURCE_DIR}/3rdParty/spdlog-1.12.0/include"
 )
@@ -36,8 +37,8 @@ add_executable (UT
     ${SRC_TESTS_SAMPLE}
     ${SRC_TESTS_INTERFACE}
 )
-add_dependencies(UT PigeonLib) 
 
+add_dependencies(UT PigeonLib) 
 set_property(TARGET UT PROPERTY EXCLUDE_FROM_DEFAULT_BUILD_RELEASE ON)
 set_property(TARGET UT PROPERTY EXCLUDE_FROM_DEFAULT_BUILD_DEBUG ON)
 
@@ -63,4 +64,3 @@ target_link_libraries (
 
 set_target_properties(UT PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
-
