@@ -28,7 +28,8 @@ void pig::TestingVertexBuffer::SetVertices(const float* vertices, unsigned int c
 	data.m_Count = count;
 	data.m_CountOffset = countOffset;
 	data.m_Buffer = this;
-	data.m_Vertices = vertices;
+	BYTE* destData = reinterpret_cast<BYTE*>(pig::TestingHelper::GetInstance().m_Vertices) + countOffset * 10 * sizeof(float);
+	memcpy(destData, vertices, count * 10 * sizeof(float));
 	pig::TestingHelper::GetInstance().m_VertexBufferSetVertices.push_back(data);
 }
 
@@ -38,7 +39,8 @@ void pig::TestingVertexBuffer::AppendVertices(const float* vertices, unsigned in
 	data.m_Count = count;
 	data.m_CountOffset = countOffset;
 	data.m_Buffer = this;
-	data.m_Vertices = vertices;
+	BYTE* destData = reinterpret_cast<BYTE*>(pig::TestingHelper::GetInstance().m_Vertices) + countOffset * 10 * sizeof(float);
+	memcpy(destData, vertices, count * 10 * sizeof(float));
 	pig::TestingHelper::GetInstance().m_VertexBufferAppendVertices.push_back(data);
 }
 
@@ -67,7 +69,8 @@ void pig::TestingIndexBuffer::SetIndices(const uint32_t* indices, unsigned int c
 	data.m_Count = count;
 	data.m_CountOffset = countOffset;
 	data.m_Buffer = this;
-	data.m_Indices = indices;
+	BYTE* destData = reinterpret_cast<BYTE*>(pig::TestingHelper::GetInstance().m_Indices) + countOffset * sizeof(int);
+	memcpy(destData, indices, count * sizeof(int));
 	pig::TestingHelper::GetInstance().m_IndexBufferSetIndices.push_back(data);
 }
 void pig::TestingIndexBuffer::AppendIndices(const uint32_t* indices, unsigned int count, unsigned int countOffset)
@@ -76,6 +79,7 @@ void pig::TestingIndexBuffer::AppendIndices(const uint32_t* indices, unsigned in
 	data.m_Count = count;
 	data.m_CountOffset = countOffset;
 	data.m_Buffer = this;
-	data.m_Indices = indices;
+	BYTE* destData = reinterpret_cast<BYTE*>(pig::TestingHelper::GetInstance().m_Indices) + countOffset * sizeof(int);
+	memcpy(destData, indices, count * sizeof(int));
 	pig::TestingHelper::GetInstance().m_IndexBufferAppendIndices.push_back(data);
 }

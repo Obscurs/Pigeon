@@ -146,6 +146,116 @@ void pig::Renderer2D::DrawSprite(const pig::Sprite& sprite)
 	DrawQuad(sprite.GetPosition(), glm::vec3(sprite.GetScale(), 1.0f), glm::vec3(1.f), sprite.GetTextureID(), sprite.GetTexCoordsRect());
 }
 
+void pig::Renderer2D::DrawTextSprite(const pig::Sprite& sprite, const std::string& text, const glm::vec3& col)
+{
+	const pig::Texture2D* texture = pig::Renderer2D::GetTexture(sprite.GetTextureID());
+	PG_CORE_ASSERT(texture, "Text texture is missing");
+	
+	float charWidth = sprite.GetTexCoordsRect().x;
+	float charHeight = sprite.GetTexCoordsRect().y;
+	int line = 0;
+	int charIndex = 0;
+	for (unsigned int i = 0; i < text.size(); ++i)
+	{
+		const char c = text[i];
+		if (c == '\n')
+		{
+			--line;
+			charIndex = 0;
+			continue;
+		}
+		glm::vec4 rectangle(0.f, 0.f, 0.f, 0.f);
+		if (c == 'A') rectangle = glm::vec4(charWidth * 0, charHeight * 0, charWidth, charHeight);
+		else if (c == 'B') rectangle = glm::vec4(charWidth * 1, charHeight * 0, charWidth, charHeight);
+		else if (c == 'C') rectangle = glm::vec4(charWidth * 2, charHeight * 0, charWidth, charHeight);
+		else if (c == 'D') rectangle = glm::vec4(charWidth * 3, charHeight * 0, charWidth, charHeight);
+		else if (c == 'E') rectangle = glm::vec4(charWidth * 4, charHeight * 0, charWidth, charHeight);
+		else if (c == 'F') rectangle = glm::vec4(charWidth * 5, charHeight * 0, charWidth, charHeight);
+		else if (c == 'G') rectangle = glm::vec4(charWidth * 6, charHeight * 0, charWidth, charHeight);
+		else if (c == 'H') rectangle = glm::vec4(charWidth * 7, charHeight * 0, charWidth, charHeight);
+		else if (c == 'I') rectangle = glm::vec4(charWidth * 0, charHeight * 1, charWidth, charHeight);
+		else if (c == 'J') rectangle = glm::vec4(charWidth * 1, charHeight * 1, charWidth, charHeight);
+		else if (c == 'K') rectangle = glm::vec4(charWidth * 2, charHeight * 1, charWidth, charHeight);
+		else if (c == 'L') rectangle = glm::vec4(charWidth * 3, charHeight * 1, charWidth, charHeight);
+		else if (c == 'M') rectangle = glm::vec4(charWidth * 4, charHeight * 1, charWidth, charHeight);
+		else if (c == 'N') rectangle = glm::vec4(charWidth * 5, charHeight * 1, charWidth, charHeight);
+		else if (c == 'O') rectangle = glm::vec4(charWidth * 6, charHeight * 1, charWidth, charHeight);
+		else if (c == 'P') rectangle = glm::vec4(charWidth * 7, charHeight * 1, charWidth, charHeight);
+		else if (c == 'Q') rectangle = glm::vec4(charWidth * 0, charHeight * 2, charWidth, charHeight);
+		else if (c == 'R') rectangle = glm::vec4(charWidth * 1, charHeight * 2, charWidth, charHeight);
+		else if (c == 'S') rectangle = glm::vec4(charWidth * 2, charHeight * 2, charWidth, charHeight);
+		else if (c == 'T') rectangle = glm::vec4(charWidth * 3, charHeight * 2, charWidth, charHeight);
+		else if (c == 'U') rectangle = glm::vec4(charWidth * 4, charHeight * 2, charWidth, charHeight);
+		else if (c == 'V') rectangle = glm::vec4(charWidth * 5, charHeight * 2, charWidth, charHeight);
+		else if (c == 'W') rectangle = glm::vec4(charWidth * 6, charHeight * 2, charWidth, charHeight);
+		else if (c == 'X') rectangle = glm::vec4(charWidth * 7, charHeight * 2, charWidth, charHeight);
+		else if (c == 'Y') rectangle = glm::vec4(charWidth * 0, charHeight * 3, charWidth, charHeight);
+		else if (c == 'Z') rectangle = glm::vec4(charWidth * 1, charHeight * 3, charWidth, charHeight);
+		else if (c == 'a') rectangle = glm::vec4(charWidth * 2, charHeight * 3, charWidth, charHeight);
+		else if (c == 'b') rectangle = glm::vec4(charWidth * 3, charHeight * 3, charWidth, charHeight);
+		else if (c == 'c') rectangle = glm::vec4(charWidth * 4, charHeight * 3, charWidth, charHeight);
+		else if (c == 'd') rectangle = glm::vec4(charWidth * 5, charHeight * 3, charWidth, charHeight);
+		else if (c == 'e') rectangle = glm::vec4(charWidth * 6, charHeight * 3, charWidth, charHeight);
+		else if (c == 'f') rectangle = glm::vec4(charWidth * 7, charHeight * 3, charWidth, charHeight);
+		else if (c == 'g') rectangle = glm::vec4(charWidth * 0, charHeight * 4, charWidth, charHeight);
+		else if (c == 'h') rectangle = glm::vec4(charWidth * 1, charHeight * 4, charWidth, charHeight);
+		else if (c == 'i') rectangle = glm::vec4(charWidth * 2, charHeight * 4, charWidth, charHeight);
+		else if (c == 'j') rectangle = glm::vec4(charWidth * 3, charHeight * 4, charWidth, charHeight);
+		else if (c == 'k') rectangle = glm::vec4(charWidth * 4, charHeight * 4, charWidth, charHeight);
+		else if (c == 'l') rectangle = glm::vec4(charWidth * 5, charHeight * 4, charWidth, charHeight);
+		else if (c == 'm') rectangle = glm::vec4(charWidth * 6, charHeight * 4, charWidth, charHeight);
+		else if (c == 'n') rectangle = glm::vec4(charWidth * 7, charHeight * 4, charWidth, charHeight);
+		else if (c == 'o') rectangle = glm::vec4(charWidth * 0, charHeight * 5, charWidth, charHeight);
+		else if (c == 'p') rectangle = glm::vec4(charWidth * 1, charHeight * 5, charWidth, charHeight);
+		else if (c == 'q') rectangle = glm::vec4(charWidth * 2, charHeight * 5, charWidth, charHeight);
+		else if (c == 'r') rectangle = glm::vec4(charWidth * 3, charHeight * 5, charWidth, charHeight);
+		else if (c == 's') rectangle = glm::vec4(charWidth * 4, charHeight * 5, charWidth, charHeight);
+		else if (c == 't') rectangle = glm::vec4(charWidth * 5, charHeight * 5, charWidth, charHeight);
+		else if (c == 'u') rectangle = glm::vec4(charWidth * 6, charHeight * 5, charWidth, charHeight);
+		else if (c == 'v') rectangle = glm::vec4(charWidth * 7, charHeight * 5, charWidth, charHeight);
+		else if (c == 'w') rectangle = glm::vec4(charWidth * 0, charHeight * 6, charWidth, charHeight);
+		else if (c == 'x') rectangle = glm::vec4(charWidth * 1, charHeight * 6, charWidth, charHeight);
+		else if (c == 'y') rectangle = glm::vec4(charWidth * 2, charHeight * 6, charWidth, charHeight);
+		else if (c == 'z') rectangle = glm::vec4(charWidth * 3, charHeight * 6, charWidth, charHeight);
+		else if (c == '0') rectangle = glm::vec4(charWidth * 4, charHeight * 6, charWidth, charHeight);
+		else if (c == '1') rectangle = glm::vec4(charWidth * 5, charHeight * 6, charWidth, charHeight);
+		else if (c == '2') rectangle = glm::vec4(charWidth * 6, charHeight * 6, charWidth, charHeight);
+		else if (c == '3') rectangle = glm::vec4(charWidth * 7, charHeight * 6, charWidth, charHeight);
+		else if (c == '4') rectangle = glm::vec4(charWidth * 0, charHeight * 7, charWidth, charHeight);
+		else if (c == '5') rectangle = glm::vec4(charWidth * 1, charHeight * 7, charWidth, charHeight);
+		else if (c == '6') rectangle = glm::vec4(charWidth * 2, charHeight * 7, charWidth, charHeight);
+		else if (c == '7') rectangle = glm::vec4(charWidth * 3, charHeight * 7, charWidth, charHeight);
+		else if (c == '8') rectangle = glm::vec4(charWidth * 4, charHeight * 7, charWidth, charHeight);
+		else if (c == '9') rectangle = glm::vec4(charWidth * 5, charHeight * 7, charWidth, charHeight);
+		else if (c == '.') rectangle = glm::vec4(charWidth * 6, charHeight * 7, charWidth, charHeight);
+		else if (c == ',') rectangle = glm::vec4(charWidth * 7, charHeight * 7, charWidth, charHeight);
+		else if (c == ';') rectangle = glm::vec4(charWidth * 0, charHeight * 8, charWidth, charHeight);
+		else if (c == ':') rectangle = glm::vec4(charWidth * 1, charHeight * 8, charWidth, charHeight);
+		else if (c == '?') rectangle = glm::vec4(charWidth * 2, charHeight * 8, charWidth, charHeight);
+		else if (c == '!') rectangle = glm::vec4(charWidth * 3, charHeight * 8, charWidth, charHeight);
+		else if (c == '-') rectangle = glm::vec4(charWidth * 4, charHeight * 8, charWidth, charHeight);
+		else if (c == '_') rectangle = glm::vec4(charWidth * 5, charHeight * 8, charWidth, charHeight);
+		else if (c == '\'') rectangle = glm::vec4(charWidth * 6, charHeight * 8, charWidth, charHeight);
+		else if (c == '#') rectangle = glm::vec4(charWidth * 7, charHeight * 8, charWidth, charHeight);
+		else if (c == '"') rectangle = glm::vec4(charWidth * 0, charHeight * 9, charWidth, charHeight);
+		else if (c == '\\') rectangle = glm::vec4(charWidth * 1, charHeight * 9, charWidth, charHeight);
+		else if (c == '/') rectangle = glm::vec4(charWidth * 2, charHeight * 9, charWidth, charHeight);
+		else if (c == '<') rectangle = glm::vec4(charWidth * 3, charHeight * 9, charWidth, charHeight);
+		else if (c == '>') rectangle = glm::vec4(charWidth * 4, charHeight * 9, charWidth, charHeight);
+		else if (c == '(') rectangle = glm::vec4(charWidth * 5, charHeight * 9, charWidth, charHeight);
+		else if (c == ')') rectangle = glm::vec4(charWidth * 6, charHeight * 9, charWidth, charHeight);
+		else if (c == 'e') rectangle = glm::vec4(charWidth * 7, charHeight * 9, charWidth, charHeight);
+
+		glm::vec3 pos = sprite.GetPosition();
+		pos.x += charIndex * (0.5 - sprite.GetTexCoordsRect().z) * sprite.GetScale().x;
+		pos.y += line * (0.5 - sprite.GetTexCoordsRect().w) * sprite.GetScale().y;
+
+		const glm::vec4 texCoordsRect = texture->GetTexCoordsRect(glm::vec2(rectangle.x, rectangle.y), glm::vec2(rectangle.z, rectangle.w));
+		DrawQuad(pos, glm::vec3(sprite.GetScale(), 1.0f), col, sprite.GetTextureID(), texCoordsRect);
+		++charIndex;
+	}
+}
+
 void pig::Renderer2D::DrawQuad(const glm::vec3& pos, const glm::vec3& scale, const std::string& handle)
 {
 	DrawQuad(pos, scale, glm::vec3(1.f), handle, glm::vec4(0.f, 0.f, 1.f, 1.f));

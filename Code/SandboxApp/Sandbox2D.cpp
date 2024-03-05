@@ -18,8 +18,11 @@ sbx::Sandbox2D::Sandbox2D(): pig::Layer("Sandbox2D"), m_CameraController(1280.0f
 	m_PosQuad2 = glm::vec3(1.f, 1.f, 0.f);
 	m_ScaleQuad2 = glm::vec3(0.5f, 1.0f, 1.f);
 
+	m_PosText = glm::vec3(0.f, 0.f, 0.f);
+	m_ColorText = glm::vec3(1.f, 0.f, 0.f);
+
 	pig::Renderer2D::AddTexture("Assets/Textures/Checkerboard.png", "Checkerboard");
-	
+	pig::Renderer2D::AddTexture("Assets/Textures/fontSprite.png", "Text");
 }
 
 void sbx::Sandbox2D::OnUpdate(pig::Timestep ts)
@@ -37,6 +40,9 @@ void sbx::Sandbox2D::OnUpdate(pig::Timestep ts)
 	pig::Sprite sprite(m_PosQuad2, m_ScaleQuad2, texCoordsRect, "Checkerboard");
 	pig::Renderer2D::DrawSprite(sprite);
 
+	const pig::Texture2D* textureText = pig::Renderer2D::GetTexture("Text");
+	pig::Sprite spriteText(m_PosText, glm::vec3(0.05f,0.05f,1.f), glm::vec4(7.f, 7.f, 0.f, -0.3f), "Text");
+	pig::Renderer2D::DrawTextSprite(spriteText,"This is a fucking text\nEven with multiple lines", m_ColorText);
 	pig::Renderer2D::EndScene();
 }
 

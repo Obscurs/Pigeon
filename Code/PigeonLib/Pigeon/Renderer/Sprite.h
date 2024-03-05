@@ -13,6 +13,7 @@ namespace pig
 			glm::vec2 m_Scale;
 			glm::vec4 m_TexCoordsRect;
 			std::string m_TextureID;
+			glm::vec2 m_TextureSize;
 		};
 
 		Sprite(const glm::vec3 pos, const  glm::vec2 scale, const glm::vec4 texCoords, const std::string& textureID);
@@ -30,6 +31,7 @@ namespace pig
 		const glm::vec2& GetScale() const { return m_Data.m_Scale; }
 		const glm::vec4& GetTexCoordsRect() const { return m_Data.m_TexCoordsRect; }
 		const std::string& GetTextureID() const { return m_Data.m_TextureID; }
+		const glm::vec2& GetTextureSize() const { return m_Data.m_TextureSize; }
 
 	private:
 		Data m_Data;

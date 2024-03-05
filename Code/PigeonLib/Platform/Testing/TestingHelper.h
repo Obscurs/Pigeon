@@ -19,7 +19,6 @@ namespace pig
 		// VertexBuffer
 		struct VertexBufferSetVerticesData
 		{
-			const float* m_Vertices;
 			unsigned int m_Count = 0;
 			unsigned int m_CountOffset = 0;
 			const pig::TestingVertexBuffer* m_Buffer = nullptr;
@@ -33,7 +32,6 @@ namespace pig
 		// IndexBuffer
 		struct IndexBufferSetVerticesData
 		{
-			const uint32_t* m_Indices;
 			unsigned int m_Count = 0;
 			unsigned int m_CountOffset = 0;
 			const pig::TestingIndexBuffer* m_Buffer = nullptr;
@@ -44,6 +42,8 @@ namespace pig
 		std::vector<IndexBufferSetVerticesData> m_IndexBufferSetIndices;
 		std::vector<IndexBufferSetVerticesData> m_IndexBufferAppendIndices;
 
+		float m_Vertices[20000];
+		uint32_t m_Indices[20000];
 	private:
 		static pig::S_Ptr<TestingHelper> s_Instance;
 	};

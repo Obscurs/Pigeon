@@ -71,6 +71,9 @@ namespace pig
 
 		static void DrawSprite(const pig::Sprite& sprite);
 
+		//This function is here meanwhile we do not have proper atlas
+		static void DrawTextSprite(const pig::Sprite& sprite, const std::string& text, const glm::vec3& col);
+
 #ifdef TESTS_ENABLED
 		static const Data& GetData() { return s_Data; }
 #endif

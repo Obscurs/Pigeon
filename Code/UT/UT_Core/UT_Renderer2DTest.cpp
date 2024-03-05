@@ -87,6 +87,8 @@ namespace CatchTestsetFail
 			pig::Sprite sprite(pos, scale, texCoordsRect, textureName);
 			const pig::Sprite::Data& spriteData = sprite.GetData();
 			CHECK(spriteData.m_Position == pos);
+			CHECK(spriteData.m_TextureSize == glm::vec2(textureWidth, textureHeight));
+			CHECK(sprite.GetTextureSize() == glm::vec2(textureWidth, textureHeight));
 			CHECK(spriteData.m_Scale == scale);
 			CHECK(spriteData.m_TexCoordsRect == texCoordsRect);
 			CHECK(spriteData.m_TextureID == textureName);
@@ -115,17 +117,110 @@ namespace CatchTestsetFail
 
 			const int strideOffset = 10;
 
-			CHECK(interfaceData.m_Vertices[7 + strideOffset * 0] == offsetNormalized.x);
-			CHECK(interfaceData.m_Vertices[8 + strideOffset * 0] == offsetNormalized.y);
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[7 + strideOffset * 0] == offsetNormalized.x);
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[8 + strideOffset * 0] == offsetNormalized.y);
 
-			CHECK(interfaceData.m_Vertices[7 + strideOffset * 1] == offsetNormalized.x);
-			CHECK(interfaceData.m_Vertices[8 + strideOffset * 1] == offsetNormalized.y + sizeNormalized.y);
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[7 + strideOffset * 1] == offsetNormalized.x);
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[8 + strideOffset * 1] == offsetNormalized.y + sizeNormalized.y);
 
-			CHECK(interfaceData.m_Vertices[7 + strideOffset * 2] == offsetNormalized.x + sizeNormalized.x);
-			CHECK(interfaceData.m_Vertices[8 + strideOffset * 2] == offsetNormalized.y + sizeNormalized.y);
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[7 + strideOffset * 2] == offsetNormalized.x + sizeNormalized.x);
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[8 + strideOffset * 2] == offsetNormalized.y + sizeNormalized.y);
 
-			CHECK(interfaceData.m_Vertices[7 + strideOffset * 3] == offsetNormalized.x + sizeNormalized.x);
-			CHECK(interfaceData.m_Vertices[8 + strideOffset * 3] == offsetNormalized.y);
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[7 + strideOffset * 3] == offsetNormalized.x + sizeNormalized.x);
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[8 + strideOffset * 3] == offsetNormalized.y);
+		}
+		SECTION("Draw text")
+		{
+			std::string textureName("TextTexture");
+			const int textureHeight = 70;
+			const int textureWidth = 56;
+			pig::TestingTexture2D::s_ExpectedWidth = textureWidth;
+			pig::TestingTexture2D::s_ExpectedHeight = textureHeight;
+			pig::Renderer2D::AddTexture("Assets/Test/SampleTexture.png", textureName);
+
+			const glm::vec3 pos(4.f, 5.f, 6.f);
+			const glm::vec2 scale(1.1f, 2.1f);
+			const glm::vec2 spriteSize(7, 7);
+			const glm::vec2 offset(1, 1);
+
+			glm::vec2 offsetNormalized(offset.x / textureWidth, offset.y / textureHeight);
+			glm::vec2 sizeNormalized(spriteSize.x / textureWidth, spriteSize.y / textureHeight);
+
+			const pig::Texture2D* texture = pig::Renderer2D::GetTexture(textureName);
+			glm::vec4 texCoordsRect = glm::vec4(spriteSize, offset);
+			pig::Sprite textSprite(pos, scale, texCoordsRect, textureName);
+			const pig::Sprite::Data& spriteData = textSprite.GetData();
+
+			std::string testText("This is a sample \ntext ABCDabcd01289.,?)");
+			glm::vec3 color(1.f, 0.f, 1.f);
+			//Actual sprite draw
+			pig::Renderer2D::BeginScene(cameraController);
+			pig::Renderer2D::DrawTextSprite(textSprite, testText, color);
+			pig::Renderer2D::EndScene();
+
+			REQUIRE(pig::TestingHelper::GetInstance().m_VertexBufferSetVertices.size() == 1);
+			const pig::TestingHelper::VertexBufferSetVerticesData& interfaceData = pig::TestingHelper::GetInstance().m_VertexBufferSetVertices[0];
+			CHECK(interfaceData.m_Count == 4 * (testText.size()-1));
+			CHECK(interfaceData.m_CountOffset == 0);
+
+			const int strideOffset = 10;
+			const int characterOffset = strideOffset * 4;
+
+			//Testing first character of the string ("T")
+			glm::vec2 offsetChar = glm::vec2(spriteSize.x * 3, spriteSize.y * 2);
+			offsetNormalized = glm::vec2(offsetChar.x / textureWidth, offsetChar.y / textureHeight);
+
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[(7 + strideOffset * 0)] == offsetNormalized.x);
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[(8 + strideOffset * 0)] == offsetNormalized.y);
+
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[(7 + strideOffset * 1)] == offsetNormalized.x);
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[(8 + strideOffset * 1)] == offsetNormalized.y + sizeNormalized.y);
+
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[(7 + strideOffset * 2)] == offsetNormalized.x + sizeNormalized.x);
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[(8 + strideOffset * 2)] == offsetNormalized.y + sizeNormalized.y);
+
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[(7 + strideOffset * 3)] == offsetNormalized.x + sizeNormalized.x);
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[(8 + strideOffset * 3)] == offsetNormalized.y);
+
+			//Testing first character of the texture ("A")
+			offsetChar = glm::vec2(0, 0);
+			offsetNormalized = glm::vec2(offsetChar.x / textureWidth, offsetChar.y / textureHeight);
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[(7 + strideOffset * 0) + characterOffset * 22] == offsetNormalized.x);
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[(8 + strideOffset * 0) + characterOffset * 22] == offsetNormalized.y);
+
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[(7 + strideOffset * 1) + characterOffset * 22] == offsetNormalized.x);
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[(8 + strideOffset * 1) + characterOffset * 22] == offsetNormalized.y + sizeNormalized.y);
+
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[(7 + strideOffset * 2) + characterOffset * 22] == offsetNormalized.x + sizeNormalized.x);
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[(8 + strideOffset * 2) + characterOffset * 22] == offsetNormalized.y + sizeNormalized.y);
+
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[(7 + strideOffset * 3) + characterOffset * 22] == offsetNormalized.x + sizeNormalized.x);
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[(8 + strideOffset * 3) + characterOffset * 22] == offsetNormalized.y);
+
+			float charPosX = pos.x + 5 * (0.5 - offset.x) * scale.x;
+			float charPosY = pos.y + 1 * (0.5 - offset.y) * scale.y;
+			CHECK(FLOAT_EQ(pig::TestingHelper::GetInstance().m_Vertices[(0 + strideOffset * 0) + characterOffset * 22] , charPosX + (- 0.5 * scale.x)));
+			CHECK(FLOAT_EQ(pig::TestingHelper::GetInstance().m_Vertices[(1 + strideOffset * 0) + characterOffset * 22] , charPosY - (-0.5 * scale.y)));
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[(2 + strideOffset * 0) + characterOffset * 22] == pos.z);
+
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[(3 + strideOffset * 0) + characterOffset * 22] == color.r);
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[(4 + strideOffset * 0) + characterOffset * 22] == color.g);
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[(5 + strideOffset * 0) + characterOffset * 22] == color.b);
+
+			//Testing last character of the string (")")
+			offsetChar = glm::vec2(spriteSize.x * 6, spriteSize.y * 9);
+			offsetNormalized = glm::vec2(offsetChar.x / textureWidth, offsetChar.y / textureHeight);
+			CHECK(FLOAT_EQ(pig::TestingHelper::GetInstance().m_Vertices[(7 + strideOffset * 0) + characterOffset * 38], offsetNormalized.x));
+			CHECK(FLOAT_EQ(pig::TestingHelper::GetInstance().m_Vertices[(8 + strideOffset * 0) + characterOffset * 38], offsetNormalized.y));
+
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[(7 + strideOffset * 1) + characterOffset * 38] == offsetNormalized.x);
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[(8 + strideOffset * 1) + characterOffset * 38] == offsetNormalized.y + sizeNormalized.y);
+
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[(7 + strideOffset * 2) + characterOffset * 38] == offsetNormalized.x + sizeNormalized.x);
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[(8 + strideOffset * 2) + characterOffset * 38] == offsetNormalized.y + sizeNormalized.y);
+
+			CHECK(pig::TestingHelper::GetInstance().m_Vertices[(7 + strideOffset * 3) + characterOffset * 38] == offsetNormalized.x + sizeNormalized.x);
+			CHECK(FLOAT_EQ(pig::TestingHelper::GetInstance().m_Vertices[(8 + strideOffset * 3) + characterOffset * 38], offsetNormalized.y));
 		}
 	}
 	TEST_CASE("Core.Renderer2D::BatchRendering")
