@@ -15,19 +15,14 @@ source_group("Tests/Core" FILES ${SRC_TESTS_CORE})
 source_group("Tests/Interface" FILES ${SRC_TESTS_INTERFACE})
 
 include_directories (
-    "${PROJECT_SOURCE_DIR}/3rdParty/Catch"
     "${PROJECT_SOURCE_DIR}/Code/PigeonLib"
     "${PROJECT_SOURCE_DIR}/Code/PigeonLib/PigeonLib.dir/Test"
     "${PROJECT_SOURCE_DIR}/Code/UT"
     "${PROJECT_SOURCE_DIR}/3rdParty/"
-    "${PROJECT_SOURCE_DIR}/3rdParty/entt"
-    "${PROJECT_SOURCE_DIR}/3rdParty/glm"
-    "${PROJECT_SOURCE_DIR}/3rdParty/spdlog-1.12.0/include"
 )
 
 link_directories (
     "${PROJECT_BINARY_DIR}/bin"
-    "${PROJECT_SOURCE_DIR}/3rdParty/spdlog-1.12.0/lib"
 )
 
 add_executable (UT 
@@ -59,7 +54,9 @@ target_precompile_headers(UT PRIVATE "${PROJECT_SOURCE_DIR}/Code/PigeonLib/pch.h
 
 target_link_libraries (
     UT PRIVATE PigeonLib
-    spdlog.lib
+    spdlog
+    d3dcompiler
+    Catch2::Catch2
 )
 
 set_target_properties(UT PROPERTIES

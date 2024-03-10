@@ -24,8 +24,13 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/skypjack/entt
   GIT_TAG        v3.13.1
 )
+FetchContent_Declare(
+  Catch2
+  GIT_REPOSITORY https://github.com/catchorg/Catch2
+  GIT_TAG        v2.13.9
+)
 
-FetchContent_MakeAvailable(glm spdlog)
+FetchContent_MakeAvailable(glm spdlog Catch2)
 
 FetchContent_GetProperties(imgui)
 if(NOT imgui_POPULATED)
