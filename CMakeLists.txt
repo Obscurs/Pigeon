@@ -9,8 +9,30 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/g-truc/glm
   GIT_TAG        1.0.1
 )
+FetchContent_Declare(
+  imgui
+  GIT_REPOSITORY https://github.com/ocornut/imgui
+  GIT_TAG        v1.90.4-docking
+)
 
 FetchContent_MakeAvailable(glm)
+
+FetchContent_GetProperties(imgui)
+if(NOT imgui_POPULATED)
+  FetchContent_Populate(imgui)
+  set(IMGUI_INCLUDE_DIRS "${imgui_SOURCE_DIR}")
+  set(IMGUI_SOURCES 
+      "${imgui_SOURCE_DIR}/imgui.cpp"
+      "${imgui_SOURCE_DIR}/imgui_demo.cpp"
+      "${imgui_SOURCE_DIR}/imgui_draw.cpp"
+      "${imgui_SOURCE_DIR}/imgui_tables.cpp"
+      "${imgui_SOURCE_DIR}/imgui_widgets.cpp"
+      "${imgui_SOURCE_DIR}/backends/imgui_impl_dx11.cpp"
+      "${imgui_SOURCE_DIR}/backends/imgui_impl_win32.cpp")
+endif()
+add_library(imgui STATIC ${IMGUI_SOURCES})
+target_include_directories(imgui PUBLIC ${IMGUI_INCLUDE_DIRS})
+target_link_libraries(imgui PUBLIC d3d11)
 
 # Turn on the ability to create folders to organize projects (.vcproj)
 # It creates "CMakePredefinedTargets" folder by default and adds CMake
@@ -40,4 +62,3 @@ add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 add_subdirectory(Code/PigeonLib)
 add_subdirectory(Code/SandboxApp)
 add_subdirectory(Code/UT)
-add_subdirectory(3rdParty/imgui)
