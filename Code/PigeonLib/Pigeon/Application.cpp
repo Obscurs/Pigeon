@@ -83,7 +83,7 @@ void pig::Application::Init()
 void pig::Application::Update()
 {
 	auto currentTime = std::chrono::steady_clock::now();
-	pig::Timestep timestep = std::chrono::duration<float>(currentTime - m_Data.m_LastFrameTime).count();
+	const pig::Timestep timestep{ static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - m_Data.m_LastFrameTime).count()) };
 	m_Data.m_LastFrameTime = currentTime;
 
 	for (pig::S_Ptr<pig::Layer> layer : m_Data.m_LayerStack)

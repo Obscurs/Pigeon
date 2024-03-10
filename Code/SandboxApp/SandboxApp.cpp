@@ -45,7 +45,7 @@ namespace
 			m_IndexBuffer.reset();
 		}
 
-		void OnUpdate(pig::Timestep ts) override
+		void OnUpdate(const pig::Timestep& ts) override
 		{
 			m_CameraController.OnUpdate(ts);
 

@@ -31,7 +31,7 @@ namespace pig
 		const Data& GetData() const { return m_Data; }
 #endif
 
-		void OnUpdate(Timestep ts);
+		void OnUpdate(const Timestep& ts);
 		bool OnEvent(const Event& e);
 
 		const OrthographicCamera& GetCamera() const { return m_Data.m_Camera; }
