@@ -98,14 +98,10 @@ source_group("vendor" FILES ${VENDOR})
 include_directories (
     "${PROJECT_SOURCE_DIR}/Code/PigeonLib"
     "${PROJECT_SOURCE_DIR}/3rdParty/entt"
-    "${PROJECT_SOURCE_DIR}/3rdParty/spdlog-1.12.0/include"
     "${PROJECT_SOURCE_DIR}/3rdParty"
     
 )
 
-link_directories (
-    "${PROJECT_SOURCE_DIR}/3rdParty/spdlog-1.12.0/lib"
-)
 
 # Set Properties->General->Configuration Type to Application(.exe)
 # Creates app.exe with the listed sources (main.cxx)
@@ -139,7 +135,7 @@ endif()
 target_link_libraries (
     PigeonLib
     imgui
-    spdlog.lib
+    spdlog
     glm
 )
 

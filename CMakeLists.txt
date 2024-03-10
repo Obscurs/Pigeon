@@ -14,8 +14,13 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/ocornut/imgui
   GIT_TAG        v1.90.4-docking
 )
+FetchContent_Declare(
+  spdlog
+  GIT_REPOSITORY https://github.com/gabime/spdlog
+  GIT_TAG        v1.13.0
+)
 
-FetchContent_MakeAvailable(glm)
+FetchContent_MakeAvailable(glm spdlog)
 
 FetchContent_GetProperties(imgui)
 if(NOT imgui_POPULATED)
