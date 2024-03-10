@@ -23,10 +23,13 @@
 	#define PG_CORE_ASSERT(x, ...)
 #endif
 
-#define BIT(x) (1 << x)
-
 namespace pig
 {
+	constexpr int BIT(int x) noexcept
+	{
+		return 1 << x;
+	}
+
 	template<typename T, typename Deleter = std::default_delete<T>>
 	using U_Ptr = std::unique_ptr<T, Deleter>;
 
