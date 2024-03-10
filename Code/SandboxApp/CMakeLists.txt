@@ -11,7 +11,6 @@ include_directories (
 	"${PROJECT_SOURCE_DIR}/Code/SandboxApp"
     "${PROJECT_SOURCE_DIR}/3rdParty/"
     "${PROJECT_SOURCE_DIR}/3rdParty/entt"
-    "${PROJECT_SOURCE_DIR}/3rdParty/glm"
     "${PROJECT_SOURCE_DIR}/3rdParty/spdlog-1.12.0/include"
 )
 
@@ -44,6 +43,7 @@ target_precompile_headers(SandboxApp PRIVATE "${PROJECT_SOURCE_DIR}/Code/PigeonL
 target_link_libraries (
     SandboxApp PRIVATE PigeonLib
     spdlog.lib
+    glm
 )
 
 # Creates a folder "executables" and adds target 

@@ -99,7 +99,6 @@ include_directories (
     "${PROJECT_SOURCE_DIR}/Code/PigeonLib"
     "${PROJECT_SOURCE_DIR}/3rdParty/entt"
     "${PROJECT_SOURCE_DIR}/3rdParty/spdlog-1.12.0/include"
-    "${PROJECT_SOURCE_DIR}/3rdParty/glm"
     "${PROJECT_SOURCE_DIR}/3rdParty/imgui"
     "${PROJECT_SOURCE_DIR}/3rdParty"
 )
@@ -142,6 +141,7 @@ target_link_libraries (
     PigeonLib
     ImGui
     spdlog.lib
+    glm
 )
 
 # Properties->General->Output Directory

@@ -2,6 +2,16 @@ cmake_minimum_required (VERSION 3.20)
 
 project(PigeonEngine)
 
+include(FetchContent)
+
+FetchContent_Declare(
+  glm
+  GIT_REPOSITORY https://github.com/g-truc/glm
+  GIT_TAG        1.0.1
+)
+
+FetchContent_MakeAvailable(glm)
+
 # Turn on the ability to create folders to organize projects (.vcproj)
 # It creates "CMakePredefinedTargets" folder by default and adds CMake
 # defined projects like INSTALL.vcproj and ZERO_CHECK.vcproj
@@ -31,4 +41,3 @@ add_subdirectory(Code/PigeonLib)
 add_subdirectory(Code/SandboxApp)
 add_subdirectory(Code/UT)
 add_subdirectory(3rdParty/imgui)
-add_subdirectory(3rdParty/glm)
