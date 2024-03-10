@@ -1,100 +1,88 @@
 #pragma once
 
 // From WinUser.h
-#define PG_KEY_0                  0x30
-#define PG_KEY_1                  0x31
-#define PG_KEY_2                  0x32
-#define PG_KEY_3                  0x33
-#define PG_KEY_4                  0x34
-#define PG_KEY_5                  0x35
-#define PG_KEY_6                  0x36
-#define PG_KEY_7                  0x37
-#define PG_KEY_8                  0x38
-#define PG_KEY_9                  0x39
-#define PG_KEY_A                  0x41
-#define PG_KEY_B                  0x42
-#define PG_KEY_C                  0x43
-#define PG_KEY_D                  0x44
-#define PG_KEY_E                  0x45
-#define PG_KEY_F                  0x46
-#define PG_KEY_G                  0x47
-#define PG_KEY_H                  0x48
-#define PG_KEY_I                  0x49
-#define PG_KEY_J                  0x4A
-#define PG_KEY_K                  0x4B
-#define PG_KEY_L                  0x4C
-#define PG_KEY_M                  0x4D
-#define PG_KEY_N                  0x4E
-#define PG_KEY_O                  0x4F
-#define PG_KEY_P                  0x50
-#define PG_KEY_Q                  0x51
-#define PG_KEY_R                  0x52
-#define PG_KEY_S                  0x53
-#define PG_KEY_T                  0x54
-#define PG_KEY_U                  0x55
-#define PG_KEY_V                  0x56
-#define PG_KEY_W                  0x57
-#define PG_KEY_X                  0x58
-#define PG_KEY_Y                  0x59
-#define PG_KEY_Z                  0x5A
+constexpr unsigned char PG_KEY_0 = 0x30;
+constexpr unsigned char PG_KEY_1 = 0x31;
+constexpr unsigned char PG_KEY_2 = 0x32;
+constexpr unsigned char PG_KEY_3 = 0x33;
+constexpr unsigned char PG_KEY_4 = 0x34;
+constexpr unsigned char PG_KEY_5 = 0x35;
+constexpr unsigned char PG_KEY_6 = 0x36;
+constexpr unsigned char PG_KEY_7 = 0x37;
+constexpr unsigned char PG_KEY_8 = 0x38;
+constexpr unsigned char PG_KEY_9 = 0x39;
+constexpr unsigned char PG_KEY_A = 0x41;
+constexpr unsigned char PG_KEY_B = 0x42;
+constexpr unsigned char PG_KEY_C = 0x43;
+constexpr unsigned char PG_KEY_D = 0x44;
+constexpr unsigned char PG_KEY_E = 0x45;
+constexpr unsigned char PG_KEY_F = 0x46;
+constexpr unsigned char PG_KEY_G = 0x47;
+constexpr unsigned char PG_KEY_H = 0x48;
+constexpr unsigned char PG_KEY_I = 0x49;
+constexpr unsigned char PG_KEY_J = 0x4A;
+constexpr unsigned char PG_KEY_K = 0x4B;
+constexpr unsigned char PG_KEY_L = 0x4C;
+constexpr unsigned char PG_KEY_M = 0x4D;
+constexpr unsigned char PG_KEY_N = 0x4E;
+constexpr unsigned char PG_KEY_O = 0x4F;
+constexpr unsigned char PG_KEY_P = 0x50;
+constexpr unsigned char PG_KEY_Q = 0x51;
+constexpr unsigned char PG_KEY_R = 0x52;
+constexpr unsigned char PG_KEY_S = 0x53;
+constexpr unsigned char PG_KEY_T = 0x54;
+constexpr unsigned char PG_KEY_U = 0x55;
+constexpr unsigned char PG_KEY_V = 0x56;
+constexpr unsigned char PG_KEY_W = 0x57;
+constexpr unsigned char PG_KEY_X = 0x58;
+constexpr unsigned char PG_KEY_Y = 0x59;
+constexpr unsigned char PG_KEY_Z = 0x5A;
 
 /* Function keys */
-#define PG_KEY_SPACE              VK_SPACE
-#define PG_KEY_ESCAPE             VK_ESCAPE
-#define PG_KEY_ENTER              VK_RETURN
-#define PG_KEY_TAB                VK_TAB
-#define PG_KEY_BACKSPACE          VK_BACK
-#define PG_KEY_INSERT             VK_INSERT
-#define PG_KEY_DELETE             VK_DELETE
-#define PG_KEY_RIGHT              VK_RIGHT
-#define PG_KEY_LEFT               VK_LEFT
-#define PG_KEY_DOWN               VK_DOWN
-#define PG_KEY_UP                 VK_UP
-#define PG_KEY_PAGE_UP            VK_PRIOR
-#define PG_KEY_PAGE_DOWN          VK_NEXT
-#define PG_KEY_HOME               VK_HOME
-#define PG_KEY_END                VK_END
-#define PG_KEY_CAPS_LOCK          VK_CAPITAL
-#define PG_KEY_CONTROL            VK_CONTROL
-#define PG_KEY_ALT                VK_MENU
-#define PG_KEY_SHIFT              VK_SHIFT
-#define PG_KEY_PAUSE              VK_PAUSE
-#define PG_KEY_F1                 VK_F1
-#define PG_KEY_F2                 VK_F2
-#define PG_KEY_F3                 VK_F3
-#define PG_KEY_F4                 VK_F4
-#define PG_KEY_F5                 VK_F5
-#define PG_KEY_F6                 VK_F6
-#define PG_KEY_F7                 VK_F7
-#define PG_KEY_F8                 VK_F8
-#define PG_KEY_F9                 VK_F9
-#define PG_KEY_F10                VK_F10
-#define PG_KEY_F11                VK_F11
-#define PG_KEY_F12                VK_F12
-#define PG_KEY_F13                VK_F13
-#define PG_KEY_F14                VK_F14
-#define PG_KEY_F15                VK_F15
-#define PG_KEY_F16                VK_F16
-#define PG_KEY_F17                VK_F17
-#define PG_KEY_F18                VK_F18
-#define PG_KEY_F19                VK_F19
-#define PG_KEY_F20                VK_F20
-#define PG_KEY_F21                VK_F21
-#define PG_KEY_F22                VK_F22
-#define PG_KEY_F23                VK_F23
-#define PG_KEY_F24                VK_F24
-#define PG_KEY_F25                VK_F25
-#define PG_KEY_KP_0               VK_NUMPAD0
-#define PG_KEY_KP_1               VK_NUMPAD1
-#define PG_KEY_KP_2               VK_NUMPAD2
-#define PG_KEY_KP_3               VK_NUMPAD3
-#define PG_KEY_KP_4               VK_NUMPAD4
-#define PG_KEY_KP_5               VK_NUMPAD5
-#define PG_KEY_KP_6               VK_NUMPAD6
-#define PG_KEY_KP_7               VK_NUMPAD7
-#define PG_KEY_KP_8               VK_NUMPAD8
-#define PG_KEY_KP_9               VK_NUMPAD9
-#define PG_KEY_UP                 VK_UP
-#define PG_KEY_DOWNN              VK_DOWN
-#define PG_KEY_LEFT               VK_LEFT
-#define PG_KEY_RIGHT              VK_RIGHT
+constexpr unsigned char PG_KEY_SPACE = VK_SPACE;
+constexpr unsigned char PG_KEY_ESCAPE = VK_ESCAPE;
+constexpr unsigned char PG_KEY_ENTER = VK_RETURN;
+constexpr unsigned char PG_KEY_TAB = VK_TAB;
+constexpr unsigned char PG_KEY_BACKSPACE = VK_BACK;
+constexpr unsigned char PG_KEY_INSERT = VK_INSERT;
+constexpr unsigned char PG_KEY_DELETE = VK_DELETE;
+constexpr unsigned char PG_KEY_RIGHT = VK_RIGHT;
+constexpr unsigned char PG_KEY_LEFT = VK_LEFT;
+constexpr unsigned char PG_KEY_DOWN = VK_DOWN;
+constexpr unsigned char PG_KEY_UP = VK_UP;
+constexpr unsigned char PG_KEY_PAGE_UP = VK_PRIOR;
+constexpr unsigned char PG_KEY_PAGE_DOWN = VK_NEXT;
+constexpr unsigned char PG_KEY_HOME = VK_HOME;
+constexpr unsigned char PG_KEY_END = VK_END;
+constexpr unsigned char PG_KEY_CAPS_LOCK = VK_CAPITAL;
+constexpr unsigned char PG_KEY_CONTROL = VK_CONTROL;
+constexpr unsigned char PG_KEY_ALT = VK_MENU;
+constexpr unsigned char PG_KEY_SHIFT = VK_SHIFT;
+constexpr unsigned char PG_KEY_PAUSE = VK_PAUSE;
+constexpr unsigned char PG_KEY_F1 = VK_F1;
+constexpr unsigned char PG_KEY_F2 = VK_F2;
+constexpr unsigned char PG_KEY_F3 = VK_F3;
+constexpr unsigned char PG_KEY_F4 = VK_F4;
+constexpr unsigned char PG_KEY_F5 = VK_F5;
+constexpr unsigned char PG_KEY_F6 = VK_F6;
+constexpr unsigned char PG_KEY_F7 = VK_F7;
+constexpr unsigned char PG_KEY_F8 = VK_F8;
+constexpr unsigned char PG_KEY_F9 = VK_F9;
+constexpr unsigned char PG_KEY_F10 = VK_F10;
+constexpr unsigned char PG_KEY_F11 = VK_F11;
+constexpr unsigned char PG_KEY_F12 = VK_F12;
+constexpr unsigned char PG_KEY_F13 = VK_F13;
+constexpr unsigned char PG_KEY_F14 = VK_F14;
+constexpr unsigned char PG_KEY_F15 = VK_F15;
+constexpr unsigned char PG_KEY_F16 = VK_F16;
+constexpr unsigned char PG_KEY_F17 = VK_F17;
+constexpr unsigned char PG_KEY_F18 = VK_F18;
+constexpr unsigned char PG_KEY_F19 = VK_F19;
+constexpr unsigned char PG_KEY_F20 = VK_F20;
+constexpr unsigned char PG_KEY_F21 = VK_F21;
+constexpr unsigned char PG_KEY_F22 = VK_F22;
+constexpr unsigned char PG_KEY_F23 = VK_F23;
+constexpr unsigned char PG_KEY_F24 = VK_F24;
+//constexpr unsigned char PG_KEY_F25 = VK_F25;
+constexpr unsigned char PG_KEY_KP_0 = VK_NUMPAD0;
+constexpr unsigned char PG_KEY_KP_1 = VK_NUMPAD1;
