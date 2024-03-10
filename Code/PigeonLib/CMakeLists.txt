@@ -97,7 +97,6 @@ source_group("vendor" FILES ${VENDOR})
 # Properties->C/C++->General->Additional Include Directories
 include_directories (
     "${PROJECT_SOURCE_DIR}/Code/PigeonLib"
-    "${PROJECT_SOURCE_DIR}/3rdParty/entt"
     "${PROJECT_SOURCE_DIR}/3rdParty"
     
 )
@@ -138,6 +137,8 @@ target_link_libraries (
     spdlog
     glm
 )
+
+target_include_directories(PigeonLib PUBLIC ${ENTT_INCLUDE_DIRS})
 
 # Properties->General->Output Directory
 set_target_properties(PigeonLib PROPERTIES

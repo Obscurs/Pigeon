@@ -19,6 +19,11 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/gabime/spdlog
   GIT_TAG        v1.13.0
 )
+FetchContent_Declare(
+  entt
+  GIT_REPOSITORY https://github.com/skypjack/entt
+  GIT_TAG        v3.13.1
+)
 
 FetchContent_MakeAvailable(glm spdlog)
 
@@ -38,6 +43,12 @@ endif()
 add_library(imgui STATIC ${IMGUI_SOURCES})
 target_include_directories(imgui PUBLIC ${IMGUI_INCLUDE_DIRS})
 target_link_libraries(imgui PUBLIC d3d11)
+
+FetchContent_GetProperties(entt)
+if(NOT entt_POPULATED)
+  FetchContent_Populate(entt)
+  set(ENTT_INCLUDE_DIRS "${entt_SOURCE_DIR}/src")
+endif()
 
 # Turn on the ability to create folders to organize projects (.vcproj)
 # It creates "CMakePredefinedTargets" folder by default and adds CMake
