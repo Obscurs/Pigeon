@@ -9,14 +9,6 @@ source_group("" FILES ${SRCS})
 include_directories (
     "${PROJECT_SOURCE_DIR}/Code/PigeonLib"
 	"${PROJECT_SOURCE_DIR}/Code/SandboxApp"
-    "${PROJECT_SOURCE_DIR}/3rdParty/"
-    "${PROJECT_SOURCE_DIR}/3rdParty/entt"
-    "${PROJECT_SOURCE_DIR}/3rdParty/glm"
-    "${PROJECT_SOURCE_DIR}/3rdParty/spdlog-1.12.0/include"
-)
-
-link_directories (
-    "${PROJECT_SOURCE_DIR}/3rdParty/spdlog-1.12.0/lib"
 )
 
 # Set Properties->General->Configuration Type to Application(.exe)
@@ -43,7 +35,8 @@ target_precompile_headers(SandboxApp PRIVATE "${PROJECT_SOURCE_DIR}/Code/PigeonL
 
 target_link_libraries (
     SandboxApp PRIVATE PigeonLib
-    spdlog.lib
+    spdlog
+    glm
 )
 
 # Creates a folder "executables" and adds target 

@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "WindowsWindow.h"
 
-#include <imgui/imgui.h>
+#include <imgui.h>
 
 #include <Pigeon/Events/ApplicationEvent.h>
 #include <Pigeon/Events/MouseEvent.h>

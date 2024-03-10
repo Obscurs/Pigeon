@@ -2,6 +2,59 @@ cmake_minimum_required (VERSION 3.20)
 
 project(PigeonEngine)
 
+include(FetchContent)
+
+FetchContent_Declare(
+  glm
+  GIT_REPOSITORY https://github.com/g-truc/glm
+  GIT_TAG        1.0.1
+)
+FetchContent_Declare(
+  imgui
+  GIT_REPOSITORY https://github.com/ocornut/imgui
+  GIT_TAG        v1.90.4-docking
+)
+FetchContent_Declare(
+  spdlog
+  GIT_REPOSITORY https://github.com/gabime/spdlog
+  GIT_TAG        v1.13.0
+)
+FetchContent_Declare(
+  entt
+  GIT_REPOSITORY https://github.com/skypjack/entt
+  GIT_TAG        v3.13.1
+)
+FetchContent_Declare(
+  Catch2
+  GIT_REPOSITORY https://github.com/catchorg/Catch2
+  GIT_TAG        v2.13.9
+)
+
+FetchContent_MakeAvailable(glm spdlog Catch2)
+
+FetchContent_GetProperties(imgui)
+if(NOT imgui_POPULATED)
+  FetchContent_Populate(imgui)
+  set(IMGUI_INCLUDE_DIRS "${imgui_SOURCE_DIR}")
+  set(IMGUI_SOURCES 
+      "${imgui_SOURCE_DIR}/imgui.cpp"
+      "${imgui_SOURCE_DIR}/imgui_demo.cpp"
+      "${imgui_SOURCE_DIR}/imgui_draw.cpp"
+      "${imgui_SOURCE_DIR}/imgui_tables.cpp"
+      "${imgui_SOURCE_DIR}/imgui_widgets.cpp"
+      "${imgui_SOURCE_DIR}/backends/imgui_impl_dx11.cpp"
+      "${imgui_SOURCE_DIR}/backends/imgui_impl_win32.cpp")
+endif()
+add_library(imgui STATIC ${IMGUI_SOURCES})
+target_include_directories(imgui PUBLIC ${IMGUI_INCLUDE_DIRS})
+target_link_libraries(imgui PUBLIC d3d11)
+
+FetchContent_GetProperties(entt)
+if(NOT entt_POPULATED)
+  FetchContent_Populate(entt)
+  set(ENTT_INCLUDE_DIRS "${entt_SOURCE_DIR}/src")
+endif()
+
 # Turn on the ability to create folders to organize projects (.vcproj)
 # It creates "CMakePredefinedTargets" folder by default and adds CMake
 # defined projects like INSTALL.vcproj and ZERO_CHECK.vcproj
@@ -30,5 +83,3 @@ add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 add_subdirectory(Code/PigeonLib)
 add_subdirectory(Code/SandboxApp)
 add_subdirectory(Code/UT)
-add_subdirectory(3rdParty/imgui)
-add_subdirectory(3rdParty/glm)

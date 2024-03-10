@@ -1,9 +1,9 @@
 #include "pch.h"
 #include "ImGuiLayer.h"
 
-#include "imgui/imgui.h"
-#include "imgui/backends/imgui_impl_dx11.h"
-#include "imgui/backends/imgui_impl_win32.h"
+#include <imgui.h>
+#include <backends/imgui_impl_dx11.h>
+#include <backends/imgui_impl_win32.h>
 
 #include "Pigeon/Application.h"
 #include "Pigeon/KeyCodes.h"

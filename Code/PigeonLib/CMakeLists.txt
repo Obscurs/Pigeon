@@ -97,16 +97,8 @@ source_group("vendor" FILES ${VENDOR})
 # Properties->C/C++->General->Additional Include Directories
 include_directories (
     "${PROJECT_SOURCE_DIR}/Code/PigeonLib"
-    "${PROJECT_SOURCE_DIR}/3rdParty/entt"
-    "${PROJECT_SOURCE_DIR}/3rdParty/spdlog-1.12.0/include"
-    "${PROJECT_SOURCE_DIR}/3rdParty/glm"
-    "${PROJECT_SOURCE_DIR}/3rdParty/imgui"
-    "${PROJECT_SOURCE_DIR}/3rdParty"
 )
 
-link_directories (
-    "${PROJECT_SOURCE_DIR}/3rdParty/spdlog-1.12.0/lib"
-)
 
 # Set Properties->General->Configuration Type to Application(.exe)
 # Creates app.exe with the listed sources (main.cxx)
@@ -115,7 +107,6 @@ add_library(PigeonLib STATIC)
 
 # Add common sources to target
 target_sources(PigeonLib PRIVATE ${SRC})
-add_dependencies(PigeonLib ImGui) 
 
 # Platform/Windows files are included for configurations other than "Test"
 # This assumes WIN32 is true; adjust as necessary for other platforms
@@ -140,9 +131,12 @@ endif()
 
 target_link_libraries (
     PigeonLib
-    ImGui
-    spdlog.lib
+    imgui
+    spdlog
+    glm
 )
+
+target_include_directories(PigeonLib PUBLIC ${ENTT_INCLUDE_DIRS})
 
 # Properties->General->Output Directory
 set_target_properties(PigeonLib PROPERTIES

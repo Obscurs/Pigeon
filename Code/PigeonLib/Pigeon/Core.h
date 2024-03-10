@@ -2,6 +2,7 @@
 #define PG_ENABLE_ASSERTS
 
 #ifdef PG_PLATFORM_WINDOWS
+	#define NOMINMAX
 	#if PG_DYNAMIC_LINK
 		#ifdef PG_BUILD_DLL
 			#define PIGEON_API __declspec(dllexport)
