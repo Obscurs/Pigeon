@@ -9,9 +9,7 @@ source_group("" FILES ${SRCS})
 include_directories (
     "${PROJECT_SOURCE_DIR}/Code/PigeonLib"
 	"${PROJECT_SOURCE_DIR}/Code/SandboxApp"
-    "${PROJECT_SOURCE_DIR}/3rdParty/"
 )
-
 
 # Set Properties->General->Configuration Type to Application(.exe)
 # Creates app.exe with the listed sources (main.cxx)

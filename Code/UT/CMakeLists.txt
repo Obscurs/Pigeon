@@ -18,7 +18,6 @@ include_directories (
     "${PROJECT_SOURCE_DIR}/Code/PigeonLib"
     "${PROJECT_SOURCE_DIR}/Code/PigeonLib/PigeonLib.dir/Test"
     "${PROJECT_SOURCE_DIR}/Code/UT"
-    "${PROJECT_SOURCE_DIR}/3rdParty/"
 )
 
 link_directories (

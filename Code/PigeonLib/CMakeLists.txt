@@ -97,8 +97,6 @@ source_group("vendor" FILES ${VENDOR})
 # Properties->C/C++->General->Additional Include Directories
 include_directories (
     "${PROJECT_SOURCE_DIR}/Code/PigeonLib"
-    "${PROJECT_SOURCE_DIR}/3rdParty"
-    
 )
 
 
