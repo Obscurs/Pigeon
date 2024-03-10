@@ -25,7 +25,7 @@ sbx::Sandbox2D::Sandbox2D(): pig::Layer("Sandbox2D"), m_CameraController(1280.0f
 	pig::Renderer2D::AddTexture("Assets/Textures/fontSprite.png", "Text");
 }
 
-void sbx::Sandbox2D::OnUpdate(pig::Timestep ts)
+void sbx::Sandbox2D::OnUpdate(const pig::Timestep& ts)
 {
 	m_CameraController.OnUpdate(ts);
 

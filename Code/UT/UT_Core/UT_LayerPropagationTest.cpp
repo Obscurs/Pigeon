@@ -20,7 +20,7 @@ namespace
 		{
 		}
 
-		void OnUpdate(pig::Timestep ts) override
+		void OnUpdate(const pig::Timestep& ts) override
 		{
 			m_ReceivedEvent = false;
 		}
@@ -44,7 +44,7 @@ namespace
 			: Layer("UTLayerEventPropagate")
 		{
 		}
-		void OnUpdate(pig::Timestep ts) override
+		void OnUpdate(const pig::Timestep& ts) override
 		{
 			m_ReceivedEvent = false;
 		}

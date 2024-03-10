@@ -14,7 +14,7 @@ namespace sbx
 		Sandbox2D();
 		~Sandbox2D() = default;
 
-		void OnUpdate(pig::Timestep ts) override;
+		void OnUpdate(const pig::Timestep& ts) override;
 
 		virtual void OnImGuiRender() override;
 		bool OnEvent(const pig::Event& event) override;

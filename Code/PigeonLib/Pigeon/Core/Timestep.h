@@ -5,16 +5,16 @@ namespace pig
 	class Timestep
 	{
 	public:
-		Timestep(float time = 0.0f)
+		Timestep(uint64_t time = 0)
 			: m_Time(time)
 		{
 		}
 
-		operator float() const { return m_Time; }
+		operator uint64_t() const { return m_Time; }
 
-		float GetSeconds() const { return m_Time; }
-		float GetMilliseconds() const { return m_Time * 1000.0f; }
+		float AsSeconds() const { return m_Time / 1000.f; }
+		uint64_t AsMilliseconds() const { return m_Time; }
 	private:
-		float m_Time;
+		uint64_t m_Time;
 	};
 }
