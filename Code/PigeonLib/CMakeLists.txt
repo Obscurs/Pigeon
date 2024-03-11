@@ -5,6 +5,7 @@ file(GLOB ROOT
 file(GLOB PG
     "Pigeon/Application.cpp"
     "Pigeon/Core.h"
+    "Pigeon/Core/Clock.h"
     "Pigeon/Core/Timestep.h"
     "Pigeon/EntryPoint.h"
     "Pigeon/Input.h"

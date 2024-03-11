@@ -82,15 +82,14 @@ void pig::Application::Init()
 
 void pig::Application::Update()
 {
-	auto currentTime = std::chrono::steady_clock::now();
-	const pig::Timestep timestep{ static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - m_Data.m_LastFrameTime).count()) };
-	m_Data.m_LastFrameTime = currentTime;
+	const Timestep deltaTime = m_Data.m_ClockFrameTime.Restart();
+	m_Data.m_LastFrameTime = deltaTime;
 
 	for (pig::S_Ptr<pig::Layer> layer : m_Data.m_LayerStack)
 		layer->Begin();
 
 	for (pig::S_Ptr<pig::Layer> layer : m_Data.m_LayerStack)
-		layer->OnUpdate(timestep);
+		layer->OnUpdate(deltaTime);
 #ifndef TESTS_ENABLED
 	if (m_Data.m_ImGuiLayer->IsAttached())
 	{
