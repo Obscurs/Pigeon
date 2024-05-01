@@ -79,6 +79,7 @@ namespace CatchTestsetFail
 	TEST_CASE("Core.Camera::OrthographicCameraController")
 	{
 		pig::Application& app = pig::CreateApplication();
+		const pig::Timestep timestep(5);
 		SECTION("Keyboard events")
 		{
 			pig::OrthographicCameraController cameraController(0.5f);
@@ -95,7 +96,7 @@ namespace CatchTestsetFail
 				SECTION("Moving left")
 				{
 					appInput.TESTING_KeysPressed.push_back(PG_KEY_A);
-					cameraController.OnUpdate(5);
+					cameraController.OnUpdate(timestep);
 					CHECK(camPos.x < 0.f);
 					CHECK(camPos.y == 0.f);
 					CHECK(camPos.z == 0.f);
@@ -103,7 +104,7 @@ namespace CatchTestsetFail
 				SECTION("Moving right")
 				{
 					appInput.TESTING_KeysPressed.push_back(PG_KEY_D);
-					cameraController.OnUpdate(5);
+					cameraController.OnUpdate(timestep);
 					CHECK(camPos.x > 0.f);
 					CHECK(camPos.y == 0.f);
 					CHECK(camPos.z == 0.f);
@@ -111,7 +112,7 @@ namespace CatchTestsetFail
 				SECTION("Moving up")
 				{
 					appInput.TESTING_KeysPressed.push_back(PG_KEY_W);
-					cameraController.OnUpdate(5);
+					cameraController.OnUpdate(timestep);
 					CHECK(camPos.x == 0.f);
 					CHECK(camPos.y > 0.f);
 					CHECK(camPos.z == 0.f);
@@ -119,7 +120,7 @@ namespace CatchTestsetFail
 				SECTION("Moving down")
 				{
 					appInput.TESTING_KeysPressed.push_back(PG_KEY_S);
-					cameraController.OnUpdate(5);
+					cameraController.OnUpdate(timestep);
 					CHECK(camPos.x == 0.f);
 					CHECK(camPos.y < 0.f);
 					CHECK(camPos.z == 0.f);
@@ -128,7 +129,7 @@ namespace CatchTestsetFail
 				{
 					appInput.TESTING_KeysPressed.push_back(PG_KEY_A);
 					appInput.TESTING_KeysPressed.push_back(PG_KEY_W);
-					cameraController.OnUpdate(5);
+					cameraController.OnUpdate(timestep);
 					CHECK(camPos.x < 0.f);
 					CHECK(camPos.y > 0.f);
 					CHECK(camPos.z == 0.f);
@@ -137,7 +138,7 @@ namespace CatchTestsetFail
 				{
 					appInput.TESTING_KeysPressed.push_back(PG_KEY_D);
 					appInput.TESTING_KeysPressed.push_back(PG_KEY_S);
-					cameraController.OnUpdate(5);
+					cameraController.OnUpdate(timestep);
 					CHECK(camPos.x > 0.f);
 					CHECK(camPos.y < 0.f);
 					CHECK(camPos.z == 0.f);
@@ -160,7 +161,7 @@ namespace CatchTestsetFail
 				CHECK(cameraController.GetData().m_CameraTranslationSpeed == 5.f);
 				CHECK(cameraController.GetData().m_CameraRotationSpeed == 180.f);
 
-				cameraController.OnUpdate(5);
+				cameraController.OnUpdate(timestep);
 
 				CHECK(cameraController.GetData().m_AspectRatio == 0.5f);
 				CHECK(cameraController.GetData().m_Rotation == false);
@@ -174,7 +175,7 @@ namespace CatchTestsetFail
 				pig::MouseScrolledEvent event(123.f, 456.f);
 
 				cameraController.OnEvent(event);
-				cameraController.OnUpdate(5);
+				cameraController.OnUpdate(timestep);
 				
 				CHECK(cameraController.GetCamera().GetPosition() == pos0);
 				CHECK(cameraController.GetCamera().GetRotation() == rot0);
@@ -201,7 +202,9 @@ namespace CatchTestsetFail
 
 				pig::WindowResizeEvent event(100.f, 1000.f);
 				cameraController.OnEvent(event);
-				cameraController.OnUpdate(10);
+				
+				cameraController.OnUpdate(timestep);
+				cameraController.OnUpdate(timestep);
 
 				const glm::vec3 pos0(0.f, 0.f, 0.f);
 				const float rot0 = 0.f;
