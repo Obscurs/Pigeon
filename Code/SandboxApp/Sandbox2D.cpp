@@ -8,6 +8,8 @@
 #include "Pigeon/Renderer/Renderer2D.h"
 #include "Pigeon/Renderer/Sprite.h"
 
+#include "Pigeon/Core/Clock.h"
+
 sbx::Sandbox2D::Sandbox2D(): pig::Layer("Sandbox2D"), m_CameraController(1280.0f / 720.0f)
 {
 	m_ColorQuad1 = glm::vec3(0.f, 1.f, 0.0f);
@@ -41,8 +43,32 @@ void sbx::Sandbox2D::OnUpdate(const pig::Timestep& ts)
 	pig::Renderer2D::DrawSprite(sprite);
 
 	const pig::Texture2D* textureText = pig::Renderer2D::GetTexture("Text");
-	pig::Sprite spriteText(m_PosText, glm::vec3(0.05f,0.05f,1.f), glm::vec4(7.f, 7.f, 0.f, -0.3f), "Text");
-	pig::Renderer2D::DrawTextSprite(spriteText,"This is a fucking text\nEven with multiple lines", m_ColorText);
+	pig::Sprite spriteText(m_PosText, glm::vec3(0.05f, 0.05f, 1.f), glm::vec4(7.f, 7.f, 0.f, -0.3f), "Text");
+	pig::Renderer2D::DrawTextSprite(spriteText, "This is a fucking text\nEven with multiple lines", m_ColorText);
+
+	static pig::Clock clock;
+	const pig::Timestep elapsed{ clock.Elapsed() };
+	const std::string timeString
+	{
+		std::to_string(static_cast<int>(elapsed.AsMinutes())) + ":" +
+		std::to_string(static_cast<int>(elapsed.AsSeconds()) % 60) + ":" +
+		std::to_string(elapsed.AsMilliseconds() % 1000)
+	};
+	const glm::vec3 timeTextColor
+	{
+		std::fmodf(elapsed.AsSeconds()*8.f, 1.f),
+		std::fmodf(elapsed.AsSeconds()*2.f, 1.f),
+		std::fmodf(elapsed.AsSeconds()*4.f, 1.f),
+	};
+	const pig::Sprite spriteTextClock
+	{
+		{ -0.7f, 0.7f, 0.f },
+		{ 0.2f, 0.2f },
+		{ 7.f, 7.f, 0.f, -0.3f },
+		"Text"
+	};
+	pig::Renderer2D::DrawTextSprite(spriteTextClock, timeString, timeTextColor);
+
 	pig::Renderer2D::EndScene();
 }
 

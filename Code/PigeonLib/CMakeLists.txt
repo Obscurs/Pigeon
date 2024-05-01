@@ -5,6 +5,7 @@ file(GLOB ROOT
 file(GLOB PGCORE
     "Pigeon/Core/Application.cpp"
     "Pigeon/Core/Core.h"
+    "Pigeon/Core/Clock.h"
     "Pigeon/Core/EntryPoint.h"
     "Pigeon/Core/Input.h"
     "Pigeon/Core/KeyCodes.h"

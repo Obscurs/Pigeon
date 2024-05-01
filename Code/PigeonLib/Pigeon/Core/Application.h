@@ -7,6 +7,7 @@
 #include "Pigeon/Events/ApplicationEvent.h"
 #include "Pigeon/Core/LayerStack.h"
 #include "Pigeon/Renderer/Buffer.h"
+#include "Pigeon/Core/Clock.h"
 
 namespace pig
 {
@@ -27,7 +28,9 @@ namespace pig
 			pig::S_Ptr<Window> m_Window;
 			bool m_Running = true;
 			bool m_Initialized = false;
-			std::chrono::steady_clock::time_point m_LastFrameTime;
+			Clock m_ClockUptime;
+			Clock m_ClockFrameTime;
+			Timestep m_LastFrameTime;
 			LayerStack m_LayerStack;
 			bool m_Minimized = false;
 		};
