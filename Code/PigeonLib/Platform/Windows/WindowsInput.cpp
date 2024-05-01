@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "WindowsInput.h"
 
-#include "Pigeon/Application.h"
+#include "Pigeon/Core/Application.h"
 #include "Platform/Windows/WindowsWindow.h"
 
 #ifndef TESTS_ENABLED

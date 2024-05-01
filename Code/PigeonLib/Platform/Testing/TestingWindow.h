@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Pigeon/Window.h"
+#include "Pigeon/Core/Window.h"
 
 namespace pig
 {

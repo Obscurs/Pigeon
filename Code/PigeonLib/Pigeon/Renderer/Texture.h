@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "Pigeon/Core.h"
+#include "Pigeon/Core/Core.h"
 
 namespace pig 
 {

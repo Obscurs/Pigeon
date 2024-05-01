@@ -1,5 +1,5 @@
 #pragma once
-#include "Pigeon/Input.h"
+#include "Pigeon/Core/Input.h"
 
 namespace pig 
 {

@@ -2,7 +2,7 @@
 
 #include "RenderCommand.h"
 
-#include "Pigeon/OrthographicCameraController.h"
+#include "Pigeon/Core/OrthographicCameraController.h"
 #include "Pigeon/Renderer/Buffer.h"
 #include "Pigeon/Renderer/Shader.h"
 #include "Pigeon/Renderer/Sprite.h"

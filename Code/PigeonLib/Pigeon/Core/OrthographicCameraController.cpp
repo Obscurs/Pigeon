@@ -1,8 +1,8 @@
 #include "pch.h"
 #include "OrthographicCameraController.h"
 
-#include "Pigeon/Input.h"
-#include "Pigeon/KeyCodes.h"
+#include "Pigeon/Core/Input.h"
+#include "Pigeon/Core/KeyCodes.h"
 
 pig::OrthographicCameraController::OrthographicCameraController(float aspectRatio, bool rotation)
 {

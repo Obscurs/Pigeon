@@ -5,8 +5,8 @@
 #include <backends/imgui_impl_dx11.h>
 #include <backends/imgui_impl_win32.h>
 
-#include "Pigeon/Application.h"
-#include "Pigeon/KeyCodes.h"
+#include "Pigeon/Core/Application.h"
+#include "Pigeon/Core/KeyCodes.h"
 
 #include "Platform/DirectX11/Dx11Context.h"
 #include "Platform/Windows/WindowsWindow.h"

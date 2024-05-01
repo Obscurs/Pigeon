@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Pigeon/Layer.h"
+#include "Pigeon/Core/Layer.h"
 #include "Pigeon/Renderer/Buffer.h"
-#include "Pigeon/OrthographicCameraController.h"
+#include "Pigeon/Core/OrthographicCameraController.h"
 #include "Pigeon/Renderer/Shader.h"
 #include "Pigeon/Renderer/Texture.h"
 

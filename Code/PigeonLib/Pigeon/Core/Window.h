@@ -2,7 +2,7 @@
 
 #include "pch.h"
 
-#include "Pigeon/Core.h"
+#include "Pigeon/Core/Core.h"
 #include "Pigeon/Events/Event.h"
 
 namespace pig {

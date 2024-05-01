@@ -2,16 +2,19 @@ file(GLOB ROOT
     "Pigeon.h"
 )
 
-file(GLOB PG
-    "Pigeon/Application.cpp"
-    "Pigeon/Core.h"
+file(GLOB PGCORE
+    "Pigeon/Core/Application.cpp"
+    "Pigeon/Core/Core.h"
+    "Pigeon/Core/EntryPoint.h"
+    "Pigeon/Core/Input.h"
+    "Pigeon/Core/KeyCodes.h"
+    "Pigeon/Core/Layer.cpp"
+    "Pigeon/Core/LayerStack.cpp"
+    "Pigeon/Core/Log.cpp"
+    "Pigeon/Core/MouseButtonCodes.h"
+    "Pigeon/Core/OrthographicCameraController.cpp"
     "Pigeon/Core/Timestep.h"
-    "Pigeon/EntryPoint.h"
-    "Pigeon/Input.h"
-    "Pigeon/Layer.cpp"
-    "Pigeon/LayerStack.cpp"
-    "Pigeon/Log.cpp"
-    "Pigeon/OrthographicCameraController.cpp"
+    "Pigeon/Core/Window.h"
 )
 
 file(GLOB PGIMGUI
@@ -85,7 +88,7 @@ file(GLOB_RECURSE SRC
 )
 
 source_group("" FILES ${ROOT})
-source_group("Pigeon" FILES ${PG})
+source_group("Pigeon\\Core" FILES ${PGCORE})
 source_group("Pigeon\\ImGui" FILES ${PGIMGUI})
 source_group("Pigeon\\Renderer" FILES ${RENDERER})
 source_group("Platform\\Testing" FILES ${PLATFORM_TESTING})

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Pigeon/Core.h"
+#include "Pigeon/Core/Core.h"
 #include "Pigeon/Core/Timestep.h"
 #include "Pigeon/Events/Event.h"
 

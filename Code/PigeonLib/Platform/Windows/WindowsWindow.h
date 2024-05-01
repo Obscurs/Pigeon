@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Pigeon/Window.h"
+#include "Pigeon/Core/Window.h"
 #include "Pigeon/Renderer/GraphicsContext.h"
 
 namespace pig 
