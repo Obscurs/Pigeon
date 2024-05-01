@@ -24,6 +24,7 @@ file(GLOB PGIMGUI
 
 file(GLOB RENDERER
     "Pigeon/Renderer/Buffer.cpp"
+    "Pigeon/Renderer/GraphicsContext.cpp"
     "Pigeon/Renderer/OrthographicCamera.cpp"
     "Pigeon/Renderer/RenderCommand.cpp"
     "Pigeon/Renderer/Renderer.cpp"
