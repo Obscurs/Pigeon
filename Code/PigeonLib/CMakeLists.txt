@@ -6,13 +6,13 @@ file(GLOB PGCORE
     "Pigeon/Core/Application.cpp"
     "Pigeon/Core/Core.h"
     "Pigeon/Core/Clock.h"
-    "Pigeon/Core/EntryPoint.h"
     "Pigeon/Core/Input.h"
+    "Pigeon/Core/EntryPoint.h"
+    "Pigeon/Core/InputLayer.cpp"
     "Pigeon/Core/KeyCodes.h"
     "Pigeon/Core/Layer.cpp"
     "Pigeon/Core/LayerStack.cpp"
     "Pigeon/Core/Log.cpp"
-    "Pigeon/Core/MouseButtonCodes.h"
     "Pigeon/Core/OrthographicCameraController.cpp"
     "Pigeon/Core/Timestep.h"
     "Pigeon/Core/Window.h"
@@ -51,6 +51,7 @@ file(GLOB ECS_COMPONENTS
 file(GLOB PLATFORM_WIN
     "Platform/Windows/WindowsWindow.cpp"
     "Platform/Windows/WindowsInput.cpp"
+    "Platform/Windows/WindowsInputKeyCodeMapping.h"
 )
 
 file(GLOB PLATFORM_DX

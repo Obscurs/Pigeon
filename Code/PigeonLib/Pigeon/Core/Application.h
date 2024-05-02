@@ -12,6 +12,7 @@
 namespace pig
 {
 	class ImGuiLayer;
+	class InputLayer;
 	class Shader;
 }
 
@@ -25,6 +26,7 @@ namespace pig
 #ifndef TESTS_ENABLED
 			pig::S_Ptr<ImGuiLayer> m_ImGuiLayer;
 #endif
+			pig::S_Ptr<InputLayer> m_InputLayer;
 			pig::S_Ptr<Window> m_Window;
 			bool m_Running = true;
 			bool m_Initialized = false;
@@ -47,7 +49,7 @@ namespace pig
 
 #ifdef TESTS_ENABLED
 		const Data& GetData() const { return m_Data; }
-		void TestUpdate() { Update(); }
+		void TestUpdate(const Timestep& ts) { Update(ts); }
 #else
 		void Run();
 #endif
@@ -56,13 +58,15 @@ namespace pig
 		void PushOverlay(pig::S_Ptr<Layer> layer);
 
 		inline Window& GetWindow() { return *m_Data.m_Window; }
+		inline InputLayer& GetInputLayer() { return *m_Data.m_InputLayer; }
 
 		inline static Application& Get() { return *s_Instance; }
 	private:
 		void Shutdown();
 		void Init();
 
-		void Update();
+		void UpdateApp();
+		void Update(const Timestep& ts);
 
 		bool OnWindowClose(const WindowCloseEvent& e);
 		bool OnWindowResize(const WindowResizeEvent& e);

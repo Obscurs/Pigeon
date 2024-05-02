@@ -1,11 +1,11 @@
 #include "pch.h"
 
 #include "Application.h"
-#include "Input.h"
 
+#include "Pigeon/Core/InputLayer.h"
+#include "Pigeon/Core/Log.h"
 #include "Pigeon/Events/ApplicationEvent.h"
 #include "Pigeon/ImGui/ImGuiLayer.h"
-#include "Pigeon/Core/Log.h"
 #include "Pigeon/Renderer/Renderer.h"
 #include "Pigeon/Renderer/Renderer2D.h"
 
@@ -56,7 +56,7 @@ void pig::Application::Run()
 {
 	while (m_Data.m_Running)
 	{
-		Update();
+		UpdateApp();
 	}
 }
 #endif
@@ -77,19 +77,24 @@ void pig::Application::Init()
 	m_Data.m_ImGuiLayer = std::make_shared<ImGuiLayer>();
 	PushOverlay(m_Data.m_ImGuiLayer);
 #endif
+	m_Data.m_InputLayer = std::make_shared<InputLayer>();
+	PushOverlay(m_Data.m_InputLayer);
 	m_Data.m_Initialized = true;
 }
 
-void pig::Application::Update()
+void pig::Application::UpdateApp()
 {
-	const Timestep deltaTime = m_Data.m_ClockFrameTime.Restart();
-	m_Data.m_LastFrameTime = deltaTime;
+	Update(m_Data.m_ClockFrameTime.Restart());
+}
 
+void pig::Application::Update(const Timestep& ts)
+{
+	m_Data.m_LastFrameTime = ts;
 	for (pig::S_Ptr<pig::Layer> layer : m_Data.m_LayerStack)
 		layer->Begin();
 
 	for (pig::S_Ptr<pig::Layer> layer : m_Data.m_LayerStack)
-		layer->OnUpdate(deltaTime);
+		layer->OnUpdate(ts);
 #ifndef TESTS_ENABLED
 	if (m_Data.m_ImGuiLayer->IsAttached())
 	{

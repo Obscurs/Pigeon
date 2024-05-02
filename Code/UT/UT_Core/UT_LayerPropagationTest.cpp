@@ -71,7 +71,7 @@ namespace CatchTestsetFail
 		pig::KeyPressedEvent eventSent1(eventKeyCode, eventRepeat);
 		const pig::LayerStack::Data& layerStackData = app.GetData().m_LayerStack.GetData();
 		CHECK(layerStackData.m_LayerInsertIndex == 0);
-		CHECK(layerStackData.m_Layers.size() == 0);
+		CHECK(layerStackData.m_Layers.size() == 1);
 		pig::S_Ptr<TestLayerEventPropagate> testLayerPropagate1 = std::make_shared<TestLayerEventPropagate>();
 		pig::S_Ptr<TestLayerEventPropagate> testLayerPropagate2 = std::make_shared < TestLayerEventPropagate>();
 		pig::S_Ptr<TestLayerEventNoPropagate> testLayerNoPropagate1 = std::make_shared < TestLayerEventNoPropagate>();
@@ -91,7 +91,7 @@ namespace CatchTestsetFail
 			app.PushLayer(testLayerPropagate1);
 
 			CHECK(layerStackData.m_LayerInsertIndex == 1);
-			CHECK(layerStackData.m_Layers.size() == 1);
+			CHECK(layerStackData.m_Layers.size() == 2);
 
 			CHECK(!testLayerPropagate1->m_ReceivedEvent);
 			CHECK(!testLayerPropagate2->m_ReceivedEvent);
@@ -101,21 +101,21 @@ namespace CatchTestsetFail
 			CHECK(testLayerPropagate1->m_ReceivedEvent);
 			CHECK(!testLayerPropagate2->m_ReceivedEvent);
 			CHECK(!testLayerNoPropagate1->m_ReceivedEvent);
-			app.TestUpdate();
+			app.TestUpdate(pig::Timestep(0));
 			CHECK(!testLayerPropagate1->m_ReceivedEvent);
 
 			SECTION("Two propagatorLayers")
 			{
 				app.PushLayer(testLayerPropagate2);
 				CHECK(layerStackData.m_LayerInsertIndex == 2);
-				CHECK(layerStackData.m_Layers.size() == 2);
+				CHECK(layerStackData.m_Layers.size() == 3);
 
 				appWindow.TESTING_TriggerEvent(&eventSent1);
 				CHECK(testLayerPropagate1->m_ReceivedEvent);
 				CHECK(testLayerPropagate2->m_ReceivedEvent);
 				CHECK(!testLayerNoPropagate1->m_ReceivedEvent);
 
-				app.TestUpdate();
+				app.TestUpdate(pig::Timestep(0));
 				CHECK(!testLayerPropagate1->m_ReceivedEvent);
 				CHECK(!testLayerPropagate2->m_ReceivedEvent);
 			}
@@ -128,14 +128,14 @@ namespace CatchTestsetFail
 				app.PushLayer(testLayerPropagate2);
 				app.PushLayer(testLayerNoPropagate1);
 				CHECK(layerStackData.m_LayerInsertIndex == 3);
-				CHECK(layerStackData.m_Layers.size() == 3);
+				CHECK(layerStackData.m_Layers.size() == 4);
 
 				appWindow.TESTING_TriggerEvent(&eventSent1);
 				CHECK(!testLayerPropagate1->m_ReceivedEvent);
 				CHECK(!testLayerPropagate2->m_ReceivedEvent);
 				CHECK(testLayerNoPropagate1->m_ReceivedEvent);
 
-				app.TestUpdate();
+				app.TestUpdate(pig::Timestep(0));
 				CHECK(!testLayerPropagate1->m_ReceivedEvent);
 				CHECK(!testLayerPropagate2->m_ReceivedEvent);
 				CHECK(!testLayerNoPropagate1->m_ReceivedEvent);
@@ -146,14 +146,14 @@ namespace CatchTestsetFail
 				app.PushLayer(testLayerPropagate1);
 				app.PushLayer(testLayerPropagate2);
 				CHECK(layerStackData.m_LayerInsertIndex == 3);
-				CHECK(layerStackData.m_Layers.size() == 3);
+				CHECK(layerStackData.m_Layers.size() == 4);
 
 				appWindow.TESTING_TriggerEvent(&eventSent1);
 				CHECK(testLayerPropagate1->m_ReceivedEvent);
 				CHECK(testLayerPropagate2->m_ReceivedEvent);
 				CHECK(testLayerNoPropagate1->m_ReceivedEvent);
 
-				app.TestUpdate();
+				app.TestUpdate(pig::Timestep(0));
 				CHECK(!testLayerPropagate1->m_ReceivedEvent);
 				CHECK(!testLayerPropagate2->m_ReceivedEvent);
 				CHECK(!testLayerNoPropagate1->m_ReceivedEvent);
@@ -164,14 +164,14 @@ namespace CatchTestsetFail
 				app.PushLayer(testLayerNoPropagate1);
 				app.PushLayer(testLayerPropagate2);
 				CHECK(layerStackData.m_LayerInsertIndex == 3);
-				CHECK(layerStackData.m_Layers.size() == 3);
+				CHECK(layerStackData.m_Layers.size() == 4);
 
 				appWindow.TESTING_TriggerEvent(&eventSent1);
 				CHECK(!testLayerPropagate1->m_ReceivedEvent);
 				CHECK(testLayerPropagate2->m_ReceivedEvent);
 				CHECK(testLayerNoPropagate1->m_ReceivedEvent);
 
-				app.TestUpdate();
+				app.TestUpdate(pig::Timestep(0));
 				CHECK(!testLayerPropagate1->m_ReceivedEvent);
 				CHECK(!testLayerPropagate2->m_ReceivedEvent);
 				CHECK(!testLayerNoPropagate1->m_ReceivedEvent);

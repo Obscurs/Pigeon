@@ -2,7 +2,7 @@
 #include "TestingInput.h"
 
 #ifdef TESTS_ENABLED
-pig::S_Ptr<pig::Input> pig::Input::s_Instance = std::make_shared<pig::TestingInput>();
+pig::S_Ptr<pig::PlatformInput> pig::PlatformInput::s_Instance = std::make_shared<pig::TestingInput>();
 #endif
 
 bool pig::TestingInput::IsKeyPressedImpl(int keycode)
@@ -38,4 +38,14 @@ float pig::TestingInput::GetMouseXImpl()
 float pig::TestingInput::GetMouseYImpl()
 {
 	return TESTING_MousePos.second;
+}
+
+unsigned char pig::TestingInput::GetKeyCodeImpl(unsigned char keyCode)
+{
+	return keyCode;
+}
+
+unsigned char pig::TestingInput::GetMouseButtonCodeImpl(unsigned char keyCode)
+{
+	return keyCode;
 }

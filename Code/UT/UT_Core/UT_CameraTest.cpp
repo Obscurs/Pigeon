@@ -7,12 +7,14 @@
 
 #include "Utils/TestApp.h"
 
+#include <Pigeon/Core/InputLayer.h>
 #include <Pigeon/Core/KeyCodes.h>
+
 #include <Pigeon/Renderer/OrthographicCamera.h>
 #include <Pigeon/Renderer/Renderer2D.h>
 #include <Pigeon/Renderer/Texture.h>
 
-#include <Platform/Testing/TestingInput.h>
+#include <Platform/Testing/TestingWindow.h>
 
 #define FLOAT_EQ(x, y) (std::fabs((x) - (y)) < 1e-6)
 
@@ -79,13 +81,14 @@ namespace CatchTestsetFail
 	TEST_CASE("Core.Camera::OrthographicCameraController")
 	{
 		pig::Application& app = pig::CreateApplication();
+		pig::TestingWindow& appWindow = static_cast<pig::TestingWindow&>(app.GetWindow());
 		const pig::Timestep timestep(5);
 		SECTION("Keyboard events")
 		{
 			pig::OrthographicCameraController cameraController(0.5f);
 			const glm::vec3& camPos = cameraController.GetData().m_CameraPosition;
 
-			pig::TestingInput& appInput = static_cast<pig::TestingInput&>(pig::Input::GetInput());
+			pig::Input& appInput = static_cast<pig::Input&>(pig::Input::GetInput());
 
 			CHECK(camPos.x == 0.f);
 			CHECK(camPos.y == 0.f);
@@ -95,7 +98,9 @@ namespace CatchTestsetFail
 			{
 				SECTION("Moving left")
 				{
-					appInput.TESTING_KeysPressed.push_back(PG_KEY_A);
+					pig::KeyPressedEvent pressEvent(PG_KEY_A, 0);
+					appWindow.TESTING_TriggerEvent(&pressEvent);
+					app.TestUpdate(timestep);
 					cameraController.OnUpdate(timestep);
 					CHECK(camPos.x < 0.f);
 					CHECK(camPos.y == 0.f);
@@ -103,7 +108,9 @@ namespace CatchTestsetFail
 				}
 				SECTION("Moving right")
 				{
-					appInput.TESTING_KeysPressed.push_back(PG_KEY_D);
+					pig::KeyPressedEvent pressEvent(PG_KEY_D, 0);
+					appWindow.TESTING_TriggerEvent(&pressEvent);
+					app.TestUpdate(timestep);
 					cameraController.OnUpdate(timestep);
 					CHECK(camPos.x > 0.f);
 					CHECK(camPos.y == 0.f);
@@ -111,7 +118,9 @@ namespace CatchTestsetFail
 				}
 				SECTION("Moving up")
 				{
-					appInput.TESTING_KeysPressed.push_back(PG_KEY_W);
+					pig::KeyPressedEvent pressEvent(PG_KEY_W, 0);
+					appWindow.TESTING_TriggerEvent(&pressEvent);
+					app.TestUpdate(timestep);
 					cameraController.OnUpdate(timestep);
 					CHECK(camPos.x == 0.f);
 					CHECK(camPos.y > 0.f);
@@ -119,7 +128,9 @@ namespace CatchTestsetFail
 				}
 				SECTION("Moving down")
 				{
-					appInput.TESTING_KeysPressed.push_back(PG_KEY_S);
+					pig::KeyPressedEvent pressEvent(PG_KEY_S, 0);
+					appWindow.TESTING_TriggerEvent(&pressEvent);
+					app.TestUpdate(timestep);
 					cameraController.OnUpdate(timestep);
 					CHECK(camPos.x == 0.f);
 					CHECK(camPos.y < 0.f);
@@ -127,8 +138,11 @@ namespace CatchTestsetFail
 				}
 				SECTION("Moving up and left")
 				{
-					appInput.TESTING_KeysPressed.push_back(PG_KEY_A);
-					appInput.TESTING_KeysPressed.push_back(PG_KEY_W);
+					pig::KeyPressedEvent pressEvent1(PG_KEY_A, 0);
+					pig::KeyPressedEvent pressEvent2(PG_KEY_W, 0);
+					appWindow.TESTING_TriggerEvent(&pressEvent1);
+					appWindow.TESTING_TriggerEvent(&pressEvent2);
+					app.TestUpdate(timestep);
 					cameraController.OnUpdate(timestep);
 					CHECK(camPos.x < 0.f);
 					CHECK(camPos.y > 0.f);
@@ -136,14 +150,16 @@ namespace CatchTestsetFail
 				}
 				SECTION("Moving down and right")
 				{
-					appInput.TESTING_KeysPressed.push_back(PG_KEY_D);
-					appInput.TESTING_KeysPressed.push_back(PG_KEY_S);
+					pig::KeyPressedEvent pressEvent1(PG_KEY_D, 0);
+					pig::KeyPressedEvent pressEvent2(PG_KEY_S, 0);
+					appWindow.TESTING_TriggerEvent(&pressEvent1);
+					appWindow.TESTING_TriggerEvent(&pressEvent2);
+					app.TestUpdate(timestep);
 					cameraController.OnUpdate(timestep);
 					CHECK(camPos.x > 0.f);
 					CHECK(camPos.y < 0.f);
 					CHECK(camPos.z == 0.f);
 				}
-				appInput.TESTING_KeysPressed.clear();
 			}
 		}
 		SECTION("Mouse events")
