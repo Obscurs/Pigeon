@@ -105,7 +105,6 @@ include_directories (
     "${PROJECT_SOURCE_DIR}/Code/PigeonLib"
 )
 
-
 # Set Properties->General->Configuration Type to Application(.exe)
 # Creates app.exe with the listed sources (main.cxx)
 # Adds sources to the Solution Explorer
@@ -140,6 +139,7 @@ target_link_libraries (
     imgui
     spdlog
     glm
+    msdf-atlas-gen
 )
 
 target_include_directories(PigeonLib PUBLIC ${ENTT_INCLUDE_DIRS})

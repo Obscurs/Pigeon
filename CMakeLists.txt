@@ -30,7 +30,11 @@ FetchContent_Declare(
   GIT_TAG        v2.13.9
 )
 
-FetchContent_MakeAvailable(glm spdlog Catch2)
+FetchContent_Declare(
+  msdf-atlas-gen
+  GIT_REPOSITORY https://github.com/Obscurs/msdf-atlas-gen
+  GIT_TAG        main
+)
 
 FetchContent_GetProperties(imgui)
 if(NOT imgui_POPULATED)
@@ -54,6 +58,8 @@ if(NOT entt_POPULATED)
   FetchContent_Populate(entt)
   set(ENTT_INCLUDE_DIRS "${entt_SOURCE_DIR}/src")
 endif()
+
+FetchContent_MakeAvailable(glm spdlog Catch2 msdf-atlas-gen)
 
 # Turn on the ability to create folders to organize projects (.vcproj)
 # It creates "CMakePredefinedTargets" folder by default and adds CMake
@@ -80,6 +86,7 @@ message ("cxx Flags: " ${CMAKE_CXX_FLAGS})
 add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 
 # Sub-directories where more CMakeLists.txt exist
+
 add_subdirectory(Code/PigeonLib)
 add_subdirectory(Code/SandboxApp)
 add_subdirectory(Code/UT)

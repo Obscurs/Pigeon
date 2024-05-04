@@ -37,6 +37,7 @@ target_link_libraries (
     SandboxApp PRIVATE PigeonLib
     spdlog
     glm
+    msdf-atlas-gen
 )
 
 # Creates a folder "executables" and adds target 
