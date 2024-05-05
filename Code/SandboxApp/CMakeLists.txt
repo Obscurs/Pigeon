@@ -23,7 +23,9 @@ set_property(TARGET SandboxApp PROPERTY EXCLUDE_FROM_DEFAULT_BUILD_TESTING ON)
 
 # Properties->Linker->Input->Additional Dependencies
 
-add_dependencies(SandboxApp PigeonLib) 
+add_dependencies(SandboxApp 
+    PigeonLib
+) 
 
 if(WIN32)
     target_compile_definitions(SandboxApp PRIVATE PG_PLATFORM_WINDOWS)
@@ -37,7 +39,6 @@ target_link_libraries (
     SandboxApp PRIVATE PigeonLib
     spdlog
     glm
-    msdf-atlas-gen
 )
 
 # Creates a folder "executables" and adds target 

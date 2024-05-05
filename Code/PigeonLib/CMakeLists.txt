@@ -4,16 +4,17 @@ file(GLOB ROOT
 
 file(GLOB PGCORE
     "Pigeon/Core/Application.cpp"
-    "Pigeon/Core/Core.h"
-    "Pigeon/Core/Clock.h"
-    "Pigeon/Core/Input.h"
-    "Pigeon/Core/EntryPoint.h"
+    "Pigeon/Core/Font.cpp"
     "Pigeon/Core/InputLayer.cpp"
-    "Pigeon/Core/KeyCodes.h"
     "Pigeon/Core/Layer.cpp"
     "Pigeon/Core/LayerStack.cpp"
     "Pigeon/Core/Log.cpp"
     "Pigeon/Core/OrthographicCameraController.cpp"
+    "Pigeon/Core/Core.h"
+    "Pigeon/Core/Clock.h"
+    "Pigeon/Core/Input.h"
+    "Pigeon/Core/EntryPoint.h"
+    "Pigeon/Core/KeyCodes.h"
     "Pigeon/Core/Timestep.h"
     "Pigeon/Core/Window.h"
 )
@@ -139,10 +140,14 @@ target_link_libraries (
     imgui
     spdlog
     glm
+    msdfgen
     msdf-atlas-gen
 )
 
-target_include_directories(PigeonLib PUBLIC ${ENTT_INCLUDE_DIRS})
+target_include_directories(PigeonLib PUBLIC 
+    ${ENTT_INCLUDE_DIRS}
+    ${MSDFGEN_INCLUDE_DIRS}
+)
 
 # Properties->General->Output Directory
 set_target_properties(PigeonLib PROPERTIES
