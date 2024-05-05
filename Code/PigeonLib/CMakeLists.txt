@@ -4,7 +4,6 @@ file(GLOB ROOT
 
 file(GLOB PGCORE
     "Pigeon/Core/Application.cpp"
-    "Pigeon/Core/Font.cpp"
     "Pigeon/Core/InputLayer.cpp"
     "Pigeon/Core/Layer.cpp"
     "Pigeon/Core/LayerStack.cpp"
@@ -25,6 +24,7 @@ file(GLOB PGIMGUI
 
 file(GLOB RENDERER
     "Pigeon/Renderer/Buffer.cpp"
+    "Pigeon/Renderer/Font.cpp"
     "Pigeon/Renderer/GraphicsContext.cpp"
     "Pigeon/Renderer/OrthographicCamera.cpp"
     "Pigeon/Renderer/RenderCommand.cpp"
@@ -34,6 +34,7 @@ file(GLOB RENDERER
     "Pigeon/Renderer/Shader.cpp"
     "Pigeon/Renderer/Sprite.cpp"
     "Pigeon/Renderer/Texture.cpp"
+    "Pigeon/Renderer/MSDFData.h"
 )
 
 file(GLOB ECS_WORLD

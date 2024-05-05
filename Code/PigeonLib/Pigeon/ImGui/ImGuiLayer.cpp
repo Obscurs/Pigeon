@@ -35,6 +35,10 @@ void pig::ImGuiLayer::OnAttach()
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
 	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
 
+	const float fontSize = 18.0f;// *2.0f;
+	io.Fonts->AddFontFromFileTTF("Assets/Fonts/opensans/OpenSans-Bold.ttf", fontSize);
+	io.FontDefault = io.Fonts->AddFontFromFileTTF("Assets/Fonts/opensans/OpenSans-Regular.ttf", fontSize);
+
 	// Setup Dear ImGui style
 	ImGui::StyleColorsDark();
 

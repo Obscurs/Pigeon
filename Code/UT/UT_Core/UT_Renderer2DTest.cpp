@@ -81,7 +81,7 @@ namespace CatchTestsetFail
 			glm::vec2 offsetNormalized(offset.x / textureWidth, offset.y / textureHeight);
 			glm::vec2 sizeNormalized(spriteSize.x / textureWidth, spriteSize.y / textureHeight);
 
-			const pig::Texture2D* texture = pig::Renderer2D::GetTexture(textureName);
+			const pig::S_Ptr<pig::Texture2D> texture = pig::Renderer2D::GetTexture(textureName);
 			glm::vec4 texCoordsRect = texture->GetTexCoordsRect(offset, spriteSize);
 			
 			pig::Sprite sprite(pos, scale, texCoordsRect, textureName);
@@ -146,7 +146,7 @@ namespace CatchTestsetFail
 			glm::vec2 offsetNormalized(offset.x / textureWidth, offset.y / textureHeight);
 			glm::vec2 sizeNormalized(spriteSize.x / textureWidth, spriteSize.y / textureHeight);
 
-			const pig::Texture2D* texture = pig::Renderer2D::GetTexture(textureName);
+			const pig::S_Ptr<pig::Texture2D> texture = pig::Renderer2D::GetTexture(textureName);
 			glm::vec4 texCoordsRect = glm::vec4(spriteSize, offset);
 			pig::Sprite textSprite(pos, scale, texCoordsRect, textureName);
 			const pig::Sprite::Data& spriteData = textSprite.GetData();
@@ -258,9 +258,9 @@ namespace CatchTestsetFail
 		pig::TestingTexture2D::s_ExpectedHeight = 64;
 		pig::Renderer2D::AddTexture(texWidht, texHeight, texChannels, texData.data(), "SampleTexture3");
 
-		const pig::Texture2D* tex1 = pig::Renderer2D::GetTexture("SampleTexture1");
-		const pig::Texture2D* tex2 = pig::Renderer2D::GetTexture("SampleTexture2");
-		const pig::Texture2D* tex3 = pig::Renderer2D::GetTexture("SampleTexture3");
+		const pig::S_Ptr<pig::Texture2D> tex1 = pig::Renderer2D::GetTexture("SampleTexture1");
+		const pig::S_Ptr<pig::Texture2D> tex2 = pig::Renderer2D::GetTexture("SampleTexture2");
+		const pig::S_Ptr<pig::Texture2D> tex3 = pig::Renderer2D::GetTexture("SampleTexture3");
 		REQUIRE(tex1);
 		CHECK(tex1->GetWidth() == 1024);
 		CHECK(tex1->GetHeight() == 1024);
@@ -291,6 +291,7 @@ namespace CatchTestsetFail
 
 		SECTION("Multiple textures")
 		{
+			//TODO Arnau test text batchmap as well
 			REQUIRE(data.m_BatchMap.find("") != data.m_BatchMap.end());
 			REQUIRE(data.m_BatchMap.find("SampleTexture1") != data.m_BatchMap.end());
 			REQUIRE(data.m_BatchMap.find("SampleTexture2") != data.m_BatchMap.end());

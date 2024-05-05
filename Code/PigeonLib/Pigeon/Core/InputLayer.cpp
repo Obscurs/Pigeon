@@ -20,7 +20,8 @@ bool pig::InputLayer::OnEvent(const pig::Event& e)
 {
 	pig::EventDispatcher::Dispatch<pig::KeyPressedEvent>(e, pig::BindEventFn<&pig::InputLayer::AppendKeyEvent, pig::InputLayer>(this));
 	pig::EventDispatcher::Dispatch<pig::KeyReleasedEvent>(e, pig::BindEventFn<&pig::InputLayer::AppendKeyEvent, pig::InputLayer>(this));
-	pig::EventDispatcher::Dispatch<pig::KeyTypedEvent>(e, pig::BindEventFn<&pig::InputLayer::AppendKeyEvent, pig::InputLayer>(this));
+	//TODO Arnau: typed key codes are incomplete, we do not have codes for both up-down case
+	//pig::EventDispatcher::Dispatch<pig::KeyTypedEvent>(e, pig::BindEventFn<&pig::InputLayer::AppendKeyEvent, pig::InputLayer>(this));
 	pig::EventDispatcher::Dispatch<pig::MouseMovedEvent>(e, pig::BindEventFn<&pig::InputLayer::AppendMouseMoveEvent, pig::InputLayer>(this));
 	pig::EventDispatcher::Dispatch<pig::MouseButtonPressedEvent>(e, pig::BindEventFn<&pig::InputLayer::AppendMouseButtonEvent, pig::InputLayer>(this));
 	pig::EventDispatcher::Dispatch<pig::MouseButtonReleasedEvent>(e, pig::BindEventFn<&pig::InputLayer::AppendMouseButtonEvent, pig::InputLayer>(this));

@@ -8,7 +8,6 @@
 #include "Pigeon/ImGui/ImGuiLayer.h"
 #include "Pigeon/Renderer/Renderer.h"
 #include "Pigeon/Renderer/Renderer2D.h"
-
 #include <chrono>
 
 pig::U_Ptr<pig::Application> pig::Application::s_Instance = nullptr;
@@ -73,6 +72,7 @@ void pig::Application::Init()
 	m_Data.m_Window->SetEventCallback(pig::BindEventFn<&Application::OnEvent, Application>(this));
 	pig::Renderer::Init();
 	pig::Renderer2D::Init();
+
 #ifndef TESTS_ENABLED
 	m_Data.m_ImGuiLayer = std::make_shared<ImGuiLayer>();
 	PushOverlay(m_Data.m_ImGuiLayer);

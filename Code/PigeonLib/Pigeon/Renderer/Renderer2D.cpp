@@ -2,6 +2,9 @@
 
 #include "Renderer2D.h"
 
+#include "Pigeon/Renderer/Font.h"
+#include "Pigeon/Renderer/Msdfdata.h"
+
 pig::Renderer2D::Data pig::Renderer2D::s_Data;
 
 namespace
@@ -71,7 +74,8 @@ void pig::Renderer2D::Init()
 
 	std::vector<unsigned char> data(2 * 2 * 4, 255);
 	s_Data.m_TextureMap[""] = std::move(pig::Texture2D::Create(2, 2, 4, data.data()));
-	s_Data.m_Shader = std::move(pig::Shader::Create("Assets/Shaders/Renderer2DShader.shader"));
+	s_Data.m_QuadShader = std::move(pig::Shader::Create("Assets/Shaders/Renderer2DQuad.shader"));
+	s_Data.m_TextShader = std::move(pig::Shader::Create("Assets/Shaders/Renderer2DText.shader"));
 }
 
 void pig::Renderer2D::Clear(const glm::vec4& color)
@@ -89,11 +93,11 @@ void pig::Renderer2D::BeginScene(const pig::OrthographicCameraController& camera
 	s_Data.m_VertexBuffer->Bind();
 	s_Data.m_IndexBuffer->Bind();
 	s_Data.m_TextureMap[""]->Bind(0);
-	s_Data.m_Shader->Bind();
+	s_Data.m_QuadShader->Bind();
 
 	const OrthographicCamera& ortoCamera = s_Data.m_Camera->GetCamera();
 	glm::mat4 viewProjMat = ortoCamera.GetViewProjectionMatrix();
-	s_Data.m_Shader->UploadUniformMat4("u_ViewProjection", viewProjMat);
+	s_Data.m_QuadShader->UploadUniformMat4("u_ViewProjection", viewProjMat);
 }
 
 void pig::Renderer2D::EndScene()
@@ -106,10 +110,19 @@ void pig::Renderer2D::EndScene()
 	s_Data.m_Camera = nullptr;
 }
 
-const pig::Texture2D* pig::Renderer2D::GetTexture(const std::string& handle)
+const pig::S_Ptr<pig::Texture2D> pig::Renderer2D::GetTexture(const std::string& handle)
 {
 	const auto it = s_Data.m_TextureMap.find(handle);
-	return it != s_Data.m_TextureMap.end() ? it->second.get() : nullptr;
+	if (it != s_Data.m_TextureMap.end())
+	{
+		return it->second;
+	}
+	else
+	{
+		//TODO Arnau: ensure default texture exists as well, maybe create some kind of null texture to return in this cases
+		PG_CORE_ASSERT(false, "Texture not found returning default one");
+		return s_Data.m_TextureMap[""];
+	}
 }
 
 void pig::Renderer2D::AddTexture(const std::string& path, const std::string& handle)
@@ -146,10 +159,98 @@ void pig::Renderer2D::DrawSprite(const pig::Sprite& sprite)
 	DrawQuad(sprite.GetPosition(), glm::vec3(sprite.GetScale(), 1.0f), glm::vec3(1.f), sprite.GetTextureID(), sprite.GetTexCoordsRect());
 }
 
+//TODO Arnau: UT
+void pig::Renderer2D::DrawString(const std::string& string, pig::S_Ptr<pig::Font> font, const glm::mat4& transform, const glm::vec4& color, float kerning, float linespacing)
+{
+	const auto& fontGeometry = font->GetMSDFData()->FontGeometry;
+	const auto& metrics = fontGeometry.getMetrics();
+	pig::S_Ptr<Texture2D> fontAtlas = GetTexture(font->GetFontID());
+
+	double x = 0.0;
+	double fsScale = 1.0 / (metrics.ascenderY - metrics.descenderY);
+	double y = 0.0;
+
+	const float spaceGlyphAdvance = fontGeometry.getGlyph(' ')->getAdvance();
+
+	for (size_t i = 0; i < string.size(); i++)
+	{
+		char character = string[i];
+		if (character == '\r')
+			continue;
+
+		if (character == '\n')
+		{
+			x = 0;
+			y -= fsScale * metrics.lineHeight + linespacing;
+			continue;
+		}
+
+		if (character == ' ')
+		{
+			float advance = spaceGlyphAdvance;
+			if (i < string.size() - 1)
+			{
+				char nextCharacter = string[i + 1];
+				double dAdvance;
+				fontGeometry.getAdvance(dAdvance, character, nextCharacter);
+				advance = (float)dAdvance;
+			}
+
+			x += fsScale * advance + kerning;
+			continue;
+		}
+
+		if (character == '\t')
+		{
+			x += 4.0f * (fsScale * spaceGlyphAdvance + kerning);
+			continue;
+		}
+
+		auto glyph = fontGeometry.getGlyph(character);
+		if (!glyph)
+			glyph = fontGeometry.getGlyph('?');
+		if (!glyph)
+			return;
+
+		double al, ab, ar, at;
+		glyph->getQuadAtlasBounds(al, ab, ar, at);
+		glm::vec2 texCoordMin((float)al, (float)ab);
+		glm::vec2 texCoordMax((float)ar, (float)at);
+
+		double pl, pb, pr, pt;
+		glyph->getQuadPlaneBounds(pl, pb, pr, pt);
+		glm::vec2 quadMin((float)pl, (float)pb);
+		glm::vec2 quadMax((float)pr, (float)pt);
+
+		quadMin *= fsScale, quadMax *= fsScale;
+		quadMin += glm::vec2(x, y);
+		quadMax += glm::vec2(x, y);
+
+		float texelWidth = 1.0f / fontAtlas->GetWidth();
+		float texelHeight = 1.0f / fontAtlas->GetHeight();
+		texCoordMin *= glm::vec2(texelWidth, texelHeight);
+		texCoordMax *= glm::vec2(texelWidth, texelHeight);
+
+		//TODO Arnau: transform charater to the proper position instead of mid
+		const glm::vec2 sizequad((quadMax.x - quadMin.x), (quadMax.y - quadMin.y));
+		const glm::vec2 midPoint(sizequad.x / 2.f + quadMin.x, sizequad.y / 2.f + quadMin.y);
+		glm::vec3 position = transform * glm::vec4(midPoint, 0.0f, 1.0f);
+		DrawTextQuad(position, glm::vec3(sizequad, 1.0f), color, font->GetFontID(), glm::vec4(texCoordMin, texCoordMax));
+
+		if (i < string.size() - 1)
+		{
+			double advance = glyph->getAdvance();
+			char nextCharacter = string[i + 1];
+			fontGeometry.getAdvance(advance, character, nextCharacter);
+
+			x += fsScale * advance + kerning;
+		}
+	}
+}
+
 void pig::Renderer2D::DrawTextSprite(const pig::Sprite& sprite, const std::string& text, const glm::vec3& col)
 {
-	const pig::Texture2D* texture = pig::Renderer2D::GetTexture(sprite.GetTextureID());
-	PG_CORE_ASSERT(texture, "Text texture is missing");
+	const pig::S_Ptr<pig::Texture2D> texture = pig::Renderer2D::GetTexture(sprite.GetTextureID());
 	
 	float charWidth = sprite.GetTexCoordsRect().x;
 	float charHeight = sprite.GetTexCoordsRect().y;
@@ -270,7 +371,38 @@ void pig::Renderer2D::DrawQuad(const glm::vec3& pos, const glm::vec3& scale, con
 		if (texBatch.m_IndexCount == BATCH_MAX_COUNT * QUAD_INDEX_COUNT)
 		{
 			Flush();
-			DrawQuad(pos, scale, handle);
+			DrawQuad(pos, scale, col, handle, texRect);
+		}
+		else
+		{
+			QuadData quad(pos, scale, glm::vec4(col, 1.f), texBatch.m_VertexCount, 0, texRect);
+			const unsigned int vertexBufferOffset = texBatch.m_VertexCount * VERTEX_ATRIB_COUNT;
+			const unsigned int indexBufferOffset = texBatch.m_IndexCount;
+
+			memcpy(&texBatch.m_VertexBuffer[vertexBufferOffset], quad.m_SquareVertices, VERTEX_STRIDE);
+			memcpy(&texBatch.m_IndexBuffer[indexBufferOffset], quad.m_SquareIndices, INDEX_STRIDE);
+
+			texBatch.m_IndexCount += 6;
+			texBatch.m_VertexCount += 4;
+		}
+	}
+	else
+	{
+		PG_CORE_ASSERT(false, "Texture %s not fount in renderer2d batch map", handle.c_str());
+	}
+}
+
+//TODO Arnau: duplicated code try to use the same as the DrawQuad
+void pig::Renderer2D::DrawTextQuad(const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& col, const std::string& handle, glm::vec4 texRect)
+{
+	if (s_Data.m_TextureMap.find(handle) != s_Data.m_TextureMap.end())
+	{
+		pig::Renderer2D::Data::BatchData& texBatch = s_Data.m_TextBatchMap[handle];
+
+		if (texBatch.m_IndexCount == BATCH_MAX_COUNT * QUAD_INDEX_COUNT)
+		{
+			Flush();
+			DrawTextQuad(pos, scale, col, handle, texRect);
 		}
 		else
 		{
@@ -293,6 +425,7 @@ void pig::Renderer2D::DrawQuad(const glm::vec3& pos, const glm::vec3& scale, con
 
 void pig::Renderer2D::Flush()
 {
+	s_Data.m_QuadShader->Bind();
 	for (auto& batch : s_Data.m_BatchMap)
 	{
 		auto& tex = s_Data.m_TextureMap.find(batch.first);
@@ -306,6 +439,21 @@ void pig::Renderer2D::Flush()
 		pig::Renderer2D::Submit(batch.second.m_IndexCount);
 	}
 	s_Data.m_BatchMap.clear();
+
+	s_Data.m_TextShader->Bind();
+	for (auto& batch : s_Data.m_TextBatchMap)
+	{
+		auto& tex = s_Data.m_TextureMap.find(batch.first);
+		PG_CORE_ASSERT(tex != s_Data.m_TextureMap.end(), "unable to bind texture, texture not found");
+		if (tex != s_Data.m_TextureMap.end())
+		{
+			tex->second->Bind(0);
+		}
+		s_Data.m_VertexBuffer->SetVertices(batch.second.m_VertexBuffer, batch.second.m_VertexCount, 0);
+		s_Data.m_IndexBuffer->SetIndices(batch.second.m_IndexBuffer, batch.second.m_IndexCount, 0);
+		pig::Renderer2D::Submit(batch.second.m_IndexCount);
+	}
+	s_Data.m_TextBatchMap.clear();
 }
 
 void pig::Renderer2D::Submit(unsigned int count)
@@ -316,5 +464,6 @@ void pig::Renderer2D::Submit(unsigned int count)
 void pig::Renderer2D::Destroy()
 {
 	s_Data.m_BatchMap.clear();
+	s_Data.m_TextBatchMap.clear();
 	s_Data.m_TextureMap.clear();
 }

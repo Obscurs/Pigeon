@@ -3,9 +3,11 @@
 
 #include <imgui.h>
 
-#include <Pigeon/Events/ApplicationEvent.h>
-#include <Pigeon/Events/MouseEvent.h>
-#include <Pigeon/Events/KeyEvent.h>
+#include "Pigeon/Events/ApplicationEvent.h"
+#include "Pigeon/Events/MouseEvent.h"
+#include "Pigeon/Events/KeyEvent.h"
+
+#include "Platform/Windows/WindowsInputKeyCodeMapping.h"
 
 // Forward declare message handler from imgui_impl_win32.cpp
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -205,37 +207,37 @@ void pig::WindowsWindow::ProcessMouseButtonEvent(UINT msg)
 	{
 	case WM_LBUTTONDOWN:
 	{
-		pig::MouseButtonPressedEvent event(0);
+		pig::MouseButtonPressedEvent event(WIN_PG_MOUSE_BUTTON_LEFT);
 		m_Data.EventCallback(event);
 		break;
 	}
 	case WM_RBUTTONDOWN:
 	{
-		pig::MouseButtonPressedEvent event(1);
+		pig::MouseButtonPressedEvent event(WIN_PG_MOUSE_BUTTON_RIGHT);
 		m_Data.EventCallback(event);
 		break;
 	}
 	case WM_MBUTTONDOWN:
 	{
-		pig::MouseButtonPressedEvent event(2);
+		pig::MouseButtonPressedEvent event(WIN_PG_MOUSE_BUTTON_MIDDLE);
 		m_Data.EventCallback(event);
 		break;
 	}
 	case WM_LBUTTONUP:
 	{
-		pig::MouseButtonReleasedEvent event(0);
+		pig::MouseButtonReleasedEvent event(WIN_PG_MOUSE_BUTTON_LEFT);
 		m_Data.EventCallback(event);
 		break;
 	}
 	case WM_RBUTTONUP:
 	{
-		pig::MouseButtonReleasedEvent event(1);
+		pig::MouseButtonReleasedEvent event(WIN_PG_MOUSE_BUTTON_RIGHT);
 		m_Data.EventCallback(event);
 		break;
 	}
 	case WM_MBUTTONUP:
 	{
-		pig::MouseButtonReleasedEvent event(2);
+		pig::MouseButtonReleasedEvent event(WIN_PG_MOUSE_BUTTON_MIDDLE);
 		m_Data.EventCallback(event);
 		break;
 	}
