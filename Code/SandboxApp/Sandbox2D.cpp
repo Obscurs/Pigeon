@@ -45,9 +45,6 @@ void sbx::Sandbox2D::OnUpdate(const pig::Timestep& ts)
 	pig::Renderer2D::DrawSprite(sprite);
 
 	std::string textString("This is a fucking text\nEven with multiple lines");
-	//const pig::S_Ptr<pig::Texture2D> textureText = pig::Renderer2D::GetTexture("Text");
-	//pig::Sprite spriteText(m_PosText, glm::vec3(0.05f, 0.05f, 1.f), glm::vec4(7.f, 7.f, 0.f, -0.3f), "Text");
-	//pig::Renderer2D::DrawTextSprite(spriteText, textString, m_ColorText);
 
 	glm::mat4 stringTransform = glm::mat4(1.0f); // Identity matrix
 	stringTransform = glm::translate(stringTransform, m_PosText); // Apply translation
@@ -69,14 +66,12 @@ void sbx::Sandbox2D::OnUpdate(const pig::Timestep& ts)
 		std::fmodf(elapsed.AsSeconds()*2.f, 1.f),
 		std::fmodf(elapsed.AsSeconds()*4.f, 1.f),
 	};
-	const pig::Sprite spriteTextClock
-	{
-		{ -0.7f, 0.7f, 0.f },
-		{ 0.2f, 0.2f },
-		{ 7.f, 7.f, 0.f, -0.3f },
-		"Text"
-	};
-	pig::Renderer2D::DrawTextSprite(spriteTextClock, timeString, timeTextColor);
+
+	glm::mat4 stringClockTransform = glm::mat4(1.0f); // Identity matrix
+	stringClockTransform = glm::translate(stringClockTransform, glm::vec3(-0.7f, 0.7f, 0.f)); // Apply translation
+	stringClockTransform = glm::scale(stringClockTransform, glm::vec3(0.3f, 0.3f, 1.0f)); // Apply scaling
+
+	pig::Renderer2D::DrawString(timeString, pig::Font::GetDefault(), stringClockTransform, glm::vec4(timeTextColor, 1.f), 1.0f, 1.0f);
 
 	pig::Renderer2D::EndScene();
 }

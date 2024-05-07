@@ -81,9 +81,6 @@ namespace pig
 
 		static void DrawString(const std::string& string, pig::S_Ptr<pig::Font> font, const glm::mat4& transform, const glm::vec4& color, float kerning, float linespacing);
 
-		//TODO Arnau: Remove this
-		static void DrawTextSprite(const pig::Sprite& sprite, const std::string& text, const glm::vec3& col);
-
 #ifdef TESTS_ENABLED
 		static const Data& GetData() { return s_Data; }
 #endif
