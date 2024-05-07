@@ -29,7 +29,8 @@ namespace CatchTestsetFail
 		{
 			const pig::Renderer2D::Data& data = pig::Renderer2D::GetData();
 			CHECK(!data.m_Camera);
-			CHECK(data.m_Shader);
+			CHECK(data.m_QuadShader);
+			CHECK(data.m_TextShader);
 			CHECK(data.m_VertexBuffer);
 			CHECK(data.m_IndexBuffer);
 			CHECK(data.m_TextureMap.size() == 1);
@@ -53,7 +54,7 @@ namespace CatchTestsetFail
 		}
 		SECTION("Draw textured quad")
 		{
-			pig::Renderer2D::AddTexture("Assets/Test/SampleTexture.png", "SampleTexture");
+			pig::Renderer2D::AddTexture("Assets/Test/SampleTexture.png", "SampleTexture", pig::EMappedTextureType::eQuad);
 
 			pig::Renderer2D::BeginScene(cameraController);
 
@@ -71,7 +72,7 @@ namespace CatchTestsetFail
 			const int textureWidth = 1024;
 			pig::TestingTexture2D::s_ExpectedWidth = textureWidth;
 			pig::TestingTexture2D::s_ExpectedHeight = textureHeight;
-			pig::Renderer2D::AddTexture("Assets/Test/SampleTexture.png", textureName);
+			pig::Renderer2D::AddTexture("Assets/Test/SampleTexture.png", textureName, pig::EMappedTextureType::eQuad);
 
 			const glm::vec3 pos(4.f, 5.f, 6.f);
 			const glm::vec2 scale(1.f, 2.f);
@@ -157,13 +158,13 @@ namespace CatchTestsetFail
 		CHECK(data.m_TextureMap.size() == 1);
 		pig::TestingTexture2D::s_ExpectedWidth = 1024;
 		pig::TestingTexture2D::s_ExpectedHeight = 1024;
-		pig::Renderer2D::AddTexture("Assets/Test/SampleTexture.png", "SampleTexture1");
+		pig::Renderer2D::AddTexture("Assets/Test/SampleTexture.png", "SampleTexture1", pig::EMappedTextureType::eQuad);
 		pig::TestingTexture2D::s_ExpectedWidth = 980;
 		pig::TestingTexture2D::s_ExpectedHeight = 725;
-		pig::Renderer2D::AddTexture("Assets/Test/SampleTexture2.png", "SampleTexture2");
+		pig::Renderer2D::AddTexture("Assets/Test/SampleTexture2.png", "SampleTexture2", pig::EMappedTextureType::eQuad);
 		pig::TestingTexture2D::s_ExpectedWidth = 128;
 		pig::TestingTexture2D::s_ExpectedHeight = 64;
-		pig::Renderer2D::AddTexture(texWidht, texHeight, texChannels, texData.data(), "SampleTexture3");
+		pig::Renderer2D::AddTexture(texWidht, texHeight, texChannels, texData.data(), "SampleTexture3", pig::EMappedTextureType::eQuad);
 
 		const pig::S_Ptr<pig::Texture2D> tex1 = pig::Renderer2D::GetTexture("SampleTexture1");
 		const pig::S_Ptr<pig::Texture2D> tex2 = pig::Renderer2D::GetTexture("SampleTexture2");
@@ -179,7 +180,9 @@ namespace CatchTestsetFail
 		CHECK(tex3->GetHeight() == 64);
 
 		CHECK(data.m_TextureMap.size() == 4);
-		CHECK(data.m_TextureMap.find("SampleTexture2") != data.m_TextureMap.end());
+		const auto it = data.m_TextureMap.find("SampleTexture2");
+		CHECK(it != data.m_TextureMap.end());
+		CHECK(it->second.m_TextureType == pig::EMappedTextureType::eQuad);
 
 		pig::Renderer2D::Clear({ 0.f, 0.f, 0.f, 1.f });
 		pig::Renderer2D::BeginScene(cameraController);

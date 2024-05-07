@@ -73,7 +73,9 @@ void pig::Renderer2D::Init()
 	s_Data.m_IndexBuffer = std::move(pig::IndexBuffer::Create(s_SuareIndicesEmpty, (BATCH_MAX_COUNT * INDEX_STRIDE) / sizeof(uint32_t)));
 
 	std::vector<unsigned char> data(2 * 2 * 4, 255);
-	s_Data.m_TextureMap[""] = std::move(pig::Texture2D::Create(2, 2, 4, data.data()));
+
+	pig::MappedTexture mappedTexture = { std::move(pig::Texture2D::Create(2, 2, 4, data.data())), pig::EMappedTextureType::eQuad };
+	s_Data.m_TextureMap[""] = std::move(mappedTexture);
 	s_Data.m_QuadShader = std::move(pig::Shader::Create("Assets/Shaders/Renderer2DQuad.shader"));
 	s_Data.m_TextShader = std::move(pig::Shader::Create("Assets/Shaders/Renderer2DText.shader"));
 }
@@ -92,7 +94,7 @@ void pig::Renderer2D::BeginScene(const pig::OrthographicCameraController& camera
 
 	s_Data.m_VertexBuffer->Bind();
 	s_Data.m_IndexBuffer->Bind();
-	s_Data.m_TextureMap[""]->Bind(0);
+	s_Data.m_TextureMap[""].m_Texture->Bind(0);
 	s_Data.m_QuadShader->Bind();
 
 	const OrthographicCamera& ortoCamera = s_Data.m_Camera->GetCamera();
@@ -115,21 +117,22 @@ const pig::S_Ptr<pig::Texture2D> pig::Renderer2D::GetTexture(const std::string& 
 	const auto it = s_Data.m_TextureMap.find(handle);
 	if (it != s_Data.m_TextureMap.end())
 	{
-		return it->second;
+		return it->second.m_Texture;
 	}
 	else
 	{
 		//TODO Arnau: ensure default texture exists as well, maybe create some kind of null texture to return in this cases
 		PG_CORE_ASSERT(false, "Texture not found returning default one");
-		return s_Data.m_TextureMap[""];
+		return s_Data.m_TextureMap[""].m_Texture;
 	}
 }
 
-void pig::Renderer2D::AddTexture(const std::string& path, const std::string& handle)
+void pig::Renderer2D::AddTexture(const std::string& path, const std::string& handle, EMappedTextureType type)
 {
 	if (!handle.empty())
 	{
-		s_Data.m_TextureMap[handle] = std::move(pig::Texture2D::Create(path));
+		pig::MappedTexture mappedTexture = { std::move(pig::Texture2D::Create(path)), type };
+		s_Data.m_TextureMap[handle] = std::move(mappedTexture);
 	}
 	else
 	{
@@ -137,11 +140,12 @@ void pig::Renderer2D::AddTexture(const std::string& path, const std::string& han
 	}
 }
 
-void pig::Renderer2D::AddTexture(unsigned int width, unsigned int height, unsigned int channels, const unsigned char* data, const std::string& handle)
+void pig::Renderer2D::AddTexture(unsigned int width, unsigned int height, unsigned int channels, const unsigned char* data, const std::string& handle, EMappedTextureType type)
 {
 	if (!handle.empty())
 	{
-		s_Data.m_TextureMap[handle] = std::move(pig::Texture2D::Create(width, height, channels, data));
+		pig::MappedTexture mappedTexture = { std::move(pig::Texture2D::Create(width, height, channels, data)), type };
+		s_Data.m_TextureMap[handle] = std::move(mappedTexture);
 	}
 	else
 	{
@@ -151,12 +155,12 @@ void pig::Renderer2D::AddTexture(unsigned int width, unsigned int height, unsign
 
 void pig::Renderer2D::DrawQuad(const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& col)
 {
-	DrawQuad(pos, scale, col, "", glm::vec4(0.f, 0.f, 1.f, 1.f));
+	DrawBatch(pos, scale, col, "", glm::vec4(0.f, 0.f, 1.f, 1.f));
 }
 
 void pig::Renderer2D::DrawSprite(const pig::Sprite& sprite)
 {
-	DrawQuad(sprite.GetPosition(), glm::vec3(sprite.GetScale(), 1.0f), glm::vec3(1.f), sprite.GetTextureID(), sprite.GetTexCoordsRect());
+	DrawBatch(sprite.GetPosition(), glm::vec3(sprite.GetScale(), 1.0f), glm::vec3(1.f), sprite.GetTextureID(), sprite.GetTexCoordsRect());
 }
 
 //TODO Arnau: UT
@@ -235,7 +239,7 @@ void pig::Renderer2D::DrawString(const std::string& string, pig::S_Ptr<pig::Font
 		const glm::vec2 sizequad((quadMax.x - quadMin.x), (quadMax.y - quadMin.y));
 		const glm::vec2 midPoint(sizequad.x / 2.f + quadMin.x, sizequad.y / 2.f + quadMin.y);
 		glm::vec3 position = transform * glm::vec4(midPoint, 0.0f, 1.0f);
-		DrawTextQuad(position, glm::vec3(sizequad, 1.0f), color, font->GetFontID(), glm::vec4(texCoordMin, texCoordMax));
+		DrawBatch(position, glm::vec3(sizequad, 1.0f), color, font->GetFontID(), glm::vec4(texCoordMin, texCoordMax));
 
 		if (i < string.size() - 1)
 		{
@@ -250,10 +254,10 @@ void pig::Renderer2D::DrawString(const std::string& string, pig::S_Ptr<pig::Font
 
 void pig::Renderer2D::DrawQuad(const glm::vec3& pos, const glm::vec3& scale, const std::string& handle)
 {
-	DrawQuad(pos, scale, glm::vec3(1.f), handle, glm::vec4(0.f, 0.f, 1.f, 1.f));
+	DrawBatch(pos, scale, glm::vec3(1.f), handle, glm::vec4(0.f, 0.f, 1.f, 1.f));
 }
 
-void pig::Renderer2D::DrawQuad(const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& col, const std::string& handle, glm::vec4 texRect)
+void pig::Renderer2D::DrawBatch(const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& col, const std::string& handle, glm::vec4 texRect)
 {
 	if (s_Data.m_TextureMap.find(handle) != s_Data.m_TextureMap.end())
 	{
@@ -262,38 +266,7 @@ void pig::Renderer2D::DrawQuad(const glm::vec3& pos, const glm::vec3& scale, con
 		if (texBatch.m_IndexCount == BATCH_MAX_COUNT * QUAD_INDEX_COUNT)
 		{
 			Flush();
-			DrawQuad(pos, scale, col, handle, texRect);
-		}
-		else
-		{
-			QuadData quad(pos, scale, glm::vec4(col, 1.f), texBatch.m_VertexCount, 0, texRect);
-			const unsigned int vertexBufferOffset = texBatch.m_VertexCount * VERTEX_ATRIB_COUNT;
-			const unsigned int indexBufferOffset = texBatch.m_IndexCount;
-
-			memcpy(&texBatch.m_VertexBuffer[vertexBufferOffset], quad.m_SquareVertices, VERTEX_STRIDE);
-			memcpy(&texBatch.m_IndexBuffer[indexBufferOffset], quad.m_SquareIndices, INDEX_STRIDE);
-
-			texBatch.m_IndexCount += 6;
-			texBatch.m_VertexCount += 4;
-		}
-	}
-	else
-	{
-		PG_CORE_ASSERT(false, "Texture %s not fount in renderer2d batch map", handle.c_str());
-	}
-}
-
-//TODO Arnau: duplicated code try to use the same as the DrawQuad
-void pig::Renderer2D::DrawTextQuad(const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& col, const std::string& handle, glm::vec4 texRect)
-{
-	if (s_Data.m_TextureMap.find(handle) != s_Data.m_TextureMap.end())
-	{
-		pig::Renderer2D::Data::BatchData& texBatch = s_Data.m_TextBatchMap[handle];
-
-		if (texBatch.m_IndexCount == BATCH_MAX_COUNT * QUAD_INDEX_COUNT)
-		{
-			Flush();
-			DrawTextQuad(pos, scale, col, handle, texRect);
+			DrawBatch(pos, scale, col, handle, texRect);
 		}
 		else
 		{
@@ -316,35 +289,28 @@ void pig::Renderer2D::DrawTextQuad(const glm::vec3& pos, const glm::vec3& scale,
 
 void pig::Renderer2D::Flush()
 {
-	s_Data.m_QuadShader->Bind();
 	for (auto& batch : s_Data.m_BatchMap)
 	{
 		auto& tex = s_Data.m_TextureMap.find(batch.first);
 		PG_CORE_ASSERT(tex != s_Data.m_TextureMap.end(), "unable to bind texture, texture not found");
 		if (tex != s_Data.m_TextureMap.end())
 		{
-			tex->second->Bind(0);
+			tex->second.m_Texture->Bind(0);
+			switch (tex->second.m_TextureType)
+			{
+			case pig::EMappedTextureType::eQuad:
+				s_Data.m_QuadShader->Bind(); break;
+			case pig::EMappedTextureType::eText:
+				s_Data.m_TextShader->Bind(); break;
+			default:
+				PG_CORE_ASSERT(false, "EMappedTextureType not implemented");
+			}
+			s_Data.m_VertexBuffer->SetVertices(batch.second.m_VertexBuffer, batch.second.m_VertexCount, 0);
+			s_Data.m_IndexBuffer->SetIndices(batch.second.m_IndexBuffer, batch.second.m_IndexCount, 0);
+			pig::Renderer2D::Submit(batch.second.m_IndexCount);
 		}
-		s_Data.m_VertexBuffer->SetVertices(batch.second.m_VertexBuffer, batch.second.m_VertexCount, 0);
-		s_Data.m_IndexBuffer->SetIndices(batch.second.m_IndexBuffer, batch.second.m_IndexCount, 0);
-		pig::Renderer2D::Submit(batch.second.m_IndexCount);
 	}
 	s_Data.m_BatchMap.clear();
-
-	s_Data.m_TextShader->Bind();
-	for (auto& batch : s_Data.m_TextBatchMap)
-	{
-		auto& tex = s_Data.m_TextureMap.find(batch.first);
-		PG_CORE_ASSERT(tex != s_Data.m_TextureMap.end(), "unable to bind texture, texture not found");
-		if (tex != s_Data.m_TextureMap.end())
-		{
-			tex->second->Bind(0);
-		}
-		s_Data.m_VertexBuffer->SetVertices(batch.second.m_VertexBuffer, batch.second.m_VertexCount, 0);
-		s_Data.m_IndexBuffer->SetIndices(batch.second.m_IndexBuffer, batch.second.m_IndexCount, 0);
-		pig::Renderer2D::Submit(batch.second.m_IndexCount);
-	}
-	s_Data.m_TextBatchMap.clear();
 }
 
 void pig::Renderer2D::Submit(unsigned int count)
@@ -355,6 +321,5 @@ void pig::Renderer2D::Submit(unsigned int count)
 void pig::Renderer2D::Destroy()
 {
 	s_Data.m_BatchMap.clear();
-	s_Data.m_TextBatchMap.clear();
 	s_Data.m_TextureMap.clear();
 }

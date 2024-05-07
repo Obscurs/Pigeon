@@ -41,7 +41,7 @@ void CreateAndCacheAtlas(const std::string& fontName, float fontSize, const std:
 
 	msdfgen::BitmapConstRef<T, N> bitmap = (msdfgen::BitmapConstRef<T, N>)generator.atlasStorage();
 	const unsigned char* data = bitmap.pixels;
-	pig::Renderer2D::AddTexture(bitmap.width, bitmap.height, 3, data, fontName);
+	pig::Renderer2D::AddTexture(bitmap.width, bitmap.height, 3, data, fontName, pig::EMappedTextureType::eText);
 }
 
 pig::Font::Font(const std::filesystem::path& filepath)

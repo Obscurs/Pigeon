@@ -17,6 +17,18 @@ namespace pig
 }
 namespace pig 
 {
+	enum class EMappedTextureType
+	{
+		eQuad,
+		eText
+	};
+
+	struct MappedTexture
+	{
+		pig::S_Ptr<pig::Texture2D> m_Texture;
+		EMappedTextureType m_TextureType;
+	};
+
 	class Renderer2D
 	{
 	public:
@@ -55,9 +67,8 @@ namespace pig
 
 			const pig::OrthographicCameraController* m_Camera = nullptr;
 			
-			std::unordered_map<std::string, pig::S_Ptr<pig::Texture2D>> m_TextureMap;
+			std::unordered_map<std::string, MappedTexture> m_TextureMap;
 			std::unordered_map<std::string, BatchData> m_BatchMap;
-			std::unordered_map<std::string, BatchData> m_TextBatchMap;
 		};
 
 		static void Destroy();
@@ -71,8 +82,8 @@ namespace pig
 
 		//TODO Arnau: re-think this, should we return pointers of textures? is texture destruction safe? Maybe returning an identifier is safer
 		static const pig::S_Ptr<pig::Texture2D> GetTexture(const std::string& handle);
-		static void AddTexture(const std::string& path, const std::string& handle);
-		static void AddTexture(unsigned int width, unsigned int height, unsigned int channels, const unsigned char* data, const std::string& handle);
+		static void AddTexture(const std::string& path, const std::string& handle, EMappedTextureType type);
+		static void AddTexture(unsigned int width, unsigned int height, unsigned int channels, const unsigned char* data, const std::string& handle, EMappedTextureType type);
 
 		static void DrawQuad(const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& col);
 		static void DrawQuad(const glm::vec3& pos, const glm::vec3& scale, const std::string& handle);
@@ -85,8 +96,7 @@ namespace pig
 		static const Data& GetData() { return s_Data; }
 #endif
 	private:
-		static void DrawQuad(const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& col, const std::string& handle, glm::vec4 texRect);
-		static void DrawTextQuad(const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& col, const std::string& handle, glm::vec4 texRect);
+		static void DrawBatch(const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& col, const std::string& handle, glm::vec4 texRect);
 		static void Flush();
 
 		static void Submit(unsigned int count);

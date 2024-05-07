@@ -25,8 +25,7 @@ sbx::Sandbox2D::Sandbox2D(): pig::Layer("Sandbox2D"), m_CameraController(1280.0f
 	m_ScaleText = glm::vec3(0.3f, 0.3f, 1.f);
 	m_ColorText = glm::vec3(1.f, 0.f, 0.f);
 
-	pig::Renderer2D::AddTexture("Assets/Textures/Checkerboard.png", "Checkerboard");
-	pig::Renderer2D::AddTexture("Assets/Textures/fontSprite.png", "Text");
+	pig::Renderer2D::AddTexture("Assets/Textures/Checkerboard.png", "Checkerboard", pig::EMappedTextureType::eQuad);
 }
 
 void sbx::Sandbox2D::OnUpdate(const pig::Timestep& ts)
