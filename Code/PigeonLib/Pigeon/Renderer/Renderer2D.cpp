@@ -163,7 +163,6 @@ void pig::Renderer2D::DrawSprite(const pig::Sprite& sprite)
 	DrawBatch(sprite.GetPosition(), glm::vec3(sprite.GetScale(), 1.0f), glm::vec3(1.f), sprite.GetTextureID(), sprite.GetTexCoordsRect());
 }
 
-//TODO Arnau: UT
 void pig::Renderer2D::DrawString(const std::string& string, pig::S_Ptr<pig::Font> font, const glm::mat4& transform, const glm::vec4& color, float kerning, float linespacing)
 {
 	const auto& fontGeometry = font->GetMSDFData()->FontGeometry;

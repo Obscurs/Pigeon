@@ -21,9 +21,6 @@ namespace sbx
 
 	private:
 
-		//ARNAU TODO? spritesheet
-		//pig::U_Ptr<pig::Texture2D> m_Texture; 
-
 		pig::OrthographicCameraController m_CameraController;
 
 		glm::vec3 m_ColorQuad1;

@@ -90,6 +90,7 @@ namespace pig
 
 		static void DrawSprite(const pig::Sprite& sprite);
 
+		//TODO Arnau re-think arguments (for the other draws as well)
 		static void DrawString(const std::string& string, pig::S_Ptr<pig::Font> font, const glm::mat4& transform, const glm::vec4& color, float kerning, float linespacing);
 
 #ifdef TESTS_ENABLED

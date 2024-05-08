@@ -138,6 +138,7 @@ pig::Font::~Font()
 
 pig::S_Ptr<pig::Font> pig::Font::GetDefault()
 {
+	//TODO Arnau: do something about these kind of statics, they are not cleared between UT
 	if (!DefaultFont)
 		DefaultFont = std::make_shared<pig::Font>("Assets/Fonts/opensans/OpenSans-Regular.ttf");
 	return DefaultFont;
