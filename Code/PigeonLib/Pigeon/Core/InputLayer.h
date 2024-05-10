@@ -9,6 +9,7 @@ namespace pig
 	class PIGEON_API Input
 	{
 	public:
+		//TODO Arnau Support Gamepad input
 		static bool IsKeyTyped(int keycode);
 		static bool IsKeyPressed(int keycode, bool justPressed = false);
 		static bool IsKeyReleased(int keycode);
