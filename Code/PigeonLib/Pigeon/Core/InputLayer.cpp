@@ -20,8 +20,7 @@ bool pig::InputLayer::OnEvent(const pig::Event& e)
 {
 	pig::EventDispatcher::Dispatch<pig::KeyPressedEvent>(e, pig::BindEventFn<&pig::InputLayer::AppendKeyEvent, pig::InputLayer>(this));
 	pig::EventDispatcher::Dispatch<pig::KeyReleasedEvent>(e, pig::BindEventFn<&pig::InputLayer::AppendKeyEvent, pig::InputLayer>(this));
-	//TODO Arnau: typed key codes are incomplete, we do not have codes for both up-down case
-	//pig::EventDispatcher::Dispatch<pig::KeyTypedEvent>(e, pig::BindEventFn<&pig::InputLayer::AppendKeyEvent, pig::InputLayer>(this));
+	pig::EventDispatcher::Dispatch<pig::KeyTypedEvent>(e, pig::BindEventFn<&pig::InputLayer::AppendKeyTypedEvent, pig::InputLayer>(this));
 	pig::EventDispatcher::Dispatch<pig::MouseMovedEvent>(e, pig::BindEventFn<&pig::InputLayer::AppendMouseMoveEvent, pig::InputLayer>(this));
 	pig::EventDispatcher::Dispatch<pig::MouseButtonPressedEvent>(e, pig::BindEventFn<&pig::InputLayer::AppendMouseButtonEvent, pig::InputLayer>(this));
 	pig::EventDispatcher::Dispatch<pig::MouseButtonReleasedEvent>(e, pig::BindEventFn<&pig::InputLayer::AppendMouseButtonEvent, pig::InputLayer>(this));
@@ -30,9 +29,19 @@ bool pig::InputLayer::OnEvent(const pig::Event& e)
 	return false;
 }
 
-void pig::InputLayer::OnUpdate(const Timestep& ts)
+void pig::InputLayer::OnUpdate(const pig::Timestep& ts)
 {
 	ProcessEvents();
+}
+
+bool pig::InputLayer::IsKeyTyped(int keycode) const
+{
+	for (int i = 0; i < m_KeysTyped.size(); ++i)
+	{
+		if (m_KeysTyped[i] == keycode)
+			return true;
+	}
+	return false;
 }
 
 bool pig::InputLayer::IsKeyPressed(int keycode, bool justPressed) const
@@ -73,7 +82,12 @@ glm::vec2 pig::InputLayer::GetMouseScrolled() const
 	return m_MouseScroll;
 }
 
-bool pig::InputLayer::AppendKeyEvent(const Event& e)
+const std::vector<int>& pig::InputLayer::GetKeysTyped() const
+{
+	return m_KeysTyped;
+}
+
+bool pig::InputLayer::AppendKeyEvent(const pig::Event& e)
 {
 	InputEvent inputEvent;
 	inputEvent.m_Type = e.GetEventType();
@@ -92,7 +106,24 @@ bool pig::InputLayer::AppendKeyEvent(const Event& e)
 	return false;
 }
 
-bool pig::InputLayer::AppendMouseMoveEvent(const Event& e)
+bool pig::InputLayer::AppendKeyTypedEvent(const pig::Event& e)
+{
+	InputEvent inputEvent;
+	inputEvent.m_Type = e.GetEventType();
+
+	switch (inputEvent.m_Type)
+	{
+	case pig::EventType::KeyTyped:
+		inputEvent.m_KeyCode = dynamic_cast<const pig::KeyEvent&>(e).GetKeyCode();
+		break;
+	default:
+		PG_CORE_ASSERT(false, "event type not implemented");
+	}
+	m_Events.push_back(std::move(inputEvent));
+	return false;
+}
+
+bool pig::InputLayer::AppendMouseMoveEvent(const pig::Event& e)
 {
 	InputEvent inputEvent;
 	inputEvent.m_Type = e.GetEventType();
@@ -110,7 +141,7 @@ bool pig::InputLayer::AppendMouseMoveEvent(const Event& e)
 	return false;
 }
 
-bool pig::InputLayer::AppendMouseButtonEvent(const Event& e)
+bool pig::InputLayer::AppendMouseButtonEvent(const pig::Event& e)
 {
 	InputEvent inputEvent;
 	inputEvent.m_Type = e.GetEventType();
@@ -135,6 +166,7 @@ bool pig::InputLayer::AppendMouseButtonEvent(const Event& e)
 void pig::InputLayer::ProcessEvents()
 {
 	m_KeysReleased.clear();
+	m_KeysTyped.clear();
 	for (auto it = m_KeysPressed.begin(); it != m_KeysPressed.end(); ++it)
 	{
 		++it->second;
@@ -142,9 +174,13 @@ void pig::InputLayer::ProcessEvents()
 	for (int i = 0; i < m_Events.size(); ++i)
 	{
 		const InputEvent& inputEvent = m_Events[i];
-		if (inputEvent.m_Type == pig::EventType::KeyPressed || inputEvent.m_Type == pig::EventType::KeyTyped || inputEvent.m_Type == pig::EventType::MouseButtonPressed)
+		if (inputEvent.m_Type == pig::EventType::KeyPressed || inputEvent.m_Type == pig::EventType::MouseButtonPressed)
 		{
 			m_KeysPressed[inputEvent.m_KeyCode] = 1;
+		}
+		else if (inputEvent.m_Type == pig::EventType::KeyTyped)
+		{
+			m_KeysTyped.push_back(inputEvent.m_KeyCode);
 		}
 		else if (inputEvent.m_Type == pig::EventType::KeyReleased || inputEvent.m_Type == pig::EventType::MouseButtonReleased)
 		{
@@ -171,6 +207,11 @@ void pig::InputLayer::ProcessEvents()
 		}
 	}
 	m_Events.clear();
+}
+
+bool pig::Input::IsKeyTyped(int keycode)
+{
+	return pig::Application::Get().GetInputLayer().IsKeyTyped(keycode);
 }
 
 bool pig::Input::IsKeyPressed(int keycode, bool justPressed)
@@ -201,4 +242,9 @@ glm::vec2 pig::Input::GetMousePosition()
 glm::vec2 pig::Input::GetMouseScrolled()
 {
 	return pig::Application::Get().GetInputLayer().GetMouseScrolled();
+}
+
+const std::vector<int>& pig::Input::GetKeysTyped()
+{
+	return pig::Application::Get().GetInputLayer().GetKeysTyped();
 }

@@ -9,6 +9,7 @@ namespace pig
 	class PIGEON_API Input
 	{
 	public:
+		static bool IsKeyTyped(int keycode);
 		static bool IsKeyPressed(int keycode, bool justPressed = false);
 		static bool IsKeyReleased(int keycode);
 
@@ -17,6 +18,8 @@ namespace pig
 
 		static glm::vec2 GetMousePosition();
 		static glm::vec2 GetMouseScrolled();
+
+		static const std::vector<int>& GetKeysTyped();
 
 		inline static Input& GetInput() { return *s_Instance; }
 
@@ -34,6 +37,7 @@ namespace pig
 		virtual void OnUpdate(const pig::Timestep& ts) override;
 
 	protected:
+		bool IsKeyTyped(int keycode) const;
 		bool IsKeyPressed(int keycode, bool justPressed = false) const;
 		bool IsKeyReleased(int keycode) const;
 
@@ -42,6 +46,8 @@ namespace pig
 
 		glm::vec2 GetMousePosition() const;
 		glm::vec2 GetMouseScrolled() const;
+
+		const std::vector<int>& GetKeysTyped() const;
 
 		friend class Input;
 	private:
@@ -54,6 +60,7 @@ namespace pig
 		};
 
 		bool AppendKeyEvent(const pig::Event& e);
+		bool AppendKeyTypedEvent(const pig::Event& e);
 		bool AppendMouseMoveEvent(const pig::Event& e);
 		bool AppendMouseButtonEvent(const pig::Event& e);
 
@@ -63,6 +70,7 @@ namespace pig
 
 		std::unordered_map<int, int> m_KeysPressed;
 		std::unordered_map<int, int> m_KeysReleased;
+		std::vector<int> m_KeysTyped;
 		glm::vec2 m_MousePos = glm::vec2(0.f, 0.f);
 		glm::vec2 m_MouseScroll = glm::vec2(0.f, 0.f);
 	};

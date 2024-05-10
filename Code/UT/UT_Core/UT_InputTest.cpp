@@ -13,85 +13,6 @@
 #include <Pigeon/Events/ApplicationEvent.h>
 #include <Pigeon/Events/MouseEvent.h>
 
-namespace
-{
-	using ExpectedEventResult = std::variant<
-		pig::KeyPressedEvent,
-		pig::KeyReleasedEvent,
-		pig::KeyTypedEvent,
-		pig::WindowResizeEvent,
-		pig::WindowCloseEvent,
-		pig::MouseMovedEvent,
-		pig::MouseScrolledEvent,
-		pig::MouseButtonPressedEvent,
-		pig::MouseButtonReleasedEvent,
-		bool
-	>;
-
-	template<typename T>
-	T GetEventValue(const ExpectedEventResult& eventResult)
-	{
-		REQUIRE(std::holds_alternative<T>(eventResult));
-		return std::get<T>(eventResult);
-	}
-	
-	ExpectedEventResult StoreToVariant(const pig::Event& ev)
-	{
-		if (auto e = dynamic_cast<const pig::KeyPressedEvent*>(&ev)) {
-			return *e;
-		}
-		else if (auto e = dynamic_cast<const pig::KeyReleasedEvent*>(&ev)) {
-			return *e;
-		}
-		else if (auto e = dynamic_cast<const pig::KeyTypedEvent*>(&ev)) {
-			return *e;
-		}
-		else if (auto e = dynamic_cast<const pig::WindowResizeEvent*>(&ev)) {
-			return *e;
-		}
-		else if (auto e = dynamic_cast<const pig::WindowCloseEvent*>(&ev)) {
-			return *e;
-		}
-		else if (auto e = dynamic_cast<const pig::MouseMovedEvent*>(&ev)) {
-			return *e;
-		}
-		else if (auto e = dynamic_cast<const pig::MouseScrolledEvent*>(&ev)) {
-			return *e;
-		}
-		else if (auto e = dynamic_cast<const pig::MouseButtonPressedEvent*>(&ev)) {
-			return *e;
-		}
-		else if (auto e = dynamic_cast<const pig::MouseButtonReleasedEvent*>(&ev)) {
-			return *e;
-		}
-		else
-		{
-			return false;
-			CHECK(false); //type not implemented?
-		}
-	}
-	
-	class TestLayer : public pig::Layer
-	{
-	public:
-		TestLayer()
-			: Layer("UTLayerEventPropagate")
-		{
-		}
-		void OnUpdate(const pig::Timestep& ts) override
-		{
-			m_ExpectedEvent = false;
-		}
-
-		bool OnEvent(const pig::Event& event) override
-		{
-			m_ExpectedEvent = StoreToVariant(event);
-			return true;
-		}
-		ExpectedEventResult m_ExpectedEvent = false;
-	};
-}
-
 namespace CatchTestsetFail
 {
 	TEST_CASE("Core.Layers::Input")
@@ -106,8 +27,7 @@ namespace CatchTestsetFail
 			CHECK(!pig::Input::IsKeyPressed(eventKeyCode));
 			CHECK(!pig::Input::IsKeyReleased(eventKeyCode));
 			
-			pig::KeyPressedEvent pressEvent(eventKeyCode, 0);
-			appWindow.TESTING_TriggerEvent(&pressEvent);
+			appWindow.TESTING_TriggerEvent(&pig::KeyPressedEvent(eventKeyCode, 0));
 			CHECK(!pig::Input::IsKeyPressed(eventKeyCode));
 			CHECK(!pig::Input::IsKeyReleased(eventKeyCode));
 			app.TestUpdate(timestep);
@@ -120,8 +40,7 @@ namespace CatchTestsetFail
 			CHECK(!pig::Input::IsKeyPressed(eventKeyCode, true));
 			CHECK(!pig::Input::IsKeyReleased(eventKeyCode));
 
-			pig::KeyReleasedEvent releaseEvent(eventKeyCode);
-			appWindow.TESTING_TriggerEvent(&releaseEvent);
+			appWindow.TESTING_TriggerEvent(&pig::KeyReleasedEvent(eventKeyCode));
 			app.TestUpdate(timestep);
 			CHECK(!pig::Input::IsKeyPressed(eventKeyCode));
 			CHECK(pig::Input::IsKeyReleased(eventKeyCode));
@@ -129,6 +48,68 @@ namespace CatchTestsetFail
 			app.TestUpdate(timestep);
 			CHECK(!pig::Input::IsKeyPressed(eventKeyCode));
 			CHECK(!pig::Input::IsKeyReleased(eventKeyCode));
+		}
+		SECTION("Key typed events")
+		{
+			int eventKeyCode1 = 123;
+			int eventKeyCode2 = 456;
+			CHECK(!pig::Input::IsKeyTyped(eventKeyCode1));
+			CHECK(!pig::Input::IsKeyTyped(eventKeyCode2));
+
+			appWindow.TESTING_TriggerEvent(&pig::KeyTypedEvent(eventKeyCode1));
+			appWindow.TESTING_TriggerEvent(&pig::KeyTypedEvent(eventKeyCode2));
+			CHECK(!pig::Input::IsKeyTyped(eventKeyCode1));
+			CHECK(!pig::Input::IsKeyPressed(eventKeyCode1));
+			CHECK(!pig::Input::IsKeyReleased(eventKeyCode1));
+			CHECK(!pig::Input::IsKeyTyped(eventKeyCode2));
+			CHECK(!pig::Input::IsKeyPressed(eventKeyCode2));
+			CHECK(!pig::Input::IsKeyReleased(eventKeyCode2));
+			app.TestUpdate(timestep);
+			CHECK(pig::Input::IsKeyTyped(eventKeyCode1));
+			CHECK(!pig::Input::IsKeyPressed(eventKeyCode1));
+			CHECK(!pig::Input::IsKeyReleased(eventKeyCode1));
+			CHECK(pig::Input::IsKeyTyped(eventKeyCode2));
+			CHECK(!pig::Input::IsKeyPressed(eventKeyCode2));
+			CHECK(!pig::Input::IsKeyReleased(eventKeyCode2));
+			app.TestUpdate(timestep);
+			CHECK(!pig::Input::IsKeyTyped(eventKeyCode1));
+			CHECK(!pig::Input::IsKeyPressed(eventKeyCode1));
+			CHECK(!pig::Input::IsKeyReleased(eventKeyCode1));
+			CHECK(!pig::Input::IsKeyTyped(eventKeyCode2));
+			CHECK(!pig::Input::IsKeyPressed(eventKeyCode2));
+			CHECK(!pig::Input::IsKeyReleased(eventKeyCode2));
+		}
+		SECTION("Multiple keys typed event")
+		{
+			int eventKeyCode1 = 1;
+			int eventKeyCode2 = 2;
+			int eventKeyCode3 = 3;
+			int eventKeyCode4 = 2;
+			int eventKeyCode5 = 2;
+			int eventKeyCode6 = 1;
+
+			CHECK(!pig::Input::IsKeyTyped(eventKeyCode1));
+			CHECK(!pig::Input::IsKeyTyped(eventKeyCode2));
+			CHECK(!pig::Input::IsKeyTyped(eventKeyCode3));
+			CHECK(!pig::Input::IsKeyTyped(eventKeyCode4));
+			CHECK(!pig::Input::IsKeyTyped(eventKeyCode5));
+			CHECK(!pig::Input::IsKeyTyped(eventKeyCode6));
+
+			appWindow.TESTING_TriggerEvent(&pig::KeyTypedEvent(eventKeyCode1));
+			appWindow.TESTING_TriggerEvent(&pig::KeyTypedEvent(eventKeyCode2));
+			appWindow.TESTING_TriggerEvent(&pig::KeyTypedEvent(eventKeyCode3));
+			appWindow.TESTING_TriggerEvent(&pig::KeyTypedEvent(eventKeyCode4));
+			appWindow.TESTING_TriggerEvent(&pig::KeyTypedEvent(eventKeyCode5));
+			appWindow.TESTING_TriggerEvent(&pig::KeyTypedEvent(eventKeyCode6));
+			app.TestUpdate(timestep);
+			const std::vector<int>& keysTyped = pig::Input::GetKeysTyped();
+			REQUIRE(keysTyped.size() == 6);
+			CHECK(keysTyped[0] == eventKeyCode1);
+			CHECK(keysTyped[1] == eventKeyCode2);
+			CHECK(keysTyped[2] == eventKeyCode3);
+			CHECK(keysTyped[3] == eventKeyCode4);
+			CHECK(keysTyped[4] == eventKeyCode5);
+			CHECK(keysTyped[5] == eventKeyCode6);
 		}
 		SECTION("Mouse button pressed and released")
 		{
