@@ -35,6 +35,9 @@ namespace sbx
 		glm::vec3 m_ScaleText;
 		glm::vec3 m_ColorText;
 
+		glm::vec3 m_OriginQuad1;
+		glm::vec3 m_OriginQuad2;
+
 		pig::S_Ptr<pig::Texture2D> m_Texture;
 	};
 }

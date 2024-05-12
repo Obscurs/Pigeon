@@ -43,3 +43,15 @@ pig::S_Ptr<pig::Texture2DArray> pig::Texture2DArray::Create(unsigned int count)
 	PG_CORE_ASSERT(false, "Unknown RendererAPI!");
 	return nullptr;
 }
+
+bool pig::Texture2D::FlipY()
+{
+	switch (pig::Renderer::GetAPI())
+	{
+	case pig::RendererAPI::API::None:    PG_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
+	case pig::RendererAPI::API::DirectX11:  return true;
+	case pig::RendererAPI::API::Testing:  return false;
+	default:
+		return false;
+	}
+}

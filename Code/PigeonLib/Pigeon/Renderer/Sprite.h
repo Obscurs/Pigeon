@@ -9,27 +9,27 @@ namespace pig
 	public:
 		struct Data
 		{
-			glm::vec3 m_Position;
-			glm::vec2 m_Scale;
-			glm::vec4 m_TexCoordsRect;
-			std::string m_TextureID;
-			glm::vec2 m_TextureSize;
+			glm::vec4 m_TexCoordsRect = glm::vec4(0.f, 0.f, 0.f, 0.f);;
+			std::string m_TextureID = "";
+			glm::vec2 m_TextureSize = glm::vec2(0.f, 0.f);
+			glm::mat4 m_Transform = glm::mat4(1.f);
+			glm::vec3 m_Origin = glm::vec3(0.f, 0.f, 0.f);
 		};
 
-		Sprite(const glm::vec3 pos, const  glm::vec2 scale, const glm::vec4 texCoords, const std::string& textureID);
+		Sprite(const glm::mat4 transform, const glm::vec4 texCoords, const std::string& textureID, const glm::vec3 origin = glm::vec3(0.f, 1.f, 0.f));
 		~Sprite() = default;
 
 #ifdef TESTS_ENABLED
 		const Data& GetData() const { return m_Data; }
 #endif
 
-		void SetPosition(const glm::vec3& position) { m_Data.m_Position = position; }
-		void SetScale(const glm::vec2& scale) { m_Data.m_Scale = scale; }
-		void SetTexCoords(const glm::vec4& texCoords) { m_Data.m_TexCoordsRect = texCoords; }
+		void SetTransform(const glm::mat4& transform);
+		void SetTexCoords(const glm::vec4& texCoords);
+		void SetOrigin(const glm::vec3& origin);
 
-		const glm::vec3& GetPosition() const { return m_Data.m_Position; }
-		const glm::vec2& GetScale() const { return m_Data.m_Scale; }
+		const glm::mat4& GetTransform() const { return m_Data.m_Transform; }
 		const glm::vec4& GetTexCoordsRect() const { return m_Data.m_TexCoordsRect; }
+		const glm::vec3& GetOrigin() const { return m_Data.m_Origin; }
 		const std::string& GetTextureID() const { return m_Data.m_TextureID; }
 		const glm::vec2& GetTextureSize() const { return m_Data.m_TextureSize; }
 

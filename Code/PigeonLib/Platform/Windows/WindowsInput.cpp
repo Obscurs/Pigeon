@@ -153,7 +153,7 @@ unsigned char pig::WindowsInput::GetKeyCodeImpl(unsigned char keyCode)
 	case WIN_PG_KEY_KP_1: return PG_KEY_KP_1;
 	default:
 	{
-		PG_CORE_ASSERT(false, "Type not found");
+		//PG_CORE_ASSERT(false, "Type not found");
 		return 0;
 	}
 	}

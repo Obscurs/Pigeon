@@ -85,19 +85,18 @@ namespace pig
 		static void AddTexture(const std::string& path, const std::string& handle, EMappedTextureType type);
 		static void AddTexture(unsigned int width, unsigned int height, unsigned int channels, const unsigned char* data, const std::string& handle, EMappedTextureType type);
 
-		static void DrawQuad(const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& col);
-		static void DrawQuad(const glm::vec3& pos, const glm::vec3& scale, const std::string& handle);
+		static void DrawQuad(const glm::mat4& transform, const glm::vec3& col, const glm::vec3& origin);
+		static void DrawQuad(const glm::mat4& transform, const std::string& handle, const glm::vec3& origin);
 
 		static void DrawSprite(const pig::Sprite& sprite);
 
-		//TODO Arnau re-think arguments (for the other draws as well)
-		static void DrawString(const std::string& string, pig::S_Ptr<pig::Font> font, const glm::mat4& transform, const glm::vec4& color, float kerning, float linespacing);
+		static void DrawString(const glm::mat4& transform, const std::string& string, pig::S_Ptr<pig::Font> font, const glm::vec4& color, float kerning, float linespacing);
 
 #ifdef TESTS_ENABLED
 		static const Data& GetData() { return s_Data; }
 #endif
 	private:
-		static void DrawBatch(const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& col, const std::string& handle, glm::vec4 texRect);
+		static void DrawBatch(const glm::mat4& transform, const glm::vec3& col, const std::string& handle, glm::vec4 texRect, const glm::vec3& origin);
 		static void Flush();
 
 		static void Submit(unsigned int count);

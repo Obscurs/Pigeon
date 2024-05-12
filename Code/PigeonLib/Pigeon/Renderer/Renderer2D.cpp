@@ -4,6 +4,7 @@
 
 #include "Pigeon/Renderer/Font.h"
 #include "Pigeon/Renderer/Msdfdata.h"
+#include "Pigeon/Renderer/Texture.h"
 
 pig::Renderer2D::Data pig::Renderer2D::s_Data;
 
@@ -12,25 +13,18 @@ namespace
 	static const unsigned int VERTEX_STRIDE = pig::Renderer2D::VERTEX_ATRIB_COUNT * pig::Renderer2D::QUAD_VERTEX_COUNT * sizeof(float);
 	static const unsigned int INDEX_STRIDE = pig::Renderer2D::QUAD_INDEX_COUNT * sizeof(int);
 
-	static const float s_SquareVertices[pig::Renderer2D::VERTEX_ATRIB_COUNT * pig::Renderer2D::QUAD_VERTEX_COUNT] = {
-		-0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.f,
-		-0.5f,  0.5f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.f,
-		 0.5f,  0.5f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.f,
-		 0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.f
-	};
-
-	static const uint32_t s_SuareIndices[pig::Renderer2D::QUAD_INDEX_COUNT] = { 0, 1, 2, 2, 3, 0 };
+	static const uint32_t s_SuareIndices[pig::Renderer2D::QUAD_INDEX_COUNT] = { 0, 2, 1, 2, 0, 3 };
 
 	static const float s_SquareVerticesEmpty[pig::Renderer2D::VERTEX_ATRIB_COUNT * pig::Renderer2D::QUAD_VERTEX_COUNT * pig::Renderer2D::BATCH_MAX_COUNT];
 	static const uint32_t s_SuareIndicesEmpty[pig::Renderer2D::QUAD_INDEX_COUNT * pig::Renderer2D::BATCH_MAX_COUNT];
 
 	struct VertexData
 	{
-		VertexData(const glm::vec3& pos, const glm::vec3& scale, const glm::vec4& color, const float* vertexBase, int textureId, const glm::vec2& texCoords)
+		VertexData(const glm::vec4& pos, const glm::vec4& color, int textureId, const glm::vec2& texCoords)
 		{
-			m_Data[0] = vertexBase[0] * scale.x + pos.x;
-			m_Data[1] = vertexBase[1] * scale.y + pos.y;
-			m_Data[2] = vertexBase[2] * scale.z + pos.z;
+			m_Data[0] = pos.x;
+			m_Data[1] = pos.y * (pig::Texture2D::FlipY() ? -1.f : 1.f);
+			m_Data[2] = pos.z;
 			m_Data[3] = color.r;
 			m_Data[4] = color.g;
 			m_Data[5] = color.b;
@@ -46,12 +40,21 @@ namespace
 	};
 	struct QuadData
 	{
-		QuadData(const glm::vec3& pos, const glm::vec3& scale, const glm::vec4& color, unsigned int offsetIndices, int textureId, const glm::vec4& texCoordsRect)
+		QuadData(const glm::mat4& transform, const glm::vec4& color, unsigned int offsetIndices, int textureId, const glm::vec4& texCoordsRect, const glm::vec3& origin)
 		{
-			memcpy(m_SquareVertices, VertexData(pos, scale, color, &s_SquareVertices[0], textureId, glm::vec2(texCoordsRect.x, texCoordsRect.y)).m_Data, pig::Renderer2D::VERTEX_ATRIB_COUNT * sizeof(float));
-			memcpy(&m_SquareVertices[pig::Renderer2D::VERTEX_ATRIB_COUNT], VertexData(pos, scale, color, &s_SquareVertices[pig::Renderer2D::VERTEX_ATRIB_COUNT], textureId, glm::vec2(texCoordsRect.x, texCoordsRect.w)).m_Data, pig::Renderer2D::VERTEX_ATRIB_COUNT * sizeof(float));
-			memcpy(&m_SquareVertices[pig::Renderer2D::VERTEX_ATRIB_COUNT*2], VertexData(pos, scale, color, &s_SquareVertices[pig::Renderer2D::VERTEX_ATRIB_COUNT*2], textureId, glm::vec2(texCoordsRect.z, texCoordsRect.w)).m_Data, pig::Renderer2D::VERTEX_ATRIB_COUNT * sizeof(float));
-			memcpy(&m_SquareVertices[pig::Renderer2D::VERTEX_ATRIB_COUNT*3], VertexData(pos, scale, color, &s_SquareVertices[pig::Renderer2D::VERTEX_ATRIB_COUNT*3], textureId, glm::vec2(texCoordsRect.z, texCoordsRect.y)).m_Data, pig::Renderer2D::VERTEX_ATRIB_COUNT * sizeof(float));
+			const glm::mat4 translateToOrigin = glm::translate(glm::mat4(1.0f), -origin);
+			const glm::mat4 translateBack = glm::translate(glm::mat4(1.0f), origin);
+			const glm::mat4 combinedTransform = translateBack * transform * translateToOrigin;
+
+			const glm::vec4 pos_v1 = combinedTransform * glm::vec4(0, 0, 0, 1);
+			const glm::vec4 pos_v2 = combinedTransform * glm::vec4(0, 1, 0, 1);
+			const glm::vec4 pos_v3 = combinedTransform * glm::vec4(1, 1, 0, 1);
+			const glm::vec4 pos_v4 = combinedTransform * glm::vec4(1, 0, 0, 1);
+
+			memcpy(m_SquareVertices, VertexData(pos_v1, color, textureId, glm::vec2(texCoordsRect.x, texCoordsRect.y)).m_Data, pig::Renderer2D::VERTEX_ATRIB_COUNT * sizeof(float));
+			memcpy(&m_SquareVertices[pig::Renderer2D::VERTEX_ATRIB_COUNT], VertexData(pos_v2, color, textureId, glm::vec2(texCoordsRect.x, texCoordsRect.w)).m_Data, pig::Renderer2D::VERTEX_ATRIB_COUNT * sizeof(float));
+			memcpy(&m_SquareVertices[pig::Renderer2D::VERTEX_ATRIB_COUNT*2], VertexData(pos_v3, color, textureId, glm::vec2(texCoordsRect.z, texCoordsRect.w)).m_Data, pig::Renderer2D::VERTEX_ATRIB_COUNT * sizeof(float));
+			memcpy(&m_SquareVertices[pig::Renderer2D::VERTEX_ATRIB_COUNT*3], VertexData(pos_v4, color, textureId, glm::vec2(texCoordsRect.z, texCoordsRect.y)).m_Data, pig::Renderer2D::VERTEX_ATRIB_COUNT * sizeof(float));
 
 			m_SquareIndices[0] = s_SuareIndices[0] + offsetIndices;
 			m_SquareIndices[1] = s_SuareIndices[1] + offsetIndices;
@@ -153,17 +156,17 @@ void pig::Renderer2D::AddTexture(unsigned int width, unsigned int height, unsign
 	}
 }
 
-void pig::Renderer2D::DrawQuad(const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& col)
+void pig::Renderer2D::DrawQuad(const glm::mat4& transform, const glm::vec3& col, const glm::vec3& origin)
 {
-	DrawBatch(pos, scale, col, "", glm::vec4(0.f, 0.f, 1.f, 1.f));
+	DrawBatch(transform, col, "", glm::vec4(0.f, 0.f, 1.f, 1.f), origin);
 }
 
 void pig::Renderer2D::DrawSprite(const pig::Sprite& sprite)
 {
-	DrawBatch(sprite.GetPosition(), glm::vec3(sprite.GetScale(), 1.0f), glm::vec3(1.f), sprite.GetTextureID(), sprite.GetTexCoordsRect());
+	DrawBatch(sprite.GetTransform(), glm::vec3(1.f), sprite.GetTextureID(), sprite.GetTexCoordsRect(), sprite.GetOrigin());
 }
 
-void pig::Renderer2D::DrawString(const std::string& string, pig::S_Ptr<pig::Font> font, const glm::mat4& transform, const glm::vec4& color, float kerning, float linespacing)
+void pig::Renderer2D::DrawString(const glm::mat4& transform, const std::string& string, pig::S_Ptr<pig::Font> font, const glm::vec4& color, float kerning, float linespacing)
 {
 	const auto& fontGeometry = font->GetMSDFData()->FontGeometry;
 	const auto& metrics = fontGeometry.getMetrics();
@@ -175,6 +178,8 @@ void pig::Renderer2D::DrawString(const std::string& string, pig::S_Ptr<pig::Font
 
 	const float spaceGlyphAdvance = fontGeometry.getGlyph(' ')->getAdvance();
 
+	const glm::vec3 originSprite(0.f, 0.0f, 0.f);
+
 	for (size_t i = 0; i < string.size(); i++)
 	{
 		char character = string[i];
@@ -184,7 +189,7 @@ void pig::Renderer2D::DrawString(const std::string& string, pig::S_Ptr<pig::Font
 		if (character == '\n')
 		{
 			x = 0;
-			y -= fsScale * metrics.lineHeight + linespacing;
+			y += fsScale * metrics.lineHeight + linespacing;
 			continue;
 		}
 
@@ -217,15 +222,16 @@ void pig::Renderer2D::DrawString(const std::string& string, pig::S_Ptr<pig::Font
 
 		double al, ab, ar, at;
 		glyph->getQuadAtlasBounds(al, ab, ar, at);
-		glm::vec2 texCoordMin((float)al, (float)ab);
-		glm::vec2 texCoordMax((float)ar, (float)at);
+		glm::vec2 texCoordMin((float)al, (float)at);
+		glm::vec2 texCoordMax((float)ar, (float)ab);
 
 		double pl, pb, pr, pt;
 		glyph->getQuadPlaneBounds(pl, pb, pr, pt);
-		glm::vec2 quadMin((float)pl, (float)pb);
-		glm::vec2 quadMax((float)pr, (float)pt);
+		glm::vec2 quadMin((float)pl, 1.f - (float)pt);
+		glm::vec2 quadMax((float)pr, 1.f - (float)pb);
 
-		quadMin *= fsScale, quadMax *= fsScale;
+		quadMin *= fsScale;
+		quadMax *= fsScale;
 		quadMin += glm::vec2(x, y);
 		quadMax += glm::vec2(x, y);
 
@@ -234,11 +240,12 @@ void pig::Renderer2D::DrawString(const std::string& string, pig::S_Ptr<pig::Font
 		texCoordMin *= glm::vec2(texelWidth, texelHeight);
 		texCoordMax *= glm::vec2(texelWidth, texelHeight);
 
-		//TODO Arnau: transform charater to the proper position instead of mid
-		const glm::vec2 sizequad((quadMax.x - quadMin.x), (quadMax.y - quadMin.y));
-		const glm::vec2 midPoint(sizequad.x / 2.f + quadMin.x, sizequad.y / 2.f + quadMin.y);
-		glm::vec3 position = transform * glm::vec4(midPoint, 0.0f, 1.0f);
-		DrawBatch(position, glm::vec3(sizequad, 1.0f), color, font->GetFontID(), glm::vec4(texCoordMin, texCoordMax));
+		glm::mat4 stringTransform = glm::mat4(1.0f); // Identity matrix
+		stringTransform = glm::translate(stringTransform, glm::vec3(quadMin, 0.0f)); // Apply translation
+		stringTransform = glm::scale(stringTransform, glm::vec3(quadMax.x - quadMin.x, quadMax.y - quadMin.y, 1.0f)); // Apply scaling
+		stringTransform = transform * stringTransform;
+
+		DrawBatch(stringTransform, color, font->GetFontID(), glm::vec4(texCoordMin, texCoordMax), originSprite);
 
 		if (i < string.size() - 1)
 		{
@@ -251,12 +258,12 @@ void pig::Renderer2D::DrawString(const std::string& string, pig::S_Ptr<pig::Font
 	}
 }
 
-void pig::Renderer2D::DrawQuad(const glm::vec3& pos, const glm::vec3& scale, const std::string& handle)
+void pig::Renderer2D::DrawQuad(const glm::mat4& transform, const std::string& handle, const glm::vec3& origin)
 {
-	DrawBatch(pos, scale, glm::vec3(1.f), handle, glm::vec4(0.f, 0.f, 1.f, 1.f));
+	DrawBatch(transform, glm::vec3(1.f), handle, glm::vec4(0.f, 0.f, 1.f, 1.f), origin);
 }
 
-void pig::Renderer2D::DrawBatch(const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& col, const std::string& handle, glm::vec4 texRect)
+void pig::Renderer2D::DrawBatch(const glm::mat4& transform, const glm::vec3& col, const std::string& handle, glm::vec4 texRect, const glm::vec3& origin)
 {
 	if (s_Data.m_TextureMap.find(handle) != s_Data.m_TextureMap.end())
 	{
@@ -265,11 +272,11 @@ void pig::Renderer2D::DrawBatch(const glm::vec3& pos, const glm::vec3& scale, co
 		if (texBatch.m_IndexCount == BATCH_MAX_COUNT * QUAD_INDEX_COUNT)
 		{
 			Flush();
-			DrawBatch(pos, scale, col, handle, texRect);
+			DrawBatch(transform, col, handle, texRect, origin);
 		}
 		else
 		{
-			QuadData quad(pos, scale, glm::vec4(col, 1.f), texBatch.m_VertexCount, 0, texRect);
+			QuadData quad(transform, glm::vec4(col, 1.f), texBatch.m_VertexCount, 0, texRect, origin);
 			const unsigned int vertexBufferOffset = texBatch.m_VertexCount * VERTEX_ATRIB_COUNT;
 			const unsigned int indexBufferOffset = texBatch.m_IndexCount;
 

@@ -96,13 +96,13 @@ bool pig::InputLayer::AppendKeyEvent(const pig::Event& e)
 	{
 	case pig::EventType::KeyPressed:
 	case pig::EventType::KeyReleased:
-	case pig::EventType::KeyTyped:
 		inputEvent.m_KeyCode = pig::PlatformInput::GetKeyCode(dynamic_cast<const pig::KeyEvent&>(e).GetKeyCode());
 		break;
 	default:
 		PG_CORE_ASSERT(false, "event type not implemented");
 	}
-	m_Events.push_back(std::move(inputEvent));
+	if (inputEvent.m_KeyCode)
+		m_Events.push_back(std::move(inputEvent));
 	return false;
 }
 

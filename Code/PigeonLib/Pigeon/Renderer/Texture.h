@@ -34,6 +34,7 @@ namespace pig
 
 		static pig::S_Ptr<Texture2D> Create(const std::string& path);
 		static pig::S_Ptr<Texture2D> Create(unsigned int width, unsigned int height, unsigned int channels, const unsigned char* data);
+		static bool FlipY();
 	};
 
 	class Texture2DArray : public Texture
