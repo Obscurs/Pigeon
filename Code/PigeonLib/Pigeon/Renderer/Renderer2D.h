@@ -3,6 +3,7 @@
 #include "RenderCommand.h"
 
 #include "Pigeon/Core/OrthographicCameraController.h"
+#include "Pigeon/Core/UUID.h"
 #include "Pigeon/Renderer/Buffer.h"
 #include "Pigeon/Renderer/Shader.h"
 #include "Pigeon/Renderer/Sprite.h"
@@ -67,8 +68,8 @@ namespace pig
 
 			const pig::OrthographicCameraController* m_Camera = nullptr;
 			
-			std::unordered_map<std::string, MappedTexture> m_TextureMap;
-			std::unordered_map<std::string, BatchData> m_BatchMap;
+			std::unordered_map<pig::UUID, MappedTexture> m_TextureMap;
+			std::unordered_map<pig::UUID, BatchData> m_BatchMap;
 		};
 
 		static void Destroy();
@@ -80,13 +81,12 @@ namespace pig
 		static void BeginScene(const pig::OrthographicCameraController& cameraController);
 		static void EndScene();
 
-		//TODO Arnau: re-think this, should we return pointers of textures? is texture destruction safe? Maybe returning an identifier is safer
-		static const pig::S_Ptr<pig::Texture2D> GetTexture(const std::string& handle);
-		static void AddTexture(const std::string& path, const std::string& handle, EMappedTextureType type);
-		static void AddTexture(unsigned int width, unsigned int height, unsigned int channels, const unsigned char* data, const std::string& handle, EMappedTextureType type);
+		static const pig::Texture2D& GetTexture(const pig::UUID& textureID);
+		static pig::UUID AddTexture(const std::string& path, EMappedTextureType type);
+		static pig::UUID AddTexture(unsigned int width, unsigned int height, unsigned int channels, const unsigned char* data, EMappedTextureType type);
 
 		static void DrawQuad(const glm::mat4& transform, const glm::vec3& col, const glm::vec3& origin);
-		static void DrawQuad(const glm::mat4& transform, const std::string& handle, const glm::vec3& origin);
+		static void DrawQuad(const glm::mat4& transform, const pig::UUID& textureID, const glm::vec3& origin);
 
 		static void DrawSprite(const pig::Sprite& sprite);
 
@@ -95,8 +95,9 @@ namespace pig
 #ifdef TESTS_ENABLED
 		static const Data& GetData() { return s_Data; }
 #endif
+		static const UUID s_DefaultTexture;
 	private:
-		static void DrawBatch(const glm::mat4& transform, const glm::vec3& col, const std::string& handle, glm::vec4 texRect, const glm::vec3& origin);
+		static void DrawBatch(const glm::mat4& transform, const glm::vec3& col, const pig::UUID& textureID, glm::vec4 texRect, const glm::vec3& origin);
 		static void Flush();
 
 		static void Submit(unsigned int count);

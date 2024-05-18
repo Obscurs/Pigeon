@@ -3,9 +3,14 @@
 #include "Pigeon/Core/Layer.h"
 #include "Pigeon/Renderer/Buffer.h"
 #include "Pigeon/Core/OrthographicCameraController.h"
+#include "Pigeon/Core/UUID.h"
 #include "Pigeon/Renderer/Shader.h"
 #include "Pigeon/Renderer/Texture.h"
 
+namespace pig
+{
+	class Font;
+}
 namespace sbx
 {
 	class Sandbox2D : public pig::Layer
@@ -39,6 +44,9 @@ namespace sbx
 		glm::vec3 m_OriginQuad2;
 
 		pig::S_Ptr<pig::Texture2D> m_Texture;
+
+		pig::UUID m_TextureID1{};
+		pig::S_Ptr<pig::Font> m_Font;
 	};
 }
 

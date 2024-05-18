@@ -3,6 +3,7 @@
 #include <filesystem>
 
 #include "Pigeon/Core/Core.h"
+#include "Pigeon/Core/UUID.h"
 #include "Pigeon/Renderer/Texture.h"
 
 namespace pig 
@@ -16,11 +17,9 @@ namespace pig
 		~Font();
 
 		const MSDFData* GetMSDFData() const { return m_Data; }
-		const std::string& GetFontID() const { return m_FontID; };
-
-		static pig::S_Ptr<Font> GetDefault();
+		const pig::UUID& GetFontID() const { return m_FontID; };
 	private:
 		MSDFData* m_Data;
-		std::string m_FontID;
+		pig::UUID m_FontID;
 	};
 }

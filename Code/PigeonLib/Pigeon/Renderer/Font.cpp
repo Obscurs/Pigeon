@@ -24,10 +24,9 @@ namespace
 		{ 0x0020, 0x00FF }
 	};
 }
-static pig::S_Ptr<pig::Font> DefaultFont;
 
 template<typename T, typename S, int N, msdf_atlas::GeneratorFunction<S, N> GenFunc>
-void CreateAndCacheAtlas(const std::string& fontName, float fontSize, const std::vector<msdf_atlas::GlyphGeometry>& glyphs,
+pig::UUID CreateAndCacheAtlas(float fontSize, const std::vector<msdf_atlas::GlyphGeometry>& glyphs,
 	const msdf_atlas::FontGeometry& fontGeometry, uint32_t width, uint32_t height)
 {
 	msdf_atlas::GeneratorAttributes attributes;
@@ -41,7 +40,7 @@ void CreateAndCacheAtlas(const std::string& fontName, float fontSize, const std:
 
 	msdfgen::BitmapConstRef<T, N> bitmap = (msdfgen::BitmapConstRef<T, N>)generator.atlasStorage();
 	const unsigned char* data = bitmap.pixels;
-	pig::Renderer2D::AddTexture(bitmap.width, bitmap.height, 3, data, fontName, pig::EMappedTextureType::eText);
+	return pig::Renderer2D::AddTexture(bitmap.width, bitmap.height, 3, data, pig::EMappedTextureType::eText);
 }
 
 pig::Font::Font(const std::filesystem::path& filepath)
@@ -50,12 +49,10 @@ pig::Font::Font(const std::filesystem::path& filepath)
 	msdfgen::FreetypeHandle* ft = msdfgen::initializeFreetype();
 	PG_CORE_ASSERT(ft, "Failed to initialize freetype");
 
-	m_FontID = filepath.string();
-
-	msdfgen::FontHandle* font = msdfgen::loadFont(ft, m_FontID.c_str());
+	msdfgen::FontHandle* font = msdfgen::loadFont(ft, filepath.string().c_str());
 	if (!font)
 	{
-		PG_CORE_ERROR("Failed to load font: {}", m_FontID);
+		PG_CORE_ERROR("Failed to load font: {}", filepath.string().c_str());
 		return;
 	}
 
@@ -109,7 +106,7 @@ pig::Font::Font(const std::filesystem::path& filepath)
 		}
 	}
 	
-	CreateAndCacheAtlas<uint8_t, float, 3, msdf_atlas::msdfGenerator>(m_FontID, (float)emSize, m_Data->Glyphs, m_Data->FontGeometry, width, height);
+	m_FontID = CreateAndCacheAtlas<uint8_t, float, 3, msdf_atlas::msdfGenerator>((float)emSize, m_Data->Glyphs, m_Data->FontGeometry, width, height);
 
 	//Uncomment to test single character
 	/*
@@ -134,12 +131,4 @@ pig::Font::Font(const std::filesystem::path& filepath)
 pig::Font::~Font()
 {
 	delete m_Data;
-}
-
-pig::S_Ptr<pig::Font> pig::Font::GetDefault()
-{
-	//TODO Arnau: do something about these kind of statics, they are not cleared between UT
-	if (!DefaultFont)
-		DefaultFont = std::make_shared<pig::Font>("Assets/Fonts/opensans/OpenSans-Regular.ttf");
-	return DefaultFont;
 }

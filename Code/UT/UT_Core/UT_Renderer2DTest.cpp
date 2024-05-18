@@ -62,7 +62,7 @@ namespace CatchTestsetFail
 		}
 		SECTION("Draw textured quad")
 		{
-			pig::Renderer2D::AddTexture("Assets/Test/SampleTexture.png", "SampleTexture", pig::EMappedTextureType::eQuad);
+			pig::UUID sampleTexture = pig::Renderer2D::AddTexture("Assets/Test/SampleTexture.png", pig::EMappedTextureType::eQuad);
 
 			pig::Renderer2D::BeginScene(cameraController);
 
@@ -74,18 +74,17 @@ namespace CatchTestsetFail
 			glm::mat4 transform(1.f);
 			transform = glm::translate(transform, pos);
 			transform = glm::scale(transform, scale);
-			pig::Renderer2D::DrawQuad(transform, "SampleTexture", origin);
+			pig::Renderer2D::DrawQuad(transform, sampleTexture, origin);
 
 			pig::Renderer2D::EndScene();
 		}
 		SECTION("Draw sprite")
 		{
-			std::string textureName("SampleTexture1");
 			const int textureHeight = 1024;
 			const int textureWidth = 1024;
 			pig::TestingTexture2D::s_ExpectedWidth = textureWidth;
 			pig::TestingTexture2D::s_ExpectedHeight = textureHeight;
-			pig::Renderer2D::AddTexture("Assets/Test/SampleTexture.png", textureName, pig::EMappedTextureType::eQuad);
+			pig::UUID sampleTexture = pig::Renderer2D::AddTexture("Assets/Test/SampleTexture.png", pig::EMappedTextureType::eQuad);
 
 			const glm::vec3 pos1(4.f, 5.f, 6.f);
 			const glm::vec3 scale1(1.f, 2.f, 1.f);
@@ -103,16 +102,16 @@ namespace CatchTestsetFail
 			glm::vec2 offsetNormalized(offset.x / textureWidth, offset.y / textureHeight);
 			glm::vec2 sizeNormalized(spriteSize.x / textureWidth, spriteSize.y / textureHeight);
 
-			const pig::S_Ptr<pig::Texture2D> texture = pig::Renderer2D::GetTexture(textureName);
-			glm::vec4 texCoordsRect = texture->GetTexCoordsRect(offset, spriteSize);
+			const pig::Texture2D& texture = pig::Renderer2D::GetTexture(sampleTexture);
+			glm::vec4 texCoordsRect = texture.GetTexCoordsRect(offset, spriteSize);
 			
-			pig::Sprite sprite(transform1, texCoordsRect, textureName, origin1);
+			pig::Sprite sprite(transform1, texCoordsRect, sampleTexture, origin1);
 			const pig::Sprite::Data& spriteData = sprite.GetData();
 
 			CHECK(sprite.GetTransform() == transform1);
 			CHECK(sprite.GetTextureSize() == glm::vec2(textureWidth, textureHeight));
 
-			CHECK(sprite.GetTextureID() == textureName);
+			CHECK(sprite.GetTextureID() == sampleTexture);
 			CHECK(sprite.GetTexCoordsRect() == texCoordsRect);
 
 			sprite.SetTexCoords(texcoordsRectTest);
@@ -162,8 +161,8 @@ namespace CatchTestsetFail
 			glm::vec2 textConfig(0.5f, 1.5f);
 
 			pig::S_Ptr<pig::Font> testFont = std::make_shared<pig::Font>("Assets/Test/OpenSans-Regular.ttf");
-			const std::string testFontId = testFont->GetFontID();
-			CHECK(testFontId == "Assets/Test/OpenSans-Regular.ttf");
+			const pig::UUID testFontId = testFont->GetFontID();
+			CHECK(!testFontId.IsNull());
 			CHECK(testFont->GetMSDFData()->Glyphs.size() == 191);
 			CHECK(FLOAT_EQ(testFont->GetMSDFData()->FontGeometry.getMetrics().lineHeight, 1.3618164062f));
 
@@ -265,33 +264,31 @@ namespace CatchTestsetFail
 		CHECK(data.m_TextureMap.size() == 1);
 		pig::TestingTexture2D::s_ExpectedWidth = 1024;
 		pig::TestingTexture2D::s_ExpectedHeight = 1024;
-		pig::Renderer2D::AddTexture("Assets/Test/SampleTexture.png", "SampleTexture1", pig::EMappedTextureType::eQuad);
+		const pig::UUID sampleTexture1 = pig::Renderer2D::AddTexture("Assets/Test/SampleTexture.png", pig::EMappedTextureType::eQuad);
 		pig::TestingTexture2D::s_ExpectedWidth = 980;
 		pig::TestingTexture2D::s_ExpectedHeight = 725;
-		pig::Renderer2D::AddTexture("Assets/Test/SampleTexture2.png", "SampleTexture2", pig::EMappedTextureType::eQuad);
+		const pig::UUID sampleTexture2 = pig::Renderer2D::AddTexture("Assets/Test/SampleTexture2.png", pig::EMappedTextureType::eQuad);
 		pig::TestingTexture2D::s_ExpectedWidth = 128;
 		pig::TestingTexture2D::s_ExpectedHeight = 64;
-		pig::Renderer2D::AddTexture(texWidht, texHeight, texChannels, texData.data(), "SampleTexture3", pig::EMappedTextureType::eQuad);
+		const pig::UUID sampleTexture3 = pig::Renderer2D::AddTexture(texWidht, texHeight, texChannels, texData.data(), pig::EMappedTextureType::eQuad);
 
 		pig::S_Ptr<pig::Font> testFont = std::make_shared<pig::Font>("Assets/Test/OpenSans-Regular.ttf");
-		const std::string testFontId = testFont->GetFontID();
+		const pig::UUID& testFontId = testFont->GetFontID();
 
-		const pig::S_Ptr<pig::Texture2D> tex1 = pig::Renderer2D::GetTexture("SampleTexture1");
-		const pig::S_Ptr<pig::Texture2D> tex2 = pig::Renderer2D::GetTexture("SampleTexture2");
-		const pig::S_Ptr<pig::Texture2D> tex3 = pig::Renderer2D::GetTexture("SampleTexture3");
-		const pig::S_Ptr<pig::Texture2D> tex4 = pig::Renderer2D::GetTexture(testFontId);
-		REQUIRE(tex1);
-		CHECK(tex1->GetWidth() == 1024);
-		CHECK(tex1->GetHeight() == 1024);
-		REQUIRE(tex2);
-		CHECK(tex2->GetWidth() == 980);
-		CHECK(tex2->GetHeight() == 725);
-		REQUIRE(tex3);
-		CHECK(tex3->GetWidth() == 128);
-		CHECK(tex3->GetHeight() == 64);
+		const pig::Texture2D& tex1 = pig::Renderer2D::GetTexture(sampleTexture1);
+		const pig::Texture2D& tex2 = pig::Renderer2D::GetTexture(sampleTexture2);
+		const pig::Texture2D& tex3 = pig::Renderer2D::GetTexture(sampleTexture3);
+		const pig::Texture2D& tex4 = pig::Renderer2D::GetTexture(testFontId);
+
+		CHECK(tex1.GetWidth() == 1024);
+		CHECK(tex1.GetHeight() == 1024);
+		CHECK(tex2.GetWidth() == 980);
+		CHECK(tex2.GetHeight() == 725);
+		CHECK(tex3.GetWidth() == 128);
+		CHECK(tex3.GetHeight() == 64);
 
 		CHECK(data.m_TextureMap.size() == 5);
-		const auto it = data.m_TextureMap.find("SampleTexture2");
+		const auto it = data.m_TextureMap.find(sampleTexture2);
 		CHECK(it != data.m_TextureMap.end());
 		CHECK(it->second.m_TextureType == pig::EMappedTextureType::eQuad);
 
@@ -303,15 +300,15 @@ namespace CatchTestsetFail
 		pig::Renderer2D::BeginScene(cameraController);
 
 		pig::Renderer2D::DrawQuad(transform1, col1, origin1);
-		pig::Renderer2D::DrawQuad(transform1, "SampleTexture1", origin2);
-		pig::Renderer2D::DrawQuad(transform2, "SampleTexture1", origin1);
+		pig::Renderer2D::DrawQuad(transform1, sampleTexture1, origin2);
+		pig::Renderer2D::DrawQuad(transform2, sampleTexture1, origin1);
 		pig::Renderer2D::DrawQuad(transform2, col2, origin2);
-		pig::Renderer2D::DrawQuad(transform1, "SampleTexture2", origin1);
-		pig::Renderer2D::DrawQuad(transform3, "SampleTexture2", origin2);
-		pig::Renderer2D::DrawQuad(transform3, "SampleTexture1", origin1);
-		pig::Renderer2D::DrawQuad(transform1, "SampleTexture3", origin1);
-		pig::Renderer2D::DrawQuad(transform4, "SampleTexture3", origin2);
-		pig::Renderer2D::DrawQuad(transform4, "SampleTexture2", origin1);
+		pig::Renderer2D::DrawQuad(transform1, sampleTexture2, origin1);
+		pig::Renderer2D::DrawQuad(transform3, sampleTexture2, origin2);
+		pig::Renderer2D::DrawQuad(transform3, sampleTexture1, origin1);
+		pig::Renderer2D::DrawQuad(transform1, sampleTexture3, origin1);
+		pig::Renderer2D::DrawQuad(transform4, sampleTexture3, origin2);
+		pig::Renderer2D::DrawQuad(transform4, sampleTexture2, origin1);
 		pig::Renderer2D::DrawQuad(transform3, col3, origin2);
 
 		const std::string testText("Sample\nText\n1");
@@ -322,15 +319,15 @@ namespace CatchTestsetFail
 
 		SECTION("Multiple textures")
 		{
-			REQUIRE(data.m_BatchMap.find("") != data.m_BatchMap.end());
-			REQUIRE(data.m_BatchMap.find("SampleTexture1") != data.m_BatchMap.end());
-			REQUIRE(data.m_BatchMap.find("SampleTexture2") != data.m_BatchMap.end());
-			REQUIRE(data.m_BatchMap.find("SampleTexture3") != data.m_BatchMap.end());
+			REQUIRE(data.m_BatchMap.find(pig::Renderer2D::s_DefaultTexture) != data.m_BatchMap.end());
+			REQUIRE(data.m_BatchMap.find(sampleTexture1) != data.m_BatchMap.end());
+			REQUIRE(data.m_BatchMap.find(sampleTexture2) != data.m_BatchMap.end());
+			REQUIRE(data.m_BatchMap.find(sampleTexture3) != data.m_BatchMap.end());
 			REQUIRE(data.m_BatchMap.find(testFontId) != data.m_BatchMap.end());
-			const pig::Renderer2D::Data::BatchData& texBatch1 = data.m_BatchMap.at("");
-			const pig::Renderer2D::Data::BatchData& texBatch2 = data.m_BatchMap.at("SampleTexture1");
-			const pig::Renderer2D::Data::BatchData& texBatch3 = data.m_BatchMap.at("SampleTexture2");
-			const pig::Renderer2D::Data::BatchData& texBatch4 = data.m_BatchMap.at("SampleTexture3");
+			const pig::Renderer2D::Data::BatchData& texBatch1 = data.m_BatchMap.at(pig::Renderer2D::s_DefaultTexture);
+			const pig::Renderer2D::Data::BatchData& texBatch2 = data.m_BatchMap.at(sampleTexture1);
+			const pig::Renderer2D::Data::BatchData& texBatch3 = data.m_BatchMap.at(sampleTexture2);
+			const pig::Renderer2D::Data::BatchData& texBatch4 = data.m_BatchMap.at(sampleTexture3);
 			const pig::Renderer2D::Data::BatchData& texBatch5 = data.m_BatchMap.at(testFontId);
 
 			CHECK(texBatch1.m_IndexCount == 18);
@@ -361,14 +358,14 @@ namespace CatchTestsetFail
 			}
 
 			{
-				REQUIRE(data.m_BatchMap.find("") != data.m_BatchMap.end());
-				REQUIRE(data.m_BatchMap.find("SampleTexture1") != data.m_BatchMap.end());
-				REQUIRE(data.m_BatchMap.find("SampleTexture2") != data.m_BatchMap.end());
-				REQUIRE(data.m_BatchMap.find("SampleTexture3") != data.m_BatchMap.end());
-				const pig::Renderer2D::Data::BatchData& texBatch1 = data.m_BatchMap.at("");
-				const pig::Renderer2D::Data::BatchData& texBatch2 = data.m_BatchMap.at("SampleTexture1");
-				const pig::Renderer2D::Data::BatchData& texBatch3 = data.m_BatchMap.at("SampleTexture2");
-				const pig::Renderer2D::Data::BatchData& texBatch4 = data.m_BatchMap.at("SampleTexture3");
+				REQUIRE(data.m_BatchMap.find(pig::Renderer2D::s_DefaultTexture) != data.m_BatchMap.end());
+				REQUIRE(data.m_BatchMap.find(sampleTexture1) != data.m_BatchMap.end());
+				REQUIRE(data.m_BatchMap.find(sampleTexture2) != data.m_BatchMap.end());
+				REQUIRE(data.m_BatchMap.find(sampleTexture3) != data.m_BatchMap.end());
+				const pig::Renderer2D::Data::BatchData& texBatch1 = data.m_BatchMap.at(pig::Renderer2D::s_DefaultTexture);
+				const pig::Renderer2D::Data::BatchData& texBatch2 = data.m_BatchMap.at(sampleTexture1);
+				const pig::Renderer2D::Data::BatchData& texBatch3 = data.m_BatchMap.at(sampleTexture2);
+				const pig::Renderer2D::Data::BatchData& texBatch4 = data.m_BatchMap.at(sampleTexture3);
 				CHECK(texBatch1.m_IndexCount == pig::Renderer2D::BATCH_MAX_COUNT * pig::Renderer2D::QUAD_INDEX_COUNT);
 				CHECK(texBatch1.m_VertexCount == pig::Renderer2D::BATCH_MAX_COUNT * pig::Renderer2D::QUAD_VERTEX_COUNT);
 				CHECK(texBatch2.m_IndexCount == 18);
@@ -379,16 +376,16 @@ namespace CatchTestsetFail
 				CHECK(texBatch4.m_VertexCount == 8);
 			}
 
-			pig::Renderer2D::DrawQuad(transform3, "SampleTexture1", origin1);
+			pig::Renderer2D::DrawQuad(transform3, sampleTexture1, origin1);
 			{
-				REQUIRE(data.m_BatchMap.find("") != data.m_BatchMap.end());
-				REQUIRE(data.m_BatchMap.find("SampleTexture1") != data.m_BatchMap.end());
-				REQUIRE(data.m_BatchMap.find("SampleTexture2") != data.m_BatchMap.end());
-				REQUIRE(data.m_BatchMap.find("SampleTexture3") != data.m_BatchMap.end());
-				const pig::Renderer2D::Data::BatchData& texBatch1 = data.m_BatchMap.at("");
-				const pig::Renderer2D::Data::BatchData& texBatch2 = data.m_BatchMap.at("SampleTexture1");
-				const pig::Renderer2D::Data::BatchData& texBatch3 = data.m_BatchMap.at("SampleTexture2");
-				const pig::Renderer2D::Data::BatchData& texBatch4 = data.m_BatchMap.at("SampleTexture3");
+				REQUIRE(data.m_BatchMap.find(pig::Renderer2D::s_DefaultTexture) != data.m_BatchMap.end());
+				REQUIRE(data.m_BatchMap.find(sampleTexture1) != data.m_BatchMap.end());
+				REQUIRE(data.m_BatchMap.find(sampleTexture2) != data.m_BatchMap.end());
+				REQUIRE(data.m_BatchMap.find(sampleTexture3) != data.m_BatchMap.end());
+				const pig::Renderer2D::Data::BatchData& texBatch1 = data.m_BatchMap.at(pig::Renderer2D::s_DefaultTexture);
+				const pig::Renderer2D::Data::BatchData& texBatch2 = data.m_BatchMap.at(sampleTexture1);
+				const pig::Renderer2D::Data::BatchData& texBatch3 = data.m_BatchMap.at(sampleTexture2);
+				const pig::Renderer2D::Data::BatchData& texBatch4 = data.m_BatchMap.at(sampleTexture3);
 				CHECK(texBatch1.m_IndexCount == pig::Renderer2D::BATCH_MAX_COUNT * pig::Renderer2D::QUAD_INDEX_COUNT);
 				CHECK(texBatch1.m_VertexCount == pig::Renderer2D::BATCH_MAX_COUNT * pig::Renderer2D::QUAD_VERTEX_COUNT);
 				CHECK(texBatch2.m_IndexCount == 24);
@@ -402,11 +399,11 @@ namespace CatchTestsetFail
 			pig::Renderer2D::DrawQuad(transform1, col1, origin2);
 
 			{
-				REQUIRE(data.m_BatchMap.find("") != data.m_BatchMap.end());
-				CHECK(data.m_BatchMap.find("SampleTexture1") == data.m_BatchMap.end());
-				REQUIRE(data.m_BatchMap.find("SampleTexture2") == data.m_BatchMap.end());
-				REQUIRE(data.m_BatchMap.find("SampleTexture3") == data.m_BatchMap.end());
-				const pig::Renderer2D::Data::BatchData& texBatch1 = data.m_BatchMap.at("");
+				REQUIRE(data.m_BatchMap.find(pig::Renderer2D::s_DefaultTexture) != data.m_BatchMap.end());
+				CHECK(data.m_BatchMap.find(sampleTexture1) == data.m_BatchMap.end());
+				REQUIRE(data.m_BatchMap.find(sampleTexture2) == data.m_BatchMap.end());
+				REQUIRE(data.m_BatchMap.find(sampleTexture3) == data.m_BatchMap.end());
+				const pig::Renderer2D::Data::BatchData& texBatch1 = data.m_BatchMap.at(pig::Renderer2D::s_DefaultTexture);
 
 				CHECK(texBatch1.m_IndexCount == 6);
 				CHECK(texBatch1.m_VertexCount == 4);

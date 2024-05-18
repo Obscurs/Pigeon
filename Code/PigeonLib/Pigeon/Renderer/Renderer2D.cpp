@@ -7,6 +7,7 @@
 #include "Pigeon/Renderer/Texture.h"
 
 pig::Renderer2D::Data pig::Renderer2D::s_Data;
+const pig::UUID pig::Renderer2D::s_DefaultTexture = pig::UUID::Generate();
 
 namespace
 {
@@ -78,7 +79,7 @@ void pig::Renderer2D::Init()
 	std::vector<unsigned char> data(2 * 2 * 4, 255);
 
 	pig::MappedTexture mappedTexture = { std::move(pig::Texture2D::Create(2, 2, 4, data.data())), pig::EMappedTextureType::eQuad };
-	s_Data.m_TextureMap[""] = std::move(mappedTexture);
+	s_Data.m_TextureMap[pig::Renderer2D::s_DefaultTexture] = std::move(mappedTexture);
 	s_Data.m_QuadShader = std::move(pig::Shader::Create("Assets/Shaders/Renderer2DQuad.shader"));
 	s_Data.m_TextShader = std::move(pig::Shader::Create("Assets/Shaders/Renderer2DText.shader"));
 }
@@ -97,7 +98,7 @@ void pig::Renderer2D::BeginScene(const pig::OrthographicCameraController& camera
 
 	s_Data.m_VertexBuffer->Bind();
 	s_Data.m_IndexBuffer->Bind();
-	s_Data.m_TextureMap[""].m_Texture->Bind(0);
+	s_Data.m_TextureMap[pig::Renderer2D::s_DefaultTexture].m_Texture->Bind(0);
 	s_Data.m_QuadShader->Bind();
 
 	const OrthographicCamera& ortoCamera = s_Data.m_Camera->GetCamera();
@@ -115,50 +116,40 @@ void pig::Renderer2D::EndScene()
 	s_Data.m_Camera = nullptr;
 }
 
-const pig::S_Ptr<pig::Texture2D> pig::Renderer2D::GetTexture(const std::string& handle)
+const pig::Texture2D& pig::Renderer2D::GetTexture(const pig::UUID& textureID)
 {
-	const auto it = s_Data.m_TextureMap.find(handle);
+	const auto it = s_Data.m_TextureMap.find(textureID);
 	if (it != s_Data.m_TextureMap.end())
 	{
-		return it->second.m_Texture;
+		return *it->second.m_Texture.get();
 	}
 	else
 	{
-		//TODO Arnau: ensure default texture exists as well, maybe create some kind of null texture to return in this cases
 		PG_CORE_ASSERT(false, "Texture not found returning default one");
-		return s_Data.m_TextureMap[""].m_Texture;
+
+		return *s_Data.m_TextureMap[pig::Renderer2D::s_DefaultTexture].m_Texture.get();
 	}
 }
 
-void pig::Renderer2D::AddTexture(const std::string& path, const std::string& handle, EMappedTextureType type)
+pig::UUID pig::Renderer2D::AddTexture(const std::string& path, EMappedTextureType type)
 {
-	if (!handle.empty())
-	{
-		pig::MappedTexture mappedTexture = { std::move(pig::Texture2D::Create(path)), type };
-		s_Data.m_TextureMap[handle] = std::move(mappedTexture);
-	}
-	else
-	{
-		PG_CORE_ASSERT(false, "Tried to add an empty texture to the 2d batch renderer");
-	}
+	pig::UUID textureID = pig::UUID::Generate();
+	pig::MappedTexture mappedTexture = { std::move(pig::Texture2D::Create(path)), type };
+	s_Data.m_TextureMap[textureID] = std::move(mappedTexture);
+	return textureID;
 }
 
-void pig::Renderer2D::AddTexture(unsigned int width, unsigned int height, unsigned int channels, const unsigned char* data, const std::string& handle, EMappedTextureType type)
+pig::UUID pig::Renderer2D::AddTexture(unsigned int width, unsigned int height, unsigned int channels, const unsigned char* data, EMappedTextureType type)
 {
-	if (!handle.empty())
-	{
-		pig::MappedTexture mappedTexture = { std::move(pig::Texture2D::Create(width, height, channels, data)), type };
-		s_Data.m_TextureMap[handle] = std::move(mappedTexture);
-	}
-	else
-	{
-		PG_CORE_ASSERT(false, "Tried to add an empty texture to the 2d batch renderer");
-	}
+	pig::UUID textureID = pig::UUID::Generate();
+	pig::MappedTexture mappedTexture = { std::move(pig::Texture2D::Create(width, height, channels, data)), type };
+	s_Data.m_TextureMap[textureID] = std::move(mappedTexture);
+	return textureID;
 }
 
 void pig::Renderer2D::DrawQuad(const glm::mat4& transform, const glm::vec3& col, const glm::vec3& origin)
 {
-	DrawBatch(transform, col, "", glm::vec4(0.f, 0.f, 1.f, 1.f), origin);
+	DrawBatch(transform, col, pig::Renderer2D::s_DefaultTexture, glm::vec4(0.f, 0.f, 1.f, 1.f), origin);
 }
 
 void pig::Renderer2D::DrawSprite(const pig::Sprite& sprite)
@@ -168,10 +159,10 @@ void pig::Renderer2D::DrawSprite(const pig::Sprite& sprite)
 
 void pig::Renderer2D::DrawString(const glm::mat4& transform, const std::string& string, pig::S_Ptr<pig::Font> font, const glm::vec4& color, float kerning, float linespacing)
 {
+	const pig::Texture2D& fontAtlas = GetTexture(font->GetFontID());
+
 	const auto& fontGeometry = font->GetMSDFData()->FontGeometry;
 	const auto& metrics = fontGeometry.getMetrics();
-	pig::S_Ptr<Texture2D> fontAtlas = GetTexture(font->GetFontID());
-
 	double x = 0.0;
 	double fsScale = 1.0 / (metrics.ascenderY - metrics.descenderY);
 	double y = 0.0;
@@ -235,8 +226,8 @@ void pig::Renderer2D::DrawString(const glm::mat4& transform, const std::string& 
 		quadMin += glm::vec2(x, y);
 		quadMax += glm::vec2(x, y);
 
-		float texelWidth = 1.0f / fontAtlas->GetWidth();
-		float texelHeight = 1.0f / fontAtlas->GetHeight();
+		float texelWidth = 1.0f / fontAtlas.GetWidth();
+		float texelHeight = 1.0f / fontAtlas.GetHeight();
 		texCoordMin *= glm::vec2(texelWidth, texelHeight);
 		texCoordMax *= glm::vec2(texelWidth, texelHeight);
 
@@ -258,21 +249,21 @@ void pig::Renderer2D::DrawString(const glm::mat4& transform, const std::string& 
 	}
 }
 
-void pig::Renderer2D::DrawQuad(const glm::mat4& transform, const std::string& handle, const glm::vec3& origin)
+void pig::Renderer2D::DrawQuad(const glm::mat4& transform, const pig::UUID& textureID, const glm::vec3& origin)
 {
-	DrawBatch(transform, glm::vec3(1.f), handle, glm::vec4(0.f, 0.f, 1.f, 1.f), origin);
+	DrawBatch(transform, glm::vec3(1.f), textureID, glm::vec4(0.f, 0.f, 1.f, 1.f), origin);
 }
 
-void pig::Renderer2D::DrawBatch(const glm::mat4& transform, const glm::vec3& col, const std::string& handle, glm::vec4 texRect, const glm::vec3& origin)
+void pig::Renderer2D::DrawBatch(const glm::mat4& transform, const glm::vec3& col, const pig::UUID& textureID, glm::vec4 texRect, const glm::vec3& origin)
 {
-	if (s_Data.m_TextureMap.find(handle) != s_Data.m_TextureMap.end())
+	if (s_Data.m_TextureMap.find(textureID) != s_Data.m_TextureMap.end())
 	{
-		pig::Renderer2D::Data::BatchData& texBatch = s_Data.m_BatchMap[handle];
+		pig::Renderer2D::Data::BatchData& texBatch = s_Data.m_BatchMap[textureID];
 
 		if (texBatch.m_IndexCount == BATCH_MAX_COUNT * QUAD_INDEX_COUNT)
 		{
 			Flush();
-			DrawBatch(transform, col, handle, texRect, origin);
+			DrawBatch(transform, col, textureID, texRect, origin);
 		}
 		else
 		{
@@ -289,7 +280,7 @@ void pig::Renderer2D::DrawBatch(const glm::mat4& transform, const glm::vec3& col
 	}
 	else
 	{
-		PG_CORE_ASSERT(false, "Texture %s not fount in renderer2d batch map", handle.c_str());
+		PG_CORE_ASSERT(false, "Texture %s not fount in renderer2d batch map", textureID.ToString().c_str());
 	}
 }
 

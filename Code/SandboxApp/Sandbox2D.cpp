@@ -27,9 +27,8 @@ sbx::Sandbox2D::Sandbox2D(): pig::Layer("Sandbox2D"), m_CameraController(1280.0f
 	m_ScaleText = glm::vec3(0.3f, 0.3f, 1.f);
 	m_ColorText = glm::vec3(1.f, 0.f, 0.f);
 
-
-
-	pig::Renderer2D::AddTexture("Assets/Textures/Checkerboard.png", "Checkerboard", pig::EMappedTextureType::eQuad);
+	m_TextureID1 = pig::Renderer2D::AddTexture("Assets/Textures/Checkerboard.png", pig::EMappedTextureType::eQuad);
+	m_Font = std::make_shared<pig::Font>("Assets/Fonts/opensans/OpenSans-Regular.ttf");
 }
 
 void sbx::Sandbox2D::OnUpdate(const pig::Timestep& ts)
@@ -50,13 +49,14 @@ void sbx::Sandbox2D::OnUpdate(const pig::Timestep& ts)
 	//pig::Renderer2D::DrawQuad(transformGrid, "Checkerboard", glm::vec3(0.f, 0.f, 0.f));
 	pig::Renderer2D::DrawQuad(transformQuad1, m_ColorQuad1, glm::vec3(0.f, 0.f, 0.f));
 
-	const pig::S_Ptr<pig::Texture2D> texture = pig::Renderer2D::GetTexture("Checkerboard");
-	const glm::vec4 texCoordsRect = texture->GetTexCoordsRect(glm::vec2(512, 128), glm::vec2(128, 256)); //B5 C5
+	const pig::Texture2D& texture = pig::Renderer2D::GetTexture(m_TextureID1);
+
+	const glm::vec4 texCoordsRect = texture.GetTexCoordsRect(glm::vec2(512, 128), glm::vec2(128, 256)); //B5 C5
 
 	glm::mat4 transformQuad2(1.f);
 	transformQuad2 = glm::translate(transformQuad2, m_PosQuad2);
 	transformQuad2 = glm::scale(transformQuad2, m_ScaleQuad2);
-	pig::Sprite sprite(transformQuad2, texCoordsRect, "Checkerboard", m_OriginQuad2);
+	pig::Sprite sprite(transformQuad2, texCoordsRect, m_TextureID1, m_OriginQuad2);
 	pig::Renderer2D::DrawSprite(sprite);
 
 	std::string textString("This is a fucking text\nEven with multiple lines");
@@ -65,7 +65,7 @@ void sbx::Sandbox2D::OnUpdate(const pig::Timestep& ts)
 	stringTransform = glm::translate(stringTransform, m_PosText); // Apply translation
 	stringTransform = glm::scale(stringTransform, m_ScaleText); // Apply scaling
 
-	pig::Renderer2D::DrawString(stringTransform, textString, pig::Font::GetDefault(), glm::vec4(m_ColorText, 1.f), 0.1f, 0.1f);
+	pig::Renderer2D::DrawString(stringTransform, textString, m_Font, glm::vec4(m_ColorText, 1.f), 0.1f, 0.1f);
 
 	static pig::Clock clock;
 	const pig::Timestep elapsed{ clock.Elapsed() };

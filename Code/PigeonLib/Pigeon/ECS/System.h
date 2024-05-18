@@ -3,7 +3,7 @@
 
 namespace pig
 {
-	//ARNAU TODO change systemType, sandbox can not change this enum so we have to find another way to differentiate systems
+	//TODO Arnau change systemType, sandbox can not change this enum so we have to find another way to differentiate systems
 	enum class SystemType
 	{
 		eTest
