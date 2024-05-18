@@ -16,9 +16,15 @@
 	#error Pigeon only supports Windows!
 #endif
 
+#ifndef TESTS_ENABLED
+#define PG_DEBUGBREAK __debugbreak();
+#else
+#define PG_DEBUGBREAK
+#endif
 #ifdef PG_ENABLE_ASSERTS
-	#define PG_ASSERT(x, ...) { if(!(x)) { PG_ERROR("Assertion Failed: {0}", __VA_ARGS__); __debugbreak(); } }
-	#define PG_CORE_ASSERT(x, ...) { if(!(x)) { PG_CORE_ERROR("Assertion Failed: {0}", __VA_ARGS__); __debugbreak(); } }
+	#define PG_ASSERT(x, ...) { if(!(x)) { PG_ERROR("Assertion Failed: {0}", __VA_ARGS__); PG_DEBUGBREAK } }
+	#define PG_CORE_ASSERT(x, ...) { if(!(x)) { PG_CORE_ERROR("Assertion Failed: {0}", __VA_ARGS__); PG_DEBUGBREAK } }
+	#define PG_CORE_EXCEPT(x, ...) { if(!(x)) { PG_CORE_ERROR("Assertion Failed: {0}", __VA_ARGS__); PG_DEBUGBREAK throw std::invalid_argument(__VA_ARGS__);} }
 #else
 	#define PG_ASSERT(x, ...)
 	#define PG_CORE_ASSERT(x, ...)

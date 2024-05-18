@@ -9,6 +9,7 @@ file(GLOB PGCORE
     "Pigeon/Core/LayerStack.cpp"
     "Pigeon/Core/Log.cpp"
     "Pigeon/Core/OrthographicCameraController.cpp"
+    "Pigeon/Core/UUID.cpp"
     "Pigeon/Core/Core.h"
     "Pigeon/Core/Clock.h"
     "Pigeon/Core/Input.h"
