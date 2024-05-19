@@ -1,0 +1,96 @@
+{
+  "ui": {
+    "gameVariables": [
+      {
+        "id": "@gameTextVar"
+      },
+      {
+        "id": "@gameOnHover1"
+      },
+      {
+        "id": "@gameImageUUIDVar"
+      },
+      {
+        "id": "@subVar1"
+      },
+      {
+        "id": "@subVar2"
+      },
+      {
+        "id": "@subVar3"
+      }
+    ],
+    "verticalLayout": {
+      "children": [
+        {
+          "text": {
+            "x": 100,
+            "y": 50,
+            "width": 400,
+            "height": 50,
+            "text": "Sample text",
+            "fontSize": 32,
+            "alignment": "center",
+            "spacing_x": 5,
+            "spacing_y": 10
+          }
+        },
+        {
+          "text": {
+            "x": 100,
+            "y": 100,
+            "width": 400,
+            "height": 50,
+            "text": "@gameTextVar",
+            "fontSize": 32,
+            "alignment": "left",
+            "spacing_x": 5,
+            "spacing_y": 10,
+            "onHover": "@gameOnHover1"
+          }
+        },
+        {
+          "image": {
+            "x": 10,
+            "y": 150,
+            "width": 300,
+            "height": 200,
+            "path": "Test/uiTestImage1.png",
+            "alignment": "center",
+            "spacing_x": 1,
+            "spacing_y": 2
+          }
+        },
+        {
+          "image": {
+            "x": 10,
+            "y": 400,
+            "width": 300,
+            "height": 200,
+            "uuid": "@gameImageUUIDVar",
+            "alignment": "right",
+            "spacing_x": 1,
+            "spacing_y": 2,
+            "onClick": "@gameAction1"
+          }
+        },
+        {
+          "ui": {
+            "id": "TestSubUI",
+            "gameVariables": [
+              {
+                "id": "@subVar1"
+              },
+              {
+                "id": "@subVar2"
+              },
+              {
+                "id": "@subVar3"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}
