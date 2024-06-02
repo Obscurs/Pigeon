@@ -23,16 +23,16 @@ namespace
 	{
 		VertexData(const glm::vec4& pos, const glm::vec4& color, int textureId, const glm::vec2& texCoords)
 		{
-			m_Data[0] = pos.x;
-			m_Data[1] = pos.y * (pig::Texture2D::FlipY() ? -1.f : 1.f);
-			m_Data[2] = pos.z;
-			m_Data[3] = color.r;
-			m_Data[4] = color.g;
-			m_Data[5] = color.b;
-			m_Data[6] = color.a;
-			m_Data[7] = texCoords.x;
-			m_Data[8] = texCoords.y;
-			m_Data[9] = textureId;
+			m_Data[pig::Renderer2D::ATRIB_POS_X_INDEX] = pos.x;
+			m_Data[pig::Renderer2D::ATRIB_POS_Y_INDEX] = pos.y * (pig::Texture2D::FlipY() ? -1.f : 1.f);
+			m_Data[pig::Renderer2D::ATRIB_POS_Z_INDEX] = pos.z;
+			m_Data[pig::Renderer2D::ATRIB_COL_R_INDEX] = color.r;
+			m_Data[pig::Renderer2D::ATRIB_COL_G_INDEX] = color.g;
+			m_Data[pig::Renderer2D::ATRIB_COL_B_INDEX] = color.b;
+			m_Data[pig::Renderer2D::ATRIB_COL_A_INDEX] = color.a;
+			m_Data[pig::Renderer2D::ATRIB_TEX_X_INDEX] = texCoords.x;
+			m_Data[pig::Renderer2D::ATRIB_TEX_Y_INDEX] = texCoords.y;
+			m_Data[pig::Renderer2D::ATRIB_TEX_ID_INDEX] = textureId;
 		}
 
 		~VertexData() = default;
@@ -90,18 +90,15 @@ void pig::Renderer2D::Clear(const glm::vec4& color)
 	pig::RenderCommand::Clear();
 }
 
-void pig::Renderer2D::BeginScene(const pig::OrthographicCameraController& cameraController)
+void pig::Renderer2D::BeginScene(const pig::OrthographicCamera& ortoCamera)
 {
 	pig::RenderCommand::Begin();
-
-	s_Data.m_Camera = &cameraController;
 
 	s_Data.m_VertexBuffer->Bind();
 	s_Data.m_IndexBuffer->Bind();
 	s_Data.m_TextureMap[pig::Renderer2D::s_DefaultTexture].m_Texture->Bind(0);
 	s_Data.m_QuadShader->Bind();
 
-	const OrthographicCamera& ortoCamera = s_Data.m_Camera->GetCamera();
 	glm::mat4 viewProjMat = ortoCamera.GetViewProjectionMatrix();
 	s_Data.m_QuadShader->UploadUniformMat4("u_ViewProjection", viewProjMat);
 }
@@ -113,7 +110,6 @@ void pig::Renderer2D::EndScene()
 	pig::RenderCommand::End();
 	s_Data.m_VertexBuffer->Unbind();
 	s_Data.m_IndexBuffer->Unbind();
-	s_Data.m_Camera = nullptr;
 }
 
 const pig::Texture2D& pig::Renderer2D::GetTexture(const pig::UUID& textureID)
@@ -251,6 +247,7 @@ void pig::Renderer2D::DrawString(const glm::mat4& transform, const std::string& 
 
 void pig::Renderer2D::DrawQuad(const glm::mat4& transform, const pig::UUID& textureID, const glm::vec3& origin)
 {
+	//TODO ARNAU Assert if scene has not began
 	DrawBatch(transform, glm::vec3(1.f), textureID, glm::vec4(0.f, 0.f, 1.f, 1.f), origin);
 }
 

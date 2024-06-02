@@ -10,6 +10,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <memory>
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
 #include <optional>
 #include <string>
 #include <sstream>
@@ -19,6 +21,7 @@
 #include <vector>
 
 #include <Pigeon/Core/Log.h>
+#include <Pigeon/Core/UUID.h>
 
 #ifdef PG_PLATFORM_WINDOWS
 	#include <Windows.h>

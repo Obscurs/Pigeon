@@ -4,10 +4,13 @@
 
 #include "Pigeon/Core/InputLayer.h"
 #include "Pigeon/Core/Log.h"
+#include "Pigeon/ECS/World.h"
 #include "Pigeon/Events/ApplicationEvent.h"
 #include "Pigeon/ImGui/ImGuiLayer.h"
 #include "Pigeon/Renderer/Renderer.h"
 #include "Pigeon/Renderer/Renderer2D.h"
+#include "Pigeon/UI/LayoutControlSystem.h"
+#include "Pigeon/UI/UIRenderSystem.h"
 #include <chrono>
 
 pig::U_Ptr<pig::Application> pig::Application::s_Instance = nullptr;
@@ -70,6 +73,13 @@ void pig::Application::Init()
 {
 	m_Data.m_Window = std::move(Window::Create());
 	m_Data.m_Window->SetEventCallback(pig::BindEventFn<&Application::OnEvent, Application>(this));
+	pig::World& world = pig::World::Create();
+
+	//ARNAU TODO consider using something else instead of pointers?
+	//ARNAU TODO move system registration on a separate file and do proper system ordering
+	world.RegisterSystem(std::move(std::make_unique<pig::ui::LayoutControlSystem>()));
+	world.RegisterSystem(std::move(std::make_unique<pig::ui::UIRenderSystem>(std::make_shared<pig::ui::UIRenderSystemHelper>())));
+
 	pig::Renderer::Init();
 	pig::Renderer2D::Init();
 
@@ -102,6 +112,9 @@ void pig::Application::Update(const Timestep& ts)
 			layer->OnImGuiRender();
 	}
 #endif
+
+	pig::World::Get().Update(ts.AsMilliseconds());
+
 	for (pig::S_Ptr<pig::Layer> layer : m_Data.m_LayerStack)
 		layer->End();
 

@@ -38,6 +38,12 @@ file(GLOB RENDERER
     "Pigeon/Renderer/MSDFData.h"
 )
 
+file(GLOB UI
+    "Pigeon/UI/LayoutControlSystem.cpp"
+    "Pigeon/UI/UIComponents.h"
+    "Pigeon/UI/UIRenderSystem.cpp"
+)
+
 file(GLOB ECS_WORLD
     "Pigeon/ECS/System.h"
     "Pigeon/ECS/World.cpp"
@@ -97,6 +103,7 @@ source_group("" FILES ${ROOT})
 source_group("Pigeon\\Core" FILES ${PGCORE})
 source_group("Pigeon\\ImGui" FILES ${PGIMGUI})
 source_group("Pigeon\\Renderer" FILES ${RENDERER})
+source_group("Pigeon\\UI" FILES ${UI})
 source_group("Platform\\Testing" FILES ${PLATFORM_TESTING})
 source_group("Platform\\DirectX11" FILES ${PLATFORM_DX})
 source_group("Pigeon\\ECS" FILES ${ECS_WORLD})
@@ -144,6 +151,7 @@ target_link_libraries (
     glm
     msdfgen
     msdf-atlas-gen
+    nlohmann_json
 )
 
 target_include_directories(PigeonLib PUBLIC 

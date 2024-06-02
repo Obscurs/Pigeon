@@ -25,7 +25,7 @@ namespace
 	public:
 		ExampleLayer()
 			: Layer("Example"),
-			m_CameraController(1280.0f / 720.0f)
+			m_CameraController(true, 1280.0f / 720.0f, 0.f)
 		{
 			m_VertexBuffer = std::move(pig::VertexBuffer::Create(s_SquareVertices, sizeof(s_SquareVertices), sizeof(float) * 5));
 			m_IndexBuffer = std::move(pig::IndexBuffer::Create(s_SuareIndices, sizeof(s_SuareIndices) / sizeof(uint32_t)));

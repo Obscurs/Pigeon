@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Pigeon/Core/Layer.h"
+#include "Pigeon/ECS/World.h"
 #include "Pigeon/Renderer/Buffer.h"
 #include "Pigeon/Core/OrthographicCameraController.h"
 #include "Pigeon/Core/UUID.h"
@@ -47,6 +48,9 @@ namespace sbx
 
 		pig::UUID m_TextureID1{};
 		pig::S_Ptr<pig::Font> m_Font;
+
+		entt::entity m_UIEntity1{ entt::null };
+		entt::entity m_UIEntity2{ entt::null };
 	};
 }
 

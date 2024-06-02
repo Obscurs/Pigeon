@@ -1,10 +1,7 @@
 #pragma once
 #include <entt/entt.hpp>
 
-namespace pig
-{
-	class System;
-}
+#include "Pigeon/ECS/System.h"
 
 namespace pig
 {

@@ -83,9 +83,10 @@ namespace CatchTestsetFail
 		pig::Application& app = pig::CreateApplication();
 		pig::TestingWindow& appWindow = static_cast<pig::TestingWindow&>(app.GetWindow());
 		const pig::Timestep timestep(5);
+		
 		SECTION("Keyboard events")
 		{
-			pig::OrthographicCameraController cameraController(0.5f);
+			pig::OrthographicCameraController cameraController(true, 0.5f, 0.f);
 			const glm::vec3& camPos = cameraController.GetData().m_CameraPosition;
 
 			pig::Input& appInput = static_cast<pig::Input&>(pig::Input::GetInput());
@@ -166,7 +167,7 @@ namespace CatchTestsetFail
 		{
 			SECTION("Mouse scrolled")
 			{
-				pig::OrthographicCameraController cameraController(0.5f);
+				pig::OrthographicCameraController cameraController(true, 0.5f, 0.f);
 
 				cameraController.SetZoomLevel(3.5f);
 				CHECK(cameraController.GetZoomLevel() == 3.5f);
@@ -212,7 +213,7 @@ namespace CatchTestsetFail
 			}
 			SECTION("Window Resized")
 			{
-				pig::OrthographicCameraController cameraController(0.123f);
+				pig::OrthographicCameraController cameraController(true, 0.123f, 0.f);
 				CHECK(cameraController.GetZoomLevel() == 1.0f);
 				cameraController.SetZoomLevel(4.f);
 
@@ -241,6 +242,31 @@ namespace CatchTestsetFail
 				CHECK(cameraTest.GetData().m_ViewMatrix == controllerCamera.GetData().m_ViewMatrix);
 				CHECK(cameraTest.GetData().m_ViewProjectionMatrix == controllerCamera.GetData().m_ViewProjectionMatrix);
 				CHECK(cameraTest.GetData().m_ProjectionMatrix == controllerCamera.GetData().m_ProjectionMatrix);
+			}
+		}
+		SECTION("Camera that does not react to input")
+		{
+			pig::OrthographicCameraController cameraController(false, 0.5f, 0.f);
+			const glm::vec3& camPos = cameraController.GetData().m_CameraPosition;
+
+			pig::Input& appInput = static_cast<pig::Input&>(pig::Input::GetInput());
+
+			CHECK(camPos.x == 0.f);
+			CHECK(camPos.y == 0.f);
+			CHECK(camPos.z == 0.f);
+
+			SECTION("MovingDirections")
+			{
+				SECTION("Moving left")
+				{
+					pig::KeyPressedEvent pressEvent(PG_KEY_A, 0);
+					appWindow.TESTING_TriggerEvent(&pressEvent);
+					app.TestUpdate(timestep);
+					cameraController.OnUpdate(timestep);
+					CHECK(camPos.x == 0.f);
+					CHECK(camPos.y == 0.f);
+					CHECK(camPos.z == 0.f);
+				}
 			}
 		}
 	}

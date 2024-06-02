@@ -115,8 +115,12 @@ void pig::Dx11RendererAPI::End()
 
 void pig::Dx11RendererAPI::Clear()
 {
-	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
-	context->GetPd3dDeviceContext()->ClearRenderTargetView(m_Data.m_MainRenderTargetView.get(), m_Data.m_ClearColor);
+	//ARNAU TODO remove this hack
+	if (m_Data.m_ClearColor[3] != 0.f)
+	{
+		auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
+		context->GetPd3dDeviceContext()->ClearRenderTargetView(m_Data.m_MainRenderTargetView.get(), m_Data.m_ClearColor);
+	}
 }
 
 void pig::Dx11RendererAPI::DrawIndexed(unsigned int count)

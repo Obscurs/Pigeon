@@ -1,0 +1,13 @@
+{
+  "ui": {
+    "text": {
+      "width": 400,
+      "height": 50,
+      "text": "this is a sample text",
+      "fontSize": 32,
+      "alignment_h": "left",
+      "spacing_x": 5,
+      "spacing_y": 10,
+    }
+  }
+}

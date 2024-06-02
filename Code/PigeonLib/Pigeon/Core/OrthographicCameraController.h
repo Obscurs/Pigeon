@@ -23,9 +23,10 @@ namespace pig
 			float m_CameraRotation = 0.0f;
 			float m_CameraTranslationSpeed = 5.0f;
 			float m_CameraRotationSpeed = 180.0f;
+			bool m_ReactsToInput = false;
 		};
 
-		OrthographicCameraController(float aspectRatio, bool rotation = false);
+		OrthographicCameraController(bool reactsToInput, float aspectRatio, float z, bool rotation = false);
 
 #ifdef TESTS_ENABLED
 		const Data& GetData() const { return m_Data; }

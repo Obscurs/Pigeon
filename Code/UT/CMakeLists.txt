@@ -7,16 +7,19 @@ file(GLOB SRC_TESTS_SAMPLE "UT_Sample/*.cpp")
 
 file(GLOB SRC_TESTS_CORE "UT_Core/*.cpp")
 file(GLOB SRC_TESTS_INTERFACE "UT_Interface/*.cpp")
+file(GLOB SRC_TESTS_UI "UT_UI/*.cpp")
 
 source_group("" FILES ${SRC_MAIN})
 source_group("Tests/Sample" FILES ${SRC_TESTS_SAMPLE})
 
 source_group("Tests/Core" FILES ${SRC_TESTS_CORE})
 source_group("Tests/Interface" FILES ${SRC_TESTS_INTERFACE})
+source_group("Tests/UI" FILES ${SRC_TESTS_UI})
 
 include_directories (
     "${PROJECT_SOURCE_DIR}/Code/PigeonLib"
     "${PROJECT_SOURCE_DIR}/Code/PigeonLib/PigeonLib.dir/Test"
+
     "${PROJECT_SOURCE_DIR}/Code/UT"
 )
 
@@ -30,6 +33,7 @@ add_executable (UT
     ${SRC_TESTS_CORE}  
     ${SRC_TESTS_SAMPLE}
     ${SRC_TESTS_INTERFACE}
+    ${SRC_TESTS_UI}
 )
 
 add_dependencies(UT PigeonLib) 

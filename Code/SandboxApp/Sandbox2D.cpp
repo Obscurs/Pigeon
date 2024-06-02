@@ -9,9 +9,11 @@
 #include "Pigeon/Renderer/Renderer2D.h"
 #include "Pigeon/Renderer/Sprite.h"
 
+#include "Pigeon/UI/UIComponents.h"
+
 #include "Pigeon/Core/Clock.h"
 
-sbx::Sandbox2D::Sandbox2D(): pig::Layer("Sandbox2D"), m_CameraController(1280.0f / 720.0f)
+sbx::Sandbox2D::Sandbox2D(): pig::Layer("Sandbox2D"), m_CameraController(true, 1280.0f / 720.0f, 0.0f)
 {
 	m_ColorQuad1 = glm::vec3(0.f, 1.f, 0.0f);
 	m_PosQuad1 = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -29,6 +31,26 @@ sbx::Sandbox2D::Sandbox2D(): pig::Layer("Sandbox2D"), m_CameraController(1280.0f
 
 	m_TextureID1 = pig::Renderer2D::AddTexture("Assets/Textures/Checkerboard.png", pig::EMappedTextureType::eQuad);
 	m_Font = std::make_shared<pig::Font>("Assets/Fonts/opensans/OpenSans-Regular.ttf");
+
+	m_UIEntity1 = pig::World::GetRegistry().create();
+	m_UIEntity2 = pig::World::GetRegistry().create();
+
+	pig::ui::BaseComponent& baseComponent1 = pig::World::GetRegistry().emplace<pig::ui::BaseComponent>(m_UIEntity1);
+	pig::ui::BaseComponent& baseComponent2 = pig::World::GetRegistry().emplace<pig::ui::BaseComponent>(m_UIEntity2);
+	pig::ui::TextComponent& textComponent1 = pig::World::GetRegistry().emplace<pig::ui::TextComponent>(m_UIEntity1);
+	pig::ui::ImageComponent& imageComponent2 = pig::World::GetRegistry().emplace<pig::ui::ImageComponent>(m_UIEntity2);
+
+	baseComponent1.m_Parent = m_UIEntity2;
+	baseComponent1.m_Size = { 100.f, 100.f };
+	baseComponent2.m_Size = { 400.f, 400.f };
+	baseComponent1.m_HAlign = pig::ui::EHAlignType::eRight;
+
+	textComponent1.m_Text = "Sample\nUI";
+	textComponent1.m_Kerning = 0.1f;
+	textComponent1.m_Spacing = 0.1f;
+	textComponent1.m_Color = { 0.f, 0.f, 1.f, 1.f };
+
+	imageComponent2.m_TextureHandle = m_TextureID1;
 }
 
 void sbx::Sandbox2D::OnUpdate(const pig::Timestep& ts)
@@ -36,7 +58,7 @@ void sbx::Sandbox2D::OnUpdate(const pig::Timestep& ts)
 	m_CameraController.OnUpdate(ts);
 
 	pig::Renderer2D::Clear({ 0.3f, 0.3f, 0.3f, 1.f });
-	pig::Renderer2D::BeginScene(m_CameraController);
+	pig::Renderer2D::BeginScene(m_CameraController.GetCamera());
 
 	glm::mat4 transformQuad1(1.f);
 	transformQuad1 = glm::translate(transformQuad1, m_PosQuad1);

@@ -33,6 +33,17 @@ namespace pig
 	class Renderer2D
 	{
 	public:
+		static const unsigned int ATRIB_POS_X_INDEX = 0;
+		static const unsigned int ATRIB_POS_Y_INDEX = 1;
+		static const unsigned int ATRIB_POS_Z_INDEX = 2;
+		static const unsigned int ATRIB_COL_R_INDEX = 3;
+		static const unsigned int ATRIB_COL_G_INDEX = 4;
+		static const unsigned int ATRIB_COL_B_INDEX = 5;
+		static const unsigned int ATRIB_COL_A_INDEX = 6;
+		static const unsigned int ATRIB_TEX_X_INDEX = 7;
+		static const unsigned int ATRIB_TEX_Y_INDEX = 8;
+		static const unsigned int ATRIB_TEX_ID_INDEX = 9;
+
 		static const unsigned int VERTEX_ATRIB_COUNT = 10;
 		static const unsigned int QUAD_VERTEX_COUNT = 4;
 		static const unsigned int QUAD_INDEX_COUNT = 6;
@@ -46,7 +57,6 @@ namespace pig
 				m_IndexBuffer = nullptr;
 				m_QuadShader = nullptr;
 				m_TextShader = nullptr;
-				m_Camera = nullptr;
 				m_TextureMap.clear();
 				m_BatchMap.clear();
 			}
@@ -65,8 +75,6 @@ namespace pig
 
 			pig::S_Ptr<pig::Shader> m_QuadShader = nullptr;
 			pig::S_Ptr<pig::Shader> m_TextShader = nullptr;
-
-			const pig::OrthographicCameraController* m_Camera = nullptr;
 			
 			std::unordered_map<pig::UUID, MappedTexture> m_TextureMap;
 			std::unordered_map<pig::UUID, BatchData> m_BatchMap;
@@ -78,7 +86,7 @@ namespace pig
 
 		static void Clear(const glm::vec4& color);
 
-		static void BeginScene(const pig::OrthographicCameraController& cameraController);
+		static void BeginScene(const pig::OrthographicCamera& ortoCamera);
 		static void EndScene();
 
 		static const pig::Texture2D& GetTexture(const pig::UUID& textureID);

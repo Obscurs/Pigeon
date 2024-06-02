@@ -6,6 +6,7 @@
 
 pig::U_Ptr<pig::World> pig::World::s_Instance = nullptr;
 
+//ARNAU TODO change dt to timestep
 void pig::World::Update(float dt)
 {
 	for (int i=0; i < m_Systems.size(); ++i)
@@ -17,10 +18,12 @@ void pig::World::Update(float dt)
 void pig::World::RegisterSystem(std::unique_ptr<pig::System> system)
 {
 	PG_CORE_ASSERT(system->IsValid(), "Trying to push an invalid system");
-	for (const auto& sys : m_Systems)
+
+	//ARNAU TODO remove this?
+	/*for (const auto& sys : m_Systems)
 	{
 		PG_CORE_ASSERT(system->GetType() != sys->GetType(), "System type already registered");
-	}
+	}*/
 	m_Systems.push_back(std::move(system));
 }
 

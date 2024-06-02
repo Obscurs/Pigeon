@@ -36,6 +36,12 @@ FetchContent_Declare(
   GIT_TAG        main
 )
 
+FetchContent_Declare(
+  nlohmann_json
+  GIT_REPOSITORY https://github.com/nlohmann/json.git
+  GIT_TAG v3.11.3
+)
+
 FetchContent_GetProperties(imgui)
 if(NOT imgui_POPULATED)
   FetchContent_Populate(imgui)
@@ -59,7 +65,7 @@ if(NOT entt_POPULATED)
   set(ENTT_INCLUDE_DIRS "${entt_SOURCE_DIR}/src")
 endif()
 
-FetchContent_MakeAvailable(glm spdlog Catch2 msdf-atlas-gen)
+FetchContent_MakeAvailable(glm spdlog Catch2 msdf-atlas-gen nlohmann_json)
 
 set(MSDFGEN_INCLUDE_DIRS 
     "${msdf-atlas-gen_SOURCE_DIR}/msdf-atlas-gen"
