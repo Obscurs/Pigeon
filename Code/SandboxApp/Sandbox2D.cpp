@@ -43,7 +43,8 @@ sbx::Sandbox2D::Sandbox2D(): pig::Layer("Sandbox2D"), m_CameraController(true, 1
 	baseComponent1.m_Parent = m_UIEntity2;
 	baseComponent1.m_Size = { 100.f, 100.f };
 	baseComponent2.m_Size = { 400.f, 400.f };
-	baseComponent1.m_HAlign = pig::ui::EHAlignType::eRight;
+	baseComponent1.m_HAlign = pig::ui::EHAlignType::eCenter;
+	baseComponent1.m_VAlign = pig::ui::EVAlignType::eCenter;
 
 	textComponent1.m_Text = "Sample\nUI";
 	textComponent1.m_Kerning = 0.1f;

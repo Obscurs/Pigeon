@@ -34,6 +34,7 @@ namespace pig
 		glm::vec4 GetCharacterTexCoordsQuad(char c, const pig::Texture2D& fontAtlas) const;
 
 		glm::mat4 GetCharacterTransform(const glm::vec4& charQuad, const glm::mat4& stringTransform) const;
+		glm::vec2 GetStringBounds(std::string string, float kerning, float linespacing) const;
 
 	private:
 		double GetFsScale() const;

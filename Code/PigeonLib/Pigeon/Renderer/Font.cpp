@@ -231,6 +231,34 @@ glm::mat4 pig::Font::GetCharacterTransform(const glm::vec4& charQuad, const glm:
 	return transform;
 }
 
+glm::vec2 pig::Font::GetStringBounds(std::string string, float kerning, float linespacing) const
+{
+	double maxWidth = 0.0;
+	glm::dvec2 charOffset{ 0.0, 0.0 };
+
+	const glm::vec3 originSprite(0.f, 0.0f, 0.f);
+
+	for (size_t i = 0; i < string.size(); i++)
+	{
+		char character = string[i];
+
+		if (IsCharacterNewLine(character))
+		{
+			charOffset.x = 0.0;
+		}
+		if (i < string.size() - 1)
+		{
+			glm::dvec2 charAdvance = GetCharacterAdvance(character, string[i + 1], kerning, linespacing);
+			charOffset += charAdvance;
+		}
+
+		if (charOffset.x > maxWidth)
+			maxWidth = charOffset.x;
+	}
+
+	return glm::vec2(maxWidth, charOffset.y);
+}
+
 double pig::Font::GetFsScale() const
 {
 	const auto& metrics = m_Data->FontGeometry.getMetrics();

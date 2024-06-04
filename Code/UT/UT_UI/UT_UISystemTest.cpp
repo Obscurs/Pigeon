@@ -44,6 +44,16 @@ namespace
 			m_Spacing = linespacing;
 			m_Color = color;
 		}
+		glm::vec2 GetStringBounds(const std::string& string, float kerning, float linespace, pig::S_Ptr<pig::Font> font)
+		{
+			return m_BoundsToReturn;
+		}
+
+		unsigned int GetStringNumLines(const std::string& string, pig::S_Ptr<pig::Font> font)
+		{
+			return m_LinesToReturn;
+		}
+
 		virtual pig::S_Ptr<pig::Font> CreateUIFont() override
 		{
 			m_FontCreated = true;
@@ -69,24 +79,27 @@ namespace
 		glm::vec4 m_Color{};
 		float m_Spacing{};
 		float m_Kerning{};
+
+		glm::vec2 m_BoundsToReturn{};
+		unsigned int m_LinesToReturn = 0;
 	};
 
-	void TestImage(pig::S_Ptr<MockUIRenderSystemHelper> helper, const pig::UUID& texture, const glm::vec2& position, const glm::vec2& size)
+	void TestImage(pig::S_Ptr<MockUIRenderSystemHelper> helper, const pig::UUID& texture, const glm::vec2& position, const glm::vec2& size, float z)
 	{
 		CHECK(helper->m_SceneBegan);
 		CHECK(helper->m_SceneEnd);
 		CHECK(helper->m_TextureID == texture);
 		glm::mat4 transform(1.f);
-		transform = glm::translate(transform, glm::vec3(position, 0.f));
+		transform = glm::translate(transform, glm::vec3(position, z));
 		transform = glm::scale(transform, glm::vec3(size, 1.f));
 
 		CHECK(helper->m_TransformRender == transform);
 	}
 
-	void TestText(pig::S_Ptr<MockUIRenderSystemHelper> helper, const glm::vec2& position, const glm::vec2& size, const std::string& string, const glm::vec4& color, float kerning, float linespacing)
+	void TestText(pig::S_Ptr<MockUIRenderSystemHelper> helper, const glm::vec2& position, const glm::vec2& size, const std::string& string, const glm::vec4& color, float kerning, float linespacing, float z)
 	{
 		glm::mat4 transform(1.f);
-		transform = glm::translate(transform, glm::vec3(position, 0.f));
+		transform = glm::translate(transform, glm::vec3(position, z));
 		transform = glm::scale(transform, glm::vec3(size, 1.f));
 
 		CHECK(helper->m_TransformRender == transform);
@@ -134,14 +147,14 @@ namespace CatchTestsetFail
 			
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
 
-			TestImage(helper, imageComponent.m_TextureHandle, baseComponent.m_Spacing, baseComponent.m_Size);
+			TestImage(helper, imageComponent.m_TextureHandle, baseComponent.m_Spacing, baseComponent.m_Size, 0.f);
 
 			baseComponent.m_Size = { 300.f, 100.f };
 			baseComponent.m_Spacing = { 10.f, 20.f};
 
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
 
-			TestImage(helper, imageComponent.m_TextureHandle, baseComponent.m_Spacing, baseComponent.m_Size);
+			TestImage(helper, imageComponent.m_TextureHandle, baseComponent.m_Spacing, baseComponent.m_Size, 0.f);
 			helper->Reset();
 			pig::World::GetRegistry().destroy(uiElementEntity);
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
@@ -154,9 +167,25 @@ namespace CatchTestsetFail
 			textComponent.m_Color = {1.f, 0.f, 0.f, 1.f};
 			textComponent.m_Kerning = 10.f;
 			textComponent.m_Spacing = 2.f;
+			helper->m_LinesToReturn = 2;
+			baseComponent.m_Size = { 300.f, 200.f };
+
+			glm::vec2 sizeToCheck{};
+			SECTION("Width limited")
+			{
+				helper->m_BoundsToReturn = { 100.f, 20.f };
+				sizeToCheck.x = baseComponent.m_Size.x / helper->m_BoundsToReturn.x;
+				sizeToCheck.y = baseComponent.m_Size.x / helper->m_BoundsToReturn.x;
+			}
+			SECTION("Height limited")
+			{
+				helper->m_BoundsToReturn = { 20.f, 100.f };
+				sizeToCheck.x = (baseComponent.m_Size.y / helper->m_BoundsToReturn.y) / helper->m_LinesToReturn;
+				sizeToCheck.y = (baseComponent.m_Size.y / helper->m_BoundsToReturn.y) / helper->m_LinesToReturn;
+			}
 
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestText(helper, baseComponent.m_Spacing, baseComponent.m_Size, textComponent.m_Text, textComponent.m_Color, textComponent.m_Kerning, textComponent.m_Spacing);
+			TestText(helper, baseComponent.m_Spacing, sizeToCheck, textComponent.m_Text, textComponent.m_Color, textComponent.m_Kerning, textComponent.m_Spacing, 0.f);
 		}
 		SECTION("Test alignment")
 		{
@@ -166,37 +195,37 @@ namespace CatchTestsetFail
 			baseComponent.m_Size = { 300.f, 100.f };
 			baseComponent.m_Spacing = { 50.f, 60.f };
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestImage(helper, imageComponent.m_TextureHandle, baseComponent.m_Spacing, baseComponent.m_Size);
+			TestImage(helper, imageComponent.m_TextureHandle, baseComponent.m_Spacing, baseComponent.m_Size, 0.f);
 
 			baseComponent.m_HAlign = pig::ui::EHAlignType::eLeft;
 			baseComponent.m_VAlign = pig::ui::EVAlignType::eTop;
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestImage(helper, imageComponent.m_TextureHandle, baseComponent.m_Spacing, baseComponent.m_Size);
+			TestImage(helper, imageComponent.m_TextureHandle, baseComponent.m_Spacing, baseComponent.m_Size, 0.f);
 
 			baseComponent.m_HAlign = pig::ui::EHAlignType::eRight;
 			glm::vec2 posFinal = glm::vec2(renderComponent.m_Width - (baseComponent.m_Size.x + baseComponent.m_Spacing.x), baseComponent.m_Spacing.y);
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size);
+			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, 0.f);
 
 			baseComponent.m_VAlign = pig::ui::EVAlignType::eBottom;
 			posFinal = glm::vec2(renderComponent.m_Width - (baseComponent.m_Size.x + baseComponent.m_Spacing.x), renderComponent.m_Height - (baseComponent.m_Size.y + baseComponent.m_Spacing.y));
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size);
+			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, 0.f);
 
 			baseComponent.m_HAlign = pig::ui::EHAlignType::eCenter;
 			posFinal = glm::vec2((renderComponent.m_Width/2.f - baseComponent.m_Size.x/2.f) + baseComponent.m_Spacing.x, renderComponent.m_Height - (baseComponent.m_Size.y + baseComponent.m_Spacing.y));
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size);
+			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, 0.f);
 
 			baseComponent.m_VAlign = pig::ui::EVAlignType::eCenter;
 			posFinal = glm::vec2((renderComponent.m_Width / 2.f - baseComponent.m_Size.x / 2.f) + baseComponent.m_Spacing.x, (renderComponent.m_Height/2.f - baseComponent.m_Size.y/2.f) + baseComponent.m_Spacing.y);
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size);
+			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, 0.f);
 
 			baseComponent.m_HAlign = pig::ui::EHAlignType::eLeft;
 			posFinal = glm::vec2(baseComponent.m_Spacing.x, (renderComponent.m_Height / 2.f - baseComponent.m_Size.y / 2.f) + baseComponent.m_Spacing.y);
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size);
+			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, 0.f);
 		}
 		SECTION("Render multilevel UI")
 		{
@@ -224,42 +253,42 @@ namespace CatchTestsetFail
 			posFinal.y = 10 + 20 + 60; // 90
 
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size);
+			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
 
 			baseComponentParent.m_HAlign = pig::ui::EHAlignType::eRight;
 			posFinal.x = 50 + 100 + 1000 - (10 + 600); //540
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size);
+			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
 
 			baseComponentParentParent.m_HAlign = pig::ui::EHAlignType::eRight;
 			posFinal.x = 1920 - (1000 + 100) + 1000 - (10 + 600) + 50; // 820 + 390 + 50 = 1260
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size);
+			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
 			
 			baseComponentParent.m_HAlign = pig::ui::EHAlignType::eCenter;
 			posFinal.x = 1920 - (1000 + 100) + (500 - 300) + 10 + 50; // 820 + 210 + 50 = 1080
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size);
+			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
 			
 			baseComponentParent.m_VAlign = pig::ui::EVAlignType::eCenter;
 			posFinal.y = 10 + (450 - 400) + 20 + 60; //10 + 70 + 60 = 140
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size);
+			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
 
 			baseComponentParentParent.m_VAlign = pig::ui::EVAlignType::eBottom;
 			posFinal.y = 1080 - (900 + 10) + (450 - 400) + 20 + 60; //170 + 70 + 60 = 140
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size);
+			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
 
 			baseComponent.m_HAlign = pig::ui::EHAlignType::eRight;
 			posFinal.x = 1920 - (1000 + 100) + (500 - 300) + 10 + 600 - (300 + 50); // 820 + 210 + 250 = 1280
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size);
+			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
 
 			baseComponent.m_VAlign = pig::ui::EVAlignType::eCenter;
 			posFinal.y = 1080 - (900 + 10) + (450 - 400) + 20 + (400 - 50) + 60; //170 + 70 + 410 = 650
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size);
+			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
 		}
 	}
 	TEST_CASE("UI.LayoutControlSystem::LayoutControlSystem")
