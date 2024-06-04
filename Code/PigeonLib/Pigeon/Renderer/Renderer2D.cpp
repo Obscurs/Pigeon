@@ -157,90 +157,30 @@ void pig::Renderer2D::DrawString(const glm::mat4& transform, const std::string& 
 {
 	const pig::Texture2D& fontAtlas = GetTexture(font->GetFontID());
 
-	const auto& fontGeometry = font->GetMSDFData()->FontGeometry;
-	const auto& metrics = fontGeometry.getMetrics();
-	double x = 0.0;
-	double fsScale = 1.0 / (metrics.ascenderY - metrics.descenderY);
-	double y = 0.0;
-
-	const float spaceGlyphAdvance = fontGeometry.getGlyph(' ')->getAdvance();
-
+	glm::dvec2 charOffset{ 0.0, 0.0 };
 	const glm::vec3 originSprite(0.f, 0.0f, 0.f);
 
 	for (size_t i = 0; i < string.size(); i++)
 	{
 		char character = string[i];
-		if (character == '\r')
-			continue;
 
-		if (character == '\n')
+		if (font->IsCharacterDrawable(character))
 		{
-			x = 0;
-			y += fsScale * metrics.lineHeight + linespacing;
-			continue;
+			const glm::vec4 texCoords = font->GetCharacterTexCoordsQuad(character, fontAtlas);
+			const glm::vec4 charQuad = font->GetCharacterVertexQuad(character, charOffset);
+			const glm::mat4 charTransform = font->GetCharacterTransform(charQuad, transform);
+
+			DrawBatch(charTransform, color, font->GetFontID(), texCoords, originSprite);
 		}
 
-		if (character == ' ')
+		if (font->IsCharacterNewLine(character))
 		{
-			float advance = spaceGlyphAdvance;
-			if (i < string.size() - 1)
-			{
-				char nextCharacter = string[i + 1];
-				double dAdvance;
-				fontGeometry.getAdvance(dAdvance, character, nextCharacter);
-				advance = (float)dAdvance;
-			}
-
-			x += fsScale * advance + kerning;
-			continue;
+			charOffset.x = 0.0;
 		}
-
-		if (character == '\t')
-		{
-			x += 4.0f * (fsScale * spaceGlyphAdvance + kerning);
-			continue;
-		}
-
-		auto glyph = fontGeometry.getGlyph(character);
-		if (!glyph)
-			glyph = fontGeometry.getGlyph('?');
-		if (!glyph)
-			return;
-
-		double al, ab, ar, at;
-		glyph->getQuadAtlasBounds(al, ab, ar, at);
-		glm::vec2 texCoordMin((float)al, (float)at);
-		glm::vec2 texCoordMax((float)ar, (float)ab);
-
-		double pl, pb, pr, pt;
-		glyph->getQuadPlaneBounds(pl, pb, pr, pt);
-		glm::vec2 quadMin((float)pl, 1.f - (float)pt);
-		glm::vec2 quadMax((float)pr, 1.f - (float)pb);
-
-		quadMin *= fsScale;
-		quadMax *= fsScale;
-		quadMin += glm::vec2(x, y);
-		quadMax += glm::vec2(x, y);
-
-		float texelWidth = 1.0f / fontAtlas.GetWidth();
-		float texelHeight = 1.0f / fontAtlas.GetHeight();
-		texCoordMin *= glm::vec2(texelWidth, texelHeight);
-		texCoordMax *= glm::vec2(texelWidth, texelHeight);
-
-		glm::mat4 stringTransform = glm::mat4(1.0f); // Identity matrix
-		stringTransform = glm::translate(stringTransform, glm::vec3(quadMin, 0.0f)); // Apply translation
-		stringTransform = glm::scale(stringTransform, glm::vec3(quadMax.x - quadMin.x, quadMax.y - quadMin.y, 1.0f)); // Apply scaling
-		stringTransform = transform * stringTransform;
-
-		DrawBatch(stringTransform, color, font->GetFontID(), glm::vec4(texCoordMin, texCoordMax), originSprite);
-
 		if (i < string.size() - 1)
 		{
-			double advance = glyph->getAdvance();
-			char nextCharacter = string[i + 1];
-			fontGeometry.getAdvance(advance, character, nextCharacter);
-
-			x += fsScale * advance + kerning;
+			glm::dvec2 charAdvance = font->GetCharacterAdvance(character, string[i + 1], kerning, linespacing);
+			charOffset += charAdvance;
 		}
 	}
 }

@@ -132,3 +132,108 @@ pig::Font::~Font()
 {
 	delete m_Data;
 }
+
+glm::dvec2 pig::Font::GetCharacterAdvance(char c1, char c2, float kerning, float linespacing) const
+{
+	glm::dvec2 advance{ 0.0,0.0 };
+	const auto& fontGeometry = m_Data->FontGeometry;
+	const auto& metrics = fontGeometry.getMetrics();
+	double fsScale = GetFsScale();
+	if (c1 == '\n')
+	{
+		advance.y += fsScale * metrics.lineHeight + linespacing;
+	}
+	else if (c1 == '\t')
+	{
+		advance.x += 4.0f * (fsScale * fontGeometry.getGlyph(' ')->getAdvance() + kerning);
+	}
+	else if (auto glyph = fontGeometry.getGlyph(c1))
+	{
+		double glyphAdvance = glyph->getAdvance();
+		fontGeometry.getAdvance(glyphAdvance, c1, c2);
+		advance.x += fsScale * glyphAdvance + kerning;
+	}
+
+	return advance;
+}
+
+bool pig::Font::IsCharacterDrawable(char c) const
+{
+	return
+		c != '\n' &&
+		c != '\r' &&
+		c != ' ' &&
+		c != '\t' &&
+		m_Data->FontGeometry.getGlyph(c);
+}
+
+bool pig::Font::IsCharacterNewLine(char c) const
+{
+	return c == '\n';
+}
+
+const msdf_atlas::GlyphGeometry* pig::Font::GetGlyph(char c) const
+{
+	const msdf_atlas::GlyphGeometry* glyph = m_Data->FontGeometry.getGlyph(c);
+	if (!glyph)
+		glyph = m_Data->FontGeometry.getGlyph('?');
+	if (!glyph)
+		return nullptr;
+	return glyph;
+}
+
+glm::vec4 pig::Font::GetCharacterVertexQuad(char c, const glm::dvec2& offset) const
+{
+	glm::vec4 quad{};
+	if (const msdf_atlas::GlyphGeometry* glyph = GetGlyph(c))
+	{
+		double fsScale = GetFsScale();
+		double pl, pb, pr, pt;
+		glyph->getQuadPlaneBounds(pl, pb, pr, pt);
+		glm::vec2 quadMin((float)pl, 1.f - (float)pt);
+		glm::vec2 quadMax((float)pr, 1.f - (float)pb);
+
+		quadMin *= fsScale;
+		quadMax *= fsScale;
+		quadMin += offset;
+		quadMax += offset;
+		quad = glm::vec4( quadMin , quadMax );
+	}
+	return quad;
+}
+
+glm::vec4 pig::Font::GetCharacterTexCoordsQuad(char c, const pig::Texture2D& fontAtlas) const
+{
+	glm::vec4 texCoords{};
+	if (const msdf_atlas::GlyphGeometry* glyph = GetGlyph(c))
+	{
+		double al, ab, ar, at;
+		glyph->getQuadAtlasBounds(al, ab, ar, at);
+		glm::vec2 texCoordMin((float)al, (float)at);
+		glm::vec2 texCoordMax((float)ar, (float)ab);
+
+		float texelWidth = 1.0f / fontAtlas.GetWidth();
+		float texelHeight = 1.0f / fontAtlas.GetHeight();
+		texCoordMin *= glm::vec2(texelWidth, texelHeight);
+		texCoordMax *= glm::vec2(texelWidth, texelHeight);
+
+		texCoords = glm::vec4(texCoordMin, texCoordMax);
+	}
+	return texCoords;
+}
+
+glm::mat4 pig::Font::GetCharacterTransform(const glm::vec4& charQuad, const glm::mat4& stringTransform) const
+{
+	glm::mat4 transform = glm::mat4(1.0f); // Identity matrix
+	transform = glm::translate(transform, glm::vec3(charQuad.x, charQuad.y, 0.0f)); // Apply translation
+	transform = glm::scale(transform, glm::vec3(charQuad.z - charQuad.x, charQuad.w - charQuad.y, 1.0f)); // Apply scaling
+	transform = stringTransform * transform;
+	return transform;
+}
+
+double pig::Font::GetFsScale() const
+{
+	const auto& metrics = m_Data->FontGeometry.getMetrics();
+	return 1.0 / (metrics.ascenderY - metrics.descenderY);
+}
+
