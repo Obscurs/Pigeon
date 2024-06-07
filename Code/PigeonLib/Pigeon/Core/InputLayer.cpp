@@ -5,11 +5,19 @@
 
 #include "Pigeon/Core/Application.h"
 #include "Pigeon/Core/Input.h"
+#include "Pigeon/Core/InputComponents.h"
 #include "Pigeon/Core/KeyCodes.h"
+
+#include "Pigeon/ECS/World.h"
 
 #include <Pigeon/Events/MouseEvent.h>
 #include <Pigeon/Events/KeyEvent.h>
 
+namespace
+{
+	//ARNAU TODO get rid of this vec
+	static std::vector<int> s_DummyVec;
+}
 pig::S_Ptr<pig::Input> pig::Input::s_Instance = std::make_shared<pig::Input>();
 pig::InputLayer::InputLayer()
 	: Layer("InputLayer")
@@ -31,60 +39,118 @@ bool pig::InputLayer::OnEvent(const pig::Event& e)
 
 void pig::InputLayer::OnUpdate(const pig::Timestep& ts)
 {
-	ProcessEvents();
+	auto view = pig::World::GetRegistry().view<pig::InputStateSingletonComponent>();
+	if (view.size() == 0)
+	{
+		pig::World::GetRegistry().emplace<pig::InputStateSingletonComponent>(pig::World::GetRegistry().create());
+		return;
+	}
+
+	PG_CORE_ASSERT(view.size() == 1, "There should only be one ui render config component");
+	pig::InputStateSingletonComponent& inputState = view.get<pig::InputStateSingletonComponent>(view.front());
+
+	ProcessEvents(inputState);
 }
 
 bool pig::InputLayer::IsKeyTyped(int keycode) const
 {
-	for (int i = 0; i < m_KeysTyped.size(); ++i)
+	auto view = pig::World::GetRegistry().view<const pig::InputStateSingletonComponent>();
+	if (view.size() == 1)
 	{
-		if (m_KeysTyped[i] == keycode)
-			return true;
+		const pig::InputStateSingletonComponent& inputState = view.get<const pig::InputStateSingletonComponent>(view.front());
+		for (int i = 0; i < inputState.m_KeysTyped.size(); ++i)
+		{
+			if (inputState.m_KeysTyped[i] == keycode)
+				return true;
+		}
 	}
+	
 	return false;
 }
 
 bool pig::InputLayer::IsKeyPressed(int keycode, bool justPressed) const
 {
-	auto it = m_KeysPressed.find(keycode);
-	if (it == m_KeysPressed.end())
-		return false;
+	auto view = pig::World::GetRegistry().view<const pig::InputStateSingletonComponent>();
+	if (view.size() == 1)
+	{
+		const pig::InputStateSingletonComponent& inputState = view.get<const pig::InputStateSingletonComponent>(view.front());
+		auto it = inputState.m_KeysPressed.find(keycode);
+		if (it == inputState.m_KeysPressed.end())
+			return false;
 
-	return justPressed ? it->second == 1 : true;
+		return justPressed ? it->second == 1 : true;
+	}
+	return false;
 }
 
 bool pig::InputLayer::IsKeyReleased(int keycode) const
 {
-	return m_KeysReleased.find(keycode) != m_KeysReleased.end();
+	auto view = pig::World::GetRegistry().view<const pig::InputStateSingletonComponent>();
+	if (view.size() == 1)
+	{
+		const pig::InputStateSingletonComponent& inputState = view.get<const pig::InputStateSingletonComponent>(view.front());
+		return inputState.m_KeysReleased.find(keycode) != inputState.m_KeysReleased.end();
+	}
+	return false;
 }
 
 bool pig::InputLayer::IsMouseButtonPressed(int button, bool justPressed) const
 {
-	auto it = m_KeysPressed.find(button);
-	if (it == m_KeysPressed.end())
-		return false;
+	auto view = pig::World::GetRegistry().view<const pig::InputStateSingletonComponent>();
+	if (view.size() == 1)
+	{
+		const pig::InputStateSingletonComponent& inputState = view.get<const pig::InputStateSingletonComponent>(view.front());
+		auto it = inputState.m_KeysPressed.find(button);
+		if (it == inputState.m_KeysPressed.end())
+			return false;
 
-	return justPressed ? it->second == 1 : true;
+		return justPressed ? it->second == 1 : true;
+	}
+	return false;
 }
 
 bool pig::InputLayer::IsMouseButtonReleased(int button) const
 {
-	return m_KeysReleased.find(button) != m_KeysReleased.end();
+	auto view = pig::World::GetRegistry().view<const pig::InputStateSingletonComponent>();
+	if (view.size() == 1)
+	{
+		const pig::InputStateSingletonComponent& inputState = view.get<const pig::InputStateSingletonComponent>(view.front());
+		return inputState.m_KeysReleased.find(button) != inputState.m_KeysReleased.end();
+	}
+	return false;
 }
 
 glm::vec2 pig::InputLayer::GetMousePosition() const
 {
-	return m_MousePos;
+	auto view = pig::World::GetRegistry().view<const pig::InputStateSingletonComponent>();
+	if (view.size() == 1)
+	{
+		const pig::InputStateSingletonComponent& inputState = view.get<const pig::InputStateSingletonComponent>(view.front());
+		return inputState.m_MousePos;
+	}
+	return glm::vec2{};
 }
 
 glm::vec2 pig::InputLayer::GetMouseScrolled() const
 {
-	return m_MouseScroll;
+	auto view = pig::World::GetRegistry().view<const pig::InputStateSingletonComponent>();
+	if (view.size() == 1)
+	{
+		const pig::InputStateSingletonComponent& inputState = view.get<const pig::InputStateSingletonComponent>(view.front());
+		return inputState.m_MouseScroll;
+	}
+	return glm::vec2{};
 }
 
 const std::vector<int>& pig::InputLayer::GetKeysTyped() const
 {
-	return m_KeysTyped;
+	auto view = pig::World::GetRegistry().view<const pig::InputStateSingletonComponent>();
+	if (view.size() == 1)
+	{
+		const pig::InputStateSingletonComponent& inputState = view.get<const pig::InputStateSingletonComponent>(view.front());
+		return inputState.m_KeysTyped;
+	}
+	return s_DummyVec;
 }
 
 bool pig::InputLayer::AppendKeyEvent(const pig::Event& e)
@@ -163,11 +229,11 @@ bool pig::InputLayer::AppendMouseButtonEvent(const pig::Event& e)
 	return false;
 }
 
-void pig::InputLayer::ProcessEvents()
+void pig::InputLayer::ProcessEvents(pig::InputStateSingletonComponent& inputState)
 {
-	m_KeysReleased.clear();
-	m_KeysTyped.clear();
-	for (auto it = m_KeysPressed.begin(); it != m_KeysPressed.end(); ++it)
+	inputState.m_KeysReleased.clear();
+	inputState.m_KeysTyped.clear();
+	for (auto it = inputState.m_KeysPressed.begin(); it != inputState.m_KeysPressed.end(); ++it)
 	{
 		++it->second;
 	}
@@ -176,34 +242,34 @@ void pig::InputLayer::ProcessEvents()
 		const InputEvent& inputEvent = m_Events[i];
 		if (inputEvent.m_Type == pig::EventType::KeyPressed || inputEvent.m_Type == pig::EventType::MouseButtonPressed)
 		{
-			m_KeysPressed[inputEvent.m_KeyCode] = 1;
+			inputState.m_KeysPressed[inputEvent.m_KeyCode] = 1;
 		}
 		else if (inputEvent.m_Type == pig::EventType::KeyTyped)
 		{
-			m_KeysTyped.push_back(inputEvent.m_KeyCode);
+			inputState.m_KeysTyped.push_back(inputEvent.m_KeyCode);
 		}
 		else if (inputEvent.m_Type == pig::EventType::KeyReleased || inputEvent.m_Type == pig::EventType::MouseButtonReleased)
 		{
-			auto it = m_KeysPressed.find(inputEvent.m_KeyCode);
-			if (it != m_KeysPressed.end())
+			auto it = inputState.m_KeysPressed.find(inputEvent.m_KeyCode);
+			if (it != inputState.m_KeysPressed.end())
 			{
-				m_KeysReleased[inputEvent.m_KeyCode] = it->second;
-				m_KeysPressed.erase(inputEvent.m_KeyCode);
+				inputState.m_KeysReleased[inputEvent.m_KeyCode] = it->second;
+				inputState.m_KeysPressed.erase(inputEvent.m_KeyCode);
 			}
 			else
 			{
-				m_KeysReleased[inputEvent.m_KeyCode] = 0;
+				inputState.m_KeysReleased[inputEvent.m_KeyCode] = 0;
 			}
 		}
 		else if (inputEvent.m_Type == pig::EventType::MouseMoved)
 		{
-			m_MousePos.x = inputEvent.m_FloatData1;
-			m_MousePos.y = inputEvent.m_FloatData2;
+			inputState.m_MousePos.x = inputEvent.m_FloatData1;
+			inputState.m_MousePos.y = inputEvent.m_FloatData2;
 		}
 		else if (inputEvent.m_Type == pig::EventType::MouseScrolled)
 		{
-			m_MouseScroll.x = inputEvent.m_FloatData1;
-			m_MouseScroll.y = inputEvent.m_FloatData2;
+			inputState.m_MouseScroll.x = inputEvent.m_FloatData1;
+			inputState.m_MouseScroll.y = inputEvent.m_FloatData2;
 		}
 	}
 	m_Events.clear();

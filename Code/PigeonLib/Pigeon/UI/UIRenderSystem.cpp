@@ -1,6 +1,7 @@
 #include "UIRenderSystem.h"
 
 #include "Pigeon/UI/UIComponents.h"
+#include "Pigeon/UI/UIHelpers.h"
 
 #include "Pigeon/ECS/World.h"
 
@@ -25,7 +26,7 @@ void pig::ui::UIRenderSystem::Update(float dt)
 		return;
 	}
 	PG_CORE_ASSERT(viewRenderConfig.size() == 1, "There should only be one ui render config component");
-	const pig::ui::RendererConfig& renderComponent = viewRenderConfig.get<pig::ui::RendererConfig>(viewRenderConfig.front());
+	const pig::ui::RendererConfig& renderComponent = viewRenderConfig.get<const pig::ui::RendererConfig>(viewRenderConfig.front());
 	
 	m_Helper->RendererBeginScene(renderComponent.m_Camera);
 	auto viewImages = pig::World::GetRegistry().view<const pig::ui::BaseComponent, const pig::ui::ImageComponent>();
@@ -54,83 +55,13 @@ void pig::ui::UIRenderSystem::Update(float dt)
 
 glm::mat4 pig::ui::UIRenderSystem::GetUIElementTransform(const pig::ui::BaseComponent& baseComponent, const pig::ui::RendererConfig& renderComponent, const glm::vec2& uiTransformScale, const glm::vec2& uiBoundsSize) const
 {
-	glm::mat4 transform(1.f);
 	int level = 0;
-	const glm::vec4 bounds = GetGlobalBoundsForElement(baseComponent, renderComponent, level);
-	glm::vec2 posFinal = glm::vec2(bounds.x, bounds.y);
+	const glm::vec4 bounds = pig::ui::GetGlobalBoundsForElement(baseComponent, renderComponent, uiBoundsSize, level);
 
-	if (baseComponent.m_HAlign == EHAlignType::eRight)
-	{
-		posFinal.x += bounds.z - (uiBoundsSize.x + baseComponent.m_Spacing.x);
-	}
-	else if (baseComponent.m_HAlign == EHAlignType::eCenter)
-	{
-		posFinal.x += (bounds.z /2.f - uiBoundsSize.x/2.f) + baseComponent.m_Spacing.x;
-	}
-	else
-	{
-		posFinal.x += baseComponent.m_Spacing.x;
-	}
-
-	if (baseComponent.m_VAlign == EVAlignType::eBottom)
-	{
-		posFinal.y += bounds.w - (uiBoundsSize.y + baseComponent.m_Spacing.y);
-	}
-	else if (baseComponent.m_VAlign == EVAlignType::eCenter)
-	{
-		posFinal.y += (bounds.w / 2.f - uiBoundsSize.y / 2.f) + baseComponent.m_Spacing.y;
-	}
-	else
-	{
-		posFinal.y += baseComponent.m_Spacing.y;
-	}
-
-	transform = glm::translate(transform, glm::vec3(posFinal, -level * 0.1f));
+	glm::mat4 transform(1.f);
+	transform = glm::translate(transform, glm::vec3(bounds.x, bounds.y, -level * 0.1f));
 	transform = glm::scale(transform, glm::vec3(uiTransformScale, 1.f));
 	return transform;
-}
-
-glm::vec4 pig::ui::UIRenderSystem::GetGlobalBoundsForElement(const pig::ui::BaseComponent& baseComponent, const pig::ui::RendererConfig& renderComponent, int& DEPRECATED_level) const
-{
-	glm::vec4 globalBounds(0.f, 0.f, renderComponent.m_Width, renderComponent.m_Height);
-
-	if (baseComponent.m_Parent != entt::null && pig::World::GetRegistry().any_of<pig::ui::BaseComponent>(baseComponent.m_Parent))
-	{
-		const pig::ui::BaseComponent& parentComponent = pig::World::GetRegistry().get<const pig::ui::BaseComponent>(baseComponent.m_Parent);
-		DEPRECATED_level += 1;
-		globalBounds = GetGlobalBoundsForElement(parentComponent, renderComponent, DEPRECATED_level);
-
-		if (parentComponent.m_HAlign == EHAlignType::eRight)
-		{
-			globalBounds.x += globalBounds.z - (parentComponent.m_Spacing.x + parentComponent.m_Size.x);
-		}
-		else if (parentComponent.m_HAlign == EHAlignType::eCenter)
-		{
-			globalBounds.x += globalBounds.z / 2.f - parentComponent.m_Size.x / 2.f + parentComponent.m_Spacing.x;
-		}
-		else
-		{
-			globalBounds.x += parentComponent.m_Spacing.x;
-		}
-
-		if (parentComponent.m_VAlign == EVAlignType::eBottom)
-		{
-			globalBounds.y += globalBounds.w - (parentComponent.m_Spacing.y + parentComponent.m_Size.y);
-		}
-		else if (parentComponent.m_VAlign == EVAlignType::eCenter)
-		{
-			globalBounds.y += globalBounds.w / 2.f - parentComponent.m_Size.y / 2.f + parentComponent.m_Spacing.y;
-		}
-		else
-		{
-			globalBounds.y += parentComponent.m_Spacing.y;
-		}
-
-		globalBounds.z = parentComponent.m_Size.x;
-		globalBounds.w = parentComponent.m_Size.y;
-	}
-
-	return globalBounds;
 }
 
 float pig::ui::UIRenderSystem::GetFontSizeFromStringBounds(const pig::ui::BaseComponent& baseComponent, const glm::vec2 stringBounds, unsigned int numLines) const

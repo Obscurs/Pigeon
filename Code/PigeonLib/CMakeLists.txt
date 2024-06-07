@@ -41,6 +41,8 @@ file(GLOB RENDERER
 file(GLOB UI
     "Pigeon/UI/LayoutControlSystem.cpp"
     "Pigeon/UI/UIComponents.h"
+    "Pigeon/UI/UIEventSystem.cpp"
+    "Pigeon/UI/UIHelpers.cpp"
     "Pigeon/UI/UIRenderSystem.cpp"
 )
 

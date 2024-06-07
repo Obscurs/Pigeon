@@ -4,8 +4,11 @@
 
 #include "Pigeon/Events/Event.h"
 
+//ARNAU TODO use system instead of layer
 namespace pig
 {
+	struct InputStateSingletonComponent;
+
 	class PIGEON_API Input
 	{
 	public:
@@ -52,6 +55,13 @@ namespace pig
 
 		friend class Input;
 	private:
+		bool AppendKeyEvent(const pig::Event& e);
+		bool AppendKeyTypedEvent(const pig::Event& e);
+		bool AppendMouseMoveEvent(const pig::Event& e);
+		bool AppendMouseButtonEvent(const pig::Event& e);
+
+		void ProcessEvents(pig::InputStateSingletonComponent& inputState);
+
 		struct InputEvent
 		{
 			pig::EventType m_Type = pig::EventType::None;
@@ -60,19 +70,6 @@ namespace pig
 			float m_FloatData2 = 0;
 		};
 
-		bool AppendKeyEvent(const pig::Event& e);
-		bool AppendKeyTypedEvent(const pig::Event& e);
-		bool AppendMouseMoveEvent(const pig::Event& e);
-		bool AppendMouseButtonEvent(const pig::Event& e);
-
-		void ProcessEvents();
-
 		std::vector<InputEvent> m_Events;
-
-		std::unordered_map<int, int> m_KeysPressed;
-		std::unordered_map<int, int> m_KeysReleased;
-		std::vector<int> m_KeysTyped;
-		glm::vec2 m_MousePos = glm::vec2(0.f, 0.f);
-		glm::vec2 m_MouseScroll = glm::vec2(0.f, 0.f);
 	};
 }

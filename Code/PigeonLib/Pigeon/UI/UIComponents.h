@@ -1,5 +1,8 @@
-#include "Pigeon/Renderer/Font.h"
+#pragma once
 
+#include "Pigeon/ECS/World.h"
+
+#include "Pigeon/Renderer/Font.h"
 #include "Pigeon/Renderer/OrthographicCamera.h"
 
 namespace pig::ui
@@ -32,6 +35,7 @@ namespace pig::ui
 		EVAlignType m_VAlign{ EVAlignType::eNone };
 
 		entt::entity m_Parent{ entt::null };
+		pig::UUID m_UUID{};
 	};
 
 	struct TextComponent
@@ -73,5 +77,30 @@ namespace pig::ui
 
 		float m_Width{ 1920.f };
 		float m_Height{ 1080.f };
+	};
+
+	//ARNAU TODO rethink, maybe we do not need OFC for this
+	struct UIOnClickOneFrameComponent
+	{
+		UIOnClickOneFrameComponent() = default;
+		UIOnClickOneFrameComponent(const UIOnClickOneFrameComponent&) = default;
+
+		pig::UUID m_ElementID;
+	};
+
+	struct UIOnHoverOneFrameComponent
+	{
+		UIOnHoverOneFrameComponent() = default;
+		UIOnHoverOneFrameComponent(const UIOnHoverOneFrameComponent&) = default;
+
+		pig::UUID m_ElementID;
+	};
+
+	struct UIOnReleaseOneFrameComponent
+	{
+		UIOnReleaseOneFrameComponent() = default;
+		UIOnReleaseOneFrameComponent(const UIOnReleaseOneFrameComponent&) = default;
+
+		pig::UUID m_ElementID;
 	};
 }

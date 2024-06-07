@@ -83,7 +83,7 @@ namespace CatchTestsetFail
 		pig::Application& app = pig::CreateApplication();
 		pig::TestingWindow& appWindow = static_cast<pig::TestingWindow&>(app.GetWindow());
 		const pig::Timestep timestep(5);
-		
+		app.TestUpdate(timestep);
 		SECTION("Keyboard events")
 		{
 			pig::OrthographicCameraController cameraController(true, 0.5f, 0.f);

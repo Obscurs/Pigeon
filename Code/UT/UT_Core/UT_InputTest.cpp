@@ -20,7 +20,7 @@ namespace CatchTestsetFail
 		pig::Application& app = pig::CreateApplication();
 		const pig::Timestep timestep(5);
 		pig::TestingWindow& appWindow = static_cast<pig::TestingWindow&>(app.GetWindow());
-
+		app.TestUpdate(timestep);
 		SECTION("Key pressed and released")
 		{
 			int eventKeyCode = PG_KEY_A;

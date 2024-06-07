@@ -52,7 +52,6 @@ namespace pig::ui
 		float GetFontSizeFromStringBounds(const pig::ui::BaseComponent& baseComponent, const glm::vec2 stringBounds, unsigned int numLines) const;
 		glm::mat4 GetUIElementTransform(const pig::ui::BaseComponent& baseComponent, const pig::ui::RendererConfig& renderComponent, const glm::vec2& uiTransformScale, const glm::vec2& uiBoundsSize) const;
 		//ARNAU TODO do z render properly instead of using these levels
-		glm::vec4 GetGlobalBoundsForElement(const pig::ui::BaseComponent& baseComponent, const pig::ui::RendererConfig& renderComponent, int& DEPRECATED_level) const;
 
 		pig::S_Ptr<IUIRenderSystemHelper> m_Helper;
 	};

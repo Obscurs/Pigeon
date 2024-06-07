@@ -4,6 +4,8 @@
 
 #include "Utils/TestApp.h"
 
+#include <Pigeon/Core/InputComponents.h>
+
 #include <Pigeon/ECS/World.h>
 #include <Pigeon/ECS/System.h>
 
@@ -11,6 +13,7 @@
 
 #include <Pigeon/UI/UIComponents.h>
 #include <Pigeon/UI/LayoutControlSystem.h>
+#include <Pigeon/UI/UIEventSystem.h>
 #include <Pigeon/UI/UIRenderSystem.h>
 
 #include <Platform/Testing/TestingHelper.h>
@@ -84,7 +87,7 @@ namespace
 		unsigned int m_LinesToReturn = 0;
 	};
 
-	void TestImage(pig::S_Ptr<MockUIRenderSystemHelper> helper, const pig::UUID& texture, const glm::vec2& position, const glm::vec2& size, float z)
+	void TestUIRender(pig::S_Ptr<MockUIRenderSystemHelper> helper, const pig::UUID& texture, const glm::vec2& position, const glm::vec2& size, float z)
 	{
 		CHECK(helper->m_SceneBegan);
 		CHECK(helper->m_SceneEnd);
@@ -147,14 +150,14 @@ namespace CatchTestsetFail
 			
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
 
-			TestImage(helper, imageComponent.m_TextureHandle, baseComponent.m_Spacing, baseComponent.m_Size, 0.f);
+			TestUIRender(helper, imageComponent.m_TextureHandle, baseComponent.m_Spacing, baseComponent.m_Size, 0.f);
 
 			baseComponent.m_Size = { 300.f, 100.f };
 			baseComponent.m_Spacing = { 10.f, 20.f};
 
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
 
-			TestImage(helper, imageComponent.m_TextureHandle, baseComponent.m_Spacing, baseComponent.m_Size, 0.f);
+			TestUIRender(helper, imageComponent.m_TextureHandle, baseComponent.m_Spacing, baseComponent.m_Size, 0.f);
 			helper->Reset();
 			pig::World::GetRegistry().destroy(uiElementEntity);
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
@@ -195,37 +198,37 @@ namespace CatchTestsetFail
 			baseComponent.m_Size = { 300.f, 100.f };
 			baseComponent.m_Spacing = { 50.f, 60.f };
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestImage(helper, imageComponent.m_TextureHandle, baseComponent.m_Spacing, baseComponent.m_Size, 0.f);
+			TestUIRender(helper, imageComponent.m_TextureHandle, baseComponent.m_Spacing, baseComponent.m_Size, 0.f);
 
 			baseComponent.m_HAlign = pig::ui::EHAlignType::eLeft;
 			baseComponent.m_VAlign = pig::ui::EVAlignType::eTop;
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestImage(helper, imageComponent.m_TextureHandle, baseComponent.m_Spacing, baseComponent.m_Size, 0.f);
+			TestUIRender(helper, imageComponent.m_TextureHandle, baseComponent.m_Spacing, baseComponent.m_Size, 0.f);
 
 			baseComponent.m_HAlign = pig::ui::EHAlignType::eRight;
 			glm::vec2 posFinal = glm::vec2(renderComponent.m_Width - (baseComponent.m_Size.x + baseComponent.m_Spacing.x), baseComponent.m_Spacing.y);
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, 0.f);
+			TestUIRender(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, 0.f);
 
 			baseComponent.m_VAlign = pig::ui::EVAlignType::eBottom;
 			posFinal = glm::vec2(renderComponent.m_Width - (baseComponent.m_Size.x + baseComponent.m_Spacing.x), renderComponent.m_Height - (baseComponent.m_Size.y + baseComponent.m_Spacing.y));
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, 0.f);
+			TestUIRender(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, 0.f);
 
 			baseComponent.m_HAlign = pig::ui::EHAlignType::eCenter;
 			posFinal = glm::vec2((renderComponent.m_Width/2.f - baseComponent.m_Size.x/2.f) + baseComponent.m_Spacing.x, renderComponent.m_Height - (baseComponent.m_Size.y + baseComponent.m_Spacing.y));
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, 0.f);
+			TestUIRender(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, 0.f);
 
 			baseComponent.m_VAlign = pig::ui::EVAlignType::eCenter;
 			posFinal = glm::vec2((renderComponent.m_Width / 2.f - baseComponent.m_Size.x / 2.f) + baseComponent.m_Spacing.x, (renderComponent.m_Height/2.f - baseComponent.m_Size.y/2.f) + baseComponent.m_Spacing.y);
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, 0.f);
+			TestUIRender(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, 0.f);
 
 			baseComponent.m_HAlign = pig::ui::EHAlignType::eLeft;
 			posFinal = glm::vec2(baseComponent.m_Spacing.x, (renderComponent.m_Height / 2.f - baseComponent.m_Size.y / 2.f) + baseComponent.m_Spacing.y);
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, 0.f);
+			TestUIRender(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, 0.f);
 		}
 		SECTION("Render multilevel UI")
 		{
@@ -253,42 +256,248 @@ namespace CatchTestsetFail
 			posFinal.y = 10 + 20 + 60; // 90
 
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
+			TestUIRender(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
 
 			baseComponentParent.m_HAlign = pig::ui::EHAlignType::eRight;
 			posFinal.x = 50 + 100 + 1000 - (10 + 600); //540
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
+			TestUIRender(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
 
 			baseComponentParentParent.m_HAlign = pig::ui::EHAlignType::eRight;
 			posFinal.x = 1920 - (1000 + 100) + 1000 - (10 + 600) + 50; // 820 + 390 + 50 = 1260
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
+			TestUIRender(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
 			
 			baseComponentParent.m_HAlign = pig::ui::EHAlignType::eCenter;
 			posFinal.x = 1920 - (1000 + 100) + (500 - 300) + 10 + 50; // 820 + 210 + 50 = 1080
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
+			TestUIRender(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
 			
 			baseComponentParent.m_VAlign = pig::ui::EVAlignType::eCenter;
 			posFinal.y = 10 + (450 - 400) + 20 + 60; //10 + 70 + 60 = 140
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
+			TestUIRender(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
 
 			baseComponentParentParent.m_VAlign = pig::ui::EVAlignType::eBottom;
 			posFinal.y = 1080 - (900 + 10) + (450 - 400) + 20 + 60; //170 + 70 + 60 = 140
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
+			TestUIRender(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
 
 			baseComponent.m_HAlign = pig::ui::EHAlignType::eRight;
 			posFinal.x = 1920 - (1000 + 100) + (500 - 300) + 10 + 600 - (300 + 50); // 820 + 210 + 250 = 1280
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
+			TestUIRender(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
 
 			baseComponent.m_VAlign = pig::ui::EVAlignType::eCenter;
 			posFinal.y = 1080 - (900 + 10) + (450 - 400) + 20 + (400 - 50) + 60; //170 + 70 + 410 = 650
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			TestImage(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
+			TestUIRender(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
+		}
+	}
+	TEST_CASE("UI.UIEventSystem::UIEventSystem")
+	{
+		pig::World& world = pig::World::Create();
+
+		entt::entity inputEventsEntity = pig::World::GetRegistry().create();
+
+		world.RegisterSystem(std::move(std::make_unique<pig::ui::UIEventSystem>()));
+
+		pig::InputStateSingletonComponent& inputComponent = pig::World::GetRegistry().emplace<pig::InputStateSingletonComponent>(inputEventsEntity);
+		
+		pig::ui::BaseComponent& baseComponent1 = pig::World::GetRegistry().emplace<pig::ui::BaseComponent>(pig::World::GetRegistry().create());
+
+		pig::ui::RendererConfig& renderComponent = pig::World::GetRegistry().emplace<pig::ui::RendererConfig>(pig::World::GetRegistry().create());
+		renderComponent.m_Height = 800;
+		renderComponent.m_Width = 900;
+
+		baseComponent1.m_Size = { 200.f, 100.f };
+		baseComponent1.m_Spacing = { 10.f, 20.f };
+
+		baseComponent1.m_UUID = pig::UUID::Generate();
+
+		pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+		{
+			auto viewClick = pig::World::GetRegistry().view<pig::ui::UIOnClickOneFrameComponent>();
+			auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+			auto viewRelease = pig::World::GetRegistry().view<pig::ui::UIOnReleaseOneFrameComponent>();
+
+			CHECK(viewClick.size() == 0);
+			CHECK(viewHover.size() == 0);
+			CHECK(viewRelease.size() == 0);
+		}
+
+		SECTION("Check single UI corners hover")
+		{
+			inputComponent.m_MousePos = { 9.f, 19.f };
+			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+			{
+				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				CHECK(viewHover.size() == 0);
+			}
+			inputComponent.m_MousePos = { 11.f, 21.f };
+			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+			{
+				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+
+				REQUIRE(viewHover.size() == 1);
+
+				const pig::ui::UIOnHoverOneFrameComponent& hoverComponent = viewHover.get<pig::ui::UIOnHoverOneFrameComponent>(viewHover.front());
+				CHECK(hoverComponent.m_ElementID == baseComponent1.m_UUID);
+			}
+			inputComponent.m_MousePos = { 209.f, 119.f };
+			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+			{
+				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+
+				REQUIRE(viewHover.size() == 1);
+
+				const pig::ui::UIOnHoverOneFrameComponent& hoverComponent = viewHover.get<pig::ui::UIOnHoverOneFrameComponent>(viewHover.front());
+				CHECK(hoverComponent.m_ElementID == baseComponent1.m_UUID);
+			}
+			inputComponent.m_MousePos = { 211.f, 121.f };
+			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+			{
+				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				CHECK(viewHover.size() == 0);
+			}
+			inputComponent.m_MousePos = { 11.f, 119.f };
+			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+			{
+				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				REQUIRE(viewHover.size() == 1);
+
+				const pig::ui::UIOnHoverOneFrameComponent& hoverComponent = viewHover.get<pig::ui::UIOnHoverOneFrameComponent>(viewHover.front());
+				CHECK(hoverComponent.m_ElementID == baseComponent1.m_UUID);
+			}
+			inputComponent.m_MousePos = { 9.f, 119.f };
+			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+			{
+				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				CHECK(viewHover.size() == 0);
+			}
+			inputComponent.m_MousePos = { 211.f, 21.f };
+			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+			{
+				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				CHECK(viewHover.size() == 0);
+			}
+			inputComponent.m_MousePos = { 209.f, 21.f };
+			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+			{
+				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				REQUIRE(viewHover.size() == 1);
+
+				const pig::ui::UIOnHoverOneFrameComponent& hoverComponent = viewHover.get<pig::ui::UIOnHoverOneFrameComponent>(viewHover.front());
+				CHECK(hoverComponent.m_ElementID == baseComponent1.m_UUID);
+			}
+			baseComponent1.m_Spacing = { 11.f, 20.f };
+			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+			{
+				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				REQUIRE(viewHover.size() == 1);
+
+				const pig::ui::UIOnHoverOneFrameComponent& hoverComponent = viewHover.get<pig::ui::UIOnHoverOneFrameComponent>(viewHover.front());
+				CHECK(hoverComponent.m_ElementID == baseComponent1.m_UUID);
+			}
+			baseComponent1.m_Spacing = { 8.f, 20.f };
+			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+			{
+				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				CHECK(viewHover.size() == 0);
+			}
+		}
+		SECTION("Check single UI click")
+		{
+			inputComponent.m_MousePos = { 5.f, 5.f };
+			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+			{
+				auto viewClick = pig::World::GetRegistry().view<pig::ui::UIOnClickOneFrameComponent>();
+				auto viewRelease = pig::World::GetRegistry().view<pig::ui::UIOnReleaseOneFrameComponent>();
+
+				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				CHECK(viewHover.size() == 0);
+				CHECK(viewClick.size() == 0);
+				CHECK(viewRelease.size() == 0);
+			}
+			inputComponent.m_KeysPressed[PG_MOUSE_BUTTON_LEFT] = 1;
+			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+			{
+				auto viewClick = pig::World::GetRegistry().view<pig::ui::UIOnClickOneFrameComponent>();
+				auto viewRelease = pig::World::GetRegistry().view<pig::ui::UIOnReleaseOneFrameComponent>();
+
+				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				CHECK(viewHover.size() == 0);
+				CHECK(viewClick.size() == 0);
+				CHECK(viewRelease.size() == 0);
+			}
+			inputComponent.m_MousePos = { 30.f, 30.f };
+			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+			{
+				auto viewClick = pig::World::GetRegistry().view<pig::ui::UIOnClickOneFrameComponent>();
+				auto viewRelease = pig::World::GetRegistry().view<pig::ui::UIOnReleaseOneFrameComponent>();
+
+				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				CHECK(viewHover.size() == 1);
+				CHECK(viewRelease.size() == 0);
+
+				REQUIRE(viewClick.size() == 1);
+
+				const pig::ui::UIOnClickOneFrameComponent& clickComponent = viewClick.get<pig::ui::UIOnClickOneFrameComponent>(viewClick.front());
+				CHECK(clickComponent.m_ElementID == baseComponent1.m_UUID);
+			}
+			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+			{
+				auto viewClick = pig::World::GetRegistry().view<pig::ui::UIOnClickOneFrameComponent>();
+				auto viewRelease = pig::World::GetRegistry().view<pig::ui::UIOnReleaseOneFrameComponent>();
+
+				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				CHECK(viewHover.size() == 1);
+				CHECK(viewRelease.size() == 0);
+				CHECK(viewClick.size() == 1);
+			}
+			inputComponent.m_KeysReleased[PG_MOUSE_BUTTON_LEFT] = 1;
+			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+			{
+				auto viewClick = pig::World::GetRegistry().view<pig::ui::UIOnClickOneFrameComponent>();
+				auto viewRelease = pig::World::GetRegistry().view<pig::ui::UIOnReleaseOneFrameComponent>();
+
+				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				CHECK(viewHover.size() == 1);
+				CHECK(viewRelease.size() == 0);
+				CHECK(viewClick.size() == 1);
+			}
+			inputComponent.m_KeysPressed.erase(PG_MOUSE_BUTTON_LEFT);
+			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+			{
+				auto viewClick = pig::World::GetRegistry().view<pig::ui::UIOnClickOneFrameComponent>();
+				auto viewRelease = pig::World::GetRegistry().view<pig::ui::UIOnReleaseOneFrameComponent>();
+
+				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				CHECK(viewHover.size() == 1);
+				CHECK(viewClick.size() == 0);
+
+				REQUIRE(viewRelease.size() == 1);
+
+				const pig::ui::UIOnReleaseOneFrameComponent& releaseComponent = viewRelease.get<pig::ui::UIOnReleaseOneFrameComponent>(viewRelease.front());
+				CHECK(releaseComponent.m_ElementID == baseComponent1.m_UUID);
+			}
+			inputComponent.m_KeysReleased.erase(PG_MOUSE_BUTTON_LEFT);
+			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+			{
+				auto viewClick = pig::World::GetRegistry().view<pig::ui::UIOnClickOneFrameComponent>();
+				auto viewRelease = pig::World::GetRegistry().view<pig::ui::UIOnReleaseOneFrameComponent>();
+
+				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				CHECK(viewHover.size() == 1);
+				CHECK(viewRelease.size() == 0);
+				CHECK(viewClick.size() == 0);
+			}
+		}
+
+		SECTION("Check multiple layer events")
+		{
+			inputComponent.m_MousePos = { 30.f, 50.f };
+			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
 		}
 	}
 	TEST_CASE("UI.LayoutControlSystem::LayoutControlSystem")

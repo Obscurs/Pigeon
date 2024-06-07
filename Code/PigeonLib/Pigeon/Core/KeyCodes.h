@@ -1,5 +1,5 @@
 #pragma once
-
+//ARNAU TODO namespace
 constexpr unsigned char PG_MOUSE_BUTTON_LEFT = 0x01; // VK_LBUTTON
 constexpr unsigned char PG_MOUSE_BUTTON_RIGHT = 0x02; // VK_RBUTTON
 constexpr unsigned char PG_MOUSE_BUTTON_MIDDLE = 0x03; // VK_MBUTTON
