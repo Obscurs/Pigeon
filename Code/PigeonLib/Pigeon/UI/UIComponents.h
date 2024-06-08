@@ -79,6 +79,57 @@ namespace pig::ui
 		float m_Height{ 1080.f };
 	};
 
+	struct UIUpdateTransformOneFrameComponent
+	{
+		UIUpdateTransformOneFrameComponent() = default;
+		UIUpdateTransformOneFrameComponent(const UIUpdateTransformOneFrameComponent&) = default;
+
+		glm::vec2 m_Size{};
+
+		glm::vec2 m_Spacing{};
+
+		EHAlignType m_HAlign{ EHAlignType::eNone };
+		EVAlignType m_VAlign{ EVAlignType::eNone };
+	};
+
+	struct UIUpdateParentOneFrameComponent
+	{
+		UIUpdateParentOneFrameComponent() = default;
+		UIUpdateParentOneFrameComponent(const UIUpdateParentOneFrameComponent&) = default;
+
+		entt::entity m_Parent{ entt::null };
+	};
+
+	struct UIUpdateUUIDOneFrameComponent
+	{
+		UIUpdateUUIDOneFrameComponent() = default;
+		UIUpdateUUIDOneFrameComponent(const UIUpdateUUIDOneFrameComponent&) = default;
+
+		pig::UUID m_UUID{};
+	};
+
+	struct UIUpdateImageUUIDOneFrameComponent
+	{
+		UIUpdateImageUUIDOneFrameComponent() = default;
+		UIUpdateImageUUIDOneFrameComponent(const UIUpdateImageUUIDOneFrameComponent&) = default;
+
+		pig::UUID m_UUID{};
+
+		//ARNAU TODO use this to destroy previous images in UI render system? or rethink 
+		pig::UUID m_PreviousImageToDestroy{};
+	};
+
+	struct UIUpdateTextOneFrameComponent
+	{
+		UIUpdateTextOneFrameComponent() = default;
+		UIUpdateTextOneFrameComponent(const UIUpdateTextOneFrameComponent&) = default;
+
+		std::string m_Text{};
+		glm::vec4 m_Color{};
+		float m_Spacing{};
+		float m_Kerning{};
+	};
+
 	//ARNAU TODO rethink, maybe we do not need OFC for this
 	struct UIOnClickOneFrameComponent
 	{

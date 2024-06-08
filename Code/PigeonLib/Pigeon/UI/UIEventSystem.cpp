@@ -63,6 +63,7 @@ void pig::ui::UIEventSystem::Update(float dt)
 
 void pig::ui::UIEventSystem::CleanOneFrameComponents()
 {
+	//ARNAU TODO: automatize one frame components?
 	//ARNAU TODO clean, do not get registry on each iter
 	auto viewClick = pig::World::GetRegistry().view<const pig::ui::UIOnClickOneFrameComponent>();
 	for (auto ent : viewClick)

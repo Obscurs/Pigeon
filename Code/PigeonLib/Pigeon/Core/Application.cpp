@@ -9,7 +9,8 @@
 #include "Pigeon/ImGui/ImGuiLayer.h"
 #include "Pigeon/Renderer/Renderer.h"
 #include "Pigeon/Renderer/Renderer2D.h"
-#include "Pigeon/UI/LayoutControlSystem.h"
+#include "Pigeon/UI/UIControlSystem.h"
+#include "Pigeon/UI/UIEventSystem.h"
 #include "Pigeon/UI/UIRenderSystem.h"
 #include <chrono>
 
@@ -77,7 +78,8 @@ void pig::Application::Init()
 
 	//ARNAU TODO consider using something else instead of pointers?
 	//ARNAU TODO move system registration on a separate file and do proper system ordering
-	world.RegisterSystem(std::move(std::make_unique<pig::ui::LayoutControlSystem>()));
+	world.RegisterSystem(std::move(std::make_unique<pig::ui::UIControlSystem>()));
+	world.RegisterSystem(std::move(std::make_unique<pig::ui::UIEventSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pig::ui::UIRenderSystem>(std::make_shared<pig::ui::UIRenderSystemHelper>())));
 
 	pig::Renderer::Init();

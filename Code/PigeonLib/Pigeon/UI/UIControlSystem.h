@@ -4,11 +4,11 @@
 
 namespace pig::ui
 {
-	class LayoutControlSystem : public pig::System
+	class UIControlSystem : public pig::System
 	{
 	public:
-		LayoutControlSystem();
-		~LayoutControlSystem() = default;
+		UIControlSystem();
+		~UIControlSystem() = default;
 		void Update(float dt) override;
 	};
 }

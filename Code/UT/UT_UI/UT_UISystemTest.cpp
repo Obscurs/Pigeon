@@ -12,7 +12,7 @@
 #include <Pigeon/Renderer/Renderer2D.h>
 
 #include <Pigeon/UI/UIComponents.h>
-#include <Pigeon/UI/LayoutControlSystem.h>
+#include <Pigeon/UI/UIControlSystem.h>
 #include <Pigeon/UI/UIEventSystem.h>
 #include <Pigeon/UI/UIRenderSystem.h>
 
@@ -500,77 +500,133 @@ namespace CatchTestsetFail
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
 		}
 	}
-	TEST_CASE("UI.LayoutControlSystem::LayoutControlSystem")
+	TEST_CASE("UI.UIControlSystem::UIControlSystem")
 	{
-		//pig::World& world = pig::World::Create();
+		pig::World& world = pig::World::Create();
 
-		//world.RegisterSystem(std::move(std::make_unique<pig::ui::UIRenderSystem>()));
+		world.RegisterSystem(std::move(std::make_unique<pig::ui::UIControlSystem>()));
 
-		//entt::entity layoutEntity = pig::World::GetRegistry().create();
+		entt::entity layoutEntity = pig::World::GetRegistry().create();
 
-		//ARNAU TODO: automatize one frame components?
-		//pig::ui::LoadableLayoutOneFrameComponent& layoutComponent = pig::World::GetRegistry().emplace<pig::ui::LoadableLayoutOneFrameComponent>(layoutEntity);
+		pig::ui::BaseComponent& baseComponent = pig::World::GetRegistry().emplace<pig::ui::BaseComponent>(layoutEntity);
+		pig::ui::RendererConfig& renderComponent = pig::World::GetRegistry().emplace<pig::ui::RendererConfig>(pig::World::GetRegistry().create());
+		renderComponent.m_Height = 800;
+		renderComponent.m_Width = 900;
 
-		/*SECTION("TestUI1")
+		baseComponent.m_Size = { 200.f, 100.f };
+		baseComponent.m_Spacing = { 10.f, 20.f };
+
+		baseComponent.m_UUID = pig::UUID::Generate();
+		baseComponent.m_Parent = entt::null;
+
+		SECTION("Update transform")
 		{
-			layoutComponent.m_LayoutFilePath = "Assets/Test/TestUISmall1.json";
+			pig::ui::UIUpdateTransformOneFrameComponent& updateComponent = pig::World::GetRegistry().emplace<pig::ui::UIUpdateTransformOneFrameComponent>(layoutEntity);
+			updateComponent.m_HAlign = pig::ui::EHAlignType::eLeft;
+			updateComponent.m_VAlign = pig::ui::EVAlignType::eBottom;
+			updateComponent.m_Size = { 123.f, 456.f };
+			updateComponent.m_Spacing = { 44.f, 55.f };
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
-			pig::World::GetRegistry().destroy(layoutEntity);
 
-			auto view = pig::World::GetRegistry().view<const pig::ui::BaseComponent, const pig::ui::TextComponent>();
+			auto viewUpdated = pig::World::GetRegistry().view<const pig::ui::BaseComponent>();
+			REQUIRE(viewUpdated.size() == 1);
+			const pig::ui::BaseComponent& baseComponentUpdated = viewUpdated.get<const pig::ui::BaseComponent>(layoutEntity);
 
-			u_int count = 0;
-			for (auto ent : view)
-			{
-				const pig::ui::BaseComponent& baseComponent = view.get<pig::ui::BaseComponent>(ent);
-				CHECK(FLOAT_EQ(baseComponent.m_Pos.x, 100.f));
-				CHECK(FLOAT_EQ(baseComponent.m_Pos.y, 200.f));
-				CHECK(FLOAT_EQ(baseComponent.m_Pos.z, 0.f));
-
-				CHECK(FLOAT_EQ(baseComponent.m_Size.x, 400.f));
-				CHECK(FLOAT_EQ(baseComponent.m_Size.y, 50));
-
-				CHECK(FLOAT_EQ(baseComponent.m_Spacing.x, 5));
-				CHECK(FLOAT_EQ(baseComponent.m_Spacing.y, 10));
-
-				CHECK(baseComponent.m_HAlign == pig::ui::EHAlignType::eLeft);
-				CHECK(baseComponent.m_VAlign == pig::ui::EVAlignType::eNone);
-
-				const pig::ui::TextComponent& textComponent = view.get<pig::ui::TextComponent>(ent);
-				CHECK(textComponent.m_Text == std::string("this is a sample text"));
-				CHECK(textComponent.m_FontSize == 32);
-				count++;
-			}
-			CHECK(count == 1);
-		}*/
-		/*
-		pig::ui::ElementComponent& component = pig::World::GetRegistry().emplace<pig::ui::ElementComponent>(testEntity);
-		component.m_Pos = glm::vec3(1.f, 2.f, 3.f);
-
-		app.TestUpdate(pig::Timestep(0));
-
-		auto view = pig::World::GetRegistry().view<pig::ui::ElementComponent>();
-		REQUIRE(view.size() == 1);
-		for (auto ent : view)
+			CHECK(baseComponentUpdated.m_HAlign == updateComponent.m_HAlign);
+			CHECK(baseComponentUpdated.m_VAlign == updateComponent.m_VAlign);
+			CHECK(baseComponentUpdated.m_Size == updateComponent.m_Size);
+			CHECK(baseComponentUpdated.m_Spacing == updateComponent.m_Spacing);
+		}
+		SECTION("Update parent")
 		{
-			pig::ui::ElementComponent& component = view.get<pig::ui::ElementComponent>(ent);
-			CHECK(component.m_Pos.x == 0.f);
-			CHECK(component.m_Pos.y == 0.f);
-			CHECK(component.m_Pos.z == 0.f);
-		}*/
-		// JSON string
-		/*std::string jsonString = R"({
-			"name": "John Doe",
-			"age": 30,
-			"is_student": false,
-			"address": {
-				"street": "123 Main St",
-				"city": "Anytown"
-			},
-			"phone_numbers": ["123-456-7890", "987-654-3210"]
-		})";
+			pig::ui::UIUpdateParentOneFrameComponent& updateComponent = pig::World::GetRegistry().emplace<pig::ui::UIUpdateParentOneFrameComponent>(layoutEntity);
+			updateComponent.m_Parent = pig::World::GetRegistry().create();
+			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
 
-		// Parse the JSON string
-		json jsonObject = json::parse(jsonString);*/
+			auto viewUpdated = pig::World::GetRegistry().view<const pig::ui::BaseComponent>();
+			REQUIRE(viewUpdated.size() == 1);
+			const pig::ui::BaseComponent& baseComponentUpdated = viewUpdated.get<const pig::ui::BaseComponent>(layoutEntity);
+
+			CHECK(baseComponentUpdated.m_Parent == updateComponent.m_Parent);
+		}
+		SECTION("Update id")
+		{
+			pig::ui::UIUpdateUUIDOneFrameComponent& updateComponent = pig::World::GetRegistry().emplace<pig::ui::UIUpdateUUIDOneFrameComponent>(layoutEntity);
+			updateComponent.m_UUID = pig::UUID::Generate();
+			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+
+			auto viewUpdated = pig::World::GetRegistry().view<const pig::ui::BaseComponent>();
+			REQUIRE(viewUpdated.size() == 1);
+			const pig::ui::BaseComponent& baseComponentUpdated = viewUpdated.get<const pig::ui::BaseComponent>(layoutEntity);
+
+			CHECK(baseComponentUpdated.m_UUID == updateComponent.m_UUID);
+		}
+		SECTION("Update image")
+		{
+			pig::ui::ImageComponent& imageComponent = pig::World::GetRegistry().emplace<pig::ui::ImageComponent>(layoutEntity);
+			imageComponent.m_TextureHandle = pig::UUID::Generate();
+
+			pig::ui::UIUpdateImageUUIDOneFrameComponent& updateComponent = pig::World::GetRegistry().emplace<pig::ui::UIUpdateImageUUIDOneFrameComponent>(layoutEntity);
+			updateComponent.m_UUID = pig::UUID::Generate();
+			updateComponent.m_PreviousImageToDestroy = pig::UUID::Generate();
+			
+			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+
+			auto viewUpdated = pig::World::GetRegistry().view<const pig::ui::ImageComponent>();
+			REQUIRE(viewUpdated.size() == 1);
+			const pig::ui::ImageComponent& imageComponentUpdated = viewUpdated.get<const pig::ui::ImageComponent>(layoutEntity);
+
+			CHECK(imageComponentUpdated.m_TextureHandle == updateComponent.m_UUID);
+		}
+		SECTION("Update text")
+		{
+			pig::ui::TextComponent& textComponent = pig::World::GetRegistry().emplace<pig::ui::TextComponent>(layoutEntity);
+			textComponent.m_Color = { 0.f, 0.f, 0.f, 0.f };
+			textComponent.m_Kerning = 0.f;
+			textComponent.m_Spacing = 0.f;
+			textComponent.m_Text = {};
+
+			pig::ui::UIUpdateTextOneFrameComponent& updateComponent = pig::World::GetRegistry().emplace<pig::ui::UIUpdateTextOneFrameComponent>(layoutEntity);
+			updateComponent.m_Color = { 1.f, 2.f, 3.f, 4.f };
+			updateComponent.m_Kerning = 5.f;
+			updateComponent.m_Spacing = 6.f;
+			updateComponent.m_Text = "random text";
+
+			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+
+			auto viewUpdated = pig::World::GetRegistry().view<const pig::ui::TextComponent>();
+			REQUIRE(viewUpdated.size() == 1);
+			const pig::ui::TextComponent& textComponentUpdated = viewUpdated.get<const pig::ui::TextComponent>(layoutEntity);
+
+			CHECK(textComponentUpdated.m_Color == updateComponent.m_Color);
+			CHECK(textComponentUpdated.m_Kerning == updateComponent.m_Kerning);
+			CHECK(textComponentUpdated.m_Spacing == updateComponent.m_Spacing);
+			CHECK(textComponentUpdated.m_Text == updateComponent.m_Text);
+		}
+		SECTION("Load layout from file")
+		{
+			SECTION("Load single element layout")
+			{
+				//ARNAU TODO
+			}
+			SECTION("Load multilevel layout")
+			{
+				//ARNAU TODO
+			}
+			SECTION("Load layout composed by multiple files")
+			{
+				//ARNAU TODO
+			}
+		}
+		SECTION("Activate/Deactivate")
+		{
+			//ARNAU TODO
+			//ARNAU TODO impact this on render and events system
+		}
+		SECTION("Check focus")
+		{
+			//ARNAU TODO
+		}
 	}
+	//ARNAU TODO
 }
