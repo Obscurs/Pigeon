@@ -608,22 +608,23 @@ namespace CatchTestsetFail
 			REQUIRE(viewUpdated.size() == 1);
 			const pig::ui::BaseComponent& baseComponentUpdated = viewUpdated.get<const pig::ui::BaseComponent>(layoutEntity);
 
-			CHECK(baseComponentUpdated.m_HAlign == updateComponent.m_HAlign);
-			CHECK(baseComponentUpdated.m_VAlign == updateComponent.m_VAlign);
-			CHECK(baseComponentUpdated.m_Size == updateComponent.m_Size);
-			CHECK(baseComponentUpdated.m_Spacing == updateComponent.m_Spacing);
+			CHECK(baseComponentUpdated.m_HAlign == pig::ui::EHAlignType::eLeft);
+			CHECK(baseComponentUpdated.m_VAlign == pig::ui::EVAlignType::eBottom);
+			CHECK(baseComponentUpdated.m_Size == glm::vec2(123.f, 456.f));
+			CHECK(baseComponentUpdated.m_Spacing == glm::vec2(44.f, 55.f));
 		}
 		SECTION("Update parent")
 		{
 			pig::ui::UIUpdateParentOneFrameComponent& updateComponent = pig::World::GetRegistry().emplace<pig::ui::UIUpdateParentOneFrameComponent>(layoutEntity);
-			updateComponent.m_Parent = pig::World::GetRegistry().create();
+			entt::entity entityParent = pig::World::GetRegistry().create();
+			updateComponent.m_Parent = entityParent;
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
 
 			auto viewUpdated = pig::World::GetRegistry().view<const pig::ui::BaseComponent>();
 			REQUIRE(viewUpdated.size() == 1);
 			const pig::ui::BaseComponent& baseComponentUpdated = viewUpdated.get<const pig::ui::BaseComponent>(layoutEntity);
 
-			CHECK(baseComponentUpdated.m_Parent == updateComponent.m_Parent);
+			CHECK(baseComponentUpdated.m_Parent == entityParent);
 		}
 		SECTION("Update enabled")
 		{
@@ -635,19 +636,20 @@ namespace CatchTestsetFail
 			REQUIRE(viewUpdated.size() == 1);
 			const pig::ui::BaseComponent& baseComponentUpdated = viewUpdated.get<const pig::ui::BaseComponent>(layoutEntity);
 
-			CHECK(baseComponentUpdated.m_Enabled == updateComponent.m_Enabled);
+			CHECK(baseComponentUpdated.m_Enabled == false);
 		}
 		SECTION("Update id")
 		{
 			pig::ui::UIUpdateUUIDOneFrameComponent& updateComponent = pig::World::GetRegistry().emplace<pig::ui::UIUpdateUUIDOneFrameComponent>(layoutEntity);
-			updateComponent.m_UUID = pig::UUID::Generate();
+			pig::UUID updateID = pig::UUID::Generate();
+			updateComponent.m_UUID = updateID;
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
 
 			auto viewUpdated = pig::World::GetRegistry().view<const pig::ui::BaseComponent>();
 			REQUIRE(viewUpdated.size() == 1);
 			const pig::ui::BaseComponent& baseComponentUpdated = viewUpdated.get<const pig::ui::BaseComponent>(layoutEntity);
 
-			CHECK(baseComponentUpdated.m_UUID == updateComponent.m_UUID);
+			CHECK(baseComponentUpdated.m_UUID == updateID);
 		}
 		SECTION("Update image")
 		{
@@ -655,16 +657,17 @@ namespace CatchTestsetFail
 			imageComponent.m_TextureHandle = pig::UUID::Generate();
 
 			pig::ui::UIUpdateImageUUIDOneFrameComponent& updateComponent = pig::World::GetRegistry().emplace<pig::ui::UIUpdateImageUUIDOneFrameComponent>(layoutEntity);
-			updateComponent.m_UUID = pig::UUID::Generate();
+			pig::UUID updateID = pig::UUID::Generate();
+			updateComponent.m_UUID = updateID;
 			updateComponent.m_PreviousImageToDestroy = pig::UUID::Generate();
-
+			
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
 
 			auto viewUpdated = pig::World::GetRegistry().view<const pig::ui::ImageComponent>();
 			REQUIRE(viewUpdated.size() == 1);
 			const pig::ui::ImageComponent& imageComponentUpdated = viewUpdated.get<const pig::ui::ImageComponent>(layoutEntity);
 
-			CHECK(imageComponentUpdated.m_TextureHandle == updateComponent.m_UUID);
+			CHECK(imageComponentUpdated.m_TextureHandle == updateID);
 		}
 		SECTION("Update text")
 		{
@@ -686,10 +689,10 @@ namespace CatchTestsetFail
 			REQUIRE(viewUpdated.size() == 1);
 			const pig::ui::TextComponent& textComponentUpdated = viewUpdated.get<const pig::ui::TextComponent>(layoutEntity);
 
-			CHECK(textComponentUpdated.m_Color == updateComponent.m_Color);
-			CHECK(textComponentUpdated.m_Kerning == updateComponent.m_Kerning);
-			CHECK(textComponentUpdated.m_Spacing == updateComponent.m_Spacing);
-			CHECK(textComponentUpdated.m_Text == updateComponent.m_Text);
+			CHECK(textComponentUpdated.m_Color == glm::vec4(1.f, 2.f, 3.f, 4.f));
+			CHECK(textComponentUpdated.m_Kerning == 5.f);
+			CHECK(textComponentUpdated.m_Spacing == 6.f);
+			CHECK(textComponentUpdated.m_Text == "random text");
 		}
 		SECTION("Destroy UI")
 		{

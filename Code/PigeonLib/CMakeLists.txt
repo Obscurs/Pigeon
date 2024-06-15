@@ -43,6 +43,7 @@ file(GLOB UI
     "Pigeon/UI/UIComponents.h"
     "Pigeon/UI/UIEventSystem.cpp"
     "Pigeon/UI/UIHelpers.cpp"
+    "Pigeon/UI/UILayoutSystemInterface.cpp"
     "Pigeon/UI/UIRenderSystem.cpp"
 )
 

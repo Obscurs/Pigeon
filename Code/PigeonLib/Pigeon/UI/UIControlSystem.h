@@ -27,6 +27,9 @@ namespace pig::ui
 		~UIControlSystem() = default;
 		void Update(float dt) override;
 	private:
+		//ARNAU TODO: this clean should not be in this system, rethink
+		void CleanOneFrameComponents();
+
 		void LoadLayoutFromFile(const std::string& path);
 		void ParseJsonUIElement(const json& jsonObject, entt::entity parent);
 		void ParseBaseComponentFromJson(const json& jsonObject, entt::entity ent, entt::entity parent);

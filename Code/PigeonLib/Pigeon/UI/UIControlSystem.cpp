@@ -95,6 +95,7 @@ void pig::ui::UIControlSystem::Update(float dt)
 	{
 		DestroyUI(ent);
 	}
+	CleanOneFrameComponents();
 }
 
 void pig::ui::UIControlSystem::LoadLayoutFromFile(const std::string& path)
@@ -267,6 +268,40 @@ void pig::ui::UIControlSystem::DestroyUI(entt::entity ent)
 		DestroyUI(child);
 	}
 	pig::World::GetRegistry().destroy(ent);
+}
+
+void pig::ui::UIControlSystem::CleanOneFrameComponents()
+{
+	//ARNAU TODO: automatize one frame components?
+	//ARNAU TODO clean, do not get registry on each iter
+	for (auto ent : pig::World::GetRegistry().view<const pig::ui::UIUpdateTransformOneFrameComponent>())
+	{
+		pig::World::GetRegistry().remove<pig::ui::UIUpdateTransformOneFrameComponent>(ent);
+	}
+	for (auto ent : pig::World::GetRegistry().view<const pig::ui::UIUpdateParentOneFrameComponent>())
+	{
+		pig::World::GetRegistry().remove<pig::ui::UIUpdateParentOneFrameComponent>(ent);
+	}
+	for (auto ent : pig::World::GetRegistry().view<const pig::ui::UIUpdateEnableOneFrameComponent>())
+	{
+		pig::World::GetRegistry().remove<pig::ui::UIUpdateEnableOneFrameComponent>(ent);
+	}
+	for (auto ent : pig::World::GetRegistry().view<const pig::ui::UIUpdateUUIDOneFrameComponent>())
+	{
+		pig::World::GetRegistry().remove<pig::ui::UIUpdateUUIDOneFrameComponent>(ent);
+	}
+	for (auto ent : pig::World::GetRegistry().view<const pig::ui::UIUpdateImageUUIDOneFrameComponent>())
+	{
+		pig::World::GetRegistry().remove<pig::ui::UIUpdateImageUUIDOneFrameComponent>(ent);
+	}
+	for (auto ent : pig::World::GetRegistry().view<const pig::ui::UIUpdateTextOneFrameComponent>())
+	{
+		pig::World::GetRegistry().remove<pig::ui::UIUpdateTextOneFrameComponent>(ent);
+	}
+	for (auto ent : pig::World::GetRegistry().view<const pig::ui::LoadLayoutOneFrameComponent>())
+	{
+		pig::World::GetRegistry().destroy(ent);
+	}
 }
 
 pig::UUID pig::ui::UIControlSystemHelper::CreateUIImageFromPath(const std::string& path)
