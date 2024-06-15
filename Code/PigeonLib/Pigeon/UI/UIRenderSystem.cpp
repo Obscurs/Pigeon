@@ -33,22 +33,28 @@ void pig::ui::UIRenderSystem::Update(float dt)
 	for (auto ent : viewImages)
 	{
 		const pig::ui::BaseComponent& baseComponent = viewImages.get<pig::ui::BaseComponent>(ent);
-		const pig::ui::ImageComponent& imageComponent = viewImages.get<pig::ui::ImageComponent>(ent);
+		if (pig::ui::IsUIElementEnabled(baseComponent))
+		{
+			const pig::ui::ImageComponent& imageComponent = viewImages.get<pig::ui::ImageComponent>(ent);
 
-		const glm::mat4 transform = GetUIElementTransform(baseComponent, renderComponent, baseComponent.m_Size, baseComponent.m_Size);
-		m_Helper->RendererDrawQuad(transform, imageComponent.m_TextureHandle, { 0.f,0.f,0.f });
+			const glm::mat4 transform = GetUIElementTransform(baseComponent, renderComponent, baseComponent.m_Size, baseComponent.m_Size);
+			m_Helper->RendererDrawQuad(transform, imageComponent.m_TextureHandle, { 0.f,0.f,0.f });
+		}
 	}
 
 	auto viewText = pig::World::GetRegistry().view<const pig::ui::BaseComponent, const pig::ui::TextComponent>();
 	for (auto ent : viewText)
 	{
 		const pig::ui::BaseComponent& baseComponent = viewText.get<pig::ui::BaseComponent>(ent);
-		const pig::ui::TextComponent& textComponent = viewText.get<pig::ui::TextComponent>(ent);
-		const unsigned int numLines = m_Helper->GetStringNumLines(textComponent.m_Text, renderComponent.m_Font);
-		const glm::vec2 stringBounds = m_Helper->GetStringBounds(textComponent.m_Text, textComponent.m_Kerning, textComponent.m_Spacing, renderComponent.m_Font);
-		const float fontSize = GetFontSizeFromStringBounds(baseComponent, stringBounds, numLines);
-		const glm::mat4 transform = GetUIElementTransform(baseComponent, renderComponent, glm::vec2(fontSize, fontSize), glm::vec2(stringBounds.x * fontSize, stringBounds.y * fontSize * numLines));
-		m_Helper->RendererDrawString(transform, textComponent.m_Text, renderComponent.m_Font, textComponent.m_Color, textComponent.m_Kerning, textComponent.m_Spacing);
+		if (pig::ui::IsUIElementEnabled(baseComponent))
+		{
+			const pig::ui::TextComponent& textComponent = viewText.get<pig::ui::TextComponent>(ent);
+			const unsigned int numLines = m_Helper->GetStringNumLines(textComponent.m_Text, renderComponent.m_Font);
+			const glm::vec2 stringBounds = m_Helper->GetStringBounds(textComponent.m_Text, textComponent.m_Kerning, textComponent.m_Spacing, renderComponent.m_Font);
+			const float fontSize = GetFontSizeFromStringBounds(baseComponent, stringBounds, numLines);
+			const glm::mat4 transform = GetUIElementTransform(baseComponent, renderComponent, glm::vec2(fontSize, fontSize), glm::vec2(stringBounds.x * fontSize, stringBounds.y * fontSize * numLines));
+			m_Helper->RendererDrawString(transform, textComponent.m_Text, renderComponent.m_Font, textComponent.m_Color, textComponent.m_Kerning, textComponent.m_Spacing);
+		}
 	}
 	m_Helper->RendererEndScene();
 }

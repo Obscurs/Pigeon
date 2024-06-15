@@ -22,6 +22,15 @@
 
 namespace
 {
+	class MockUIControlSystemHelper : public pig::ui::IUIControlSystemHelper
+	{
+	public:
+		virtual pig::UUID CreateUIImageFromPath(const std::string& path) override
+		{
+			return pig::UUID::Generate();
+		}
+	};
+
 	class MockUIRenderSystemHelper : public pig::ui::IUIRenderSystemHelper
 	{
 	public:
@@ -38,6 +47,7 @@ namespace
 			m_TransformRender = transform;
 			m_TextureID = textureID;
 			m_Origin = origin;
+			m_ImageDrawn = true;
 		}
 		virtual void RendererDrawString(const glm::mat4& transform, const std::string& string, pig::S_Ptr<pig::Font> /*font*/, const glm::vec4& color, float kerning, float linespacing) override
 		{
@@ -46,6 +56,7 @@ namespace
 			m_Kerning = kerning;
 			m_Spacing = linespacing;
 			m_Color = color;
+			m_ImageDrawn = true;
 		}
 		glm::vec2 GetStringBounds(const std::string& string, float kerning, float linespace, pig::S_Ptr<pig::Font> font)
 		{
@@ -92,6 +103,7 @@ namespace
 		CHECK(helper->m_SceneBegan);
 		CHECK(helper->m_SceneEnd);
 		CHECK(helper->m_TextureID == texture);
+		CHECK(helper->m_ImageDrawn);
 		glm::mat4 transform(1.f);
 		transform = glm::translate(transform, glm::vec3(position, z));
 		transform = glm::scale(transform, glm::vec3(size, 1.f));
@@ -110,6 +122,7 @@ namespace
 		CHECK(helper->m_Spacing == linespacing);
 		CHECK(helper->m_Kerning == kerning);
 		CHECK(helper->m_String == string);
+		CHECK(helper->m_ImageDrawn);
 	}
 }
 
@@ -190,6 +203,49 @@ namespace CatchTestsetFail
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
 			TestText(helper, baseComponent.m_Spacing, sizeToCheck, textComponent.m_Text, textComponent.m_Color, textComponent.m_Kerning, textComponent.m_Spacing, 0.f);
 		}
+
+		SECTION("Render disabled element")
+		{
+			pig::ui::ImageComponent& imageComponent = pig::World::GetRegistry().emplace<pig::ui::ImageComponent>(uiElementEntity);
+			imageComponent.m_TextureHandle = sampleTextureID;
+			baseComponent.m_Parent = pig::World::GetRegistry().create();
+
+			pig::ui::BaseComponent& baseComponentParent = pig::World::GetRegistry().emplace<pig::ui::BaseComponent>(baseComponent.m_Parent);
+			baseComponentParent.m_Parent = pig::World::GetRegistry().create();
+			pig::ui::BaseComponent& baseComponentParentParent = pig::World::GetRegistry().emplace<pig::ui::BaseComponent>(baseComponentParent.m_Parent);
+
+			SECTION("base")
+			{
+				baseComponent.m_Enabled = false;
+				pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+				CHECK(!helper->m_ImageDrawn);
+
+				baseComponent.m_Enabled = true;
+				pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+				CHECK(helper->m_ImageDrawn);
+			}
+			SECTION("parent")
+			{
+				baseComponentParent.m_Enabled = false;
+				pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+				CHECK(!helper->m_ImageDrawn);
+
+				baseComponentParent.m_Enabled = true;
+				pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+				CHECK(helper->m_ImageDrawn);
+			}
+			SECTION("root parent")
+			{
+				baseComponentParentParent.m_Enabled = false;
+				pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+				CHECK(!helper->m_ImageDrawn);
+
+				baseComponentParentParent.m_Enabled = true;
+				pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+				CHECK(helper->m_ImageDrawn);
+			}
+		}
+
 		SECTION("Test alignment")
 		{
 			pig::ui::ImageComponent& imageComponent = pig::World::GetRegistry().emplace<pig::ui::ImageComponent>(uiElementEntity);
@@ -325,7 +381,7 @@ namespace CatchTestsetFail
 			CHECK(viewHover.size() == 0);
 			CHECK(viewRelease.size() == 0);
 		}
-
+		
 		SECTION("Check single UI corners hover")
 		{
 			inputComponent.m_MousePos = { 9.f, 19.f };
@@ -494,17 +550,37 @@ namespace CatchTestsetFail
 			}
 		}
 
-		SECTION("Check multiple layer events")
+		SECTION("Check events on disabled element")
 		{
-			inputComponent.m_MousePos = { 30.f, 50.f };
+			baseComponent1.m_Parent = pig::World::GetRegistry().create();
+
+			pig::ui::BaseComponent& baseComponentParent = pig::World::GetRegistry().emplace<pig::ui::BaseComponent>(baseComponent1.m_Parent);
+			baseComponentParent.m_Parent = pig::World::GetRegistry().create();
+			pig::ui::BaseComponent& baseComponentParentParent = pig::World::GetRegistry().emplace<pig::ui::BaseComponent>(baseComponentParent.m_Parent);
+
+			baseComponentParent.m_Enabled = false;
+
+			inputComponent.m_MousePos = { 30.f, 30.f };
+			inputComponent.m_KeysPressed[PG_MOUSE_BUTTON_LEFT] = 1;
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+			{
+				auto viewClick = pig::World::GetRegistry().view<pig::ui::UIOnClickOneFrameComponent>();
+				auto viewRelease = pig::World::GetRegistry().view<pig::ui::UIOnReleaseOneFrameComponent>();
+				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				CHECK(viewHover.size() == 0);
+				CHECK(viewRelease.size() == 0);
+				CHECK(viewClick.size() == 0);
+			}
 		}
 	}
-	TEST_CASE("UI.UIControlSystem::UIControlSystem")
+	TEST_CASE("UI.UIControlSystem::UpdateEvents")
 	{
 		pig::World& world = pig::World::Create();
 
-		world.RegisterSystem(std::move(std::make_unique<pig::ui::UIControlSystem>()));
+
+		pig::S_Ptr<MockUIControlSystemHelper> helper = std::make_shared<MockUIControlSystemHelper>();
+
+		world.RegisterSystem(std::move(std::make_unique<pig::ui::UIControlSystem>(helper)));
 
 		entt::entity layoutEntity = pig::World::GetRegistry().create();
 
@@ -549,6 +625,18 @@ namespace CatchTestsetFail
 
 			CHECK(baseComponentUpdated.m_Parent == updateComponent.m_Parent);
 		}
+		SECTION("Update enabled")
+		{
+			pig::ui::UIUpdateEnableOneFrameComponent& updateComponent = pig::World::GetRegistry().emplace<pig::ui::UIUpdateEnableOneFrameComponent>(layoutEntity);
+			updateComponent.m_Enabled = false;
+			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+
+			auto viewUpdated = pig::World::GetRegistry().view<const pig::ui::BaseComponent>();
+			REQUIRE(viewUpdated.size() == 1);
+			const pig::ui::BaseComponent& baseComponentUpdated = viewUpdated.get<const pig::ui::BaseComponent>(layoutEntity);
+
+			CHECK(baseComponentUpdated.m_Enabled == updateComponent.m_Enabled);
+		}
 		SECTION("Update id")
 		{
 			pig::ui::UIUpdateUUIDOneFrameComponent& updateComponent = pig::World::GetRegistry().emplace<pig::ui::UIUpdateUUIDOneFrameComponent>(layoutEntity);
@@ -569,7 +657,7 @@ namespace CatchTestsetFail
 			pig::ui::UIUpdateImageUUIDOneFrameComponent& updateComponent = pig::World::GetRegistry().emplace<pig::ui::UIUpdateImageUUIDOneFrameComponent>(layoutEntity);
 			updateComponent.m_UUID = pig::UUID::Generate();
 			updateComponent.m_PreviousImageToDestroy = pig::UUID::Generate();
-			
+
 			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
 
 			auto viewUpdated = pig::World::GetRegistry().view<const pig::ui::ImageComponent>();
@@ -603,30 +691,165 @@ namespace CatchTestsetFail
 			CHECK(textComponentUpdated.m_Spacing == updateComponent.m_Spacing);
 			CHECK(textComponentUpdated.m_Text == updateComponent.m_Text);
 		}
-		SECTION("Load layout from file")
+		SECTION("Destroy UI")
 		{
-			SECTION("Load single element layout")
-			{
-				//ARNAU TODO
-			}
-			SECTION("Load multilevel layout")
-			{
-				//ARNAU TODO
-			}
-			SECTION("Load layout composed by multiple files")
-			{
-				//ARNAU TODO
-			}
-		}
-		SECTION("Activate/Deactivate")
-		{
-			//ARNAU TODO
-			//ARNAU TODO impact this on render and events system
-		}
-		SECTION("Check focus")
-		{
-			//ARNAU TODO
+
+			baseComponent.m_Parent = pig::World::GetRegistry().create();
+
+			pig::ui::BaseComponent& baseComponentParent = pig::World::GetRegistry().emplace<pig::ui::BaseComponent>(baseComponent.m_Parent);
+			baseComponentParent.m_Parent = pig::World::GetRegistry().create();
+			pig::ui::BaseComponent& baseComponentParentParent = pig::World::GetRegistry().emplace<pig::ui::BaseComponent>(baseComponentParent.m_Parent);
+
+			entt::entity baseEnt = layoutEntity;
+			entt::entity parentEnt = baseComponent.m_Parent;
+			entt::entity rootEnt = baseComponentParent.m_Parent;
+
+			pig::ui::UIDestroyOneFrameComponent& destroyComponent = pig::World::GetRegistry().emplace<pig::ui::UIDestroyOneFrameComponent>(parentEnt);
+			pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+
+			CHECK(!pig::World::GetRegistry().valid(baseEnt));
+			CHECK(!pig::World::GetRegistry().valid(parentEnt));
+			CHECK(pig::World::GetRegistry().valid(rootEnt));
 		}
 	}
-	//ARNAU TODO
+	TEST_CASE("UI.UIControlSystem::LoadFromFileEvents")
+	{
+		pig::World& world = pig::World::Create();
+		pig::S_Ptr<MockUIControlSystemHelper> helper = std::make_shared<MockUIControlSystemHelper>();
+
+		world.RegisterSystem(std::move(std::make_unique<pig::ui::UIControlSystem>(helper)));
+
+		SECTION("Load layout from file")
+		{
+			pig::ui::LoadLayoutOneFrameComponent& layoutJson = pig::World::GetRegistry().emplace<pig::ui::LoadLayoutOneFrameComponent>(pig::World::GetRegistry().create());
+			
+			SECTION("Load single element image layout")
+			{
+				layoutJson.m_LayoutFilePath = "Assets/Test/TestUISmall1.json";
+				pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+
+				int elementCount = 0;
+				auto viewUI = pig::World::GetRegistry().view<const pig::ui::BaseComponent, const pig::ui::ImageComponent>();
+				for (auto ent : viewUI)
+				{
+					const pig::ui::BaseComponent& baseComponent = viewUI.get<pig::ui::BaseComponent>(ent);
+					const pig::ui::ImageComponent& dataComponent = viewUI.get<pig::ui::ImageComponent>(ent);
+					CHECK(baseComponent.m_HAlign == pig::ui::EHAlignType::eCenter);
+					CHECK(baseComponent.m_VAlign == pig::ui::EVAlignType::eTop);
+					CHECK(bool(baseComponent.m_Parent == entt::null));
+					CHECK(baseComponent.m_Spacing == glm::vec2(123.4f, 56.7f));
+					CHECK(baseComponent.m_Size == glm::vec2(4.4f, 5.7f));
+					CHECK(baseComponent.m_UUID == pig::UUID("12345678-9abc-def0-1234-56789abcdef1"));
+					CHECK(baseComponent.m_Enabled);
+
+					CHECK(!dataComponent.m_TextureHandle.IsNull());
+					elementCount++;
+				}
+				CHECK(elementCount == 1);
+			}
+			SECTION("Load single element text layout")
+			{
+				layoutJson.m_LayoutFilePath = "Assets/Test/TestUISmall2.json";
+				pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+
+				int elementCount = 0;
+				auto viewUI = pig::World::GetRegistry().view<const pig::ui::BaseComponent, const pig::ui::TextComponent>();
+				for (auto ent : viewUI)
+				{
+					const pig::ui::BaseComponent& baseComponent = viewUI.get<pig::ui::BaseComponent>(ent);
+					const pig::ui::TextComponent& dataComponent = viewUI.get<pig::ui::TextComponent>(ent);
+					CHECK(baseComponent.m_HAlign == pig::ui::EHAlignType::eNone);
+					CHECK(baseComponent.m_VAlign == pig::ui::EVAlignType::eNone);
+					CHECK(bool(baseComponent.m_Parent == entt::null));
+					CHECK(baseComponent.m_Spacing == glm::vec2(3.5f,4.6f));
+					CHECK(baseComponent.m_Size == glm::vec2(1.2f, 2.3f));
+					CHECK(baseComponent.m_UUID == pig::UUID("12345678-9abc-def0-1234-56789abcdef2"));
+					CHECK(baseComponent.m_Enabled);
+
+					CHECK(dataComponent.m_Text == "sample text");
+					CHECK(dataComponent.m_Kerning == 5.7f);
+					CHECK(dataComponent.m_Spacing == 6.7f);
+					CHECK(dataComponent.m_Color == glm::vec4(1.4f, 2.7f, 3.4f, 4.7f));
+					elementCount++;
+				}
+				CHECK(elementCount == 1);
+			}
+			SECTION("Load multilevel layout (parent)")
+			{
+				SECTION("single file")
+				{
+					layoutJson.m_LayoutFilePath = "Assets/Test/TestUIWithChildren.json";
+				}
+				SECTION("multiple files")
+				{
+					layoutJson.m_LayoutFilePath = "Assets/Test/TestUIWithChildrenSplit.json";
+				}
+				pig::World::Get().Update(pig::Timestep(0).AsMilliseconds());
+				entt::entity parentEntity = entt::null;
+				{
+					int elementCount = 0;
+					auto viewUI = pig::World::GetRegistry().view<const pig::ui::BaseComponent>(entt::exclude<pig::ui::TextComponent, pig::ui::ImageComponent>);
+					for (auto ent : viewUI)
+					{
+						const pig::ui::BaseComponent& baseComponent = viewUI.get<pig::ui::BaseComponent>(ent);
+						
+						CHECK(baseComponent.m_HAlign == pig::ui::EHAlignType::eNone);
+						CHECK(baseComponent.m_VAlign == pig::ui::EVAlignType::eNone);
+						CHECK(bool(baseComponent.m_Parent == entt::null));
+						CHECK(baseComponent.m_Spacing == glm::vec2(34.5f, 45.6f));
+						CHECK(baseComponent.m_Size == glm::vec2(12.2f, 23.3f));
+						CHECK(baseComponent.m_UUID == pig::UUID("12345678-9abc-def0-1234-56789abcdef0"));
+						CHECK(baseComponent.m_Enabled);
+						elementCount++;
+						parentEntity = ent;
+					}
+					CHECK(elementCount == 1);
+				}
+
+				{
+					int elementCount = 0;
+					auto viewUI = pig::World::GetRegistry().view<const pig::ui::BaseComponent, const pig::ui::TextComponent>();
+					for (auto ent : viewUI)
+					{
+						const pig::ui::BaseComponent& baseComponent = viewUI.get<pig::ui::BaseComponent>(ent);
+						const pig::ui::TextComponent& dataComponent = viewUI.get<pig::ui::TextComponent>(ent);
+						CHECK(baseComponent.m_HAlign == pig::ui::EHAlignType::eNone);
+						CHECK(baseComponent.m_VAlign == pig::ui::EVAlignType::eNone);
+						CHECK(bool(baseComponent.m_Parent == parentEntity));
+						CHECK(baseComponent.m_Spacing == glm::vec2(3.5f, 4.6f));
+						CHECK(baseComponent.m_Size == glm::vec2(1.2f, 2.3f));
+						CHECK(baseComponent.m_UUID == pig::UUID("12345678-9abc-def0-1234-56789abcdef2"));
+						CHECK(baseComponent.m_Enabled);
+
+						CHECK(dataComponent.m_Text == "sample text");
+						CHECK(dataComponent.m_Kerning == 5.7f);
+						CHECK(dataComponent.m_Spacing == 6.7f);
+						CHECK(dataComponent.m_Color == glm::vec4(1.4f, 2.7f, 3.4f, 4.7f));
+						elementCount++;
+					}
+					CHECK(elementCount == 1);
+				}
+				{
+					int elementCount = 0;
+					auto viewUI = pig::World::GetRegistry().view<const pig::ui::BaseComponent, const pig::ui::ImageComponent>();
+					for (auto ent : viewUI)
+					{
+						const pig::ui::BaseComponent& baseComponent = viewUI.get<pig::ui::BaseComponent>(ent);
+						const pig::ui::ImageComponent& dataComponent = viewUI.get<pig::ui::ImageComponent>(ent);
+						CHECK(baseComponent.m_HAlign == pig::ui::EHAlignType::eCenter);
+						CHECK(baseComponent.m_VAlign == pig::ui::EVAlignType::eTop);
+						CHECK(bool(baseComponent.m_Parent == parentEntity));
+						CHECK(baseComponent.m_Spacing == glm::vec2(123.4f, 56.7f));
+						CHECK(baseComponent.m_Size == glm::vec2(4.4f, 5.7f));
+						CHECK(baseComponent.m_UUID == pig::UUID("12345678-9abc-def0-1234-56789abcdef1"));
+						CHECK(baseComponent.m_Enabled);
+
+						CHECK(!dataComponent.m_TextureHandle.IsNull());
+						elementCount++;
+					}
+					CHECK(elementCount == 1);
+				}
+			}
+		}
+	}
 }

@@ -39,23 +39,26 @@ void pig::ui::UIEventSystem::Update(float dt)
 	for (auto ent : viewUI)
 	{
 		const pig::ui::BaseComponent& baseComponent = viewUI.get<pig::ui::BaseComponent>(ent);
-		int level = 0;
-		const glm::vec4 uiBounds = pig::ui::GetGlobalBoundsForElement(baseComponent, renderComponent, baseComponent.m_Size, level);
-
-		if (IsPosInsideBounds(inputComponent.m_MousePos, uiBounds))
+		if (pig::ui::IsUIElementEnabled(baseComponent))
 		{
-			pig::ui::UIOnHoverOneFrameComponent& hoverComponent = pig::World::GetRegistry().emplace<pig::ui::UIOnHoverOneFrameComponent>(ent);
-			hoverComponent.m_ElementID = baseComponent.m_UUID;
+			int level = 0;
+			const glm::vec4 uiBounds = pig::ui::GetGlobalBoundsForElement(baseComponent, renderComponent, baseComponent.m_Size, level);
 
-			if (inputComponent.m_KeysPressed.find(PG_MOUSE_BUTTON_LEFT) != inputComponent.m_KeysPressed.end())
+			if (IsPosInsideBounds(inputComponent.m_MousePos, uiBounds))
 			{
-				pig::ui::UIOnClickOneFrameComponent& clickComponent = pig::World::GetRegistry().emplace<pig::ui::UIOnClickOneFrameComponent>(ent);
-				clickComponent.m_ElementID = baseComponent.m_UUID;
-			}
-			else if (inputComponent.m_KeysReleased.find(PG_MOUSE_BUTTON_LEFT) != inputComponent.m_KeysReleased.end())
-			{
-				pig::ui::UIOnReleaseOneFrameComponent& releaseComponent = pig::World::GetRegistry().emplace<pig::ui::UIOnReleaseOneFrameComponent>(ent);
-				releaseComponent.m_ElementID = baseComponent.m_UUID;
+				pig::ui::UIOnHoverOneFrameComponent& hoverComponent = pig::World::GetRegistry().emplace<pig::ui::UIOnHoverOneFrameComponent>(ent);
+				hoverComponent.m_ElementID = baseComponent.m_UUID;
+
+				if (inputComponent.m_KeysPressed.find(PG_MOUSE_BUTTON_LEFT) != inputComponent.m_KeysPressed.end())
+				{
+					pig::ui::UIOnClickOneFrameComponent& clickComponent = pig::World::GetRegistry().emplace<pig::ui::UIOnClickOneFrameComponent>(ent);
+					clickComponent.m_ElementID = baseComponent.m_UUID;
+				}
+				else if (inputComponent.m_KeysReleased.find(PG_MOUSE_BUTTON_LEFT) != inputComponent.m_KeysReleased.end())
+				{
+					pig::ui::UIOnReleaseOneFrameComponent& releaseComponent = pig::World::GetRegistry().emplace<pig::ui::UIOnReleaseOneFrameComponent>(ent);
+					releaseComponent.m_ElementID = baseComponent.m_UUID;
+				}
 			}
 		}
 	}

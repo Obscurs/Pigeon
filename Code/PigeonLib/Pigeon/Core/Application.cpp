@@ -78,7 +78,7 @@ void pig::Application::Init()
 
 	//ARNAU TODO consider using something else instead of pointers?
 	//ARNAU TODO move system registration on a separate file and do proper system ordering
-	world.RegisterSystem(std::move(std::make_unique<pig::ui::UIControlSystem>()));
+	world.RegisterSystem(std::move(std::make_unique<pig::ui::UIControlSystem>(std::make_shared<pig::ui::UIControlSystemHelper>())));
 	world.RegisterSystem(std::move(std::make_unique<pig::ui::UIEventSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pig::ui::UIRenderSystem>(std::make_shared<pig::ui::UIRenderSystemHelper>())));
 

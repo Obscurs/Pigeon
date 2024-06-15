@@ -7,6 +7,7 @@
 
 namespace pig::ui
 {
+	//ARNAU TODO "none" alignment is redundant
 	enum class EHAlignType
 	{
 		eCenter,
@@ -36,6 +37,7 @@ namespace pig::ui
 
 		entt::entity m_Parent{ entt::null };
 		pig::UUID m_UUID{};
+		bool m_Enabled{ true };
 	};
 
 	struct TextComponent
@@ -57,9 +59,9 @@ namespace pig::ui
 		pig::UUID m_TextureHandle;
 	};
 
-	struct LoadableLayoutOneFrameComponent
+	struct LoadLayoutOneFrameComponent
 	{
-		LoadableLayoutOneFrameComponent() = default;
+		LoadLayoutOneFrameComponent() = default;
 		
 		std::string m_LayoutFilePath;
 	};
@@ -106,6 +108,22 @@ namespace pig::ui
 		UIUpdateUUIDOneFrameComponent(const UIUpdateUUIDOneFrameComponent&) = default;
 
 		pig::UUID m_UUID{};
+	};
+
+	struct UIUpdateEnableOneFrameComponent
+	{
+		UIUpdateEnableOneFrameComponent() = default;
+		UIUpdateEnableOneFrameComponent(const UIUpdateEnableOneFrameComponent&) = default;
+
+		bool m_Enabled{};
+	};
+
+	struct UIDestroyOneFrameComponent
+	{
+		UIDestroyOneFrameComponent() = default;
+		UIDestroyOneFrameComponent(const UIDestroyOneFrameComponent&) = default;
+
+		bool m_DUMMYVAR{};
 	};
 
 	struct UIUpdateImageUUIDOneFrameComponent

@@ -79,3 +79,30 @@ glm::vec4 pig::ui::GetGlobalBoundsForElement(const pig::ui::BaseComponent& baseC
 	}
 	return glm::vec4(posFinal, uiBoundsSize);
 }
+
+bool pig::ui::IsUIElementEnabled(const pig::ui::BaseComponent& baseComponent)
+{
+	bool enabled = baseComponent.m_Enabled;
+	entt::entity parentEntity = baseComponent.m_Parent;
+	while (enabled && parentEntity != entt::null)
+	{
+		PG_CORE_EXCEPT(pig::World::GetRegistry().any_of<pig::ui::BaseComponent>(parentEntity), "parent entity does not have base component");
+		const pig::ui::BaseComponent& parentComponent = pig::World::GetRegistry().get<const pig::ui::BaseComponent>(parentEntity);
+		enabled = parentComponent.m_Enabled;
+		parentEntity = parentComponent.m_Parent;
+	}
+	return enabled;
+}
+
+std::vector<entt::entity> pig::ui::GetUIChildrenForElement(entt::entity ent)
+{
+	std::vector<entt::entity> children{};
+	auto view = pig::World::GetRegistry().view<const pig::ui::BaseComponent>();
+	for (auto child : view)
+	{
+		const pig::ui::BaseComponent& baseComponent = view.get<const pig::ui::BaseComponent>(child);
+		if (baseComponent.m_Parent == ent)
+			children.push_back(child);
+	}
+	return children;
+}

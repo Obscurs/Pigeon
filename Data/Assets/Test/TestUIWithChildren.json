@@ -1,0 +1,43 @@
+{
+  "ui": {
+    "width": 12.2,
+    "height": 23.3,
+    "spacing_x": 34.5,
+    "spacing_y": 45.6,
+    "uuid": "12345678-9abc-def0-1234-56789abcdef0",
+    "children": [
+      {
+        "ui": {
+          "width": 1.2,
+          "height": 2.3,
+          "spacing_x": 3.5,
+          "spacing_y": 4.6,
+          "uuid": "12345678-9abc-def0-1234-56789abcdef2",
+          "text": {
+            "string" : "sample text",
+            "colR": 1.4,
+            "colG": 2.7,
+            "colB": 3.4,
+            "colA": 4.7,
+            "kerning": 5.7,
+            "spacing": 6.7
+          }
+        }
+      },
+      {
+        "ui": {
+          "width": 4.4,
+          "height": 5.7,
+          "spacing_x": 123.4,
+          "spacing_y": 56.7,
+          "alignment_h": "center",
+          "alignment_v": "top",
+          "uuid": "12345678-9abc-def0-1234-56789abcdef1",
+          "image": {
+            "path" : "Assets/Test/uiImage1.png"
+          }
+        }
+      }      
+    ]
+  }
+}
