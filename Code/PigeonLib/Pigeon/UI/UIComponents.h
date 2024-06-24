@@ -7,20 +7,17 @@
 
 namespace pig::ui
 {
-	//ARNAU TODO "none" alignment is redundant
 	enum class EHAlignType
 	{
 		eCenter,
 		eLeft,
-		eRight,
-		eNone,
+		eRight
 	};
 	enum class EVAlignType
 	{
 		eCenter,
 		eTop,
-		eBottom,
-		eNone,
+		eBottom
 	};
 
 	struct BaseComponent
@@ -32,8 +29,8 @@ namespace pig::ui
 
 		glm::vec2 m_Spacing{};
 
-		EHAlignType m_HAlign{ EHAlignType::eNone };
-		EVAlignType m_VAlign{ EVAlignType::eNone };
+		EHAlignType m_HAlign{ EHAlignType::eLeft };
+		EVAlignType m_VAlign{ EVAlignType::eTop };
 
 		entt::entity m_Parent{ entt::null };
 		pig::UUID m_UUID{};
@@ -90,8 +87,8 @@ namespace pig::ui
 
 		glm::vec2 m_Spacing{};
 
-		EHAlignType m_HAlign{ EHAlignType::eNone };
-		EVAlignType m_VAlign{ EVAlignType::eNone };
+		EHAlignType m_HAlign{ EHAlignType::eLeft };
+		EVAlignType m_VAlign{ EVAlignType::eTop };
 	};
 
 	struct UIUpdateParentOneFrameComponent

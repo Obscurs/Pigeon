@@ -1,5 +1,6 @@
 #pragma once
 #include <entt/entt.hpp>
+#include <typeindex>
 
 #include "Pigeon/ECS/System.h"
 
@@ -16,7 +17,7 @@ namespace pig
 			return s_Instance->Get();
 		}
 
-		void Update(float dt);
+		void Update(const pig::Timestep& ts);
 		void RegisterSystem(std::unique_ptr<pig::System> system);
 
 		inline static World& Get() { return *s_Instance; }
@@ -27,6 +28,7 @@ namespace pig
 
 		entt::registry m_Registry;
 		std::vector<pig::U_Ptr<pig::System>> m_Systems;
+		std::unordered_set<std::type_index> m_SystemTypes;
 
 		static pig::U_Ptr<World> s_Instance;
 	};

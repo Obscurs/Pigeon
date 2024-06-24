@@ -10,6 +10,6 @@ namespace pig
 	public:
 		TestSystem();
 		~TestSystem() = default;
-		void Update(float dt);
+		void Update(const pig::Timestep& ts);
 	};
 }

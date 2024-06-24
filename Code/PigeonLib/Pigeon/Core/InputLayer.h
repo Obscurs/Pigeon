@@ -12,7 +12,7 @@ namespace pig
 	class PIGEON_API Input
 	{
 	public:
-		//TODO Arnau Support Gamepad input
+		//ARNAU TODO Support Gamepad input
 		static bool IsKeyTyped(int keycode);
 		static bool IsKeyPressed(int keycode, bool justPressed = false);
 		static bool IsKeyReleased(int keycode);
@@ -23,7 +23,7 @@ namespace pig
 		static glm::vec2 GetMousePosition();
 		static glm::vec2 GetMouseScrolled();
 
-		static const std::vector<int>& GetKeysTyped();
+		static std::vector<int> GetKeysTyped();
 
 		inline static Input& GetInput() { return *s_Instance; }
 
@@ -51,7 +51,7 @@ namespace pig
 		glm::vec2 GetMousePosition() const;
 		glm::vec2 GetMouseScrolled() const;
 
-		const std::vector<int>& GetKeysTyped() const;
+		std::vector<int> GetKeysTyped() const;
 
 		friend class Input;
 	private:

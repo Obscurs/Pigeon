@@ -23,7 +23,7 @@ namespace CatchTestsetFail
 		app.TestUpdate(timestep);
 		SECTION("Key pressed and released")
 		{
-			int eventKeyCode = PG_KEY_A;
+			int eventKeyCode = pig::PG_KEY_A;
 			CHECK(!pig::Input::IsKeyPressed(eventKeyCode));
 			CHECK(!pig::Input::IsKeyReleased(eventKeyCode));
 			
@@ -102,7 +102,7 @@ namespace CatchTestsetFail
 			appWindow.TESTING_TriggerEvent(&pig::KeyTypedEvent(eventKeyCode5));
 			appWindow.TESTING_TriggerEvent(&pig::KeyTypedEvent(eventKeyCode6));
 			app.TestUpdate(timestep);
-			const std::vector<int>& keysTyped = pig::Input::GetKeysTyped();
+			const std::vector<int> keysTyped = pig::Input::GetKeysTyped();
 			REQUIRE(keysTyped.size() == 6);
 			CHECK(keysTyped[0] == eventKeyCode1);
 			CHECK(keysTyped[1] == eventKeyCode2);
@@ -113,7 +113,7 @@ namespace CatchTestsetFail
 		}
 		SECTION("Mouse button pressed and released")
 		{
-			int eventKeyCode = PG_KEY_BACKSPACE;
+			int eventKeyCode = pig::PG_KEY_BACKSPACE;
 			CHECK(!pig::Input::IsMouseButtonPressed(eventKeyCode));
 			CHECK(!pig::Input::IsMouseButtonReleased(eventKeyCode));
 
@@ -168,9 +168,9 @@ namespace CatchTestsetFail
 
 		SECTION("multiple events concurrently")
 		{
-			int eventKeyCode1 = PG_KEY_D;
-			int eventKeyCode2 = PG_KEY_LEFT;
-			int eventKeyCode3 = PG_KEY_F16;
+			int eventKeyCode1 = pig::PG_KEY_D;
+			int eventKeyCode2 = pig::PG_KEY_LEFT;
+			int eventKeyCode3 = pig::PG_KEY_F16;
 			glm::vec2 targetPos(123.f, 456.f);
 
 			pig::KeyPressedEvent pressEvent1(eventKeyCode1, 0);

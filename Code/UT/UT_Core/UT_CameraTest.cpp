@@ -99,7 +99,7 @@ namespace CatchTestsetFail
 			{
 				SECTION("Moving left")
 				{
-					pig::KeyPressedEvent pressEvent(PG_KEY_A, 0);
+					pig::KeyPressedEvent pressEvent(pig::PG_KEY_A, 0);
 					appWindow.TESTING_TriggerEvent(&pressEvent);
 					app.TestUpdate(timestep);
 					cameraController.OnUpdate(timestep);
@@ -109,7 +109,7 @@ namespace CatchTestsetFail
 				}
 				SECTION("Moving right")
 				{
-					pig::KeyPressedEvent pressEvent(PG_KEY_D, 0);
+					pig::KeyPressedEvent pressEvent(pig::PG_KEY_D, 0);
 					appWindow.TESTING_TriggerEvent(&pressEvent);
 					app.TestUpdate(timestep);
 					cameraController.OnUpdate(timestep);
@@ -119,7 +119,7 @@ namespace CatchTestsetFail
 				}
 				SECTION("Moving up")
 				{
-					pig::KeyPressedEvent pressEvent(PG_KEY_W, 0);
+					pig::KeyPressedEvent pressEvent(pig::PG_KEY_W, 0);
 					appWindow.TESTING_TriggerEvent(&pressEvent);
 					app.TestUpdate(timestep);
 					cameraController.OnUpdate(timestep);
@@ -129,7 +129,7 @@ namespace CatchTestsetFail
 				}
 				SECTION("Moving down")
 				{
-					pig::KeyPressedEvent pressEvent(PG_KEY_S, 0);
+					pig::KeyPressedEvent pressEvent(pig::PG_KEY_S, 0);
 					appWindow.TESTING_TriggerEvent(&pressEvent);
 					app.TestUpdate(timestep);
 					cameraController.OnUpdate(timestep);
@@ -139,8 +139,8 @@ namespace CatchTestsetFail
 				}
 				SECTION("Moving up and left")
 				{
-					pig::KeyPressedEvent pressEvent1(PG_KEY_A, 0);
-					pig::KeyPressedEvent pressEvent2(PG_KEY_W, 0);
+					pig::KeyPressedEvent pressEvent1(pig::PG_KEY_A, 0);
+					pig::KeyPressedEvent pressEvent2(pig::PG_KEY_W, 0);
 					appWindow.TESTING_TriggerEvent(&pressEvent1);
 					appWindow.TESTING_TriggerEvent(&pressEvent2);
 					app.TestUpdate(timestep);
@@ -151,8 +151,8 @@ namespace CatchTestsetFail
 				}
 				SECTION("Moving down and right")
 				{
-					pig::KeyPressedEvent pressEvent1(PG_KEY_D, 0);
-					pig::KeyPressedEvent pressEvent2(PG_KEY_S, 0);
+					pig::KeyPressedEvent pressEvent1(pig::PG_KEY_D, 0);
+					pig::KeyPressedEvent pressEvent2(pig::PG_KEY_S, 0);
 					appWindow.TESTING_TriggerEvent(&pressEvent1);
 					appWindow.TESTING_TriggerEvent(&pressEvent2);
 					app.TestUpdate(timestep);
@@ -259,7 +259,7 @@ namespace CatchTestsetFail
 			{
 				SECTION("Moving left")
 				{
-					pig::KeyPressedEvent pressEvent(PG_KEY_A, 0);
+					pig::KeyPressedEvent pressEvent(pig::PG_KEY_A, 0);
 					appWindow.TESTING_TriggerEvent(&pressEvent);
 					app.TestUpdate(timestep);
 					cameraController.OnUpdate(timestep);

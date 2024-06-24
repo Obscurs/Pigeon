@@ -15,12 +15,8 @@ namespace
 		return pos.x >= bounds.x && pos.y >= bounds.y && pos.x <= bounds.x + bounds.z && pos.y <= bounds.y + bounds.w;
 	}
 }
-pig::ui::UIEventSystem::UIEventSystem():
-	pig::System(pig::SystemType::eTest)
-{
-}
 
-void pig::ui::UIEventSystem::Update(float dt)
+void pig::ui::UIEventSystem::Update(const pig::Timestep& ts)
 {
 	CleanOneFrameComponents();
 

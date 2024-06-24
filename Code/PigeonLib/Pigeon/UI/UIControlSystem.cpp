@@ -23,12 +23,11 @@ namespace
 	}
 }
 pig::ui::UIControlSystem::UIControlSystem(pig::S_Ptr<IUIControlSystemHelper> helper)
-	: pig::System(pig::SystemType::eTest)
-	, m_Helper(helper)
+	: m_Helper(helper)
 {
 }
 
-void pig::ui::UIControlSystem::Update(float dt)
+void pig::ui::UIControlSystem::Update(const pig::Timestep& ts)
 {
 	auto viewTransform = pig::World::GetRegistry().view<pig::ui::BaseComponent, const pig::ui::UIUpdateTransformOneFrameComponent>();
 	for (auto ent : viewTransform)
@@ -306,6 +305,6 @@ void pig::ui::UIControlSystem::CleanOneFrameComponents()
 
 pig::UUID pig::ui::UIControlSystemHelper::CreateUIImageFromPath(const std::string& path)
 {
-	//TODO ARNAU: maybe UI renderer should handle this, or have a image system
+	//ARNAU TODO: maybe UI renderer should handle this, or have a image system
 	return pig::Renderer2D::AddTexture(path, pig::EMappedTextureType::eQuad);
 }

@@ -25,7 +25,7 @@ namespace pig::ui
 	public:
 		UIControlSystem(pig::S_Ptr<IUIControlSystemHelper> helper);
 		~UIControlSystem() = default;
-		void Update(float dt) override;
+		void Update(const pig::Timestep& ts) override;
 	private:
 		//ARNAU TODO: this clean should not be in this system, rethink
 		void CleanOneFrameComponents();

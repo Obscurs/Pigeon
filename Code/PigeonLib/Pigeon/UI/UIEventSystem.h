@@ -7,9 +7,9 @@ namespace pig::ui
 	class UIEventSystem : public pig::System
 	{
 	public:
-		UIEventSystem();
+		UIEventSystem() = default;
 		~UIEventSystem() = default;
-		void Update(float dt) override;
+		void Update(const pig::Timestep& ts) override;
 	private:
 		void CleanOneFrameComponents();
 	};

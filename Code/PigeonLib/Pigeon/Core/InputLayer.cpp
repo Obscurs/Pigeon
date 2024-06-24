@@ -13,11 +13,6 @@
 #include <Pigeon/Events/MouseEvent.h>
 #include <Pigeon/Events/KeyEvent.h>
 
-namespace
-{
-	//ARNAU TODO get rid of this vec
-	static std::vector<int> s_DummyVec;
-}
 pig::S_Ptr<pig::Input> pig::Input::s_Instance = std::make_shared<pig::Input>();
 pig::InputLayer::InputLayer()
 	: Layer("InputLayer")
@@ -142,7 +137,7 @@ glm::vec2 pig::InputLayer::GetMouseScrolled() const
 	return glm::vec2{};
 }
 
-const std::vector<int>& pig::InputLayer::GetKeysTyped() const
+std::vector<int> pig::InputLayer::GetKeysTyped() const
 {
 	auto view = pig::World::GetRegistry().view<const pig::InputStateSingletonComponent>();
 	if (view.size() == 1)
@@ -150,7 +145,7 @@ const std::vector<int>& pig::InputLayer::GetKeysTyped() const
 		const pig::InputStateSingletonComponent& inputState = view.get<const pig::InputStateSingletonComponent>(view.front());
 		return inputState.m_KeysTyped;
 	}
-	return s_DummyVec;
+	return std::vector<int>();
 }
 
 bool pig::InputLayer::AppendKeyEvent(const pig::Event& e)
@@ -310,7 +305,7 @@ glm::vec2 pig::Input::GetMouseScrolled()
 	return pig::Application::Get().GetInputLayer().GetMouseScrolled();
 }
 
-const std::vector<int>& pig::Input::GetKeysTyped()
+std::vector<int> pig::Input::GetKeysTyped()
 {
 	return pig::Application::Get().GetInputLayer().GetKeysTyped();
 }

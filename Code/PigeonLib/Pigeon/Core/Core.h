@@ -43,7 +43,7 @@ namespace pig
 	template<typename T>
 	using S_Ptr = std::shared_ptr<T>;
 
-	//TODO Arnau Move this funcs elsewhere?
+	//ARNAU TODO Move this funcs elsewhere?
 	struct ReleaseDeleter {
 		template<typename T>
 		void operator()(T* ptr) const {

@@ -10,20 +10,16 @@
 
 namespace
 {
-	static float s_DeltaReceived = 0.f;
+	static uint64_t s_DeltaReceived = 0.f;
 
 	class TestSystem : public pig::System
 	{
 	public:
-		TestSystem()
-			: System(pig::SystemType::eTest)
-		{
-
-		}
+		TestSystem() = default;
 		~TestSystem() = default;
-		void Update(float dt)
+		void Update(const pig::Timestep& ts)
 		{
-			s_DeltaReceived += dt;
+			s_DeltaReceived += ts.AsMilliseconds();
 		}
 	};
 }
@@ -35,9 +31,9 @@ namespace CatchTestsetFail
 
 		pig::U_Ptr<TestSystem> testSystem = std::make_unique<TestSystem>();
 		world.RegisterSystem(std::move(testSystem));
-
-		world.Update(3.14f);
-		CHECK(FLOAT_EQ(s_DeltaReceived, 3.14f));
+		pig::Timestep ts(3000);
+		world.Update(ts);
+		CHECK(s_DeltaReceived == 3000);
 	}
 } // End namespace: CatchTestsetFail
 

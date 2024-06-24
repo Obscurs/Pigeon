@@ -115,7 +115,7 @@ void pig::Application::Update(const Timestep& ts)
 	}
 #endif
 
-	pig::World::Get().Update(ts.AsMilliseconds());
+	pig::World::Get().Update(ts);
 
 	for (pig::S_Ptr<pig::Layer> layer : m_Data.m_LayerStack)
 		layer->End();

@@ -5,12 +5,7 @@
 
 #include "Pigeon/ECS/World.h"
 
-pig::ui::UILayoutSystemInterface::UILayoutSystemInterface()
-	: pig::System(pig::SystemType::eTest)
-{
-}
-
-void pig::ui::UILayoutSystemInterface::Update(float dt)
+void pig::ui::UILayoutSystemInterface::Update(const pig::Timestep& /*ts*/)
 {
 }
 

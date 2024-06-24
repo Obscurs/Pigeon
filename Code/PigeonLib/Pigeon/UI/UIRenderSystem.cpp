@@ -8,13 +8,12 @@
 #include "Pigeon/Renderer/Font.h"
 #include <Pigeon/Renderer/Renderer2D.h>
 
-pig::ui::UIRenderSystem::UIRenderSystem(pig::S_Ptr<IUIRenderSystemHelper> helper):
-	pig::System(pig::SystemType::eTest),
-	m_Helper(helper)
+pig::ui::UIRenderSystem::UIRenderSystem(pig::S_Ptr<IUIRenderSystemHelper> helper)
+	: m_Helper(helper)
 {
 }
 
-void pig::ui::UIRenderSystem::Update(float dt)
+void pig::ui::UIRenderSystem::Update(const pig::Timestep& ts)
 {
 	auto viewRenderConfig = pig::World::GetRegistry().view<const pig::ui::RendererConfig>();
 	if (viewRenderConfig.size() == 0)

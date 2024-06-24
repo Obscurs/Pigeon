@@ -9,9 +9,9 @@ namespace pig::ui
 	class UILayoutSystemInterface : public pig::System
 	{
 	public:
-		UILayoutSystemInterface();
+		UILayoutSystemInterface() = default;
 		~UILayoutSystemInterface() = default;
-		void Update(float dt) override;
+		void Update(const pig::Timestep& ts) override;
 	private:
 		void LoadLayout(const std::string& path);
 		void UpdateLayoutTransform(const pig::UUID& layoutId, const glm::vec2& size, const glm::vec2& spacing, pig::ui::EHAlignType hvalue, pig::ui::EVAlignType vvalue);

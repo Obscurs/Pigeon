@@ -187,7 +187,7 @@ void pig::Renderer2D::DrawString(const glm::mat4& transform, const std::string& 
 
 void pig::Renderer2D::DrawQuad(const glm::mat4& transform, const pig::UUID& textureID, const glm::vec3& origin)
 {
-	//TODO ARNAU Assert if scene has not began
+	//ARNAU TODO Assert if scene has not began
 	DrawBatch(transform, glm::vec3(1.f), textureID, glm::vec4(0.f, 0.f, 1.f, 1.f), origin);
 }
 

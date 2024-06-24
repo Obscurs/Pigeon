@@ -4,8 +4,7 @@
 
 #include "Pigeon/ECS/World.h"
 
-pig::TestSystem::TestSystem():
-	pig::System(pig::SystemType::eTest)
+pig::TestSystem::TestSystem()
 {
 	//Uncomment this code to test
 	/*entt::entity testSingletonEntity = pig::World::GetRegistry().create();
@@ -13,7 +12,7 @@ pig::TestSystem::TestSystem():
 	pig::World::GetRegistry().emplace<pig::TestComponent>(testSingletonEntity, 1, 2);*/
 }
 
-void pig::TestSystem::Update(float dt)
+void pig::TestSystem::Update(const pig::Timestep& ts)
 {
 	auto view = pig::World::GetRegistry().view<pig::TestComponent>();
 	for (auto ent : view)
