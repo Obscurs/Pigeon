@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+
+  <Catch2Adapter>
+    <Logging>debug</Logging>
+    <FilenameFilter>UT</FilenameFilter>
+  </Catch2Adapter>
+
+</RunSettings>

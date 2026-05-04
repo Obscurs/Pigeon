@@ -1,0 +1,54 @@
+{
+  "ui": {
+    "gameVariables": [
+      {
+        "id": "@var1"
+      },
+      {
+        "id": "@var2"
+      },
+      {
+        "id": "@var3"
+      }
+    ],
+    "horizontalLayout": {
+      "children": [
+        {
+          "list": {
+            "count": "@var2[0]",
+            "layout": {
+              "children": [
+                {
+                  "image": {
+                    "x": 10,
+                    "y": 10,
+                    "width": 300,
+                    "height": 200,
+                    "path": "Test/uiTestImage2.png",
+                    "alignment": "center",
+                    "spacing_x": 1,
+                    "spacing_y": 2
+                  }
+                },
+                {
+                  "text": {
+                    "x": 10,
+                    "y": 10,
+                    "width": 400,
+                    "height": 50,
+                    "text": "@var1[i]",
+                    "fontSize": "@var2[1]",
+                    "alignment": "center",
+                    "spacing_x": 5,
+                    "spacing_y": 10,
+                    "onClick": "@var3"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}
