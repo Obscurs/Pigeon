@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(Code/**)",
+      "Write(Code/**)",
+      "Edit(Code/**)",
+      "Glob(Code/**)",
+      "Grep(Code/**)",
+      "Read(Data/**)",
+      "Write(Data/**)",
+      "Edit(Data/**)",
+      "Bash(cmake *)",
+      "Bash(*UT.exe*)",
+      "Bash(rm *)",
+      "PowerShell(if \\(!\\(Test-Path \"c:\\\\Workspaces\\\\Pigeon\\\\Documentation\"\\)\\) { New-Item -ItemType Directory -Path \"c:\\\\Workspaces\\\\Pigeon\\\\Documentation\" })"
+    ],
+    "deny": [
+      "Read(External/**)",
+      "Write(External/**)",
+      "Edit(External/**)",
+      "Write(.claude/settings.local.json)",
+      "Edit(.claude/settings.local.json)"
+    ]
+  }
+}

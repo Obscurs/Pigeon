@@ -317,94 +317,121 @@ namespace CatchTestsetFail
 
 		SECTION("Multiple textures")
 		{
-			REQUIRE(data.m_BatchMap.find(pig::Renderer2D::s_DefaultTexture) != data.m_BatchMap.end());
-			REQUIRE(data.m_BatchMap.find(sampleTexture1) != data.m_BatchMap.end());
-			REQUIRE(data.m_BatchMap.find(sampleTexture2) != data.m_BatchMap.end());
-			REQUIRE(data.m_BatchMap.find(sampleTexture3) != data.m_BatchMap.end());
-			REQUIRE(data.m_BatchMap.find(testFontId) != data.m_BatchMap.end());
-			const pig::Renderer2D::Data::BatchData& texBatch1 = data.m_BatchMap.at(pig::Renderer2D::s_DefaultTexture);
-			const pig::Renderer2D::Data::BatchData& texBatch2 = data.m_BatchMap.at(sampleTexture1);
-			const pig::Renderer2D::Data::BatchData& texBatch3 = data.m_BatchMap.at(sampleTexture2);
-			const pig::Renderer2D::Data::BatchData& texBatch4 = data.m_BatchMap.at(sampleTexture3);
-			const pig::Renderer2D::Data::BatchData& texBatch5 = data.m_BatchMap.at(testFontId);
+			// DrawLayerBatch routes quads to m_LayerBatchMap[layer] keyed by z-component of transform.
+			// transform1 z=6, transform2 z=1, transform3 z=1, transform4 z=3 (also used for text)
+			REQUIRE(data.m_LayerBatchMap.find(1) != data.m_LayerBatchMap.end());
+			REQUIRE(data.m_LayerBatchMap.find(3) != data.m_LayerBatchMap.end());
+			REQUIRE(data.m_LayerBatchMap.find(6) != data.m_LayerBatchMap.end());
 
-			CHECK(texBatch1.m_IndexCount == 18);
-			CHECK(texBatch1.m_VertexCount == 12);
-			CHECK(texBatch2.m_IndexCount == 18);
-			CHECK(texBatch2.m_VertexCount == 12);
-			CHECK(texBatch3.m_IndexCount == 18);
-			CHECK(texBatch3.m_VertexCount == 12);
-			CHECK(texBatch4.m_IndexCount == 12);
-			CHECK(texBatch4.m_VertexCount == 8);
-			CHECK(texBatch5.m_IndexCount == 66); //11 characters * 6 vertices (2 triangles)
-			CHECK(texBatch5.m_VertexCount == 44); // 11 characters * 4 vertices
+			const auto& layer1 = data.m_LayerBatchMap.at(1);
+			const auto& layer3 = data.m_LayerBatchMap.at(3);
+			const auto& layer6 = data.m_LayerBatchMap.at(6);
 
-			CHECK(texBatch1.m_VertexBuffer[0] == 4.f);
-			CHECK(texBatch1.m_IndexBuffer[0] == 0.f);
-			CHECK(texBatch2.m_VertexBuffer[3] == 1.f);
-			CHECK(texBatch2.m_IndexBuffer[5] == 3.f);
-			CHECK(texBatch3.m_VertexBuffer[4] == 1.f);
-			CHECK(texBatch3.m_IndexBuffer[6] == 4.f);
-			CHECK(texBatch4.m_VertexBuffer[7] == 0.f);
-			CHECK(texBatch4.m_IndexBuffer[11] == 7.f);
+			REQUIRE(layer6.find(pig::Renderer2D::s_DefaultTexture) != layer6.end());
+			REQUIRE(layer6.find(sampleTexture1) != layer6.end());
+			REQUIRE(layer6.find(sampleTexture2) != layer6.end());
+			REQUIRE(layer6.find(sampleTexture3) != layer6.end());
+			REQUIRE(layer1.find(pig::Renderer2D::s_DefaultTexture) != layer1.end());
+			REQUIRE(layer1.find(sampleTexture1) != layer1.end());
+			REQUIRE(layer1.find(sampleTexture2) != layer1.end());
+			REQUIRE(layer3.find(sampleTexture2) != layer3.end());
+			REQUIRE(layer3.find(sampleTexture3) != layer3.end());
+			REQUIRE(layer3.find(testFontId) != layer3.end());
+
+			// Layer 6: 1 quad each (all drawn with transform1)
+			CHECK(layer6.at(pig::Renderer2D::s_DefaultTexture).m_IndexCount == 6);
+			CHECK(layer6.at(pig::Renderer2D::s_DefaultTexture).m_VertexCount == 4);
+			CHECK(layer6.at(sampleTexture1).m_IndexCount == 6);
+			CHECK(layer6.at(sampleTexture1).m_VertexCount == 4);
+			CHECK(layer6.at(sampleTexture2).m_IndexCount == 6);
+			CHECK(layer6.at(sampleTexture2).m_VertexCount == 4);
+			CHECK(layer6.at(sampleTexture3).m_IndexCount == 6);
+			CHECK(layer6.at(sampleTexture3).m_VertexCount == 4);
+
+			// Layer 1: s_DefaultTexture and sampleTexture1 have 2 quads, sampleTexture2 has 1
+			CHECK(layer1.at(pig::Renderer2D::s_DefaultTexture).m_IndexCount == 12);
+			CHECK(layer1.at(pig::Renderer2D::s_DefaultTexture).m_VertexCount == 8);
+			CHECK(layer1.at(sampleTexture1).m_IndexCount == 12);
+			CHECK(layer1.at(sampleTexture1).m_VertexCount == 8);
+			CHECK(layer1.at(sampleTexture2).m_IndexCount == 6);
+			CHECK(layer1.at(sampleTexture2).m_VertexCount == 4);
+
+			// Layer 3: 1 quad each for sampleTexture2/3, 11 chars for font
+			CHECK(layer3.at(sampleTexture2).m_IndexCount == 6);
+			CHECK(layer3.at(sampleTexture2).m_VertexCount == 4);
+			CHECK(layer3.at(sampleTexture3).m_IndexCount == 6);
+			CHECK(layer3.at(sampleTexture3).m_VertexCount == 4);
+			CHECK(layer3.at(testFontId).m_IndexCount == 66);
+			CHECK(layer3.at(testFontId).m_VertexCount == 44);
+
+			// Spot-check buffer values
+			CHECK(layer6.at(pig::Renderer2D::s_DefaultTexture).m_VertexBuffer[0] == 4.f);
+			CHECK(layer6.at(pig::Renderer2D::s_DefaultTexture).m_IndexBuffer[0] == 0);
+			CHECK(layer6.at(sampleTexture1).m_VertexBuffer[3] == 1.f);
+			CHECK(layer6.at(sampleTexture1).m_IndexBuffer[5] == 3);
+			CHECK(layer6.at(sampleTexture2).m_VertexBuffer[4] == 1.f);
+			CHECK(layer1.at(pig::Renderer2D::s_DefaultTexture).m_IndexBuffer[6] == 4);
+			CHECK(layer6.at(sampleTexture3).m_VertexBuffer[7] == 0.f);
+			CHECK(layer1.at(sampleTexture1).m_IndexBuffer[11] == 7);
 		}
 		SECTION("Going over max count")
 		{
+			// 997 more draws with transform1 (layer 6), s_DefaultTexture: 1 existing + 997 = 998 total
 			for (unsigned int i = 3; i < pig::Renderer2D::BATCH_MAX_COUNT; ++i)
 			{
 				pig::Renderer2D::DrawQuad(transform1, col1, origin1);
 			}
 
 			{
-				REQUIRE(data.m_BatchMap.find(pig::Renderer2D::s_DefaultTexture) != data.m_BatchMap.end());
-				REQUIRE(data.m_BatchMap.find(sampleTexture1) != data.m_BatchMap.end());
-				REQUIRE(data.m_BatchMap.find(sampleTexture2) != data.m_BatchMap.end());
-				REQUIRE(data.m_BatchMap.find(sampleTexture3) != data.m_BatchMap.end());
-				const pig::Renderer2D::Data::BatchData& texBatch1 = data.m_BatchMap.at(pig::Renderer2D::s_DefaultTexture);
-				const pig::Renderer2D::Data::BatchData& texBatch2 = data.m_BatchMap.at(sampleTexture1);
-				const pig::Renderer2D::Data::BatchData& texBatch3 = data.m_BatchMap.at(sampleTexture2);
-				const pig::Renderer2D::Data::BatchData& texBatch4 = data.m_BatchMap.at(sampleTexture3);
-				CHECK(texBatch1.m_IndexCount == pig::Renderer2D::BATCH_MAX_COUNT * pig::Renderer2D::QUAD_INDEX_COUNT);
-				CHECK(texBatch1.m_VertexCount == pig::Renderer2D::BATCH_MAX_COUNT * pig::Renderer2D::QUAD_VERTEX_COUNT);
-				CHECK(texBatch2.m_IndexCount == 18);
-				CHECK(texBatch2.m_VertexCount == 12);
-				CHECK(texBatch3.m_IndexCount == 18);
-				CHECK(texBatch3.m_VertexCount == 12);
-				CHECK(texBatch4.m_IndexCount == 12);
-				CHECK(texBatch4.m_VertexCount == 8);
+				REQUIRE(data.m_LayerBatchMap.find(6) != data.m_LayerBatchMap.end());
+				const auto& layer6 = data.m_LayerBatchMap.at(6);
+				REQUIRE(layer6.find(pig::Renderer2D::s_DefaultTexture) != layer6.end());
+				REQUIRE(layer6.find(sampleTexture1) != layer6.end());
+				REQUIRE(layer6.find(sampleTexture2) != layer6.end());
+				REQUIRE(layer6.find(sampleTexture3) != layer6.end());
+				CHECK(layer6.at(pig::Renderer2D::s_DefaultTexture).m_IndexCount == 998 * pig::Renderer2D::QUAD_INDEX_COUNT);
+				CHECK(layer6.at(pig::Renderer2D::s_DefaultTexture).m_VertexCount == 998 * pig::Renderer2D::QUAD_VERTEX_COUNT);
+				CHECK(layer6.at(sampleTexture1).m_IndexCount == 6);
+				CHECK(layer6.at(sampleTexture1).m_VertexCount == 4);
+				CHECK(layer6.at(sampleTexture2).m_IndexCount == 6);
+				CHECK(layer6.at(sampleTexture2).m_VertexCount == 4);
+				CHECK(layer6.at(sampleTexture3).m_IndexCount == 6);
+				CHECK(layer6.at(sampleTexture3).m_VertexCount == 4);
 			}
 
-			pig::Renderer2D::DrawQuad(transform3, sampleTexture1, origin1);
+			pig::Renderer2D::DrawQuad(transform3, sampleTexture1, origin1); // layer 1
 			{
-				REQUIRE(data.m_BatchMap.find(pig::Renderer2D::s_DefaultTexture) != data.m_BatchMap.end());
-				REQUIRE(data.m_BatchMap.find(sampleTexture1) != data.m_BatchMap.end());
-				REQUIRE(data.m_BatchMap.find(sampleTexture2) != data.m_BatchMap.end());
-				REQUIRE(data.m_BatchMap.find(sampleTexture3) != data.m_BatchMap.end());
-				const pig::Renderer2D::Data::BatchData& texBatch1 = data.m_BatchMap.at(pig::Renderer2D::s_DefaultTexture);
-				const pig::Renderer2D::Data::BatchData& texBatch2 = data.m_BatchMap.at(sampleTexture1);
-				const pig::Renderer2D::Data::BatchData& texBatch3 = data.m_BatchMap.at(sampleTexture2);
-				const pig::Renderer2D::Data::BatchData& texBatch4 = data.m_BatchMap.at(sampleTexture3);
-				CHECK(texBatch1.m_IndexCount == pig::Renderer2D::BATCH_MAX_COUNT * pig::Renderer2D::QUAD_INDEX_COUNT);
-				CHECK(texBatch1.m_VertexCount == pig::Renderer2D::BATCH_MAX_COUNT * pig::Renderer2D::QUAD_VERTEX_COUNT);
-				CHECK(texBatch2.m_IndexCount == 24);
-				CHECK(texBatch2.m_VertexCount == 16);
-				CHECK(texBatch3.m_IndexCount == 18);
-				CHECK(texBatch3.m_VertexCount == 12);
-				CHECK(texBatch4.m_IndexCount == 12);
-				CHECK(texBatch4.m_VertexCount == 8);
+				REQUIRE(data.m_LayerBatchMap.find(6) != data.m_LayerBatchMap.end());
+				REQUIRE(data.m_LayerBatchMap.find(1) != data.m_LayerBatchMap.end());
+				const auto& layer6 = data.m_LayerBatchMap.at(6);
+				const auto& layer1 = data.m_LayerBatchMap.at(1);
+				REQUIRE(layer6.find(pig::Renderer2D::s_DefaultTexture) != layer6.end());
+				REQUIRE(layer1.find(sampleTexture1) != layer1.end());
+				REQUIRE(layer1.find(sampleTexture2) != layer1.end());
+				REQUIRE(data.m_LayerBatchMap.at(3).find(sampleTexture3) != data.m_LayerBatchMap.at(3).end());
+				CHECK(layer6.at(pig::Renderer2D::s_DefaultTexture).m_IndexCount == 998 * pig::Renderer2D::QUAD_INDEX_COUNT);
+				CHECK(layer6.at(pig::Renderer2D::s_DefaultTexture).m_VertexCount == 998 * pig::Renderer2D::QUAD_VERTEX_COUNT);
+				CHECK(layer1.at(sampleTexture1).m_IndexCount == 18); // 2 existing + 1 new = 3 quads
+				CHECK(layer1.at(sampleTexture1).m_VertexCount == 12);
+				CHECK(layer1.at(sampleTexture2).m_IndexCount == 6);
+				CHECK(layer1.at(sampleTexture2).m_VertexCount == 4);
+				CHECK(data.m_LayerBatchMap.at(3).at(sampleTexture3).m_IndexCount == 6);
+				CHECK(data.m_LayerBatchMap.at(3).at(sampleTexture3).m_VertexCount == 4);
 			}
 
-			pig::Renderer2D::DrawQuad(transform1, col1, origin2);
+			pig::Renderer2D::DrawQuad(transform1, col1, origin2); // layer 6
 
 			{
-				REQUIRE(data.m_BatchMap.find(pig::Renderer2D::s_DefaultTexture) != data.m_BatchMap.end());
-				CHECK(data.m_BatchMap.find(sampleTexture1) == data.m_BatchMap.end());
-				REQUIRE(data.m_BatchMap.find(sampleTexture2) == data.m_BatchMap.end());
-				REQUIRE(data.m_BatchMap.find(sampleTexture3) == data.m_BatchMap.end());
-				const pig::Renderer2D::Data::BatchData& texBatch1 = data.m_BatchMap.at(pig::Renderer2D::s_DefaultTexture);
-
-				CHECK(texBatch1.m_IndexCount == pig::Renderer2D::QUAD_INDEX_COUNT);
-				CHECK(texBatch1.m_VertexCount == pig::Renderer2D::QUAD_VERTEX_COUNT);
+				REQUIRE(data.m_LayerBatchMap.find(6) != data.m_LayerBatchMap.end());
+				const auto& layer6 = data.m_LayerBatchMap.at(6);
+				REQUIRE(layer6.find(pig::Renderer2D::s_DefaultTexture) != layer6.end());
+				REQUIRE(layer6.find(sampleTexture1) != layer6.end());
+				REQUIRE(data.m_LayerBatchMap.at(1).find(sampleTexture2) != data.m_LayerBatchMap.at(1).end());
+				REQUIRE(data.m_LayerBatchMap.at(3).find(sampleTexture3) != data.m_LayerBatchMap.at(3).end());
+				CHECK(layer6.at(pig::Renderer2D::s_DefaultTexture).m_IndexCount == 999 * pig::Renderer2D::QUAD_INDEX_COUNT);
+				CHECK(layer6.at(pig::Renderer2D::s_DefaultTexture).m_VertexCount == 999 * pig::Renderer2D::QUAD_VERTEX_COUNT);
+				CHECK(layer6.at(sampleTexture1).m_IndexCount == 6);
+				CHECK(layer6.at(sampleTexture1).m_VertexCount == 4);
 			}
 		}
 

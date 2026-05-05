@@ -311,42 +311,42 @@ namespace CatchTestsetFail
 			posFinal.y = 10 + 20 + 60; // 90
 
 			pig::World::Get().Update(pig::Timestep(0));
-			TestUIRender(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
+			TestUIRender(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, 2.f);
 
 			baseComponentParent.m_HAlign = pig::ui::EHAlignType::eRight;
 			posFinal.x = 50 + 100 + 1000 - (10 + 600); //540
 			pig::World::Get().Update(pig::Timestep(0));
-			TestUIRender(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
+			TestUIRender(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, 2.f);
 
 			baseComponentParentParent.m_HAlign = pig::ui::EHAlignType::eRight;
 			posFinal.x = 1920 - (1000 + 100) + 1000 - (10 + 600) + 50; // 820 + 390 + 50 = 1260
 			pig::World::Get().Update(pig::Timestep(0));
-			TestUIRender(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
-			
+			TestUIRender(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, 2.f);
+
 			baseComponentParent.m_HAlign = pig::ui::EHAlignType::eCenter;
 			posFinal.x = 1920 - (1000 + 100) + (500 - 300) + 10 + 50; // 820 + 210 + 50 = 1080
 			pig::World::Get().Update(pig::Timestep(0));
-			TestUIRender(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
-			
+			TestUIRender(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, 2.f);
+
 			baseComponentParent.m_VAlign = pig::ui::EVAlignType::eCenter;
 			posFinal.y = 10 + (450 - 400) + 20 + 60; //10 + 70 + 60 = 140
 			pig::World::Get().Update(pig::Timestep(0));
-			TestUIRender(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
+			TestUIRender(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, 2.f);
 
 			baseComponentParentParent.m_VAlign = pig::ui::EVAlignType::eBottom;
 			posFinal.y = 1080 - (900 + 10) + (450 - 400) + 20 + 60; //170 + 70 + 60 = 140
 			pig::World::Get().Update(pig::Timestep(0));
-			TestUIRender(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
+			TestUIRender(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, 2.f);
 
 			baseComponent.m_HAlign = pig::ui::EHAlignType::eRight;
 			posFinal.x = 1920 - (1000 + 100) + (500 - 300) + 10 + 600 - (300 + 50); // 820 + 210 + 250 = 1280
 			pig::World::Get().Update(pig::Timestep(0));
-			TestUIRender(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
+			TestUIRender(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, 2.f);
 
 			baseComponent.m_VAlign = pig::ui::EVAlignType::eCenter;
 			posFinal.y = 1080 - (900 + 10) + (450 - 400) + 20 + (400 - 50) + 60; //170 + 70 + 410 = 650
 			pig::World::Get().Update(pig::Timestep(0));
-			TestUIRender(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, -0.2f);
+			TestUIRender(helper, imageComponent.m_TextureHandle, posFinal, baseComponent.m_Size, 2.f);
 		}
 	}
 	TEST_CASE("UI.UIEventSystem::UIEventSystem")
