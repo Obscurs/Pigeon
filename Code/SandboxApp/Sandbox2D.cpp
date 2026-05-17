@@ -32,13 +32,14 @@ sbx::Sandbox2D::Sandbox2D(): pig::Layer("Sandbox2D"), m_CameraController(true, 1
 	m_TextureID1 = pig::Renderer2D::AddTexture("Assets/Textures/Checkerboard.png", pig::EMappedTextureType::eQuad);
 	m_Font = std::make_shared<pig::Font>("Assets/Fonts/opensans/OpenSans-Regular.ttf");
 
-	m_UIEntity1 = pig::World::GetRegistry().create();
-	m_UIEntity2 = pig::World::GetRegistry().create();
+	entt::registry& reg = pig::World::GetRegistryDirect();
+	m_UIEntity1 = reg.create();
+	m_UIEntity2 = reg.create();
 
-	pig::ui::BaseComponent& baseComponent1 = pig::World::GetRegistry().emplace<pig::ui::BaseComponent>(m_UIEntity1);
-	pig::ui::BaseComponent& baseComponent2 = pig::World::GetRegistry().emplace<pig::ui::BaseComponent>(m_UIEntity2);
-	pig::ui::TextComponent& textComponent1 = pig::World::GetRegistry().emplace<pig::ui::TextComponent>(m_UIEntity1);
-	pig::ui::ImageComponent& imageComponent2 = pig::World::GetRegistry().emplace<pig::ui::ImageComponent>(m_UIEntity2);
+	pig::ui::BaseComponent& baseComponent1 = reg.emplace<pig::ui::BaseComponent>(m_UIEntity1);
+	pig::ui::BaseComponent& baseComponent2 = reg.emplace<pig::ui::BaseComponent>(m_UIEntity2);
+	pig::ui::TextComponent& textComponent1 = reg.emplace<pig::ui::TextComponent>(m_UIEntity1);
+	pig::ui::ImageComponent& imageComponent2 = reg.emplace<pig::ui::ImageComponent>(m_UIEntity2);
 
 	baseComponent1.m_Parent = m_UIEntity2;
 	baseComponent1.m_Size = { 100.f, 100.f };

@@ -34,10 +34,11 @@ bool pig::InputLayer::OnEvent(const pig::Event& e)
 
 void pig::InputLayer::OnUpdate(const pig::Timestep& ts)
 {
-	auto view = pig::World::GetRegistry().view<pig::InputStateSingletonComponent>();
+	entt::registry& reg = pig::World::GetRegistryDirect();
+	auto view = reg.view<pig::InputStateSingletonComponent>();
 	if (view.size() == 0)
 	{
-		pig::World::GetRegistry().emplace<pig::InputStateSingletonComponent>(pig::World::GetRegistry().create());
+		reg.emplace<pig::InputStateSingletonComponent>(reg.create());
 		return;
 	}
 
@@ -49,7 +50,8 @@ void pig::InputLayer::OnUpdate(const pig::Timestep& ts)
 
 bool pig::InputLayer::IsKeyTyped(int keycode) const
 {
-	auto view = pig::World::GetRegistry().view<const pig::InputStateSingletonComponent>();
+	entt::registry& reg = pig::World::GetRegistryDirect();
+	auto view = reg.view<const pig::InputStateSingletonComponent>();
 	if (view.size() == 1)
 	{
 		const pig::InputStateSingletonComponent& inputState = view.get<const pig::InputStateSingletonComponent>(view.front());
@@ -59,13 +61,14 @@ bool pig::InputLayer::IsKeyTyped(int keycode) const
 				return true;
 		}
 	}
-	
+
 	return false;
 }
 
 bool pig::InputLayer::IsKeyPressed(int keycode, bool justPressed) const
 {
-	auto view = pig::World::GetRegistry().view<const pig::InputStateSingletonComponent>();
+	entt::registry& reg = pig::World::GetRegistryDirect();
+	auto view = reg.view<const pig::InputStateSingletonComponent>();
 	if (view.size() == 1)
 	{
 		const pig::InputStateSingletonComponent& inputState = view.get<const pig::InputStateSingletonComponent>(view.front());
@@ -80,7 +83,8 @@ bool pig::InputLayer::IsKeyPressed(int keycode, bool justPressed) const
 
 bool pig::InputLayer::IsKeyReleased(int keycode) const
 {
-	auto view = pig::World::GetRegistry().view<const pig::InputStateSingletonComponent>();
+	entt::registry& reg = pig::World::GetRegistryDirect();
+	auto view = reg.view<const pig::InputStateSingletonComponent>();
 	if (view.size() == 1)
 	{
 		const pig::InputStateSingletonComponent& inputState = view.get<const pig::InputStateSingletonComponent>(view.front());
@@ -91,7 +95,8 @@ bool pig::InputLayer::IsKeyReleased(int keycode) const
 
 bool pig::InputLayer::IsMouseButtonPressed(int button, bool justPressed) const
 {
-	auto view = pig::World::GetRegistry().view<const pig::InputStateSingletonComponent>();
+	entt::registry& reg = pig::World::GetRegistryDirect();
+	auto view = reg.view<const pig::InputStateSingletonComponent>();
 	if (view.size() == 1)
 	{
 		const pig::InputStateSingletonComponent& inputState = view.get<const pig::InputStateSingletonComponent>(view.front());
@@ -106,7 +111,8 @@ bool pig::InputLayer::IsMouseButtonPressed(int button, bool justPressed) const
 
 bool pig::InputLayer::IsMouseButtonReleased(int button) const
 {
-	auto view = pig::World::GetRegistry().view<const pig::InputStateSingletonComponent>();
+	entt::registry& reg = pig::World::GetRegistryDirect();
+	auto view = reg.view<const pig::InputStateSingletonComponent>();
 	if (view.size() == 1)
 	{
 		const pig::InputStateSingletonComponent& inputState = view.get<const pig::InputStateSingletonComponent>(view.front());
@@ -117,7 +123,8 @@ bool pig::InputLayer::IsMouseButtonReleased(int button) const
 
 glm::vec2 pig::InputLayer::GetMousePosition() const
 {
-	auto view = pig::World::GetRegistry().view<const pig::InputStateSingletonComponent>();
+	entt::registry& reg = pig::World::GetRegistryDirect();
+	auto view = reg.view<const pig::InputStateSingletonComponent>();
 	if (view.size() == 1)
 	{
 		const pig::InputStateSingletonComponent& inputState = view.get<const pig::InputStateSingletonComponent>(view.front());
@@ -128,7 +135,8 @@ glm::vec2 pig::InputLayer::GetMousePosition() const
 
 glm::vec2 pig::InputLayer::GetMouseScrolled() const
 {
-	auto view = pig::World::GetRegistry().view<const pig::InputStateSingletonComponent>();
+	entt::registry& reg = pig::World::GetRegistryDirect();
+	auto view = reg.view<const pig::InputStateSingletonComponent>();
 	if (view.size() == 1)
 	{
 		const pig::InputStateSingletonComponent& inputState = view.get<const pig::InputStateSingletonComponent>(view.front());
@@ -139,7 +147,8 @@ glm::vec2 pig::InputLayer::GetMouseScrolled() const
 
 std::vector<int> pig::InputLayer::GetKeysTyped() const
 {
-	auto view = pig::World::GetRegistry().view<const pig::InputStateSingletonComponent>();
+	entt::registry& reg = pig::World::GetRegistryDirect();
+	auto view = reg.view<const pig::InputStateSingletonComponent>();
 	if (view.size() == 1)
 	{
 		const pig::InputStateSingletonComponent& inputState = view.get<const pig::InputStateSingletonComponent>(view.front());

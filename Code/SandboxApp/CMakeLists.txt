@@ -3,7 +3,23 @@ file(GLOB SRCS
     "Sandbox2D.cpp"
 )
 
+file(GLOB ECS_SYSTEMS
+    "ECS/Systems/TestSystem.h"
+    "ECS/Systems/TestSystem.cpp"
+)
+
+file(GLOB ECS_COMPONENTS
+    "ECS/Components/TestComponent.h"
+)
+
+file(GLOB ECS_EVENTS
+    "ECS/Events/MoveEvent.h"
+)
+
 source_group("" FILES ${SRCS})
+source_group("ECS\\Systems" FILES ${ECS_SYSTEMS})
+source_group("ECS\\Components" FILES ${ECS_COMPONENTS})
+source_group("ECS\\Events" FILES ${ECS_EVENTS})
 
 # Properties->C/C++->General->Additional Include Directories
 include_directories (
@@ -14,7 +30,7 @@ include_directories (
 # Set Properties->General->Configuration Type to Application(.exe)
 # Creates app.exe with the listed sources (main.cxx)
 # Adds sources to the Solution Explorer
-add_executable (SandboxApp ${SRCS})
+add_executable (SandboxApp ${SRCS} ${ECS_SYSTEMS} ${ECS_COMPONENTS} ${ECS_EVENTS})
 
 set_property(TARGET SandboxApp PROPERTY ENABLE_EXPORTS 1)
 set_property(TARGET SandboxApp PROPERTY VS_DEBUGGER_WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/Data)

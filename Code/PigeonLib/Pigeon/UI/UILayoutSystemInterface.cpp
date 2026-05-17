@@ -11,28 +11,31 @@ void pig::ui::UILayoutSystemInterface::Update(const pig::Timestep& /*ts*/)
 
 void pig::ui::UILayoutSystemInterface::LoadLayout(const std::string& path)
 {
-	entt::entity ent = pig::World::GetRegistry().create();
-	pig::ui::LoadLayoutOneFrameComponent& comp = pig::World::GetRegistry().emplace<pig::ui::LoadLayoutOneFrameComponent>(ent);
+	entt::registry& reg = pig::World::GetRegistryDirect();
+	entt::entity ent = reg.create();
+	pig::ui::LoadLayoutOneFrameComponent& comp = reg.emplace<pig::ui::LoadLayoutOneFrameComponent>(ent);
 	comp.m_LayoutFilePath = path;
 }
 
 
 void pig::ui::UILayoutSystemInterface::DestroyLayout(const pig::UUID& layoutId)
 {
-	pig::World::GetRegistry().emplace<pig::ui::UIDestroyOneFrameComponent>(pig::World::GetRegistry().create());
+	entt::registry& reg = pig::World::GetRegistryDirect();
+	reg.emplace<pig::ui::UIDestroyOneFrameComponent>(reg.create());
 }
 
 void pig::ui::UILayoutSystemInterface::UpdateLayoutTransform(const pig::UUID& layoutId, const glm::vec2& size, const glm::vec2& spacing, pig::ui::EHAlignType hvalue, pig::ui::EVAlignType vvalue)
 {
 	int count = 0;
-	auto viewUI = pig::World::GetRegistry().view<const pig::ui::BaseComponent>();
+	entt::registry& reg = pig::World::GetRegistryDirect();
+	auto viewUI = reg.view<const pig::ui::BaseComponent>();
 	for (auto ent : viewUI)
 	{
 		const pig::ui::BaseComponent& baseComponent = viewUI.get<pig::ui::BaseComponent>(ent);
 		if (baseComponent.m_UUID == layoutId)
 		{
 			count++;
-			pig::ui::UIUpdateTransformOneFrameComponent& updateComponent = pig::World::GetRegistry().emplace<pig::ui::UIUpdateTransformOneFrameComponent>(ent);
+			pig::ui::UIUpdateTransformOneFrameComponent& updateComponent = reg.emplace<pig::ui::UIUpdateTransformOneFrameComponent>(ent);
 			updateComponent.m_HAlign = hvalue;
 			updateComponent.m_VAlign = vvalue;
 			updateComponent.m_Spacing = spacing;
@@ -46,14 +49,15 @@ void pig::ui::UILayoutSystemInterface::UpdateLayoutTransform(const pig::UUID& la
 void pig::ui::UILayoutSystemInterface::UpdateLayoutUUID(const pig::UUID& layoutId, const pig::UUID& value)
 {
 	int count = 0;
-	auto viewUI = pig::World::GetRegistry().view<const pig::ui::BaseComponent>();
+	entt::registry& reg = pig::World::GetRegistryDirect();
+	auto viewUI = reg.view<const pig::ui::BaseComponent>();
 	for (auto ent : viewUI)
 	{
 		const pig::ui::BaseComponent& baseComponent = viewUI.get<pig::ui::BaseComponent>(ent);
 		if (baseComponent.m_UUID == layoutId)
 		{
 			count++;
-			pig::ui::UIUpdateUUIDOneFrameComponent& updateComponent = pig::World::GetRegistry().emplace<pig::ui::UIUpdateUUIDOneFrameComponent>(ent);
+			pig::ui::UIUpdateUUIDOneFrameComponent& updateComponent = reg.emplace<pig::ui::UIUpdateUUIDOneFrameComponent>(ent);
 			updateComponent.m_UUID = value;
 		}
 	}
@@ -64,14 +68,15 @@ void pig::ui::UILayoutSystemInterface::UpdateLayoutUUID(const pig::UUID& layoutI
 void pig::ui::UILayoutSystemInterface::UpdateLayoutParent(const pig::UUID& layoutId, entt::entity value)
 {
 	int count = 0;
-	auto viewUI = pig::World::GetRegistry().view<const pig::ui::BaseComponent>();
+	entt::registry& reg = pig::World::GetRegistryDirect();
+	auto viewUI = reg.view<const pig::ui::BaseComponent>();
 	for (auto ent : viewUI)
 	{
 		const pig::ui::BaseComponent& baseComponent = viewUI.get<pig::ui::BaseComponent>(ent);
 		if (baseComponent.m_UUID == layoutId)
 		{
 			count++;
-			pig::ui::UIUpdateParentOneFrameComponent& updateComponent = pig::World::GetRegistry().emplace<pig::ui::UIUpdateParentOneFrameComponent>(ent);
+			pig::ui::UIUpdateParentOneFrameComponent& updateComponent = reg.emplace<pig::ui::UIUpdateParentOneFrameComponent>(ent);
 			updateComponent.m_Parent = value;
 		}
 	}
@@ -82,7 +87,8 @@ void pig::ui::UILayoutSystemInterface::UpdateLayoutParent(const pig::UUID& layou
 void pig::ui::UILayoutSystemInterface::UpdateLayoutTexture(const pig::UUID& layoutId, const pig::UUID& value, bool destroyPrevious)
 {
 	int count = 0;
-	auto viewUI = pig::World::GetRegistry().view<const pig::ui::BaseComponent, const pig::ui::ImageComponent>();
+	entt::registry& reg = pig::World::GetRegistryDirect();
+	auto viewUI = reg.view<const pig::ui::BaseComponent, const pig::ui::ImageComponent>();
 	for (auto ent : viewUI)
 	{
 		const pig::ui::BaseComponent& baseComponent = viewUI.get<pig::ui::BaseComponent>(ent);
@@ -90,7 +96,7 @@ void pig::ui::UILayoutSystemInterface::UpdateLayoutTexture(const pig::UUID& layo
 		if (baseComponent.m_UUID == layoutId)
 		{
 			count++;
-			pig::ui::UIUpdateImageUUIDOneFrameComponent& updateComponent = pig::World::GetRegistry().emplace<pig::ui::UIUpdateImageUUIDOneFrameComponent>(ent);
+			pig::ui::UIUpdateImageUUIDOneFrameComponent& updateComponent = reg.emplace<pig::ui::UIUpdateImageUUIDOneFrameComponent>(ent);
 			if (destroyPrevious)
 				updateComponent.m_PreviousImageToDestroy = imageComponent.m_TextureHandle;
 			updateComponent.m_UUID = value;
@@ -103,7 +109,8 @@ void pig::ui::UILayoutSystemInterface::UpdateLayoutTexture(const pig::UUID& layo
 void pig::ui::UILayoutSystemInterface::UpdateLayoutText(const pig::UUID& layoutId, const std::string& value, const glm::vec4& color)
 {
 	int count = 0;
-	auto viewUI = pig::World::GetRegistry().view<const pig::ui::BaseComponent, const pig::ui::TextComponent>();
+	entt::registry& reg = pig::World::GetRegistryDirect();
+	auto viewUI = reg.view<const pig::ui::BaseComponent, const pig::ui::TextComponent>();
 	for (auto ent : viewUI)
 	{
 		const pig::ui::BaseComponent& baseComponent = viewUI.get<pig::ui::BaseComponent>(ent);
@@ -111,7 +118,7 @@ void pig::ui::UILayoutSystemInterface::UpdateLayoutText(const pig::UUID& layoutI
 		if (baseComponent.m_UUID == layoutId)
 		{
 			count++;
-			pig::ui::UIUpdateTextOneFrameComponent& updateComponent = pig::World::GetRegistry().emplace<pig::ui::UIUpdateTextOneFrameComponent>(ent);
+			pig::ui::UIUpdateTextOneFrameComponent& updateComponent = reg.emplace<pig::ui::UIUpdateTextOneFrameComponent>(ent);
 			updateComponent.m_Text = value;
 			updateComponent.m_Color = color;
 			updateComponent.m_Kerning = textComponent.m_Kerning;
@@ -125,14 +132,15 @@ void pig::ui::UILayoutSystemInterface::UpdateLayoutText(const pig::UUID& layoutI
 void pig::ui::UILayoutSystemInterface::UpdateEnable(const pig::UUID& layoutId, bool value)
 {
 	int count = 0;
-	auto viewUI = pig::World::GetRegistry().view<const pig::ui::BaseComponent>();
+	entt::registry& reg = pig::World::GetRegistryDirect();
+	auto viewUI = reg.view<const pig::ui::BaseComponent>();
 	for (auto ent : viewUI)
 	{
 		const pig::ui::BaseComponent& baseComponent = viewUI.get<pig::ui::BaseComponent>(ent);
 		if (baseComponent.m_UUID == layoutId)
 		{
 			count++;
-			pig::ui::UIUpdateEnableOneFrameComponent& updateComponent = pig::World::GetRegistry().emplace<pig::ui::UIUpdateEnableOneFrameComponent>(ent);
+			pig::ui::UIUpdateEnableOneFrameComponent& updateComponent = reg.emplace<pig::ui::UIUpdateEnableOneFrameComponent>(ent);
 			updateComponent.m_Enabled = value;
 		}
 	}

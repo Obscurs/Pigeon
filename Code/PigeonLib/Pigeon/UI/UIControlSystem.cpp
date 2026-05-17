@@ -4,11 +4,12 @@
 #include "Pigeon/UI/UIHelpers.h"
 
 #include "Pigeon/ECS/World.h"
+#include "Pigeon/ECS/CheckedRegistryAccessor.h"
 #include "Pigeon/Renderer/Renderer2D.h"
 
 namespace
 {
-	std::string ReadFileToString(const std::string& filePath) 
+	std::string ReadFileToString(const std::string& filePath)
 	{
 		std::ifstream file(filePath);
 		if (!file.is_open()) {
@@ -22,14 +23,53 @@ namespace
 		return ss.str();
 	}
 }
+
 pig::ui::UIControlSystem::UIControlSystem(pig::S_Ptr<IUIControlSystemHelper> helper)
 	: m_Helper(helper)
 {
 }
 
+pig::SystemAccessDecl pig::ui::UIControlSystem::DeclareAccess() const
+{
+	pig::SystemAccessDecl decl;
+	decl.readSet = {
+		std::type_index(typeid(pig::ui::UIUpdateTransformOneFrameComponent)),
+		std::type_index(typeid(pig::ui::UIUpdateParentOneFrameComponent)),
+		std::type_index(typeid(pig::ui::UIUpdateEnableOneFrameComponent)),
+		std::type_index(typeid(pig::ui::UIUpdateUUIDOneFrameComponent)),
+		std::type_index(typeid(pig::ui::UIUpdateImageUUIDOneFrameComponent)),
+		std::type_index(typeid(pig::ui::UIUpdateTextOneFrameComponent)),
+		std::type_index(typeid(pig::ui::LoadLayoutOneFrameComponent)),
+		std::type_index(typeid(pig::ui::UIDestroyOneFrameComponent)),
+		std::type_index(typeid(pig::ui::BaseComponent)),
+		std::type_index(typeid(pig::ui::ImageComponent)),
+		std::type_index(typeid(pig::ui::TextComponent)),
+	};
+	decl.writeSet = {
+		std::type_index(typeid(pig::ui::BaseComponent)),
+		std::type_index(typeid(pig::ui::ImageComponent)),
+		std::type_index(typeid(pig::ui::TextComponent)),
+		std::type_index(typeid(pig::ui::UIUpdateTransformOneFrameComponent)),
+		std::type_index(typeid(pig::ui::UIUpdateParentOneFrameComponent)),
+		std::type_index(typeid(pig::ui::UIUpdateEnableOneFrameComponent)),
+		std::type_index(typeid(pig::ui::UIUpdateUUIDOneFrameComponent)),
+		std::type_index(typeid(pig::ui::UIUpdateImageUUIDOneFrameComponent)),
+		std::type_index(typeid(pig::ui::UIUpdateTextOneFrameComponent)),
+	};
+	decl.addSet = {
+		std::type_index(typeid(pig::ui::BaseComponent)),
+		std::type_index(typeid(pig::ui::ImageComponent)),
+		std::type_index(typeid(pig::ui::TextComponent)),
+	};
+	return decl;
+}
+
 void pig::ui::UIControlSystem::Update(const pig::Timestep& ts)
 {
-	auto viewTransform = pig::World::GetRegistry().view<pig::ui::BaseComponent, const pig::ui::UIUpdateTransformOneFrameComponent>();
+	auto accessor = pig::World::GetRegistry();
+	entt::registry& reg = accessor.GetInternalRegistry();
+
+	auto viewTransform = accessor.view<pig::ui::BaseComponent, const pig::ui::UIUpdateTransformOneFrameComponent>();
 	for (auto ent : viewTransform)
 	{
 		pig::ui::BaseComponent& baseComponent = viewTransform.get<pig::ui::BaseComponent>(ent);
@@ -40,7 +80,7 @@ void pig::ui::UIControlSystem::Update(const pig::Timestep& ts)
 		baseComponent.m_Spacing = updateComponent.m_Spacing;
 	}
 
-	auto viewParent = pig::World::GetRegistry().view<pig::ui::BaseComponent, const pig::ui::UIUpdateParentOneFrameComponent>();
+	auto viewParent = accessor.view<pig::ui::BaseComponent, const pig::ui::UIUpdateParentOneFrameComponent>();
 	for (auto ent : viewParent)
 	{
 		pig::ui::BaseComponent& baseComponent = viewParent.get<pig::ui::BaseComponent>(ent);
@@ -48,7 +88,7 @@ void pig::ui::UIControlSystem::Update(const pig::Timestep& ts)
 		baseComponent.m_Parent = updateComponent.m_Parent;
 	}
 
-	auto viewEnable = pig::World::GetRegistry().view<pig::ui::BaseComponent, const pig::ui::UIUpdateEnableOneFrameComponent>();
+	auto viewEnable = accessor.view<pig::ui::BaseComponent, const pig::ui::UIUpdateEnableOneFrameComponent>();
 	for (auto ent : viewEnable)
 	{
 		pig::ui::BaseComponent& baseComponent = viewEnable.get<pig::ui::BaseComponent>(ent);
@@ -56,15 +96,15 @@ void pig::ui::UIControlSystem::Update(const pig::Timestep& ts)
 		baseComponent.m_Enabled = updateComponent.m_Enabled;
 	}
 
-	auto viewUUID = pig::World::GetRegistry().view<pig::ui::BaseComponent, const pig::ui::UIUpdateUUIDOneFrameComponent>();
+	auto viewUUID = accessor.view<pig::ui::BaseComponent, const pig::ui::UIUpdateUUIDOneFrameComponent>();
 	for (auto ent : viewUUID)
 	{
-		pig::ui::BaseComponent& baseComponent = viewParent.get<pig::ui::BaseComponent>(ent);
+		pig::ui::BaseComponent& baseComponent = viewUUID.get<pig::ui::BaseComponent>(ent);
 		const pig::ui::UIUpdateUUIDOneFrameComponent& updateComponent = viewUUID.get<const pig::ui::UIUpdateUUIDOneFrameComponent>(ent);
 		baseComponent.m_UUID = updateComponent.m_UUID;
 	}
-	
-	auto viewImage = pig::World::GetRegistry().view<pig::ui::ImageComponent, const pig::ui::UIUpdateImageUUIDOneFrameComponent>();
+
+	auto viewImage = accessor.view<pig::ui::ImageComponent, const pig::ui::UIUpdateImageUUIDOneFrameComponent>();
 	for (auto ent : viewImage)
 	{
 		pig::ui::ImageComponent& imageComponent = viewImage.get<pig::ui::ImageComponent>(ent);
@@ -72,7 +112,7 @@ void pig::ui::UIControlSystem::Update(const pig::Timestep& ts)
 		imageComponent.m_TextureHandle = updateComponent.m_UUID;
 	}
 
-	auto viewText = pig::World::GetRegistry().view<pig::ui::TextComponent, const pig::ui::UIUpdateTextOneFrameComponent>();
+	auto viewText = accessor.view<pig::ui::TextComponent, const pig::ui::UIUpdateTextOneFrameComponent>();
 	for (auto ent : viewText)
 	{
 		pig::ui::TextComponent& textComponent = viewText.get<pig::ui::TextComponent>(ent);
@@ -83,44 +123,45 @@ void pig::ui::UIControlSystem::Update(const pig::Timestep& ts)
 		textComponent.m_Text = updateComponent.m_Text;
 	}
 
-	auto viewLoad = pig::World::GetRegistry().view<const pig::ui::LoadLayoutOneFrameComponent>();
+	auto viewLoad = accessor.view<const pig::ui::LoadLayoutOneFrameComponent>();
 	for (auto entJson : viewLoad)
 	{
 		LoadLayoutFromFile(viewLoad.get<const pig::ui::LoadLayoutOneFrameComponent>(entJson).m_LayoutFilePath);
 	}
 
-	auto viewDestroy = pig::World::GetRegistry().view<const pig::ui::UIDestroyOneFrameComponent>();
+	auto viewDestroy = accessor.view<const pig::ui::UIDestroyOneFrameComponent>();
 	for (auto ent : viewDestroy)
 	{
-		DestroyUI(ent);
+		DestroyUI(reg, ent);
 	}
-	CleanOneFrameComponents();
+	CleanOneFrameComponents(reg);
 }
 
 void pig::ui::UIControlSystem::LoadLayoutFromFile(const std::string& path)
 {
 	const std::string jsonString = ReadFileToString(path);
 	json jsonObject = json::parse(jsonString);
-	ParseJsonUIElement(jsonObject, entt::null);
+	auto accessor = pig::World::GetRegistry();
+	ParseJsonUIElement(accessor, jsonObject, entt::null);
 }
 
-void pig::ui::UIControlSystem::ParseJsonUIElement(const json& jsonObject, entt::entity parent)
+void pig::ui::UIControlSystem::ParseJsonUIElement(pig::CheckedRegistryAccessor& accessor, const json& jsonObject, entt::entity parent)
 {
 	if (jsonObject.contains("ui") && jsonObject["ui"].is_object())
 	{
 		const json& uiJsonObject = jsonObject["ui"];
-		entt::entity ent = pig::World::GetRegistry().create();
-		ParseBaseComponentFromJson(uiJsonObject, ent, parent);
+		entt::entity ent = accessor.create();
+		ParseBaseComponentFromJson(accessor, uiJsonObject, ent, parent);
 
 		if (uiJsonObject.contains("image") && uiJsonObject["image"].is_object())
 		{
 			PG_CORE_EXCEPT(!uiJsonObject.contains("text"), "we should have either a image or a text but not both");
-			ParseImageComponentFromJson(uiJsonObject["image"], ent);
+			ParseImageComponentFromJson(accessor, uiJsonObject["image"], ent);
 		}
 		if (uiJsonObject.contains("text") && uiJsonObject["text"].is_object())
 		{
 			PG_CORE_EXCEPT(!uiJsonObject.contains("image"), "we should have either a image or a text but not both");
-			ParseTextComponentFromJson(uiJsonObject["text"], ent);
+			ParseTextComponentFromJson(accessor, uiJsonObject["text"], ent);
 		}
 	}
 	else if (jsonObject.contains("uiFile") && jsonObject["uiFile"].is_string())
@@ -128,13 +169,13 @@ void pig::ui::UIControlSystem::ParseJsonUIElement(const json& jsonObject, entt::
 		std::string path = jsonObject["uiFile"].get<std::string>();
 		const std::string jsonLoadedString = ReadFileToString(path);
 		json jsonLoadedObject = json::parse(jsonLoadedString);
-		ParseJsonUIElement(jsonLoadedObject, parent);
+		ParseJsonUIElement(accessor, jsonLoadedObject, parent);
 	}
 }
 
-void pig::ui::UIControlSystem::ParseBaseComponentFromJson(const json& jsonObject, entt::entity ent, entt::entity parent)
+void pig::ui::UIControlSystem::ParseBaseComponentFromJson(pig::CheckedRegistryAccessor& accessor, const json& jsonObject, entt::entity ent, entt::entity parent)
 {
-	pig::ui::BaseComponent& baseComp = pig::World::GetRegistry().emplace<pig::ui::BaseComponent>(ent);
+	pig::ui::BaseComponent baseComp;
 	baseComp.m_Parent = parent;
 
 	if (jsonObject.contains("width"))
@@ -199,29 +240,32 @@ void pig::ui::UIControlSystem::ParseBaseComponentFromJson(const json& jsonObject
 		baseComp.m_UUID = pig::UUID(jsonObject["uuid"].get<std::string>());
 	}
 
+	accessor.emplace_deferred<pig::ui::BaseComponent>(ent, std::move(baseComp));
+
 	if (jsonObject.contains("children"))
 	{
 		PG_CORE_EXCEPT(jsonObject["children"].is_array(), "unable to parse json, children is not a array");
 		for (json child : jsonObject["children"])
 		{
-			ParseJsonUIElement(child, ent);
+			ParseJsonUIElement(accessor, child, ent);
 		}
 	}
 }
 
-void pig::ui::UIControlSystem::ParseImageComponentFromJson(const json& jsonObject, entt::entity ent)
+void pig::ui::UIControlSystem::ParseImageComponentFromJson(pig::CheckedRegistryAccessor& accessor, const json& jsonObject, entt::entity ent)
 {
-	pig::ui::ImageComponent& component = pig::World::GetRegistry().emplace<pig::ui::ImageComponent>(ent);
+	pig::ui::ImageComponent component;
 	if (jsonObject.contains("path"))
 	{
 		PG_CORE_EXCEPT(jsonObject["path"].is_string(), "unable to parse json, image path is not a string");
 		component.m_TextureHandle = m_Helper->CreateUIImageFromPath(jsonObject["path"].get<std::string>());
 	}
+	accessor.emplace_deferred<pig::ui::ImageComponent>(ent, std::move(component));
 }
 
-void pig::ui::UIControlSystem::ParseTextComponentFromJson(const json& jsonObject, entt::entity ent)
+void pig::ui::UIControlSystem::ParseTextComponentFromJson(pig::CheckedRegistryAccessor& accessor, const json& jsonObject, entt::entity ent)
 {
-	pig::ui::TextComponent& component = pig::World::GetRegistry().emplace<pig::ui::TextComponent>(ent);
+	pig::ui::TextComponent component;
 	if (jsonObject.contains("colR"))
 	{
 		PG_CORE_EXCEPT(jsonObject["colR"].is_number(), "unable to parse json, colR is not a number");
@@ -257,49 +301,49 @@ void pig::ui::UIControlSystem::ParseTextComponentFromJson(const json& jsonObject
 		PG_CORE_EXCEPT(jsonObject["string"].is_string(), "unable to parse json, string is not a string");
 		component.m_Text = jsonObject["string"].get<std::string>();
 	}
+	accessor.emplace_deferred<pig::ui::TextComponent>(ent, std::move(component));
 }
 
-void pig::ui::UIControlSystem::DestroyUI(entt::entity ent)
+void pig::ui::UIControlSystem::DestroyUI(entt::registry& reg, entt::entity ent)
 {
-	std::vector<entt::entity> children = pig::ui::GetUIChildrenForElement(ent);
+	std::vector<entt::entity> children = pig::ui::GetUIChildrenForElement(reg, ent);
 	for (entt::entity& child : children)
 	{
-		DestroyUI(child);
+		DestroyUI(reg, child);
 	}
-	pig::World::GetRegistry().destroy(ent);
+	reg.destroy(ent);
 }
 
-void pig::ui::UIControlSystem::CleanOneFrameComponents()
+void pig::ui::UIControlSystem::CleanOneFrameComponents(entt::registry& reg)
 {
 	//ARNAU TODO: automatize one frame components?
-	//ARNAU TODO clean, do not get registry on each iter
-	for (auto ent : pig::World::GetRegistry().view<const pig::ui::UIUpdateTransformOneFrameComponent>())
+	for (auto ent : reg.view<const pig::ui::UIUpdateTransformOneFrameComponent>())
 	{
-		pig::World::GetRegistry().remove<pig::ui::UIUpdateTransformOneFrameComponent>(ent);
+		reg.remove<pig::ui::UIUpdateTransformOneFrameComponent>(ent);
 	}
-	for (auto ent : pig::World::GetRegistry().view<const pig::ui::UIUpdateParentOneFrameComponent>())
+	for (auto ent : reg.view<const pig::ui::UIUpdateParentOneFrameComponent>())
 	{
-		pig::World::GetRegistry().remove<pig::ui::UIUpdateParentOneFrameComponent>(ent);
+		reg.remove<pig::ui::UIUpdateParentOneFrameComponent>(ent);
 	}
-	for (auto ent : pig::World::GetRegistry().view<const pig::ui::UIUpdateEnableOneFrameComponent>())
+	for (auto ent : reg.view<const pig::ui::UIUpdateEnableOneFrameComponent>())
 	{
-		pig::World::GetRegistry().remove<pig::ui::UIUpdateEnableOneFrameComponent>(ent);
+		reg.remove<pig::ui::UIUpdateEnableOneFrameComponent>(ent);
 	}
-	for (auto ent : pig::World::GetRegistry().view<const pig::ui::UIUpdateUUIDOneFrameComponent>())
+	for (auto ent : reg.view<const pig::ui::UIUpdateUUIDOneFrameComponent>())
 	{
-		pig::World::GetRegistry().remove<pig::ui::UIUpdateUUIDOneFrameComponent>(ent);
+		reg.remove<pig::ui::UIUpdateUUIDOneFrameComponent>(ent);
 	}
-	for (auto ent : pig::World::GetRegistry().view<const pig::ui::UIUpdateImageUUIDOneFrameComponent>())
+	for (auto ent : reg.view<const pig::ui::UIUpdateImageUUIDOneFrameComponent>())
 	{
-		pig::World::GetRegistry().remove<pig::ui::UIUpdateImageUUIDOneFrameComponent>(ent);
+		reg.remove<pig::ui::UIUpdateImageUUIDOneFrameComponent>(ent);
 	}
-	for (auto ent : pig::World::GetRegistry().view<const pig::ui::UIUpdateTextOneFrameComponent>())
+	for (auto ent : reg.view<const pig::ui::UIUpdateTextOneFrameComponent>())
 	{
-		pig::World::GetRegistry().remove<pig::ui::UIUpdateTextOneFrameComponent>(ent);
+		reg.remove<pig::ui::UIUpdateTextOneFrameComponent>(ent);
 	}
-	for (auto ent : pig::World::GetRegistry().view<const pig::ui::LoadLayoutOneFrameComponent>())
+	for (auto ent : reg.view<const pig::ui::LoadLayoutOneFrameComponent>())
 	{
-		pig::World::GetRegistry().destroy(ent);
+		reg.destroy(ent);
 	}
 }
 

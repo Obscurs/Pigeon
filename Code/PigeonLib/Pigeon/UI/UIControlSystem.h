@@ -2,6 +2,11 @@
 #include <entt/entt.hpp>
 #include "Pigeon/ECS/System.h"
 
+namespace pig
+{
+	class CheckedRegistryAccessor;
+}
+
 namespace pig::ui
 {
 	class BaseComponent;
@@ -26,17 +31,18 @@ namespace pig::ui
 		UIControlSystem(pig::S_Ptr<IUIControlSystemHelper> helper);
 		~UIControlSystem() = default;
 		void Update(const pig::Timestep& ts) override;
+		pig::SystemAccessDecl DeclareAccess() const override;
 	private:
 		//ARNAU TODO: this clean should not be in this system, rethink
-		void CleanOneFrameComponents();
+		void CleanOneFrameComponents(entt::registry& reg);
 
 		void LoadLayoutFromFile(const std::string& path);
-		void ParseJsonUIElement(const json& jsonObject, entt::entity parent);
-		void ParseBaseComponentFromJson(const json& jsonObject, entt::entity ent, entt::entity parent);
-		void ParseImageComponentFromJson(const json& jsonObject, entt::entity ent);
-		void ParseTextComponentFromJson(const json& jsonObject, entt::entity ent);
+		void ParseJsonUIElement(pig::CheckedRegistryAccessor& accessor, const json& jsonObject, entt::entity parent);
+		void ParseBaseComponentFromJson(pig::CheckedRegistryAccessor& accessor, const json& jsonObject, entt::entity ent, entt::entity parent);
+		void ParseImageComponentFromJson(pig::CheckedRegistryAccessor& accessor, const json& jsonObject, entt::entity ent);
+		void ParseTextComponentFromJson(pig::CheckedRegistryAccessor& accessor, const json& jsonObject, entt::entity ent);
 
-		void DestroyUI(entt::entity ent);
+		void DestroyUI(entt::registry& reg, entt::entity ent);
 
 		pig::S_Ptr<IUIControlSystemHelper> m_Helper;
 	};

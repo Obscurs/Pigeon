@@ -1,0 +1,748 @@
+================================================================================
+  PIGEON ENGINE — SENIOR PROGRAMMER REVIEW
+  Date: 2026-05-05
+================================================================================
+
+This report is structured in three sections:
+
+  1. Correctness issues and things that need fixing
+  2. Code inconsistencies and cleanup opportunities
+  3. Missing or incomplete features
+
+Files are referenced by path from the repository root (Code/ prefix omitted for
+brevity where the context is clear).
+
+
+================================================================================
+SECTION 1 — BUGS, CORRECTNESS ISSUES, AND IMPROVEMENTS
+================================================================================
+
+--- 1.1 REAL BUGS ---
+
+[BUG] UIControlSystem reads from the wrong view for UUID updates
+  File: PigeonLib/Pigeon/UI/UIControlSystem.cpp, line 62
+
+  Inside the UUID update loop, `viewParent.get<>()` is used instead of
+  `viewUUID.get<>()`:
+
+    auto viewUUID = registry.view<BaseComponent, UIUpdateUUIDOneFrameComponent>();
+    for (auto ent : viewUUID)
+    {
+        BaseComponent& base = viewParent.get<BaseComponent>(ent);  // WRONG VIEW
+        ...
+    }
+
+  This accesses the wrong view's storage. Since viewParent may not contain `ent`
+  this can crash, silently read garbage, or assert in entt's internals. The fix is
+  to replace `viewParent.get<BaseComponent>(ent)` with
+  `viewUUID.get<BaseComponent>(ent)`.
+
+[BUG] UILayoutSystemInterface::DestroyLayout ignores the layoutId parameter
+  File: PigeonLib/Pigeon/UI/UILayoutSystemInterface.cpp, lines 21-23
+
+    void UILayoutSystemInterface::DestroyLayout(const UUID& layoutId)
+    {
+        World::GetRegistry().emplace<UIDestroyOneFrameComponent>(
+            World::GetRegistry().create()); // creates a new, nameless entity
+    }
+
+  The layoutId is completely ignored. A brand-new entity is created and tagged for
+  destruction — it will be destroyed next frame, not the intended layout element.
+  The function should find the entity whose BaseComponent.m_UUID matches layoutId
+  and emplace UIDestroyOneFrameComponent on *that* entity.
+
+[BUG] DrawLayerBatch has no overflow guard — heap corruption if > 1000 quads
+  File: PigeonLib/Pigeon/Renderer/Renderer2D.cpp, lines 224-248
+
+  DrawBatch() (the older path) flushes and recurses when a batch is full:
+
+    if (texBatch.m_IndexCount == BATCH_MAX_COUNT * QUAD_INDEX_COUNT) { Flush(); ... }
+
+  DrawLayerBatch() has no such check. BatchData holds fixed-size C arrays:
+
+    float m_VertexBuffer[VERTEX_ATRIB_COUNT * QUAD_VERTEX_COUNT * BATCH_MAX_COUNT];
+
+  Submitting more than 1000 quads to the same texture in the same layer writes
+  beyond the array bounds, corrupting the heap silently. This is undefined
+  behaviour. The same flush-and-continue guard must be added to DrawLayerBatch.
+
+[BUG] Dx11Shader::Unbind unbinds the vertex shader twice instead of unbinding the
+      pixel shader
+  File: PigeonLib/Platform/DirectX11/Dx11Shader.cpp, lines 361-362
+
+    deviceContext->VSSetShader(NULL, NULL, 0);
+    deviceContext->VSSetShader(NULL, NULL, 0); // copy-paste error, should be PSSetShader
+
+  The pixel shader is never unbound. State leaks into subsequent draw calls.
+
+[BUG] Mouse scroll events do not accumulate; multiple scroll events in one frame
+      lose all but the last
+  File: PigeonLib/Pigeon/Core/InputLayer.cpp, lines 263-265
+
+    else if (inputEvent.m_Type == EventType::MouseScrolled)
+    {
+        inputState.m_MouseScroll.x = inputEvent.m_FloatData1; // overwrites
+        inputState.m_MouseScroll.y = inputEvent.m_FloatData2;
+    }
+
+  Multiple scroll events between two Update() calls silently discard all but the
+  final one. The values should be accumulated (+=) and cleared at frame start.
+
+[BUG] Mouse position uses LOWORD/HIWORD on LPARAM — wrong for multi-monitor
+  File: PigeonLib/Platform/Windows/WindowsWindow.cpp, lines 258-260
+
+    int x = LOWORD(lParam);
+    int y = HIWORD(lParam);
+
+  On multi-monitor setups where the cursor moves to a monitor left of the primary,
+  x becomes a large positive number instead of a negative one. The correct
+  approach is GET_X_LPARAM(lParam) and GET_Y_LPARAM(lParam) from <windowsx.h>.
+
+[BUG] Renderer2D::Destroy is called twice on shutdown
+  File: PigeonLib/Pigeon/Core/Application.cpp, lines 127-130 and 69-71
+
+  OnWindowClose() calls Renderer2D::Destroy(), then the Application destructor
+  calls Shutdown(), which also calls Renderer2D::Destroy(). The second call clears
+  already-empty containers, which is harmless by accident (map::clear is
+  idempotent), but reveals that Destroy() is not idempotent in intent — it relies
+  on the caller knowing whether resources are alive. Destroy should be called once,
+  only from Shutdown().
+
+[BUG] Static initialization order problem in UUID's null UUID
+  File: PigeonLib/Pigeon/Core/UUID.cpp, lines 9 and 21-24
+
+  UUID::s_NullUUID is a static member initialized by the default UUID constructor,
+  which does `*this = s_NullUUID`. When s_NullUUID is being constructed for the
+  first time, s_NullUUID itself has not yet been initialized. This works by
+  accident because m_Data is zero-initialized by its own field initializer before
+  the constructor body runs, making the self-copy a no-op. It is still undefined
+  behaviour per the C++ standard. Use `= default` or explicitly zero-initialize
+  m_Data in the UUID default constructor body without referencing s_NullUUID.
+
+[BUG] GetStringBounds misses the width contribution of the last character
+  File: PigeonLib/Pigeon/Renderer/Font.cpp, lines 234-259
+
+  The advance loop is guarded by `if (i < string.size() - 1)`, so the last
+  character's advance is never added to charOffset.x and never compared against
+  maxWidth. If the last character on a line is the widest, the returned bounds
+  will be narrower than the actual rendered string. Wraps the last character in
+  string rendering. Fix: move the maxWidth check to after each character position
+  update, and always add the final character's own metrics.
+
+--- 1.2 INCORRECT / DANGEROUS CODE ---
+
+[INCORRECT] U_PtrToPtr uses a static local — shared across all calls of the same
+            instantiation type
+  File: PigeonLib/Pigeon/Core/Core.h, lines 54-59
+
+    std::function<T**(unique_ptr<T,D>&)> U_PtrToPtr = [](unique_ptr<T,D>& p) {
+        static T* rawPtr = nullptr; // one shared slot for all calls of this type
+        rawPtr = p.get();
+        return &rawPtr;
+    };
+
+  Because rawPtr is static, calling U_PtrToPtr for ptr1, storing the result, then
+  calling it for ptr2, causes the stored result to now point to ptr2's raw pointer.
+  This is a silent logic bug. In Dx11RendererAPI.cpp line 95 the result is passed
+  directly to OMSetRenderTargets, so it works by accident (no stored result), but
+  the template is dangerous in any other context. Replace with a normal inline
+  helper that takes a raw pointer directly.
+
+[INCORRECT] BIT() uses signed left-shift which is UB for x >= 31
+  File: PigeonLib/Pigeon/Core/Core.h, line 35
+
+    constexpr int BIT(int x) noexcept { return 1 << x; }
+
+  Shifting a signed 1 by 31 positions is undefined behaviour in C++17. Change to
+  `1u << x` or `1ULL << x` depending on the expected category field type.
+
+[INCORRECT] Timestep has an implicit conversion operator to uint64_t
+  File: PigeonLib/Pigeon/Core/Timestep.h, line 16
+
+    operator uint64_t() const noexcept { return m_Time; }
+
+  Implicit conversions from strongly-typed value objects cause silent narrowing and
+  unexpected overload resolution. This should be `explicit`. All current usages
+  use AsMilliseconds() anyway, so the implicit cast is redundant.
+
+[INCORRECT] OrthographicCameraController::Data::m_Rotation is uninitialized
+  File: PigeonLib/Pigeon/Core/OrthographicCameraController.h, line 21
+
+    bool m_Rotation; // no initializer
+
+  Reading an uninitialized bool is undefined behaviour. Add `= false;`.
+
+[INCORRECT] Font constructor is heavy and partially-constructible on failure
+  File: PigeonLib/Pigeon/Renderer/Font.cpp, lines 46-128
+
+  The constructor loads a file, packs an atlas, and uploads a GPU texture. If font
+  loading fails (line 52-56), the function returns early leaving m_FontID as a
+  null UUID while m_Data is partially filled. Callers must null-check the font ID
+  before using the font, but there's no documented API contract. Consider a static
+  factory that returns nullptr on failure, or separate construction from loading.
+
+[INCORRECT] UUID::GenerateRandom creates a new random_device and seeds a new
+            mt19937 on every call
+  File: PigeonLib/Pigeon/Core/UUID.cpp, lines 93-111
+
+  std::random_device is expensive to construct and on some platforms returns
+  deterministic data. Seeding a fresh mt19937 per call risks correlated UUIDs if
+  called rapidly. Use a static or thread-local mt19937 seeded once at startup.
+
+[INCORRECT] UUID takes non-const string reference in constructor
+  File: PigeonLib/Pigeon/Core/UUID.h, line 9
+
+    UUID(std::string& uuidStr);
+
+  GenerateFromString doesn't modify its argument. The parameter should be
+  `const std::string&`. As written, a UUID cannot be constructed from a string
+  literal or a temporary.
+
+[INCORRECT] The hardcoded clear-color alpha hack in Dx11RendererAPI::Clear
+  File: PigeonLib/Platform/DirectX11/Dx11RendererAPI.cpp, lines 118-124
+
+    if (m_Data.m_ClearColor[3] != 0.f)
+
+  Clearing to fully transparent black (0,0,0,0) is a valid operation that the
+  engine silently skips. The UIRenderSystemHelper calls Clear with alpha=0 to
+  intentionally no-op through this hack. These two pieces of accidental coupling
+  should be made explicit: either expose a "clear enabled" flag or remove the hack
+  and let UIRenderSystem not call Clear at all.
+
+[INCORRECT] Renderer2D::Flush iterates layers with a hardcoded upper bound of 100
+  File: PigeonLib/Pigeon/Renderer/Renderer2D.cpp, lines 275-305
+
+    for (int i = 0; i < 100; i++)
+
+  Any draw call that extracts a Z value >= 100 from transform[3][2] will silently
+  be discarded. The layer iteration should be based on the actual keys present in
+  m_LayerBatchMap, not a magic number. Replace with an ordered iteration over the
+  map's keys (std::map instead of std::unordered_map, or collect and sort keys).
+
+[INCORRECT] RendererConfig camera and width/height dimensions do not match
+  File: PigeonLib/Pigeon/UI/UIComponents.h, lines 74-78
+
+    OrthographicCamera m_Camera{0.f, 1280.0f, -720.0f, 0};
+    float m_Width{ 1920.f };
+    float m_Height{ 1080.f };
+
+  The camera's projection is 1280x720 but the layout system computes positions in
+  1920x1080 space. UI elements that fill the "screen" will be rendered correctly
+  in one coordinate system but incorrect in the other. Both values must agree.
+  The camera bounds should match m_Width and m_Height exactly.
+
+--- 1.3 DESIGN / QUALITY ISSUES ---
+
+[QUALITY] DrawBatch is dead code
+  File: PigeonLib/Pigeon/Renderer/Renderer2D.cpp
+
+  All public draw calls (DrawQuad, DrawSprite, DrawString) route to DrawLayerBatch.
+  DrawBatch is only called by itself (recursion for overflow). It is unreachable
+  from any public API. Remove it to reduce confusion and eliminate the only
+  recursive flush path.
+
+[QUALITY] Two separate batch maps (m_BatchMap and m_LayerBatchMap) with redundant
+          logic in Flush()
+  File: PigeonLib/Pigeon/Renderer/Renderer2D.cpp
+
+  Both maps have identical flush logic duplicated twice inside Flush(). Since
+  DrawBatch (which writes m_BatchMap) is dead, m_BatchMap and its flush block
+  should be removed entirely, cutting Flush() in half.
+
+[QUALITY] Static BSS arrays of ~180 KB used only for buffer initialization
+  File: PigeonLib/Pigeon/Renderer/Renderer2D.cpp, lines 19-20
+
+    static const float s_SquareVerticesEmpty[VERTEX_ATRIB_COUNT * QUAD_VERTEX_COUNT * BATCH_MAX_COUNT];
+    static const uint32_t s_SuareIndicesEmpty[QUAD_INDEX_COUNT * BATCH_MAX_COUNT];
+
+  These zero-initialized arrays (approximately 184 KB total) live in the BSS
+  segment permanently just to pass zeroed data to buffer creation. Use a
+  DX11 resource created with D3D11_USAGE_DYNAMIC and no initial data, or
+  zero-initialize on the stack at the call site.
+
+[QUALITY] Font::GetStringBounds takes std::string by value
+  File: PigeonLib/Pigeon/Renderer/Font.h, line 37
+
+    glm::vec2 GetStringBounds(std::string string, float kerning, float linespacing) const;
+
+  This copies every string passed to it. Change to `const std::string&`.
+
+[QUALITY] RAII_Ptr and RAII_PtrRelease are redundant
+  File: PigeonLib/Pigeon/Core/Core.h, lines 62-77
+
+  The engine already defines U_Ptr<T> = unique_ptr<T, Deleter> and ReleaseDeleter.
+  RAII_Ptr and RAII_PtrRelease duplicate exactly that functionality with an exposed
+  public raw pointer (defeating RAII). Replace all uses with U_Ptr<T> or
+  U_Ptr<T, ReleaseDeleter> and delete these classes.
+
+[QUALITY] GetConstantBufferSlot maps uniform names to slots via string comparison
+  File: PigeonLib/Platform/DirectX11/Dx11Shader.cpp, lines 61-80
+
+  Every call to UploadUniformMat4/Float/etc. does string comparisons to determine
+  a constant buffer slot. The slots are hardcoded to three strings. Any shader
+  that uses different uniform names silently hits the assert. The Shader API should
+  accept slot indices directly, or the shader file should declare its own slot
+  layout, removing C++ code changes for every new uniform.
+
+[QUALITY] Renderer2D::GetTexture returns a const reference to a map value that may
+          be invalidated by subsequent AddTexture calls
+  File: PigeonLib/Pigeon/Renderer/Renderer2D.cpp, lines 115-128
+
+  Returning `const Texture2D&` from an unordered_map look-up is safe only if the
+  map is not modified while the reference is held. Since AddTexture triggers a
+  map insertion (which can rehash), any stored reference from GetTexture is
+  dangerously invalidated. Callers should store the UUID and look up by need, or
+  the return type should be a shared_ptr.
+
+[QUALITY] Application has no thread-safety guarantees on its singleton
+  File: PigeonLib/Pigeon/Core/Application.h, lines 40-45
+
+  Application::Create() and Application::Get() operate on a static unique_ptr
+  without any synchronization. This is documented as single-threaded by convention,
+  but there is no enforcement.
+
+[QUALITY] UIRenderSystem creates the font on the first Update() call with a
+          hardcoded asset path
+  File: PigeonLib/Pigeon/UI/UIRenderSystem.cpp, lines 113-116
+
+    return std::make_shared<Font>("Assets/Fonts/opensans/OpenSans-Regular.ttf");
+
+  The font path is baked into the engine library, making it impossible to use a
+  different font without recompiling the engine. Expose the font path through
+  RendererConfig or through the UIRenderSystemHelper interface.
+
+[QUALITY] UIHelpers::GetUIChildrenForElement is O(n) — scans all entities
+  File: PigeonLib/Pigeon/UI/UIHelpers.cpp, lines 97-108
+
+  Finding the children of a given entity requires a full scan of all entities
+  that have a BaseComponent. Called during recursive destroy, this becomes O(n^2)
+  in the number of UI elements. Store a children list inside BaseComponent or use
+  a secondary map from entity → children list.
+
+[QUALITY] All UILayoutSystemInterface update methods are O(n) UUID searches
+  File: PigeonLib/Pigeon/UI/UILayoutSystemInterface.cpp
+
+  UpdateLayoutTransform, UpdateLayoutUUID, UpdateLayoutParent, etc. all scan all
+  BaseComponent entities to find one by UUID. A reverse map (UUID → entity) should
+  be maintained and kept in sync by UIControlSystem.
+
+[QUALITY] Sandbox2D.cpp contains an offensive string literal
+  File: Code/SandboxApp/Sandbox2D.cpp, line 85
+
+    std::string textString("This is a fucking text\nEven with multiple lines");
+
+  Replace with a neutral placeholder string.
+
+
+================================================================================
+SECTION 2 — CODE INCONSISTENCIES AND CLEANUP
+================================================================================
+
+--- 2.1 TYPOS ---
+
+  s_SuareIndices       → s_SquareIndices          (Renderer2D.cpp, anon namespace)
+  "not fount"          → "not found"               (Renderer2D.cpp error messages x2)
+  "Failed to pak"      → "Failed to pack"          (Font.cpp line 80)
+  UNKNOWNT_TYPE        → UNKNOWN_TYPE              (Dx11Shader.cpp EShaderType enum)
+  "Could not append vertexs" → "Could not append vertices" (Dx11Buffer.cpp x2)
+  m_TexCoordsRect = glm::vec4(...);; (double semicolon)   (Sprite.h line 13)
+
+--- 2.2 TWO PARALLEL EVENT SYSTEMS WITH NO UNIFICATION ---
+
+  The engine has:
+    (a) pig::Event — a virtual class hierarchy dispatched through the Layer stack
+        for OS events (window, keyboard, mouse). Synchronous and blocking.
+    (b) entt::dispatcher — used (or intended to be used) for game-domain events
+        between ECS systems. World::Update() calls m_Dispatcher.update() each
+        frame to flush enqueued events.
+
+  These two systems are entirely separate. The OS event system never feeds into
+  the entt dispatcher. Game systems receive input via the InputStateSingletonComponent
+  written by InputLayer, not via entt events. The entt dispatcher appears to be
+  mostly unused in the engine itself — no system calls dispatcher.trigger() or
+  dispatcher.enqueue() in the engine code. The World::Update() call to
+  m_Dispatcher.update() is therefore a no-op in practice.
+
+  Either: unify by funneling relevant OS events into entt dispatcher events, or
+  remove m_Dispatcher.update() from World::Update() and document that game code
+  must call it explicitly.
+
+--- 2.3 InputComponents.h IS MISSING #pragma once ---
+
+  File: PigeonLib/Pigeon/Core/InputComponents.h
+
+  Every other header in the project uses #pragma once. This one does not. If
+  included more than once per translation unit (e.g., through different headers),
+  the struct is redefined, causing a compile error.
+
+--- 2.4 INCONSISTENT USE OF uint32_t vs unsigned int ---
+
+  VertexBuffer::Create takes `uint32_t size, uint32_t stride`.
+  SetVertices takes `unsigned int count, unsigned int countOffset`.
+  DrawIndexed takes `unsigned int count`.
+  BATCH_MAX_COUNT is `unsigned int`.
+  Pick one type for buffer sizes and counts throughout.
+
+--- 2.5 ShaderDataTypeSize IS A STATIC FUNCTION IN A HEADER ---
+
+  File: PigeonLib/Pigeon/Renderer/Shader.h, line 15
+
+    static uint32_t ShaderDataTypeSize(ShaderDataType type) { ... }
+
+  This is compiled into every translation unit that includes Shader.h. Move it to
+  Shader.cpp as a file-local function, or mark it `inline`.
+
+--- 2.6 EventTypeToString IS A STATIC CONST MAP DEFINED IN A HEADER ---
+
+  File: PigeonLib/Pigeon/Events/Event.h, lines 21-39
+
+    static const std::unordered_map<EventType, std::string> EventTypeToString = { ... };
+
+  This instantiates a separate map in every translation unit. In C++17, use
+  `inline const std::unordered_map<...>` to give it a single definition.
+
+--- 2.7 unscoped EventCategory ENUM POLLUTES NAMESPACE ---
+
+  File: PigeonLib/Pigeon/Events/Event.h, line 50
+
+    enum EventCategory { None = 0, EventCategoryApplication = BIT(0), ... };
+
+  The unscoped `None` enumerator conflicts with EventType::None conceptually and
+  could collide with other enumerators. Convert to `enum class EventCategory` and
+  update all uses.
+
+--- 2.8 pch.h EXPOSES `using json = nlohmann::json` GLOBALLY ---
+
+  File: PigeonLib/pch.h, line 14
+
+    using json = nlohmann::json;
+
+  This alias is injected into the global namespace of every translation unit in the
+  library. Only UIControlSystem.cpp actually uses nlohmann JSON. Move the include
+  and alias to that file only.
+
+--- 2.9 OrthographicCamera CONSTRUCTOR IS INCONSISTENT WITH SetProjection ---
+
+  File: PigeonLib/Pigeon/Renderer/OrthographicCamera.cpp
+
+  Constructor:
+    m_Data.m_ViewProjectionMatrix = glm::ortho(left, right, bottom, top, -1.f, 1.f);
+  SetProjection:
+    m_Data.m_ViewProjectionMatrix = m_Data.m_ProjectionMatrix * m_Data.m_ViewMatrix;
+
+  These are mathematically identical when m_ViewMatrix is identity, but the
+  inconsistency makes it unclear what the authoritative formula is. Consolidate
+  to call RecalculateViewMatrix() from the constructor.
+
+--- 2.10 Ux11Shader::UploadUniformMat3 silently widens glm::mat3 to glm::mat4 ---
+
+  File: PigeonLib/Platform/DirectX11/Dx11Shader.cpp, line 431
+
+    DirectX::XMMATRIX mat = ConvertGLMMatrixToDX(matrix); // matrix is glm::mat3
+
+  ConvertGLMMatrixToDX takes glm::mat4. The implicit promotion adds a zero column
+  and row with a 1 at [3][3]. No Mat3 uniform actually exists in current shaders,
+  but this silent widening would produce wrong results if it did.
+
+--- 2.11 INPUT SYSTEM MIXES LAYER AND ECS CONCERNS ---
+
+  InputLayer is a Layer subclass that also writes ECS components
+  (InputStateSingletonComponent). The architecture notes mark this with an
+  "ARNAU TODO use system instead of layer". The current design means that InputLayer
+  must be registered in the Layer stack AND the ECS world must be initialized before
+  InputLayer runs, creating an implicit ordering requirement that is not enforced.
+
+  The Input static class delegates entirely to Application::Get().GetInputLayer(),
+  meaning Input:: is just a verbose alias for the Application singleton chain. Its
+  own singleton instance (s_Instance) serves no purpose.
+
+--- 2.12 COMMENTED-OUT CODE IN PRODUCTION FILES ---
+
+  - OrthographicCameraController.cpp lines 30-38: rotation feature commented out.
+  - Font.cpp lines 111-125: single-character test code left in.
+  - Dx11Shader.cpp lines 316-328: ConvertDXMatrixToGLM commented out.
+  - Renderer2D.cpp line 191: "ARNAU TODO Assert if scene has not began".
+  - Sandbox2D.cpp lines 72, 112: commented-out draw calls.
+  - pch.h line 3: `#include "optick.h"` commented out (planned profiling).
+
+  Dead code and exploratory TODOs should be tracked in an issue tracker and removed
+  from source. The ARNAU TODO comments number in the dozens across the codebase.
+
+--- 2.13 S_Ptr / U_Ptr ALIASES REDUCE READABILITY FOR NEWCOMERS ---
+
+  `pig::S_Ptr<T>` and `pig::U_Ptr<T>` are aliases for `std::shared_ptr<T>` and
+  `std::unique_ptr<T>`. These save very few characters but harm readability for
+  anyone not already familiar with the convention. The standard library names are
+  universally understood. Consider removing the aliases.
+
+--- 2.14 UIEventSystem CLEANS AT START, UIControlSystem CLEANS AT END ---
+
+  UIEventSystem::Update() cleans one-frame components at the START of the frame.
+  UIControlSystem::Update() cleans at the END of the frame.
+  This asymmetry is intentional but undocumented. Any system registered between
+  these two that queries one-frame UI components will see them, while any system
+  registered before UIEventSystem will not. The ordering contract should be
+  documented explicitly.
+
+--- 2.15 ShaderLibrary IS DEFINED BUT NEVER USED ---
+
+  File: PigeonLib/Pigeon/Renderer/Shader.h, lines 144-157
+
+  ShaderLibrary provides a named shader cache (Add, Load, Get, Exists). No code
+  in the engine or SandboxApp uses it. Shaders are created directly with
+  Shader::Create() and stored in Renderer2D's static Data. Either integrate
+  ShaderLibrary into the renderer or remove it.
+
+--- 2.16 REDUNDANT m_SystemTypes SET IN World ---
+
+  File: PigeonLib/Pigeon/ECS/World.h, line 32
+
+    std::unordered_set<std::type_index> m_SystemTypes;
+
+  This set is used only in RegisterSystem to detect duplicate registrations. The
+  set is redundant because m_Systems already contains all registered systems, and
+  the same check could be done by iterating m_Systems with typeid comparisons.
+  Since RegisterSystem is called only during startup (not per-frame), the extra
+  set is an unnecessary memory cost. Remove it and iterate m_Systems directly.
+
+--- 2.17 RENDERER2D::BEGIN/ENDSCENE BIND BUT DO NOT UNBIND ---
+
+  BeginScene binds vertex buffer, index buffer, and quad shader. EndScene calls
+  Flush and then calls Unbind on the vertex/index buffers. But the shader is not
+  unbound at EndScene, and during Flush the active shader is switched per-batch
+  without ever being reset. After EndScene, the device context has a stale shader
+  binding. Add a Shader::Unbind call at the end of Flush.
+
+
+================================================================================
+SECTION 3 — MISSING OR INCOMPLETE FEATURES
+================================================================================
+
+--- 3.1 RESOURCE MANAGER (CRITICAL) ---
+
+  There is no centralized resource manager. Textures are stored as raw entries in
+  Renderer2D::s_Data.m_TextureMap with no reference counting, no ownership
+  tracking, and no unloading. Once added, a texture lives until Destroy() is
+  called on the entire renderer. Fonts are constructed ad hoc, each uploading their
+  own texture to the renderer's map.
+
+  Proposal: Implement a ResourceManager singleton that owns assets keyed by UUID or
+  path string, tracks reference counts, and supports Load<T>(path)/Unload(uuid).
+  Renderer2D should query the resource manager for textures rather than owning them.
+  This also resolves the ARNAU TODO comment in Texture.h ("maybe some kind of
+  resource manager with a refcount to prevent texture leaks").
+
+--- 3.2 AUDIO SYSTEM (CRITICAL) ---
+
+  The engine has no audio support. No sound effects, no music playback, no volume
+  control. For a 2D game engine this is a fundamental gap.
+
+  Proposal: Integrate a lightweight audio library (miniaudio or FMOD Lite) behind
+  an IAudioBackend interface following the same pattern as RendererAPI. Expose
+  AudioSystem that reads AudioComponent entities (clip UUID, volume, looping flag)
+  and submits play/stop commands. Platform/Windows and Platform/Testing
+  implementations would be the minimum.
+
+--- 3.3 PHYSICS / COLLISION (CRITICAL) ---
+
+  No physics or collision detection of any kind. Even basic AABB overlap queries
+  are absent.
+
+  Proposal: Add a CollisionSystem that reads TransformComponent and ColliderComponent
+  (AABB or circle), builds a broad-phase structure each frame (a simple spatial grid
+  is sufficient for 2D), and dispatches CollisionEvent pairs. Keep physics response
+  out of this system — a separate PhysicsResponseSystem can read CollisionEvents and
+  modify velocity/position. This preserves single-responsibility.
+
+--- 3.4 SCENE SERIALIZATION (HIGH) ---
+
+  Game state is wired directly in Sandbox2D::Sandbox2D(). There is no ability to
+  save or load a scene from disk (beyond the UI JSON layout, which covers only
+  UI entities).
+
+  Proposal: Implement SceneSerializer that can serialize/deserialize the entt
+  registry to a JSON or binary format. Each component type registers a
+  serialize/deserialize function. This is the foundation for level editors and
+  hot-reloading.
+
+--- 3.5 ANIMATION SYSTEM (HIGH) ---
+
+  No sprite animation. No tweening. No timeline. A 2D game engine without
+  animation support forces all motion to be implemented manually in game-specific
+  systems.
+
+  Proposal: Add AnimationComponent (clip UUID, current frame, fps, looping) and
+  AnimationSystem that advances frames each Update. Clips are defined as sequences
+  of UV rects inside a sprite sheet. A Tweener utility (not a full system) that
+  interpolates values over time would complement this.
+
+--- 3.6 MULTI-TEXTURE BATCH RENDERING (HIGH) ---
+
+  The renderer binds exactly one texture per draw call submission. Each unique
+  texture in a layer triggers a separate Submit call. Real 2D batch renderers bind
+  all needed textures in a single batch (up to D3D11's 128 shader resource slots,
+  in practice 8-16 are used) and encode the texture index per vertex. This reduces
+  draw calls from O(unique textures) to O(layers).
+
+  Proposal: Change the vertex format to add a float textureSlot attribute. During
+  Flush, collect all textures for a layer into an array (up to max slots), bind
+  them as a texture array, and emit one draw call per layer. The shader samples
+  textures by index: `texture_array[slot].Sample(sampler, uv)`.
+
+--- 3.7 RENDER-TO-TEXTURE / OFFSCREEN RENDERING (HIGH) ---
+
+  There is no render target abstraction. The renderer always writes to the swap
+  chain back buffer. Post-processing, minimap rendering, and shadow maps all
+  require offscreen targets.
+
+  Proposal: Add a RenderTarget abstraction (CreateRenderTarget(width, height) →
+  RenderTargetID). Renderer2D::BeginScene should accept an optional RenderTargetID
+  to redirect output. The Dx11 implementation creates an ID3D11RenderTargetView
+  backed by a texture that can then be used as a shader resource in subsequent
+  scenes.
+
+--- 3.8 FRAME RATE CONTROL (MEDIUM) ---
+
+  The game loop runs at an uncapped rate. VSync is forced on at the swap chain
+  level (Present(1, 0)) with no way to disable it or set a frame cap.
+
+  Proposal: Expose a WindowProps::m_VSync flag. In the game loop, implement a
+  sleep-based frame limiter when VSync is off. Allow both target FPS (for
+  consistency) and uncapped (for benchmarking).
+
+--- 3.9 GAMEPAD / CONTROLLER INPUT (MEDIUM) ---
+
+  The InputLayer TODO notes this explicitly. Only keyboard and mouse are supported.
+
+  Proposal: Add XInput (Windows) reading to InputLayer::ProcessEvents. Add
+  GamepadState to InputStateSingletonComponent (axes, buttons, triggers). The
+  existing Input:: static API can expose IsGamepadButtonPressed etc. mirroring the
+  keyboard API.
+
+--- 3.10 TILEMAP SUPPORT (MEDIUM) ---
+
+  No tilemap loading or rendering. A 2D engine targeting games almost always needs
+  this.
+
+  Proposal: Add a TilemapComponent that stores a grid of tile indices and a
+  reference to a tileset UUID. TilemapSystem reads these and submits sprite draws
+  for each visible tile (using frustum culling to avoid submitting off-screen
+  tiles). Support loading Tiled (.tmj) JSON as the interchange format.
+
+--- 3.11 PARTICLE SYSTEM (MEDIUM) ---
+
+  No particle system for visual effects (explosions, trails, weather, etc.).
+
+  Proposal: Add ParticleEmitterComponent (rate, lifetime, initial velocity, etc.)
+  and ParticleSystem that spawns, updates, and kills particle entities each frame.
+  Particles are rendered as textured quads through the existing Renderer2D pipeline.
+  Keep particle data in a fixed-size pool to avoid per-frame allocation.
+
+--- 3.12 DRAW LAYER SYSTEM — EXPOSE AND HARDEN (MEDIUM) ---
+
+  The current layer system extracts Z from transform[3][2] as an integer layer
+  index and iterates 0-99. This is entirely implicit, fragile, and limited.
+
+  Proposal: Add an explicit RenderLayer component or a named DrawLayer enum with
+  defined values (Background, World, Character, Effects, UI). Renderer2D::DrawQuad
+  accepts a DrawLayer parameter instead of relying on Z-axis heuristics. The flush
+  iterates defined layers in order, not a hardcoded range.
+
+--- 3.13 UI FOCUS AND KEYBOARD NAVIGATION (MEDIUM) ---
+
+  The UI system supports hover, click, and release based on mouse position. There
+  is no concept of keyboard focus, tab order, or keyboard activation of UI
+  elements.
+
+  Proposal: Add a FocusableComponent tag to UI entities. UIEventSystem tracks a
+  focused entity. Tab key cycles focus through all focusable entities. Enter/Space
+  activates the focused element, generating UIOnClickOneFrameComponent without
+  mouse involvement.
+
+--- 3.14 SPRITE SHEET / ATLAS DESCRIPTOR LOADING (LOW) ---
+
+  While Texture2D::GetTexCoordsRect can compute UV rects from pixel offsets, there
+  is no support for loading sprite sheet descriptors (JSON, XML, or TexturePacker
+  format). Game code must hard-code pixel offsets.
+
+  Proposal: Add a SpriteAtlas resource that loads a descriptor file and maps named
+  sprites to their UV rects. Renderer2D::AddTexture variant accepts a SpriteAtlas
+  ID. Sprite construction accepts a sprite name string to look up the UV rect.
+
+--- 3.15 UNICODE / EXTENDED CHARACTER SUPPORT (LOW) ---
+
+  The font system's charset is hardcoded to U+0020–U+00FF (basic Latin + Latin-1
+  supplement). No CJK, Arabic, Cyrillic, or emoji support.
+
+  Proposal: Make the charset configurable at Font construction time. Accept a
+  list of Unicode ranges. The msdf-atlas-gen library already supports arbitrary
+  charsets — it is only the hard-coded CharsetRange array in Font.cpp that limits
+  this. For full Unicode, consider a dynamic atlas that grows as new glyphs are
+  encountered.
+
+--- 3.16 PROFILING INTEGRATION (LOW) ---
+
+  The pch.h has `#include "optick.h"` commented out, indicating profiling was
+  planned. No instrumentation exists in any system.
+
+  Proposal: Add Optick markers at the top of every System::Update() call and inside
+  Renderer2D::Flush(). Gate them behind a compile-time PG_ENABLE_PROFILING define
+  that defaults to off in Release builds. The PIX-on-Windows alternative is also
+  worth considering given the DirectX 11 backend.
+
+--- 3.17 CONFIGURATION SYSTEM (LOW) ---
+
+  Window resolution, VSync, initial audio volume, and shader asset paths are all
+  hardcoded. There is no ini/json config file read at startup.
+
+  Proposal: At Application::Create(), load a pigeon.ini or pigeon.json from the
+  working directory. Expose WindowProps from this file. Let Renderer2D::Init()
+  resolve shader paths from the config (defaulting to "Assets/Shaders/"). This
+  allows end-users to change resolution without recompiling.
+
+
+================================================================================
+SUMMARY
+================================================================================
+
+Critical (must fix before shipping):
+  - UIControlSystem UUID update reads wrong view (data corruption)
+  - UILayoutSystemInterface::DestroyLayout ignores its argument (feature broken)
+  - DrawLayerBatch has no overflow guard (heap corruption with >1000 quads/layer)
+  - Dx11Shader::Unbind leaves pixel shader bound (rendering artifacts)
+  - Mouse scroll events discard all but the last event per frame (input loss)
+  - RendererConfig camera dimensions do not match layout dimensions (UI misaligned)
+  - No resource manager: textures cannot be unloaded and leak (memory growth)
+  - No audio system
+
+High priority:
+  - Font::GetStringBounds misses last character width (incorrect text layout)
+  - Mouse position broken on multi-monitor setups (wrong LOWORD/HIWORD usage)
+  - Static UUID random seeding risks collisions (reliability)
+  - RAII_PtrRelease / U_PtrToPtr static local is a silent logic bug
+  - Two batch maps with dead DrawBatch code (complexity, confusion)
+  - 100-layer hardcoded cap silently drops draws (invisible rendering failure)
+  - No physics, no scene serialization, no animation system
+
+Medium priority:
+  - Timestep implicit uint64_t conversion (type safety)
+  - EventTypeToString / ShaderDataTypeSize in headers (ODR violations)
+  - InputComponents.h missing #pragma once
+  - unscoped EventCategory enum pollutes namespace
+  - All UILayoutSystemInterface operations are O(n) (performance for large UIs)
+  - UIHelpers::GetUIChildrenForElement is O(n) (performance during destroy)
+  - No frame rate control / VSync toggle
+  - No gamepad support
+  - No tilemap support
+
+Low priority:
+  - Naming typos (s_SuareIndices, "fount", "pak", UNKNOWNT_TYPE)
+  - Commented-out dead code throughout
+  - S_Ptr/U_Ptr aliases (readability)
+  - ShaderLibrary unused class
+  - Offensive string in Sandbox2D.cpp
+  - No profiling instrumentation
+  - No configuration file support
+  - No Unicode beyond Latin-1
+
+================================================================================

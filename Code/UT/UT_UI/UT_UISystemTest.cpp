@@ -132,21 +132,21 @@ namespace CatchTestsetFail
 	{
 		pig::World& world = pig::World::Create();
 
-		entt::entity uiElementEntity = pig::World::GetRegistry().create();
+		entt::entity uiElementEntity = pig::World::GetRegistryDirect().create();
 
 		pig::S_Ptr<MockUIRenderSystemHelper> helper = std::make_shared<MockUIRenderSystemHelper>();
 
 		world.RegisterSystem(std::move(std::make_unique<pig::ui::UIRenderSystem>(helper)));
 
-		pig::ui::BaseComponent& baseComponent = pig::World::GetRegistry().emplace<pig::ui::BaseComponent>(uiElementEntity);
+		pig::ui::BaseComponent& baseComponent = pig::World::GetRegistryDirect().emplace<pig::ui::BaseComponent>(uiElementEntity);
 		pig::UUID sampleTextureID = pig::Renderer2D::AddTexture("Assets/Test/SampleTexture.png", pig::EMappedTextureType::eQuad);
 		baseComponent.m_Size = { 100.f, 200.f };
 
-		auto viewRenderConfig = pig::World::GetRegistry().view<const pig::ui::RendererConfig>();
+		auto viewRenderConfig = pig::World::GetRegistryDirect().view<const pig::ui::RendererConfig>();
 		CHECK(viewRenderConfig.size() == 0);
 		pig::World::Get().Update(pig::Timestep(0));
 
-		viewRenderConfig = pig::World::GetRegistry().view<const pig::ui::RendererConfig>();
+		viewRenderConfig = pig::World::GetRegistryDirect().view<const pig::ui::RendererConfig>();
 		REQUIRE(viewRenderConfig.size() == 1);
 
 		const pig::ui::RendererConfig& renderComponent = viewRenderConfig.get<pig::ui::RendererConfig>(viewRenderConfig.front());
@@ -157,9 +157,9 @@ namespace CatchTestsetFail
 
 		SECTION("Render UI image")
 		{
-			pig::ui::ImageComponent& imageComponent = pig::World::GetRegistry().emplace<pig::ui::ImageComponent>(uiElementEntity);
+			pig::ui::ImageComponent& imageComponent = pig::World::GetRegistryDirect().emplace<pig::ui::ImageComponent>(uiElementEntity);
 			imageComponent.m_TextureHandle = sampleTextureID;
-			
+
 			pig::World::Get().Update(pig::Timestep(0));
 
 			TestUIRender(helper, imageComponent.m_TextureHandle, baseComponent.m_Spacing, baseComponent.m_Size, 0.f);
@@ -171,13 +171,13 @@ namespace CatchTestsetFail
 
 			TestUIRender(helper, imageComponent.m_TextureHandle, baseComponent.m_Spacing, baseComponent.m_Size, 0.f);
 			helper->Reset();
-			pig::World::GetRegistry().destroy(uiElementEntity);
+			pig::World::GetRegistryDirect().destroy(uiElementEntity);
 			pig::World::Get().Update(pig::Timestep(0));
 			CHECK(!helper->m_ImageDrawn);
 		}
 		SECTION("Render UI text")
 		{
-			pig::ui::TextComponent& textComponent = pig::World::GetRegistry().emplace<pig::ui::TextComponent>(uiElementEntity);
+			pig::ui::TextComponent& textComponent = pig::World::GetRegistryDirect().emplace<pig::ui::TextComponent>(uiElementEntity);
 			textComponent.m_Text = "This is a\nSample Text 1";
 			textComponent.m_Color = {1.f, 0.f, 0.f, 1.f};
 			textComponent.m_Kerning = 10.f;
@@ -205,13 +205,13 @@ namespace CatchTestsetFail
 
 		SECTION("Render disabled element")
 		{
-			pig::ui::ImageComponent& imageComponent = pig::World::GetRegistry().emplace<pig::ui::ImageComponent>(uiElementEntity);
+			pig::ui::ImageComponent& imageComponent = pig::World::GetRegistryDirect().emplace<pig::ui::ImageComponent>(uiElementEntity);
 			imageComponent.m_TextureHandle = sampleTextureID;
-			baseComponent.m_Parent = pig::World::GetRegistry().create();
+			baseComponent.m_Parent = pig::World::GetRegistryDirect().create();
 
-			pig::ui::BaseComponent& baseComponentParent = pig::World::GetRegistry().emplace<pig::ui::BaseComponent>(baseComponent.m_Parent);
-			baseComponentParent.m_Parent = pig::World::GetRegistry().create();
-			pig::ui::BaseComponent& baseComponentParentParent = pig::World::GetRegistry().emplace<pig::ui::BaseComponent>(baseComponentParent.m_Parent);
+			pig::ui::BaseComponent& baseComponentParent = pig::World::GetRegistryDirect().emplace<pig::ui::BaseComponent>(baseComponent.m_Parent);
+			baseComponentParent.m_Parent = pig::World::GetRegistryDirect().create();
+			pig::ui::BaseComponent& baseComponentParentParent = pig::World::GetRegistryDirect().emplace<pig::ui::BaseComponent>(baseComponentParent.m_Parent);
 
 			SECTION("base")
 			{
@@ -247,7 +247,7 @@ namespace CatchTestsetFail
 
 		SECTION("Test alignment")
 		{
-			pig::ui::ImageComponent& imageComponent = pig::World::GetRegistry().emplace<pig::ui::ImageComponent>(uiElementEntity);
+			pig::ui::ImageComponent& imageComponent = pig::World::GetRegistryDirect().emplace<pig::ui::ImageComponent>(uiElementEntity);
 			imageComponent.m_TextureHandle = sampleTextureID;
 
 			baseComponent.m_Size = { 300.f, 100.f };
@@ -287,22 +287,22 @@ namespace CatchTestsetFail
 		}
 		SECTION("Render multilevel UI")
 		{
-			pig::ui::ImageComponent& imageComponent = pig::World::GetRegistry().emplace<pig::ui::ImageComponent>(uiElementEntity);
+			pig::ui::ImageComponent& imageComponent = pig::World::GetRegistryDirect().emplace<pig::ui::ImageComponent>(uiElementEntity);
 			imageComponent.m_TextureHandle = sampleTextureID;
 
-			entt::entity uiElementEntityParent = pig::World::GetRegistry().create();
+			entt::entity uiElementEntityParent = pig::World::GetRegistryDirect().create();
 
 			baseComponent.m_Parent = uiElementEntityParent;
 			baseComponent.m_Size = { 300.f, 100.f };
 			baseComponent.m_Spacing = { 50.f, 60.f };
 
-			pig::ui::BaseComponent& baseComponentParent = pig::World::GetRegistry().emplace<pig::ui::BaseComponent>(uiElementEntityParent);
-			entt::entity uiElementEntityParentParent = pig::World::GetRegistry().create();
+			pig::ui::BaseComponent& baseComponentParent = pig::World::GetRegistryDirect().emplace<pig::ui::BaseComponent>(uiElementEntityParent);
+			entt::entity uiElementEntityParentParent = pig::World::GetRegistryDirect().create();
 			baseComponentParent.m_Size = { 600.f, 800.f };
 			baseComponentParent.m_Spacing = { 10.f, 20.f };
 			baseComponentParent.m_Parent = uiElementEntityParentParent;
 
-			pig::ui::BaseComponent& baseComponentParentParent = pig::World::GetRegistry().emplace<pig::ui::BaseComponent>(uiElementEntityParentParent);
+			pig::ui::BaseComponent& baseComponentParentParent = pig::World::GetRegistryDirect().emplace<pig::ui::BaseComponent>(uiElementEntityParentParent);
 			baseComponentParentParent.m_Size = { 1000.f, 900.f };
 			baseComponentParentParent.m_Spacing = { 100.f, 10.f };
 
@@ -353,15 +353,15 @@ namespace CatchTestsetFail
 	{
 		pig::World& world = pig::World::Create();
 
-		entt::entity inputEventsEntity = pig::World::GetRegistry().create();
+		entt::entity inputEventsEntity = pig::World::GetRegistryDirect().create();
 
 		world.RegisterSystem(std::move(std::make_unique<pig::ui::UIEventSystem>()));
 
-		pig::InputStateSingletonComponent& inputComponent = pig::World::GetRegistry().emplace<pig::InputStateSingletonComponent>(inputEventsEntity);
-		
-		pig::ui::BaseComponent& baseComponent1 = pig::World::GetRegistry().emplace<pig::ui::BaseComponent>(pig::World::GetRegistry().create());
+		pig::InputStateSingletonComponent& inputComponent = pig::World::GetRegistryDirect().emplace<pig::InputStateSingletonComponent>(inputEventsEntity);
 
-		pig::ui::RendererConfig& renderComponent = pig::World::GetRegistry().emplace<pig::ui::RendererConfig>(pig::World::GetRegistry().create());
+		pig::ui::BaseComponent& baseComponent1 = pig::World::GetRegistryDirect().emplace<pig::ui::BaseComponent>(pig::World::GetRegistryDirect().create());
+
+		pig::ui::RendererConfig& renderComponent = pig::World::GetRegistryDirect().emplace<pig::ui::RendererConfig>(pig::World::GetRegistryDirect().create());
 		renderComponent.m_Height = 800;
 		renderComponent.m_Width = 900;
 
@@ -372,9 +372,9 @@ namespace CatchTestsetFail
 
 		pig::World::Get().Update(pig::Timestep(0));
 		{
-			auto viewClick = pig::World::GetRegistry().view<pig::ui::UIOnClickOneFrameComponent>();
-			auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
-			auto viewRelease = pig::World::GetRegistry().view<pig::ui::UIOnReleaseOneFrameComponent>();
+			auto viewClick = pig::World::GetRegistryDirect().view<pig::ui::UIOnClickOneFrameComponent>();
+			auto viewHover = pig::World::GetRegistryDirect().view<pig::ui::UIOnHoverOneFrameComponent>();
+			auto viewRelease = pig::World::GetRegistryDirect().view<pig::ui::UIOnReleaseOneFrameComponent>();
 
 			CHECK(viewClick.size() == 0);
 			CHECK(viewHover.size() == 0);
@@ -386,13 +386,13 @@ namespace CatchTestsetFail
 			inputComponent.m_MousePos = { 9.f, 19.f };
 			pig::World::Get().Update(pig::Timestep(0));
 			{
-				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				auto viewHover = pig::World::GetRegistryDirect().view<pig::ui::UIOnHoverOneFrameComponent>();
 				CHECK(viewHover.size() == 0);
 			}
 			inputComponent.m_MousePos = { 11.f, 21.f };
 			pig::World::Get().Update(pig::Timestep(0));
 			{
-				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				auto viewHover = pig::World::GetRegistryDirect().view<pig::ui::UIOnHoverOneFrameComponent>();
 
 				REQUIRE(viewHover.size() == 1);
 
@@ -402,7 +402,7 @@ namespace CatchTestsetFail
 			inputComponent.m_MousePos = { 209.f, 119.f };
 			pig::World::Get().Update(pig::Timestep(0));
 			{
-				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				auto viewHover = pig::World::GetRegistryDirect().view<pig::ui::UIOnHoverOneFrameComponent>();
 
 				REQUIRE(viewHover.size() == 1);
 
@@ -412,13 +412,13 @@ namespace CatchTestsetFail
 			inputComponent.m_MousePos = { 211.f, 121.f };
 			pig::World::Get().Update(pig::Timestep(0));
 			{
-				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				auto viewHover = pig::World::GetRegistryDirect().view<pig::ui::UIOnHoverOneFrameComponent>();
 				CHECK(viewHover.size() == 0);
 			}
 			inputComponent.m_MousePos = { 11.f, 119.f };
 			pig::World::Get().Update(pig::Timestep(0));
 			{
-				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				auto viewHover = pig::World::GetRegistryDirect().view<pig::ui::UIOnHoverOneFrameComponent>();
 				REQUIRE(viewHover.size() == 1);
 
 				const pig::ui::UIOnHoverOneFrameComponent& hoverComponent = viewHover.get<pig::ui::UIOnHoverOneFrameComponent>(viewHover.front());
@@ -427,19 +427,19 @@ namespace CatchTestsetFail
 			inputComponent.m_MousePos = { 9.f, 119.f };
 			pig::World::Get().Update(pig::Timestep(0));
 			{
-				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				auto viewHover = pig::World::GetRegistryDirect().view<pig::ui::UIOnHoverOneFrameComponent>();
 				CHECK(viewHover.size() == 0);
 			}
 			inputComponent.m_MousePos = { 211.f, 21.f };
 			pig::World::Get().Update(pig::Timestep(0));
 			{
-				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				auto viewHover = pig::World::GetRegistryDirect().view<pig::ui::UIOnHoverOneFrameComponent>();
 				CHECK(viewHover.size() == 0);
 			}
 			inputComponent.m_MousePos = { 209.f, 21.f };
 			pig::World::Get().Update(pig::Timestep(0));
 			{
-				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				auto viewHover = pig::World::GetRegistryDirect().view<pig::ui::UIOnHoverOneFrameComponent>();
 				REQUIRE(viewHover.size() == 1);
 
 				const pig::ui::UIOnHoverOneFrameComponent& hoverComponent = viewHover.get<pig::ui::UIOnHoverOneFrameComponent>(viewHover.front());
@@ -448,7 +448,7 @@ namespace CatchTestsetFail
 			baseComponent1.m_Spacing = { 11.f, 20.f };
 			pig::World::Get().Update(pig::Timestep(0));
 			{
-				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				auto viewHover = pig::World::GetRegistryDirect().view<pig::ui::UIOnHoverOneFrameComponent>();
 				REQUIRE(viewHover.size() == 1);
 
 				const pig::ui::UIOnHoverOneFrameComponent& hoverComponent = viewHover.get<pig::ui::UIOnHoverOneFrameComponent>(viewHover.front());
@@ -457,7 +457,7 @@ namespace CatchTestsetFail
 			baseComponent1.m_Spacing = { 8.f, 20.f };
 			pig::World::Get().Update(pig::Timestep(0));
 			{
-				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				auto viewHover = pig::World::GetRegistryDirect().view<pig::ui::UIOnHoverOneFrameComponent>();
 				CHECK(viewHover.size() == 0);
 			}
 		}
@@ -466,10 +466,10 @@ namespace CatchTestsetFail
 			inputComponent.m_MousePos = { 5.f, 5.f };
 			pig::World::Get().Update(pig::Timestep(0));
 			{
-				auto viewClick = pig::World::GetRegistry().view<pig::ui::UIOnClickOneFrameComponent>();
-				auto viewRelease = pig::World::GetRegistry().view<pig::ui::UIOnReleaseOneFrameComponent>();
+				auto viewClick = pig::World::GetRegistryDirect().view<pig::ui::UIOnClickOneFrameComponent>();
+				auto viewRelease = pig::World::GetRegistryDirect().view<pig::ui::UIOnReleaseOneFrameComponent>();
 
-				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				auto viewHover = pig::World::GetRegistryDirect().view<pig::ui::UIOnHoverOneFrameComponent>();
 				CHECK(viewHover.size() == 0);
 				CHECK(viewClick.size() == 0);
 				CHECK(viewRelease.size() == 0);
@@ -477,10 +477,10 @@ namespace CatchTestsetFail
 			inputComponent.m_KeysPressed[pig::PG_MOUSE_BUTTON_LEFT] = 1;
 			pig::World::Get().Update(pig::Timestep(0));
 			{
-				auto viewClick = pig::World::GetRegistry().view<pig::ui::UIOnClickOneFrameComponent>();
-				auto viewRelease = pig::World::GetRegistry().view<pig::ui::UIOnReleaseOneFrameComponent>();
+				auto viewClick = pig::World::GetRegistryDirect().view<pig::ui::UIOnClickOneFrameComponent>();
+				auto viewRelease = pig::World::GetRegistryDirect().view<pig::ui::UIOnReleaseOneFrameComponent>();
 
-				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				auto viewHover = pig::World::GetRegistryDirect().view<pig::ui::UIOnHoverOneFrameComponent>();
 				CHECK(viewHover.size() == 0);
 				CHECK(viewClick.size() == 0);
 				CHECK(viewRelease.size() == 0);
@@ -488,10 +488,10 @@ namespace CatchTestsetFail
 			inputComponent.m_MousePos = { 30.f, 30.f };
 			pig::World::Get().Update(pig::Timestep(0));
 			{
-				auto viewClick = pig::World::GetRegistry().view<pig::ui::UIOnClickOneFrameComponent>();
-				auto viewRelease = pig::World::GetRegistry().view<pig::ui::UIOnReleaseOneFrameComponent>();
+				auto viewClick = pig::World::GetRegistryDirect().view<pig::ui::UIOnClickOneFrameComponent>();
+				auto viewRelease = pig::World::GetRegistryDirect().view<pig::ui::UIOnReleaseOneFrameComponent>();
 
-				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				auto viewHover = pig::World::GetRegistryDirect().view<pig::ui::UIOnHoverOneFrameComponent>();
 				CHECK(viewHover.size() == 1);
 				CHECK(viewRelease.size() == 0);
 
@@ -502,10 +502,10 @@ namespace CatchTestsetFail
 			}
 			pig::World::Get().Update(pig::Timestep(0));
 			{
-				auto viewClick = pig::World::GetRegistry().view<pig::ui::UIOnClickOneFrameComponent>();
-				auto viewRelease = pig::World::GetRegistry().view<pig::ui::UIOnReleaseOneFrameComponent>();
+				auto viewClick = pig::World::GetRegistryDirect().view<pig::ui::UIOnClickOneFrameComponent>();
+				auto viewRelease = pig::World::GetRegistryDirect().view<pig::ui::UIOnReleaseOneFrameComponent>();
 
-				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				auto viewHover = pig::World::GetRegistryDirect().view<pig::ui::UIOnHoverOneFrameComponent>();
 				CHECK(viewHover.size() == 1);
 				CHECK(viewRelease.size() == 0);
 				CHECK(viewClick.size() == 1);
@@ -513,10 +513,10 @@ namespace CatchTestsetFail
 			inputComponent.m_KeysReleased[pig::PG_MOUSE_BUTTON_LEFT] = 1;
 			pig::World::Get().Update(pig::Timestep(0));
 			{
-				auto viewClick = pig::World::GetRegistry().view<pig::ui::UIOnClickOneFrameComponent>();
-				auto viewRelease = pig::World::GetRegistry().view<pig::ui::UIOnReleaseOneFrameComponent>();
+				auto viewClick = pig::World::GetRegistryDirect().view<pig::ui::UIOnClickOneFrameComponent>();
+				auto viewRelease = pig::World::GetRegistryDirect().view<pig::ui::UIOnReleaseOneFrameComponent>();
 
-				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				auto viewHover = pig::World::GetRegistryDirect().view<pig::ui::UIOnHoverOneFrameComponent>();
 				CHECK(viewHover.size() == 1);
 				CHECK(viewRelease.size() == 0);
 				CHECK(viewClick.size() == 1);
@@ -524,10 +524,10 @@ namespace CatchTestsetFail
 			inputComponent.m_KeysPressed.erase(pig::PG_MOUSE_BUTTON_LEFT);
 			pig::World::Get().Update(pig::Timestep(0));
 			{
-				auto viewClick = pig::World::GetRegistry().view<pig::ui::UIOnClickOneFrameComponent>();
-				auto viewRelease = pig::World::GetRegistry().view<pig::ui::UIOnReleaseOneFrameComponent>();
+				auto viewClick = pig::World::GetRegistryDirect().view<pig::ui::UIOnClickOneFrameComponent>();
+				auto viewRelease = pig::World::GetRegistryDirect().view<pig::ui::UIOnReleaseOneFrameComponent>();
 
-				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				auto viewHover = pig::World::GetRegistryDirect().view<pig::ui::UIOnHoverOneFrameComponent>();
 				CHECK(viewHover.size() == 1);
 				CHECK(viewClick.size() == 0);
 
@@ -539,10 +539,10 @@ namespace CatchTestsetFail
 			inputComponent.m_KeysReleased.erase(pig::PG_MOUSE_BUTTON_LEFT);
 			pig::World::Get().Update(pig::Timestep(0));
 			{
-				auto viewClick = pig::World::GetRegistry().view<pig::ui::UIOnClickOneFrameComponent>();
-				auto viewRelease = pig::World::GetRegistry().view<pig::ui::UIOnReleaseOneFrameComponent>();
+				auto viewClick = pig::World::GetRegistryDirect().view<pig::ui::UIOnClickOneFrameComponent>();
+				auto viewRelease = pig::World::GetRegistryDirect().view<pig::ui::UIOnReleaseOneFrameComponent>();
 
-				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				auto viewHover = pig::World::GetRegistryDirect().view<pig::ui::UIOnHoverOneFrameComponent>();
 				CHECK(viewHover.size() == 1);
 				CHECK(viewRelease.size() == 0);
 				CHECK(viewClick.size() == 0);
@@ -551,11 +551,11 @@ namespace CatchTestsetFail
 
 		SECTION("Check events on disabled element")
 		{
-			baseComponent1.m_Parent = pig::World::GetRegistry().create();
+			baseComponent1.m_Parent = pig::World::GetRegistryDirect().create();
 
-			pig::ui::BaseComponent& baseComponentParent = pig::World::GetRegistry().emplace<pig::ui::BaseComponent>(baseComponent1.m_Parent);
-			baseComponentParent.m_Parent = pig::World::GetRegistry().create();
-			pig::ui::BaseComponent& baseComponentParentParent = pig::World::GetRegistry().emplace<pig::ui::BaseComponent>(baseComponentParent.m_Parent);
+			pig::ui::BaseComponent& baseComponentParent = pig::World::GetRegistryDirect().emplace<pig::ui::BaseComponent>(baseComponent1.m_Parent);
+			baseComponentParent.m_Parent = pig::World::GetRegistryDirect().create();
+			pig::ui::BaseComponent& baseComponentParentParent = pig::World::GetRegistryDirect().emplace<pig::ui::BaseComponent>(baseComponentParent.m_Parent);
 
 			baseComponentParent.m_Enabled = false;
 
@@ -563,9 +563,9 @@ namespace CatchTestsetFail
 			inputComponent.m_KeysPressed[pig::PG_MOUSE_BUTTON_LEFT] = 1;
 			pig::World::Get().Update(pig::Timestep(0));
 			{
-				auto viewClick = pig::World::GetRegistry().view<pig::ui::UIOnClickOneFrameComponent>();
-				auto viewRelease = pig::World::GetRegistry().view<pig::ui::UIOnReleaseOneFrameComponent>();
-				auto viewHover = pig::World::GetRegistry().view<pig::ui::UIOnHoverOneFrameComponent>();
+				auto viewClick = pig::World::GetRegistryDirect().view<pig::ui::UIOnClickOneFrameComponent>();
+				auto viewRelease = pig::World::GetRegistryDirect().view<pig::ui::UIOnReleaseOneFrameComponent>();
+				auto viewHover = pig::World::GetRegistryDirect().view<pig::ui::UIOnHoverOneFrameComponent>();
 				CHECK(viewHover.size() == 0);
 				CHECK(viewRelease.size() == 0);
 				CHECK(viewClick.size() == 0);
@@ -581,10 +581,10 @@ namespace CatchTestsetFail
 
 		world.RegisterSystem(std::move(std::make_unique<pig::ui::UIControlSystem>(helper)));
 
-		entt::entity layoutEntity = pig::World::GetRegistry().create();
+		entt::entity layoutEntity = pig::World::GetRegistryDirect().create();
 
-		pig::ui::BaseComponent& baseComponent = pig::World::GetRegistry().emplace<pig::ui::BaseComponent>(layoutEntity);
-		pig::ui::RendererConfig& renderComponent = pig::World::GetRegistry().emplace<pig::ui::RendererConfig>(pig::World::GetRegistry().create());
+		pig::ui::BaseComponent& baseComponent = pig::World::GetRegistryDirect().emplace<pig::ui::BaseComponent>(layoutEntity);
+		pig::ui::RendererConfig& renderComponent = pig::World::GetRegistryDirect().emplace<pig::ui::RendererConfig>(pig::World::GetRegistryDirect().create());
 		renderComponent.m_Height = 800;
 		renderComponent.m_Width = 900;
 
@@ -596,14 +596,14 @@ namespace CatchTestsetFail
 
 		SECTION("Update transform")
 		{
-			pig::ui::UIUpdateTransformOneFrameComponent& updateComponent = pig::World::GetRegistry().emplace<pig::ui::UIUpdateTransformOneFrameComponent>(layoutEntity);
+			pig::ui::UIUpdateTransformOneFrameComponent& updateComponent = pig::World::GetRegistryDirect().emplace<pig::ui::UIUpdateTransformOneFrameComponent>(layoutEntity);
 			updateComponent.m_HAlign = pig::ui::EHAlignType::eLeft;
 			updateComponent.m_VAlign = pig::ui::EVAlignType::eBottom;
 			updateComponent.m_Size = { 123.f, 456.f };
 			updateComponent.m_Spacing = { 44.f, 55.f };
 			pig::World::Get().Update(pig::Timestep(0));
 
-			auto viewUpdated = pig::World::GetRegistry().view<const pig::ui::BaseComponent>();
+			auto viewUpdated = pig::World::GetRegistryDirect().view<const pig::ui::BaseComponent>();
 			REQUIRE(viewUpdated.size() == 1);
 			const pig::ui::BaseComponent& baseComponentUpdated = viewUpdated.get<const pig::ui::BaseComponent>(layoutEntity);
 
@@ -614,12 +614,12 @@ namespace CatchTestsetFail
 		}
 		SECTION("Update parent")
 		{
-			pig::ui::UIUpdateParentOneFrameComponent& updateComponent = pig::World::GetRegistry().emplace<pig::ui::UIUpdateParentOneFrameComponent>(layoutEntity);
-			entt::entity entityParent = pig::World::GetRegistry().create();
+			pig::ui::UIUpdateParentOneFrameComponent& updateComponent = pig::World::GetRegistryDirect().emplace<pig::ui::UIUpdateParentOneFrameComponent>(layoutEntity);
+			entt::entity entityParent = pig::World::GetRegistryDirect().create();
 			updateComponent.m_Parent = entityParent;
 			pig::World::Get().Update(pig::Timestep(0));
 
-			auto viewUpdated = pig::World::GetRegistry().view<const pig::ui::BaseComponent>();
+			auto viewUpdated = pig::World::GetRegistryDirect().view<const pig::ui::BaseComponent>();
 			REQUIRE(viewUpdated.size() == 1);
 			const pig::ui::BaseComponent& baseComponentUpdated = viewUpdated.get<const pig::ui::BaseComponent>(layoutEntity);
 
@@ -627,11 +627,11 @@ namespace CatchTestsetFail
 		}
 		SECTION("Update enabled")
 		{
-			pig::ui::UIUpdateEnableOneFrameComponent& updateComponent = pig::World::GetRegistry().emplace<pig::ui::UIUpdateEnableOneFrameComponent>(layoutEntity);
+			pig::ui::UIUpdateEnableOneFrameComponent& updateComponent = pig::World::GetRegistryDirect().emplace<pig::ui::UIUpdateEnableOneFrameComponent>(layoutEntity);
 			updateComponent.m_Enabled = false;
 			pig::World::Get().Update(pig::Timestep(0));
 
-			auto viewUpdated = pig::World::GetRegistry().view<const pig::ui::BaseComponent>();
+			auto viewUpdated = pig::World::GetRegistryDirect().view<const pig::ui::BaseComponent>();
 			REQUIRE(viewUpdated.size() == 1);
 			const pig::ui::BaseComponent& baseComponentUpdated = viewUpdated.get<const pig::ui::BaseComponent>(layoutEntity);
 
@@ -639,12 +639,12 @@ namespace CatchTestsetFail
 		}
 		SECTION("Update id")
 		{
-			pig::ui::UIUpdateUUIDOneFrameComponent& updateComponent = pig::World::GetRegistry().emplace<pig::ui::UIUpdateUUIDOneFrameComponent>(layoutEntity);
+			pig::ui::UIUpdateUUIDOneFrameComponent& updateComponent = pig::World::GetRegistryDirect().emplace<pig::ui::UIUpdateUUIDOneFrameComponent>(layoutEntity);
 			pig::UUID updateID = pig::UUID::Generate();
 			updateComponent.m_UUID = updateID;
 			pig::World::Get().Update(pig::Timestep(0));
 
-			auto viewUpdated = pig::World::GetRegistry().view<const pig::ui::BaseComponent>();
+			auto viewUpdated = pig::World::GetRegistryDirect().view<const pig::ui::BaseComponent>();
 			REQUIRE(viewUpdated.size() == 1);
 			const pig::ui::BaseComponent& baseComponentUpdated = viewUpdated.get<const pig::ui::BaseComponent>(layoutEntity);
 
@@ -652,17 +652,17 @@ namespace CatchTestsetFail
 		}
 		SECTION("Update image")
 		{
-			pig::ui::ImageComponent& imageComponent = pig::World::GetRegistry().emplace<pig::ui::ImageComponent>(layoutEntity);
+			pig::ui::ImageComponent& imageComponent = pig::World::GetRegistryDirect().emplace<pig::ui::ImageComponent>(layoutEntity);
 			imageComponent.m_TextureHandle = pig::UUID::Generate();
 
-			pig::ui::UIUpdateImageUUIDOneFrameComponent& updateComponent = pig::World::GetRegistry().emplace<pig::ui::UIUpdateImageUUIDOneFrameComponent>(layoutEntity);
+			pig::ui::UIUpdateImageUUIDOneFrameComponent& updateComponent = pig::World::GetRegistryDirect().emplace<pig::ui::UIUpdateImageUUIDOneFrameComponent>(layoutEntity);
 			pig::UUID updateID = pig::UUID::Generate();
 			updateComponent.m_UUID = updateID;
 			updateComponent.m_PreviousImageToDestroy = pig::UUID::Generate();
-			
+
 			pig::World::Get().Update(pig::Timestep(0));
 
-			auto viewUpdated = pig::World::GetRegistry().view<const pig::ui::ImageComponent>();
+			auto viewUpdated = pig::World::GetRegistryDirect().view<const pig::ui::ImageComponent>();
 			REQUIRE(viewUpdated.size() == 1);
 			const pig::ui::ImageComponent& imageComponentUpdated = viewUpdated.get<const pig::ui::ImageComponent>(layoutEntity);
 
@@ -670,13 +670,13 @@ namespace CatchTestsetFail
 		}
 		SECTION("Update text")
 		{
-			pig::ui::TextComponent& textComponent = pig::World::GetRegistry().emplace<pig::ui::TextComponent>(layoutEntity);
+			pig::ui::TextComponent& textComponent = pig::World::GetRegistryDirect().emplace<pig::ui::TextComponent>(layoutEntity);
 			textComponent.m_Color = { 0.f, 0.f, 0.f, 0.f };
 			textComponent.m_Kerning = 0.f;
 			textComponent.m_Spacing = 0.f;
 			textComponent.m_Text = {};
 
-			pig::ui::UIUpdateTextOneFrameComponent& updateComponent = pig::World::GetRegistry().emplace<pig::ui::UIUpdateTextOneFrameComponent>(layoutEntity);
+			pig::ui::UIUpdateTextOneFrameComponent& updateComponent = pig::World::GetRegistryDirect().emplace<pig::ui::UIUpdateTextOneFrameComponent>(layoutEntity);
 			updateComponent.m_Color = { 1.f, 2.f, 3.f, 4.f };
 			updateComponent.m_Kerning = 5.f;
 			updateComponent.m_Spacing = 6.f;
@@ -684,7 +684,7 @@ namespace CatchTestsetFail
 
 			pig::World::Get().Update(pig::Timestep(0));
 
-			auto viewUpdated = pig::World::GetRegistry().view<const pig::ui::TextComponent>();
+			auto viewUpdated = pig::World::GetRegistryDirect().view<const pig::ui::TextComponent>();
 			REQUIRE(viewUpdated.size() == 1);
 			const pig::ui::TextComponent& textComponentUpdated = viewUpdated.get<const pig::ui::TextComponent>(layoutEntity);
 
@@ -695,23 +695,22 @@ namespace CatchTestsetFail
 		}
 		SECTION("Destroy UI")
 		{
+			baseComponent.m_Parent = pig::World::GetRegistryDirect().create();
 
-			baseComponent.m_Parent = pig::World::GetRegistry().create();
-
-			pig::ui::BaseComponent& baseComponentParent = pig::World::GetRegistry().emplace<pig::ui::BaseComponent>(baseComponent.m_Parent);
-			baseComponentParent.m_Parent = pig::World::GetRegistry().create();
-			pig::ui::BaseComponent& baseComponentParentParent = pig::World::GetRegistry().emplace<pig::ui::BaseComponent>(baseComponentParent.m_Parent);
+			pig::ui::BaseComponent& baseComponentParent = pig::World::GetRegistryDirect().emplace<pig::ui::BaseComponent>(baseComponent.m_Parent);
+			baseComponentParent.m_Parent = pig::World::GetRegistryDirect().create();
+			pig::ui::BaseComponent& baseComponentParentParent = pig::World::GetRegistryDirect().emplace<pig::ui::BaseComponent>(baseComponentParent.m_Parent);
 
 			entt::entity baseEnt = layoutEntity;
 			entt::entity parentEnt = baseComponent.m_Parent;
 			entt::entity rootEnt = baseComponentParent.m_Parent;
 
-			pig::ui::UIDestroyOneFrameComponent& destroyComponent = pig::World::GetRegistry().emplace<pig::ui::UIDestroyOneFrameComponent>(parentEnt);
+			pig::ui::UIDestroyOneFrameComponent& destroyComponent = pig::World::GetRegistryDirect().emplace<pig::ui::UIDestroyOneFrameComponent>(parentEnt);
 			pig::World::Get().Update(pig::Timestep(0));
 
-			CHECK(!pig::World::GetRegistry().valid(baseEnt));
-			CHECK(!pig::World::GetRegistry().valid(parentEnt));
-			CHECK(pig::World::GetRegistry().valid(rootEnt));
+			CHECK(!pig::World::GetRegistryDirect().valid(baseEnt));
+			CHECK(!pig::World::GetRegistryDirect().valid(parentEnt));
+			CHECK(pig::World::GetRegistryDirect().valid(rootEnt));
 		}
 	}
 	TEST_CASE("UI.UIControlSystem::LoadFromFileEvents")
@@ -723,15 +722,15 @@ namespace CatchTestsetFail
 
 		SECTION("Load layout from file")
 		{
-			pig::ui::LoadLayoutOneFrameComponent& layoutJson = pig::World::GetRegistry().emplace<pig::ui::LoadLayoutOneFrameComponent>(pig::World::GetRegistry().create());
-			
+			pig::ui::LoadLayoutOneFrameComponent& layoutJson = pig::World::GetRegistryDirect().emplace<pig::ui::LoadLayoutOneFrameComponent>(pig::World::GetRegistryDirect().create());
+
 			SECTION("Load single element image layout")
 			{
 				layoutJson.m_LayoutFilePath = "Assets/Test/TestUISmall1.json";
 				pig::World::Get().Update(pig::Timestep(0));
 
 				int elementCount = 0;
-				auto viewUI = pig::World::GetRegistry().view<const pig::ui::BaseComponent, const pig::ui::ImageComponent>();
+				auto viewUI = pig::World::GetRegistryDirect().view<const pig::ui::BaseComponent, const pig::ui::ImageComponent>();
 				for (auto ent : viewUI)
 				{
 					const pig::ui::BaseComponent& baseComponent = viewUI.get<pig::ui::BaseComponent>(ent);
@@ -755,7 +754,7 @@ namespace CatchTestsetFail
 				pig::World::Get().Update(pig::Timestep(0));
 
 				int elementCount = 0;
-				auto viewUI = pig::World::GetRegistry().view<const pig::ui::BaseComponent, const pig::ui::TextComponent>();
+				auto viewUI = pig::World::GetRegistryDirect().view<const pig::ui::BaseComponent, const pig::ui::TextComponent>();
 				for (auto ent : viewUI)
 				{
 					const pig::ui::BaseComponent& baseComponent = viewUI.get<pig::ui::BaseComponent>(ent);
@@ -790,7 +789,7 @@ namespace CatchTestsetFail
 				entt::entity parentEntity = entt::null;
 				{
 					int elementCount = 0;
-					auto viewUI = pig::World::GetRegistry().view<const pig::ui::BaseComponent>(entt::exclude<pig::ui::TextComponent, pig::ui::ImageComponent>);
+					auto viewUI = pig::World::GetRegistryDirect().view<const pig::ui::BaseComponent>(entt::exclude<pig::ui::TextComponent, pig::ui::ImageComponent>);
 					for (auto ent : viewUI)
 					{
 						const pig::ui::BaseComponent& baseComponent = viewUI.get<pig::ui::BaseComponent>(ent);
@@ -810,7 +809,7 @@ namespace CatchTestsetFail
 
 				{
 					int elementCount = 0;
-					auto viewUI = pig::World::GetRegistry().view<const pig::ui::BaseComponent, const pig::ui::TextComponent>();
+					auto viewUI = pig::World::GetRegistryDirect().view<const pig::ui::BaseComponent, const pig::ui::TextComponent>();
 					for (auto ent : viewUI)
 					{
 						const pig::ui::BaseComponent& baseComponent = viewUI.get<pig::ui::BaseComponent>(ent);
@@ -833,7 +832,7 @@ namespace CatchTestsetFail
 				}
 				{
 					int elementCount = 0;
-					auto viewUI = pig::World::GetRegistry().view<const pig::ui::BaseComponent, const pig::ui::ImageComponent>();
+					auto viewUI = pig::World::GetRegistryDirect().view<const pig::ui::BaseComponent, const pig::ui::ImageComponent>();
 					for (auto ent : viewUI)
 					{
 						const pig::ui::BaseComponent& baseComponent = viewUI.get<pig::ui::BaseComponent>(ent);

@@ -49,16 +49,14 @@ file(GLOB UI
 
 file(GLOB ECS_WORLD
     "Pigeon/ECS/System.h"
+    "Pigeon/ECS/CheckedRegistryAccessor.h"
+    "Pigeon/ECS/World.h"
     "Pigeon/ECS/World.cpp"
 )
 
-file(GLOB ECS_SYSTEMS
-    "Pigeon/ECS/Systems/TestSystem.cpp"
-)
+file(GLOB ECS_SYSTEMS)
 
-file(GLOB ECS_COMPONENTS
-    "Pigeon/ECS/Components/TestComponent.h"
-)
+file(GLOB ECS_COMPONENTS)
 
 file(GLOB PLATFORM_WIN
     "Platform/Windows/WindowsWindow.cpp"

@@ -1,17 +1,16 @@
 #pragma once
 #include <entt/entt.hpp>
 #include "Pigeon/ECS/System.h"
+#include "ECS/Events/MoveEvent.h"
 
-namespace pig::ui
+namespace sbx
 {
-	class UIEventSystem : public pig::System
+	class TestSystem : public pig::System
 	{
 	public:
-		UIEventSystem() = default;
-		~UIEventSystem() = default;
+		TestSystem();
+		~TestSystem() = default;
 		void Update(const pig::Timestep& ts) override;
 		pig::SystemAccessDecl DeclareAccess() const override;
-	private:
-		void CleanOneFrameComponents(entt::registry& reg);
 	};
 }

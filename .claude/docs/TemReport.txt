@@ -1,0 +1,37 @@
+Task: Fix 2 blocking issues from ARTEM review + new ECS tests
+Iteration: 3
+Verdict: APPROVED
+
+--- BAS (application/engine) ---
+APPROVED
+
+Both fixes verified:
+1. UIEventSystem.cpp line 47: view<> now uses `const pig::InputStateSingletonComponent` — matches the readSet declaration. Correct.
+2. coding-guidelines.md: the stale disjoint-set bullet is replaced with the accurate "MAY overlap on same system" rule, with the rationale explained. Correct.
+
+One residual observation (non-blocking, pre-existing):
+[SUGGESTION] Code/PigeonLib/Pigeon/UI/UIEventSystem.cpp:61 — viewUI.get<pig::ui::BaseComponent>(ent) should be viewUI.get<const pig::ui::BaseComponent>(ent) for consistency with the const view; the current code compiles because EnTT allows dropping const on get<> against a const-qualified view, but const should be stated explicitly for clarity.
+
+--- DIMITRY (tests) ---
+APPROVED
+
+All five new test cases reviewed:
+
+Test 1 (WriterRunsBeforeReader, line 176): Correct. Registers ReaderSystem first (intentional), then WriterSystem. Seeds a CompA entity before registration so both systems have data. Asserts s_ReaderSawValue == k_WrittenValue after one Update — this is only possible if topological sort placed WriterSystem before ReaderSystem. Logic is sound.
+
+Test 2 (NotVisibleSameFrame, line 198): Correct. AdderSystem emplace_deferred's a CompB in frame 1; CheckerSystem must see 0 in that same frame and 1 after the flush at end-of-frame 1 (visible in frame 2). Two-frame verification pattern is correct.
+
+Test 3 (UndeclaredReadAsserts_DocumentedLimitation, line 226): Acceptable. PG_CORE_ASSERT calls __debugbreak and does not throw, so no automated Catch2 death-test is feasible without a throw-based assert hook. The limitation is honestly documented in the test body and in DimitryReport.txt. CHECK(true) placeholder is appropriate. No better alternative exists without modifying the engine's assert macro — which is out of scope.
+
+Test 4 (CycleDetection_DocumentedLimitation, line 239): Acceptable for the same reason as Test 3. The cycle-detection path in World::SortSystems() is verified by code inspection. Documentation is honest.
+
+Test 5 (WriteSetAndAddSetMayOverlap, line 252): Correct. OverlapSystem declares both writeSet={CompA} and addSet={CompA}. RegisterSystem must not assert — the one-writer check in World.cpp lines 87-99 compares only across different systems, so same-system overlap is explicitly permitted. Update performs both the write path (mutating existing CompA) and the deferred-add path. Frame 2 verifies the deferred entity was flushed and the count is 2. Logic is sound.
+
+Two observations on test-local system classes (non-blocking — test code only, not production code):
+[SUGGESTION] Code/UT/UT_Core/UT_ECSTest.cpp:102 — AdderSystem has a non-queue data member `bool m_Added`. In production code this would violate the "no data members except event queues" rule. Inside a test-local anonymous-namespace helper class it is acceptable, but the pattern must not be copied into production systems.
+[SUGGESTION] Code/UT/UT_Core/UT_ECSTest.cpp:157 — OverlapSystem has the same `bool m_Added` member. Same note as above.
+
+The GetRegistryDirect() fixture fix in UT_UISystemTest.cpp is confirmed throughout the file — no remaining GetRegistry() calls in setup/teardown paths exist.
+
+Summary:
+Both BAS fixes are correct and complete. All five new ECS test cases are logically sound, cover the intended invariants, and honestly document the two untestable assert paths. No blocking issues remain. The task is done.

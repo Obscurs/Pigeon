@@ -13,55 +13,73 @@ pig::ui::UIRenderSystem::UIRenderSystem(pig::S_Ptr<IUIRenderSystemHelper> helper
 {
 }
 
+pig::SystemAccessDecl pig::ui::UIRenderSystem::DeclareAccess() const
+{
+	pig::SystemAccessDecl decl;
+	decl.readSet = {
+		std::type_index(typeid(pig::ui::BaseComponent)),
+		std::type_index(typeid(pig::ui::ImageComponent)),
+		std::type_index(typeid(pig::ui::TextComponent)),
+		std::type_index(typeid(pig::ui::RendererConfig)),
+	};
+	decl.addSet = {
+		std::type_index(typeid(pig::ui::RendererConfig)),
+	};
+	return decl;
+}
+
 void pig::ui::UIRenderSystem::Update(const pig::Timestep& ts)
 {
-	auto viewRenderConfig = pig::World::GetRegistry().view<const pig::ui::RendererConfig>();
+	auto accessor = pig::World::GetRegistry();
+	entt::registry& reg = accessor.GetInternalRegistry();
+
+	auto viewRenderConfig = accessor.view<const pig::ui::RendererConfig>();
 	if (viewRenderConfig.size() == 0)
 	{
-		entt::entity configEntity = pig::World::GetRegistry().create();
-
-		pig::ui::RendererConfig& configComponent = pig::World::GetRegistry().emplace<pig::ui::RendererConfig>(configEntity);
-		configComponent.m_Font = m_Helper->CreateUIFont();
+		pig::ui::RendererConfig config;
+		config.m_Font = m_Helper->CreateUIFont();
+		entt::entity configEntity = accessor.create();
+		accessor.emplace_deferred<pig::ui::RendererConfig>(configEntity, std::move(config));
 		return;
 	}
 	PG_CORE_ASSERT(viewRenderConfig.size() == 1, "There should only be one ui render config component");
 	const pig::ui::RendererConfig& renderComponent = viewRenderConfig.get<const pig::ui::RendererConfig>(viewRenderConfig.front());
-	
+
 	m_Helper->RendererBeginScene(renderComponent.m_Camera);
-	auto viewImages = pig::World::GetRegistry().view<const pig::ui::BaseComponent, const pig::ui::ImageComponent>();
+	auto viewImages = accessor.view<const pig::ui::BaseComponent, const pig::ui::ImageComponent>();
 	for (auto ent : viewImages)
 	{
 		const pig::ui::BaseComponent& baseComponent = viewImages.get<pig::ui::BaseComponent>(ent);
-		if (pig::ui::IsUIElementEnabled(baseComponent))
+		if (pig::ui::IsUIElementEnabled(reg, baseComponent))
 		{
 			const pig::ui::ImageComponent& imageComponent = viewImages.get<pig::ui::ImageComponent>(ent);
 
-			const glm::mat4 transform = GetUIElementTransform(baseComponent, renderComponent, baseComponent.m_Size, baseComponent.m_Size);
+			const glm::mat4 transform = GetUIElementTransform(reg, baseComponent, renderComponent, baseComponent.m_Size, baseComponent.m_Size);
 			m_Helper->RendererDrawQuad(transform, imageComponent.m_TextureHandle, { 0.f,0.f,0.f });
 		}
 	}
 
-	auto viewText = pig::World::GetRegistry().view<const pig::ui::BaseComponent, const pig::ui::TextComponent>();
+	auto viewText = accessor.view<const pig::ui::BaseComponent, const pig::ui::TextComponent>();
 	for (auto ent : viewText)
 	{
 		const pig::ui::BaseComponent& baseComponent = viewText.get<pig::ui::BaseComponent>(ent);
-		if (pig::ui::IsUIElementEnabled(baseComponent))
+		if (pig::ui::IsUIElementEnabled(reg, baseComponent))
 		{
 			const pig::ui::TextComponent& textComponent = viewText.get<pig::ui::TextComponent>(ent);
 			const unsigned int numLines = m_Helper->GetStringNumLines(textComponent.m_Text, renderComponent.m_Font);
 			const glm::vec2 stringBounds = m_Helper->GetStringBounds(textComponent.m_Text, textComponent.m_Kerning, textComponent.m_Spacing, renderComponent.m_Font);
 			const float fontSize = GetFontSizeFromStringBounds(baseComponent, stringBounds, numLines);
-			const glm::mat4 transform = GetUIElementTransform(baseComponent, renderComponent, glm::vec2(fontSize, fontSize), glm::vec2(stringBounds.x * fontSize, stringBounds.y * fontSize * numLines));
+			const glm::mat4 transform = GetUIElementTransform(reg, baseComponent, renderComponent, glm::vec2(fontSize, fontSize), glm::vec2(stringBounds.x * fontSize, stringBounds.y * fontSize * numLines));
 			m_Helper->RendererDrawString(transform, textComponent.m_Text, renderComponent.m_Font, textComponent.m_Color, textComponent.m_Kerning, textComponent.m_Spacing);
 		}
 	}
 	m_Helper->RendererEndScene();
 }
 
-glm::mat4 pig::ui::UIRenderSystem::GetUIElementTransform(const pig::ui::BaseComponent& baseComponent, const pig::ui::RendererConfig& renderComponent, const glm::vec2& uiTransformScale, const glm::vec2& uiBoundsSize) const
+glm::mat4 pig::ui::UIRenderSystem::GetUIElementTransform(entt::registry& reg, const pig::ui::BaseComponent& baseComponent, const pig::ui::RendererConfig& renderComponent, const glm::vec2& uiTransformScale, const glm::vec2& uiBoundsSize) const
 {
 	int level = 0;
-	const glm::vec4 bounds = pig::ui::GetGlobalBoundsForElement(baseComponent, renderComponent, uiBoundsSize, level);
+	const glm::vec4 bounds = pig::ui::GetGlobalBoundsForElement(reg, baseComponent, renderComponent, uiBoundsSize, level);
 
 	glm::mat4 transform(1.f);
 	transform = glm::translate(transform, glm::vec3(bounds.x, bounds.y, level));
@@ -77,7 +95,7 @@ float pig::ui::UIRenderSystem::GetFontSizeFromStringBounds(const pig::ui::BaseCo
 	float fontSize = 0;
 	if (aspectUIBox > aspectStringBounds)
 	{
-		
+
 		fontSize = baseComponent.m_Size.y / (stringBounds.y * numLines);
 	}
 	else

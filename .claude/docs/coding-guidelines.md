@@ -119,7 +119,8 @@ private:
 ```cpp
 void GameStateChangeSystem::Update(const pig::Timestep& /*ts*/)
 {
-    entt::registry& registry = pig::World::GetRegistry();
+    // Inside Update(): use GetRegistry() — access assertions are active.
+    auto accessor = pig::World::GetRegistry();
 
     for (const GameLoadRequestEvent& event : m_LoadEvents)
     {
@@ -138,6 +139,40 @@ void GameStateChangeSystem::Update(const pig::Timestep& /*ts*/)
 }
 ```
 
+### Registry access outside of Update() (constructors, OnAttach, tooling)
+
+Outside of a system `Update()` — in constructors, `OnAttach`, `OnDetach`, serialization, or any non-system code — use `GetRegistryUnchecked()`. Using `GetRegistry()` outside `Update()` will fire a `PG_CORE_ASSERT`.
+
+```cpp
+MySystem::MySystem()
+{
+    // Outside Update(): use GetRegistryUnchecked() — no active-system assertion.
+    auto accessor = pig::World::GetRegistryUnchecked();
+    entt::entity e = accessor.create();
+    accessor.emplace<MyComponent>(e);
+}
+```
+
+### Access declarations (DeclareAccess)
+
+Every system should override `DeclareAccess()` to declare the components it reads, writes, or adds. Systems without an override receive no access enforcement (unchecked mode).
+
+```cpp
+pig::SystemAccessDecl MySystem::DeclareAccess() const
+{
+    pig::SystemAccessDecl decl;
+    decl.readSet  = { std::type_index(typeid(InputComponent)) };
+    decl.writeSet = { std::type_index(typeid(PositionComponent)) };
+    // addSet: components this system deferred-adds to NEW entities this frame
+    return decl;
+}
+```
+
+- `readSet`: components this system reads (via `view<>` or `get<>`).
+- `writeSet`: components this system modifies in-place this frame.
+- `addSet`: components this system attaches to entities via `emplace_deferred<>` (visible next frame).
+- A type MAY appear in both `writeSet` and `addSet` on the same system — this covers the case where one system both creates new instances of the component (deferred, via `addSet`) and modifies existing instances (immediate, via `writeSet`).
+
 ---
 
 ## New System Checklist
@@ -147,3 +182,5 @@ Before implementing a new system:
 1. Read `Documentation/<ModuleName>.info` — understand what this system does and how it relates to others.
 2. Inherit from `pig::System` and implement `Update(const pig::Timestep& ts)`.
 3. Implement required components (pure data structs, no logic, at least one member each).
+4. Override `DeclareAccess()` and populate `readSet`, `writeSet`, and `addSet` appropriately.
+5. Use `auto accessor = pig::World::GetRegistry()` inside `Update()`; use `GetRegistryUnchecked()` in constructors and `OnAttach`.

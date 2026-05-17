@@ -1,0 +1,31 @@
+Task: Fix existing test compile errors and write new ECS access-control / system-ordering tests
+Iteration: 1
+
+Test files:
+- Code/UT/UT_Core/UT_ECSTest.cpp  — Core.ECS::World, Core.ECS.SystemOrdering::WriterRunsBeforeReader,
+                                     Core.ECS.DeferredAdd::NotVisibleSameFrame,
+                                     Core.ECS.AccessControl::UndeclaredReadAsserts_DocumentedLimitation,
+                                     Core.ECS.SystemOrdering::CycleDetection_DocumentedLimitation,
+                                     Core.ECS.AccessControl::WriteSetAndAddSetMayOverlap
+- Code/UT/UT_UI/UT_UISystemTest.cpp — all pre-existing UI tests (compile fixes only, no new cases)
+
+Test results: PASS
+all 23 test cases pass (837 assertions)
+
+Expected behaviors (for BAS):
+- WriterSystem (writeSet={CompA}) must be topologically sorted before ReaderSystem (readSet={CompA})
+  even when ReaderSystem is registered first. After one World::Update(), ReaderSystem sees
+  the value written by WriterSystem in that same frame.
+- A component added via emplace_deferred is not visible within the same frame it is enqueued;
+  it becomes visible only after World::Update() has returned and FlushDeferredAdds has run,
+  i.e. in the following frame.
+- A system with overlapping writeSet and addSet on the same component type registers without
+  asserting, and its Update() may both mutate existing components via get<> and enqueue new
+  entities via emplace_deferred without any assertions firing.
+- Tests 3 and 4 (undeclared-component read, cycle detection) are documented as limitations:
+  PG_CORE_ASSERT does not throw in the Testing configuration, so automated Catch2 death checks
+  are not feasible. The invariants are enforced in CheckedRegistryAccessor::assertReadOrWrite<>()
+  and World::SortSystems() respectively, and are verified by code inspection.
+
+Bugs found:
+- none
