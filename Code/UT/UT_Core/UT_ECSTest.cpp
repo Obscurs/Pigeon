@@ -215,37 +215,6 @@ namespace CatchTestsetFail
 		CHECK(s_CheckerSawCount == 1);
 	}
 
-	// Test 3: reading a component not declared in readSet fires PG_CORE_ASSERT.
-	// PG_CORE_ASSERT does not throw in this project (it logs and calls __debugbreak,
-	// which is a no-op under TESTS_ENABLED). There is no catchable exception mechanism
-	// for plain asserts. This test is therefore documented as a compile-time-verified
-	// invariant: the CheckedRegistryAccessor template enforces access at compile time
-	// via the assertReadOrWrite<> helper called inside view<>().
-	// Runtime enforcement is verified by code inspection of CheckedRegistryAccessor.h.
-	// No Catch2 REQUIRE_THROWS test is possible for PG_CORE_ASSERT violations.
-	TEST_CASE("Core.ECS.AccessControl::UndeclaredReadAsserts_DocumentedLimitation")
-	{
-		// This test exists to document the limitation.
-		// PG_CORE_ASSERT fires __debugbreak (no-op in Testing) and does not throw,
-		// so no automated death/exception check is feasible with Catch2 here.
-		// The invariant is enforced at the call site in CheckedRegistryAccessor::assertReadOrWrite<>().
-		CHECK(true); // placeholder — test documents the limitation only
-	}
-
-	// Test 4: a dependency cycle between two systems triggers PG_CORE_ASSERT in SortSystems.
-	// Same limitation as Test 3 — PG_CORE_ASSERT does not throw.
-	// Documented here as a known limitation; cycle detection is verified by code inspection
-	// of World::SortSystems().
-	TEST_CASE("Core.ECS.SystemOrdering::CycleDetection_DocumentedLimitation")
-	{
-		// This test exists to document the limitation.
-		// SystemX: writeSet={CompA}, readSet={CompB}
-		// SystemY: writeSet={CompB}, readSet={CompA}
-		// These form a cycle. PG_CORE_ASSERT fires but does not throw.
-		// No automated Catch2 check is feasible without a throw-based assert variant.
-		CHECK(true); // placeholder — test documents the limitation only
-	}
-
 	// Test 5: a system declaring both writeSet={CompA} and addSet={CompA} registers
 	// successfully and can both mutate existing CompA components and deferred-add new ones
 	// in the same Update() without any assertions firing.

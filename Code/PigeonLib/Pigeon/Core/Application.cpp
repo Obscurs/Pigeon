@@ -2,8 +2,19 @@
 
 #include "Application.h"
 
+#include "Pigeon/Core/CameraSystem.h"
 #include "Pigeon/Core/InputLayer.h"
+#include "Pigeon/Core/KeyPressedEventComponent.h"
+#include "Pigeon/Core/KeyReleasedEventComponent.h"
+#include "Pigeon/Core/KeyTypedEventComponent.h"
 #include "Pigeon/Core/Log.h"
+#include "Pigeon/Core/MouseButtonPressedEventComponent.h"
+#include "Pigeon/Core/MouseButtonReleasedEventComponent.h"
+#include "Pigeon/Core/MouseMovedEventComponent.h"
+#include "Pigeon/Core/MouseScrolledEventComponent.h"
+#include "Pigeon/Core/OrthographicCameraComponent.h"
+#include "Pigeon/Core/WindowCloseEventComponent.h"
+#include "Pigeon/Core/WindowResizeEventComponent.h"
 #include "Pigeon/ECS/World.h"
 #include "Pigeon/Events/ApplicationEvent.h"
 #include "Pigeon/ImGui/ImGuiLayer.h"
@@ -37,18 +48,85 @@ void pig::Application::OnEvent(const pig::Event& e)
 {
 	if (m_Data.m_Initialized)
 	{
-		pig::EventDispatcher::Dispatch<pig::WindowCloseEvent>(e, pig::BindEventFn<&Application::OnWindowClose, Application>(this));
-		pig::EventDispatcher::Dispatch<pig::WindowResizeEvent>(e, pig::BindEventFn<&Application::OnWindowResize, Application>(this));
+		if (e.GetEventType() == pig::WindowResizeEvent::GetStaticType())
+		{
+			OnWindowResize(dynamic_cast<const pig::WindowResizeEvent&>(e));
+		}
+		else if (e.GetEventType() == pig::WindowCloseEvent::GetStaticType())
+		{
+			OnWindowClose(dynamic_cast<const pig::WindowCloseEvent&>(e));
+		}
 
 		if (!m_Data.m_Minimized)
 		{
-			for (auto it = m_Data.m_LayerStack.rbegin(); it != m_Data.m_LayerStack.rend(); it++)
+			if (e.GetEventType() == pig::WindowResizeEvent::GetStaticType())
 			{
-				bool handled = (*it)->OnEvent(e);
-				if (handled)
-				{
-					break;
-				}
+				const pig::WindowResizeEvent& resolvedEvent = dynamic_cast<const pig::WindowResizeEvent&>(e);
+				pig::WindowResizeEventComponent comp;
+				comp.m_Height = resolvedEvent.GetHeight();
+				comp.m_Width = resolvedEvent.GetWidth();
+				pig::World::Get().EmplaceExternalEvent<pig::WindowResizeEventComponent>(std::move(comp));
+			}
+			else if (e.GetEventType() == pig::WindowCloseEvent::GetStaticType())
+			{
+				const pig::WindowCloseEvent& resolvedEvent = dynamic_cast<const pig::WindowCloseEvent&>(e);
+				pig::WindowCloseEventComponent comp;
+				pig::World::Get().EmplaceExternalEvent<pig::WindowCloseEventComponent>(std::move(comp));
+			}
+			else if (e.GetEventType() == pig::MouseButtonPressedEvent::GetStaticType())
+			{
+				const pig::MouseButtonPressedEvent& resolvedEvent = dynamic_cast<const pig::MouseButtonPressedEvent&>(e);
+				pig::MouseButtonPressedEventComponent comp;
+				comp.m_Button = resolvedEvent.GetMouseButton();
+				pig::World::Get().EmplaceExternalEvent<pig::MouseButtonPressedEventComponent>(std::move(comp));
+			}
+			else if (e.GetEventType() == pig::MouseButtonReleasedEvent::GetStaticType())
+			{
+				const pig::MouseButtonReleasedEvent& resolvedEvent = dynamic_cast<const pig::MouseButtonReleasedEvent&>(e);
+				pig::MouseButtonReleasedEventComponent comp;
+				comp.m_Button = resolvedEvent.GetMouseButton();
+				pig::World::Get().EmplaceExternalEvent<pig::MouseButtonReleasedEventComponent>(std::move(comp));
+			}
+			else if (e.GetEventType() == pig::MouseMovedEvent::GetStaticType())
+			{
+				const pig::MouseMovedEvent& resolvedEvent = dynamic_cast<const pig::MouseMovedEvent&>(e);
+				pig::MouseMovedEventComponent comp;
+				comp.m_MouseX = resolvedEvent.GetX();
+				comp.m_MouseY = resolvedEvent.GetY();
+				pig::World::Get().EmplaceExternalEvent<pig::MouseMovedEventComponent>(std::move(comp));
+			}
+			else if (e.GetEventType() == pig::MouseScrolledEvent::GetStaticType())
+			{
+				const pig::MouseScrolledEvent& resolvedEvent = dynamic_cast<const pig::MouseScrolledEvent&>(e);
+				pig::MouseScrolledEventComponent comp;
+				comp.m_XOffset = resolvedEvent.GetXOffset();
+				comp.m_YOffset = resolvedEvent.GetYOffset();
+				pig::World::Get().EmplaceExternalEvent<pig::MouseScrolledEventComponent>(std::move(comp));
+			}
+			else if (e.GetEventType() == pig::KeyPressedEvent::GetStaticType())
+			{
+				const pig::KeyPressedEvent& resolvedEvent = dynamic_cast<const pig::KeyPressedEvent&>(e);
+				pig::KeyPressedEventComponent comp;
+				comp.m_KeyCode = resolvedEvent.GetKeyCode();
+				pig::World::Get().EmplaceExternalEvent<pig::KeyPressedEventComponent>(std::move(comp));
+			}
+			else if (e.GetEventType() == pig::KeyReleasedEvent::GetStaticType())
+			{
+				const pig::KeyReleasedEvent& resolvedEvent = dynamic_cast<const pig::KeyReleasedEvent&>(e);
+				pig::KeyReleasedEventComponent comp;
+				comp.m_KeyCode = resolvedEvent.GetKeyCode();
+				pig::World::Get().EmplaceExternalEvent<pig::KeyReleasedEventComponent>(std::move(comp));
+			}
+			else if (e.GetEventType() == pig::KeyTypedEvent::GetStaticType())
+			{
+				const pig::KeyTypedEvent& resolvedEvent = dynamic_cast<const pig::KeyTypedEvent&>(e);
+				pig::KeyTypedEventComponent comp;
+				comp.m_KeyCode = resolvedEvent.GetKeyCode();
+				pig::World::Get().EmplaceExternalEvent<pig::KeyTypedEventComponent>(std::move(comp));
+			}
+			else
+			{
+				PG_CORE_ASSERT(false, "Event not implemented");
 			}
 		}
 	}
@@ -78,6 +156,7 @@ void pig::Application::Init()
 
 	//ARNAU TODO consider using something else instead of pointers?
 	//ARNAU TODO move system registration on a separate file and do proper system ordering
+	world.RegisterSystem(std::move(std::make_unique<pig::CameraSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pig::ui::UIControlSystem>(std::make_shared<pig::ui::UIControlSystemHelper>())));
 	world.RegisterSystem(std::move(std::make_unique<pig::ui::UIEventSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pig::ui::UIRenderSystem>(std::make_shared<pig::ui::UIRenderSystemHelper>())));

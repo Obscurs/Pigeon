@@ -12,8 +12,7 @@ namespace pig {
 	enum class EventType
 	{
 		None = 0,
-		WindowClose, WindowResize, WindowFocus, WindowLostFocus, WindowMoved,
-		AppTick, AppUpdate, AppRender,
+		WindowClose, WindowResize,
 		KeyPressed, KeyReleased, KeyTyped,
 		MouseButtonPressed, MouseButtonReleased, MouseMoved, MouseScrolled
 	};
@@ -23,12 +22,6 @@ namespace pig {
 		{EventType::None, "None"},
 		{EventType::WindowClose, "WindowClose"},
 		{EventType::WindowResize, "WindowResize"},
-		{EventType::WindowFocus, "WindowFocus"},
-		{EventType::WindowLostFocus, "WindowLostFocus"},
-		{EventType::WindowMoved, "WindowMoved"},
-		{EventType::AppTick, "AppTick"},
-		{EventType::AppUpdate, "AppUpdate"},
-		{EventType::AppRender, "AppRender"},
 		{EventType::KeyPressed, "KeyPressed"},
 		{EventType::KeyReleased, "KeyReleased"},
 		{EventType::KeyTyped, "KeyTyped"},

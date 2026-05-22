@@ -7,10 +7,6 @@
 
 pig::U_Ptr<pig::World> pig::World::s_Instance = nullptr;
 
-// ---- CheckedRegistryAccessor::pushDeferredAdd ----
-// Defined here (not in the header) to break the circular dependency:
-// CheckedRegistryAccessor.h cannot include World.h, because World.h includes
-// CheckedRegistryAccessor.h.
 void pig::CheckedRegistryAccessor::pushDeferredAdd(
 	entt::entity e, void* payload,
 	void(*apply)(entt::registry&, entt::entity, void*),
@@ -67,7 +63,7 @@ void pig::World::Update(const pig::Timestep& ts)
 		entry.system->Update(ts);
 		m_ActiveSystem = nullptr;
 	}
-
+	ClearEvents();
 	FlushDeferredAdds();
 }
 
@@ -88,13 +84,13 @@ void pig::World::RegisterSystem(std::unique_ptr<pig::System> system)
 	{
 		for (const auto& t : decl.writeSet)
 		{
-			PG_CORE_ASSERT(!entry.decl.writeSet.count(t) && !entry.decl.addSet.count(t),
-				"One-writer rule violated: two systems write or add the same component type");
+			PG_CORE_ASSERT(!entry.decl.writeSet.count(t),
+				"One-writer rule violated: two systems write the same component type");
 		}
 		for (const auto& t : decl.addSet)
 		{
-			PG_CORE_ASSERT(!entry.decl.writeSet.count(t) && !entry.decl.addSet.count(t),
-				"One-writer rule violated: two systems write or add the same component type");
+			PG_CORE_ASSERT(!entry.decl.addSet.count(t),
+				"One-writer rule violated: two systems add the same component type");
 		}
 	}
 
@@ -186,6 +182,15 @@ void pig::World::FlushDeferredAdds()
 		op.destroy(op.payload);
 	}
 	m_DeferredAdds.clear();
+}
+
+void pig::World::ClearEvents()
+{
+	auto view = m_Registry.view<const pig::EventComponent>();
+	for (auto ent : view)
+	{
+		m_Registry.destroy(ent);
+	}
 }
 
 // ---- World::Init ----

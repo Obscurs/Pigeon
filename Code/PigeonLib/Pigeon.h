@@ -7,7 +7,6 @@
 #include "Pigeon/Core/KeyCodes.h"
 #include "Pigeon/Core/Layer.h"
 #include "Pigeon/Core/Log.h"
-#include "Pigeon/Core/OrthographicCameraController.h"
 
 // ---Renderer------------------------
 #include "Pigeon/Renderer/Renderer.h"

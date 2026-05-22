@@ -7,6 +7,7 @@
 
 #include "Utils/TestApp.h"
 
+#include "Pigeon/Core/OrthographicCameraComponent.h"
 #include "Pigeon/Renderer/Font.h"
 #include "Pigeon/Renderer/MSDFData.h"
 #include <Pigeon/Renderer/OrthographicCamera.h>
@@ -27,7 +28,13 @@ namespace CatchTestsetFail
 
 		pig::Application& app = pig::CreateApplication();
 
-		pig::OrthographicCameraController cameraController(false, 1280.0f / 720.0f, 0.f);
+		pig::OrthographicCameraComponent cameraComponent;
+
+		cameraComponent.m_AspectRatio = 1280.0f / 720.0f;
+		cameraComponent.m_Camera = pig::OrthographicCamera(-cameraComponent.m_AspectRatio * cameraComponent.m_ZoomLevel, cameraComponent.m_AspectRatio * cameraComponent.m_ZoomLevel, -cameraComponent.m_ZoomLevel, cameraComponent.m_ZoomLevel);
+		cameraComponent.m_Rotation = false;
+		cameraComponent.m_ReactsToInput = true;
+		cameraComponent.m_CameraPosition.z = 0.f;
 
 		SECTION("Empty call")
 		{
@@ -39,12 +46,12 @@ namespace CatchTestsetFail
 			CHECK(data.m_TextureMap.size() == 1);
 
 			pig::Renderer2D::Clear({ 0.f, 0.f, 0.f, 1.f });
-			pig::Renderer2D::BeginScene(cameraController.GetCamera());
+			pig::Renderer2D::BeginScene(cameraComponent.m_Camera);
 			pig::Renderer2D::EndScene();
 		}
 		SECTION("Draw quad")
 		{
-			pig::Renderer2D::BeginScene(cameraController.GetCamera());
+			pig::Renderer2D::BeginScene(cameraComponent.m_Camera);
 
 			const glm::vec3 pos(4.f, 5.f, 6.f);
 			const glm::vec3 col(7.f, 8.f, 9.f);
@@ -62,7 +69,7 @@ namespace CatchTestsetFail
 		{
 			pig::UUID sampleTexture = pig::Renderer2D::AddTexture("Assets/Test/SampleTexture.png", pig::EMappedTextureType::eQuad);
 
-			pig::Renderer2D::BeginScene(cameraController.GetCamera());
+			pig::Renderer2D::BeginScene(cameraComponent.m_Camera);
 
 			const glm::vec3 pos(4.f, 5.f, 6.f);
 			const glm::vec3 col(7.f, 8.f, 9.f);
@@ -123,7 +130,7 @@ namespace CatchTestsetFail
 			CHECK(sprite.GetTransform() == transform2);
 
 			//Actual sprite draw
-			pig::Renderer2D::BeginScene(cameraController.GetCamera());
+			pig::Renderer2D::BeginScene(cameraComponent.m_Camera);
 			pig::Renderer2D::DrawSprite(sprite);
 			pig::Renderer2D::EndScene();
 
@@ -150,7 +157,14 @@ namespace CatchTestsetFail
 		{
 			pig::Application& app = pig::CreateApplication();
 
-			pig::OrthographicCameraController cameraController(false, 1280.0f / 720.0f, 0.f);
+			pig::OrthographicCameraComponent cameraComponent;
+
+			cameraComponent.m_AspectRatio = 1280.0f / 720.0f;
+			cameraComponent.m_Camera = pig::OrthographicCamera(-cameraComponent.m_AspectRatio * cameraComponent.m_ZoomLevel, cameraComponent.m_AspectRatio * cameraComponent.m_ZoomLevel, -cameraComponent.m_ZoomLevel, cameraComponent.m_ZoomLevel);
+			cameraComponent.m_Rotation = false;
+			cameraComponent.m_ReactsToInput = true;
+			cameraComponent.m_CameraPosition.z = 0.f;
+
 			const pig::Renderer2D::Data& data = pig::Renderer2D::GetData();
 
 			glm::vec3 pos(1.f, 2.f, 3.f);
@@ -169,7 +183,7 @@ namespace CatchTestsetFail
 			stringTransform = glm::translate(stringTransform, pos); // Apply translation
 			stringTransform = glm::scale(stringTransform, scale); // Apply scaling
 
-			pig::Renderer2D::BeginScene(cameraController.GetCamera());
+			pig::Renderer2D::BeginScene(cameraComponent.m_Camera);
 			pig::Renderer2D::DrawString(stringTransform, testText, testFont, glm::vec4(col, 1.0f), textConfig.x, textConfig.y);
 			pig::Renderer2D::EndScene();
 			
@@ -215,7 +229,14 @@ namespace CatchTestsetFail
 	{
 		pig::Application& app = pig::CreateApplication();
 
-		pig::OrthographicCameraController cameraController(false, 1280.0f / 720.0f, 0.f);
+		pig::OrthographicCameraComponent cameraComponent;
+
+		cameraComponent.m_AspectRatio = 1280.0f / 720.0f;
+		cameraComponent.m_Camera = pig::OrthographicCamera(-cameraComponent.m_AspectRatio * cameraComponent.m_ZoomLevel, cameraComponent.m_AspectRatio * cameraComponent.m_ZoomLevel, -cameraComponent.m_ZoomLevel, cameraComponent.m_ZoomLevel);
+		cameraComponent.m_Rotation = false;
+		cameraComponent.m_ReactsToInput = true;
+		cameraComponent.m_CameraPosition.z = 0.f;
+
 		const pig::Renderer2D::Data& data = pig::Renderer2D::GetData();
 
 		const glm::vec3 pos1(4.f, 5.f, 6.f);
@@ -295,7 +316,7 @@ namespace CatchTestsetFail
 		CHECK(it2->second.m_TextureType == pig::EMappedTextureType::eText);
 
 		pig::Renderer2D::Clear({ 0.f, 0.f, 0.f, 1.f });
-		pig::Renderer2D::BeginScene(cameraController.GetCamera());
+		pig::Renderer2D::BeginScene(cameraComponent.m_Camera);
 
 		pig::Renderer2D::DrawQuad(transform1, col1, origin1);
 		pig::Renderer2D::DrawQuad(transform1, sampleTexture1, origin2);

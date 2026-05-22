@@ -4,6 +4,7 @@
 #include <vector>
 #include <unordered_set>
 
+#include "Pigeon/Core/EventComponent.h"
 #include "Pigeon/ECS/System.h"
 #include "Pigeon/ECS/CheckedRegistryAccessor.h"
 
@@ -45,10 +46,33 @@ namespace pig
 		// Called by CheckedRegistryAccessor::emplace_deferred to buffer a deferred add.
 		void PushDeferredAdd(DeferredAdd op);
 
+		// Deferred add — asserts Component is in addSet, buffers the operation until end-of-frame.
+		template<typename Component, typename... Args>
+		void EmplaceExternalEvent(Args&&... args)
+		{
+			// Allocate the component value on the heap (unavoidable for type-erasure).
+			auto* payload = new Component(std::forward<Args>(args)...);
+
+			entt::entity e = m_Registry.create();
+			// Static template instantiations — no per-call heap allocation for the trampolines.
+			// Non-capturing lambdas are implicitly convertible to function pointers in C++17.
+			PushDeferredAdd({ e, payload,
+				+[](entt::registry& reg, entt::entity ent, void* p)
+				{
+					// Double-add assertion lives here where Component is in scope.
+					PG_CORE_ASSERT(!reg.all_of<Component>(ent),
+						"Deferred add: entity already has component");
+					reg.emplace<pig::EventComponent>(ent, std::move(*static_cast<pig::EventComponent*>(p)));
+					reg.emplace<Component>(ent, std::move(*static_cast<Component*>(p)));
+				},
+				+[](void* p) { delete static_cast<Component*>(p); } });
+		}
+
 	private:
 		void Init();
 		void SortSystems();
 		void FlushDeferredAdds();
+		void ClearEvents();
 
 		struct SystemEntry
 		{

@@ -1,31 +1,16 @@
-#pragma once
-
-#include "Pigeon/Core/Layer.h"
-#include "Pigeon/ECS/World.h"
-#include "Pigeon/Renderer/Buffer.h"
 #include "Pigeon/Core/OrthographicCameraController.h"
 #include "Pigeon/Core/UUID.h"
+#include "Pigeon/ECS/World.h"
+#include "Pigeon/Renderer/Font.h"
 #include "Pigeon/Renderer/Shader.h"
 #include "Pigeon/Renderer/Texture.h"
 
-namespace pig
-{
-	class Font;
-}
 namespace sbx
 {
-	class Sandbox2D : public pig::Layer
+	struct SampleUIComponent
 	{
-	public:
-		Sandbox2D();
-		~Sandbox2D() = default;
-
-		void OnUpdate(const pig::Timestep& ts) override;
-
-		virtual void OnImGuiRender() override;
-		bool OnEvent(const pig::Event& event) override;
-
-	private:
+		SampleUIComponent() = default;
+		SampleUIComponent(const SampleUIComponent&) = default;
 
 		pig::OrthographicCameraController m_CameraController;
 
@@ -53,4 +38,3 @@ namespace sbx
 		entt::entity m_UIEntity2{ entt::null };
 	};
 }
-

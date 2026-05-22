@@ -4,19 +4,30 @@ file(GLOB ROOT
 
 file(GLOB PGCORE
     "Pigeon/Core/Application.cpp"
+    "Pigeon/Core/CameraSystem.cpp"
+    "Pigeon/Core/Core.h"
+    "Pigeon/Core/Clock.h"
+    "Pigeon/Core/EntryPoint.h"
+    "Pigeon/Core/EventComponent.h"
+    "Pigeon/Core/Input.h"
     "Pigeon/Core/InputLayer.cpp"
+    "Pigeon/Core/KeyCodes.h"
+    "Pigeon/Core/KeyPressedEventComponent.h"
+    "Pigeon/Core/KeyReleasedEventComponent.h"
+    "Pigeon/Core/KeyTypedEventComponent.h"
     "Pigeon/Core/Layer.cpp"
     "Pigeon/Core/LayerStack.cpp"
     "Pigeon/Core/Log.cpp"
-    "Pigeon/Core/OrthographicCameraController.cpp"
-    "Pigeon/Core/UUID.cpp"
-    "Pigeon/Core/Core.h"
-    "Pigeon/Core/Clock.h"
-    "Pigeon/Core/Input.h"
-    "Pigeon/Core/EntryPoint.h"
-    "Pigeon/Core/KeyCodes.h"
+    "Pigeon/Core/MouseButtonPressedEventComponent.h"
+    "Pigeon/Core/MouseButtonReleasedEventComponent.h"
+    "Pigeon/Core/MouseMovedEventComponent.h"
+    "Pigeon/Core/MouseScrolledEventComponent.h"
+    "Pigeon/Core/OrthographicCameraComponent.h"
     "Pigeon/Core/Timestep.h"
+    "Pigeon/Core/UUID.cpp"
     "Pigeon/Core/Window.h"
+    "Pigeon/Core/WindowCloseEventComponent.h"
+    "Pigeon/Core/WindowResizeEventComponent.h"
 )
 
 file(GLOB PGIMGUI
@@ -27,6 +38,7 @@ file(GLOB RENDERER
     "Pigeon/Renderer/Buffer.cpp"
     "Pigeon/Renderer/Font.cpp"
     "Pigeon/Renderer/GraphicsContext.cpp"
+    "Pigeon/Renderer/MSDFData.h"
     "Pigeon/Renderer/OrthographicCamera.cpp"
     "Pigeon/Renderer/RenderCommand.cpp"
     "Pigeon/Renderer/Renderer.cpp"
@@ -35,7 +47,6 @@ file(GLOB RENDERER
     "Pigeon/Renderer/Shader.cpp"
     "Pigeon/Renderer/Sprite.cpp"
     "Pigeon/Renderer/Texture.cpp"
-    "Pigeon/Renderer/MSDFData.h"
 )
 
 file(GLOB UI

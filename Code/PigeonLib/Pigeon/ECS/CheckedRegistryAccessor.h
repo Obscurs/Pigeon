@@ -3,6 +3,7 @@
 #include <typeindex>
 
 #include "Pigeon/Core/Core.h"
+#include "Pigeon/Core/EventComponent.h"
 #include "Pigeon/ECS/System.h"
 
 // IMPORTANT: CheckedRegistryAccessor is a per-call transient. Do NOT store it across frames.
@@ -74,6 +75,31 @@ namespace pig
 					// Double-add assertion lives here where Component is in scope.
 					PG_CORE_ASSERT(!reg.all_of<Component>(ent),
 						"Deferred add: entity already has component");
+					reg.emplace<Component>(ent, std::move(*static_cast<Component*>(p)));
+				},
+				+[](void* p) { delete static_cast<Component*>(p); });
+		}
+
+		// Deferred add — asserts Component is in addSet, buffers the operation until end-of-frame.
+		template<typename Component, typename... Args>
+		void EmplaceEvent(Args&&... args)
+		{
+			PG_CORE_ASSERT(
+				m_Decl.addSet.count(std::type_index(typeid(Component))),
+				"System attempted deferred add of a component not in addSet");
+			// Allocate the component value on the heap (unavoidable for type-erasure).
+			auto* payload = new Component(std::forward<Args>(args)...);
+
+			entt::entity e = reg.create();
+			// Static template instantiations — no per-call heap allocation for the trampolines.
+			// Non-capturing lambdas are implicitly convertible to function pointers in C++17.
+			pushDeferredAdd(e, payload,
+				+[](entt::registry& reg, entt::entity ent, void* p)
+				{
+					// Double-add assertion lives here where Component is in scope.
+					PG_CORE_ASSERT(!reg.all_of<Component>(ent),
+						"Deferred add: entity already has component");
+					reg.emplace<pig::EventComponent>(ent, std::move(*static_cast<pig::EventComponent*>(p)));
 					reg.emplace<Component>(ent, std::move(*static_cast<Component*>(p)));
 				},
 				+[](void* p) { delete static_cast<Component*>(p); });

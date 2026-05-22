@@ -1,25 +1,10 @@
 file(GLOB SRCS
-    "SandboxApp.cpp"
+    "Sandbox/SampleUIComponent.h"
+    "Sandbox/SampleUISystem.cpp"
     "Sandbox2D.cpp"
 )
 
-file(GLOB ECS_SYSTEMS
-    "ECS/Systems/TestSystem.h"
-    "ECS/Systems/TestSystem.cpp"
-)
-
-file(GLOB ECS_COMPONENTS
-    "ECS/Components/TestComponent.h"
-)
-
-file(GLOB ECS_EVENTS
-    "ECS/Events/MoveEvent.h"
-)
-
 source_group("" FILES ${SRCS})
-source_group("ECS\\Systems" FILES ${ECS_SYSTEMS})
-source_group("ECS\\Components" FILES ${ECS_COMPONENTS})
-source_group("ECS\\Events" FILES ${ECS_EVENTS})
 
 # Properties->C/C++->General->Additional Include Directories
 include_directories (
@@ -56,10 +41,6 @@ target_link_libraries (
     spdlog
     glm
 )
-
-# Creates a folder "executables" and adds target 
-# project (app.vcproj) under it
-#set_property(TARGET app PROPERTY FOLDER "executables")
 
 # Properties->General->Output Directory
 set_target_properties(SandboxApp PROPERTIES
