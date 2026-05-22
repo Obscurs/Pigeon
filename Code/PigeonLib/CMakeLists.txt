@@ -50,8 +50,8 @@ file(GLOB RENDERER
 )
 
 file(GLOB UI
-    "Pigeon/UI/UIControlSystem.cpp"
     "Pigeon/UI/UIComponents.h"
+    "Pigeon/UI/UIControlSystem.cpp"
     "Pigeon/UI/UIEventSystem.cpp"
     "Pigeon/UI/UIHelpers.cpp"
     "Pigeon/UI/UILayoutSystemInterface.cpp"

@@ -186,13 +186,6 @@ void pig::Application::Update(const Timestep& ts)
 
 	for (pig::S_Ptr<pig::Layer> layer : m_Data.m_LayerStack)
 		layer->OnUpdate(ts);
-#ifndef TESTS_ENABLED
-	if (m_Data.m_ImGuiLayer->IsAttached())
-	{
-		for (pig::S_Ptr<pig::Layer> layer : m_Data.m_LayerStack)
-			layer->OnImGuiRender();
-	}
-#endif
 
 	pig::World::Get().Update(ts);
 

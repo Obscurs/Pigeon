@@ -47,7 +47,7 @@ namespace pig
 		static const unsigned int VERTEX_ATRIB_COUNT = 10;
 		static const unsigned int QUAD_VERTEX_COUNT = 4;
 		static const unsigned int QUAD_INDEX_COUNT = 6;
-		static const unsigned int BATCH_MAX_COUNT = 1000;
+		static const unsigned int BATCH_MAX_COUNT = 1000; //ARNAU TODO: this is hardcoded
 
 		struct Data
 		{
