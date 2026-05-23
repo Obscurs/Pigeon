@@ -22,6 +22,48 @@ namespace
 		file.close();
 		return ss.str();
 	}
+
+	void DestroyUI(pig::CheckedRegistryAccessor& accessor, entt::entity ent)
+	{
+		std::vector<entt::entity> children = pig::ui::GetUIChildrenForElement(accessor, ent);
+		for (entt::entity& child : children)
+		{
+			DestroyUI(accessor, child);
+		}
+		accessor.destroy_deferred(ent);
+	}
+
+	void CleanOneFrameComponents(pig::CheckedRegistryAccessor& accessor)
+	{
+		for (auto ent : accessor.view<const pig::ui::UIUpdateTransformOneFrameComponent>())
+		{
+			accessor.remove_deferred<pig::ui::UIUpdateTransformOneFrameComponent>(ent);
+		}
+		for (auto ent : accessor.view<const pig::ui::UIUpdateParentOneFrameComponent>())
+		{
+			accessor.remove_deferred<pig::ui::UIUpdateParentOneFrameComponent>(ent);
+		}
+		for (auto ent : accessor.view<const pig::ui::UIUpdateEnableOneFrameComponent>())
+		{
+			accessor.remove_deferred<pig::ui::UIUpdateEnableOneFrameComponent>(ent);
+		}
+		for (auto ent : accessor.view<const pig::ui::UIUpdateUUIDOneFrameComponent>())
+		{
+			accessor.remove_deferred<pig::ui::UIUpdateUUIDOneFrameComponent>(ent);
+		}
+		for (auto ent : accessor.view<const pig::ui::UIUpdateImageUUIDOneFrameComponent>())
+		{
+			accessor.remove_deferred<pig::ui::UIUpdateImageUUIDOneFrameComponent>(ent);
+		}
+		for (auto ent : accessor.view<const pig::ui::UIUpdateTextOneFrameComponent>())
+		{
+			accessor.remove_deferred<pig::ui::UIUpdateTextOneFrameComponent>(ent);
+		}
+		for (auto ent : accessor.view<const pig::ui::LoadLayoutOneFrameComponent>())
+		{
+			accessor.destroy_deferred(ent);
+		}
+	}
 }
 
 pig::ui::UIControlSystem::UIControlSystem(pig::S_Ptr<IUIControlSystemHelper> helper)
@@ -67,7 +109,6 @@ pig::SystemAccessDecl pig::ui::UIControlSystem::DeclareAccess() const
 void pig::ui::UIControlSystem::Update(const pig::Timestep& ts)
 {
 	auto accessor = pig::World::GetRegistry();
-	entt::registry& reg = accessor.GetInternalRegistry();
 
 	auto viewTransform = accessor.view<pig::ui::BaseComponent, const pig::ui::UIUpdateTransformOneFrameComponent>();
 	for (auto ent : viewTransform)
@@ -132,9 +173,9 @@ void pig::ui::UIControlSystem::Update(const pig::Timestep& ts)
 	auto viewDestroy = accessor.view<const pig::ui::UIDestroyOneFrameComponent>();
 	for (auto ent : viewDestroy)
 	{
-		DestroyUI(reg, ent);
+		DestroyUI(accessor, ent);
 	}
-	CleanOneFrameComponents(reg);
+	CleanOneFrameComponents(accessor);
 }
 
 void pig::ui::UIControlSystem::LoadLayoutFromFile(const std::string& path)
@@ -302,49 +343,6 @@ void pig::ui::UIControlSystem::ParseTextComponentFromJson(pig::CheckedRegistryAc
 		component.m_Text = jsonObject["string"].get<std::string>();
 	}
 	accessor.emplace_deferred<pig::ui::TextComponent>(ent, std::move(component));
-}
-
-void pig::ui::UIControlSystem::DestroyUI(entt::registry& reg, entt::entity ent)
-{
-	std::vector<entt::entity> children = pig::ui::GetUIChildrenForElement(reg, ent);
-	for (entt::entity& child : children)
-	{
-		DestroyUI(reg, child);
-	}
-	reg.destroy(ent);
-}
-
-void pig::ui::UIControlSystem::CleanOneFrameComponents(entt::registry& reg)
-{
-	//ARNAU TODO: automatize one frame components?
-	for (auto ent : reg.view<const pig::ui::UIUpdateTransformOneFrameComponent>())
-	{
-		reg.remove<pig::ui::UIUpdateTransformOneFrameComponent>(ent);
-	}
-	for (auto ent : reg.view<const pig::ui::UIUpdateParentOneFrameComponent>())
-	{
-		reg.remove<pig::ui::UIUpdateParentOneFrameComponent>(ent);
-	}
-	for (auto ent : reg.view<const pig::ui::UIUpdateEnableOneFrameComponent>())
-	{
-		reg.remove<pig::ui::UIUpdateEnableOneFrameComponent>(ent);
-	}
-	for (auto ent : reg.view<const pig::ui::UIUpdateUUIDOneFrameComponent>())
-	{
-		reg.remove<pig::ui::UIUpdateUUIDOneFrameComponent>(ent);
-	}
-	for (auto ent : reg.view<const pig::ui::UIUpdateImageUUIDOneFrameComponent>())
-	{
-		reg.remove<pig::ui::UIUpdateImageUUIDOneFrameComponent>(ent);
-	}
-	for (auto ent : reg.view<const pig::ui::UIUpdateTextOneFrameComponent>())
-	{
-		reg.remove<pig::ui::UIUpdateTextOneFrameComponent>(ent);
-	}
-	for (auto ent : reg.view<const pig::ui::LoadLayoutOneFrameComponent>())
-	{
-		reg.destroy(ent);
-	}
 }
 
 pig::UUID pig::ui::UIControlSystemHelper::CreateUIImageFromPath(const std::string& path)

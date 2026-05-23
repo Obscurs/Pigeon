@@ -10,7 +10,7 @@ file(GLOB PGCORE
     "Pigeon/Core/EntryPoint.h"
     "Pigeon/Core/EventComponent.h"
     "Pigeon/Core/Input.h"
-    "Pigeon/Core/InputLayer.cpp"
+    "Pigeon/Core/InputSystem.cpp"
     "Pigeon/Core/KeyCodes.h"
     "Pigeon/Core/KeyPressedEventComponent.h"
     "Pigeon/Core/KeyReleasedEventComponent.h"
@@ -54,7 +54,6 @@ file(GLOB UI
     "Pigeon/UI/UIControlSystem.cpp"
     "Pigeon/UI/UIEventSystem.cpp"
     "Pigeon/UI/UIHelpers.cpp"
-    "Pigeon/UI/UILayoutSystemInterface.cpp"
     "Pigeon/UI/UIRenderSystem.cpp"
 )
 

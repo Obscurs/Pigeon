@@ -7,7 +7,6 @@
 
 #include "Utils/TestApp.h"
 
-#include <Pigeon/Core/InputLayer.h>
 #include <Pigeon/Core/KeyCodes.h>
 
 #include <Pigeon/Renderer/OrthographicCamera.h>

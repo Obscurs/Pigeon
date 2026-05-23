@@ -7,12 +7,17 @@
 
 pig::U_Ptr<pig::World> pig::World::s_Instance = nullptr;
 
-void pig::CheckedRegistryAccessor::pushDeferredAdd(
+void pig::CheckedRegistryAccessor::pushDeferredRequest(
 	entt::entity e, void* payload,
 	void(*apply)(entt::registry&, entt::entity, void*),
 	void(*destroy)(void*))
 {
-	pig::World::Get().PushDeferredAdd({ e, payload, apply, destroy });
+	pig::World::Get().PushDeferredRequest({ e, payload, apply, destroy });
+}
+
+void pig::CheckedRegistryAccessor::pushDeferredDestroy(const entt::entity& e)
+{
+	pig::World::Get().PushDeferredDestroy(e);
 }
 
 // ---- World::GetRegistry ----
@@ -34,16 +39,19 @@ pig::CheckedRegistryAccessor pig::World::GetRegistry()
 	return CheckedRegistryAccessor(s_Instance->m_Registry, s_EmptyDecl);
 }
 
-// ---- World::GetRegistryDirect ----
 entt::registry& pig::World::GetRegistryDirect()
 {
 	return s_Instance->m_Registry;
 }
 
-// ---- World::PushDeferredAdd ----
-void pig::World::PushDeferredAdd(pig::DeferredAdd op)
+void pig::World::PushDeferredRequest(pig::DeferredRequest op)
 {
-	m_DeferredAdds.push_back(std::move(op));
+	m_DeferredRequests.push_back(std::move(op));
+}
+
+void pig::World::PushDeferredDestroy(const entt::entity& entity)
+{
+	m_DeferredDestroys.push_back(entity);
 }
 
 // ---- World::Update ----
@@ -64,7 +72,7 @@ void pig::World::Update(const pig::Timestep& ts)
 		m_ActiveSystem = nullptr;
 	}
 	ClearEvents();
-	FlushDeferredAdds();
+	FlushDeferredRequests();
 }
 
 // ---- World::RegisterSystem ----
@@ -169,19 +177,25 @@ void pig::World::SortSystems()
 	m_Systems = std::move(sorted);
 }
 
-// ---- World::FlushDeferredAdds ----
-void pig::World::FlushDeferredAdds()
+void pig::World::FlushDeferredRequests()
 {
 	// Must not be called while a system Update() is in progress.
-	PG_CORE_ASSERT(m_ActiveSystem == nullptr, "FlushDeferredAdds called during Update");
+	PG_CORE_ASSERT(m_ActiveSystem == nullptr, "FlushDeferredRequests called during Update");
 
-	for (auto& op : m_DeferredAdds)
+	for (auto& op : m_DeferredRequests)
 	{
 		if (m_Registry.valid(op.entity))
 			op.apply(m_Registry, op.entity, op.payload);
 		op.destroy(op.payload);
 	}
-	m_DeferredAdds.clear();
+	m_DeferredRequests.clear();
+
+	for (const entt::entity& entity : m_DeferredDestroys)
+	{
+		if (m_Registry.valid(entity))
+			m_Registry.destroy(entity);
+	}
+	m_DeferredDestroys.clear();
 }
 
 void pig::World::ClearEvents()
@@ -200,9 +214,9 @@ void pig::World::Init()
 	PG_CORE_ASSERT(!m_ActiveSystem, "Init called during Update");
 
 	// Clean up any outstanding deferred payloads to avoid leaks.
-	for (auto& op : m_DeferredAdds)
+	for (auto& op : m_DeferredRequests)
 		op.destroy(op.payload);
-	m_DeferredAdds.clear();
+	m_DeferredRequests.clear();
 
 	m_Sorted = false;
 

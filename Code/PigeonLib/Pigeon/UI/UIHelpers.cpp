@@ -2,15 +2,15 @@
 
 #include "Pigeon/UI/UIComponents.h"
 
-glm::vec4 pig::ui::GetGlobalBoundsForElementParent(entt::registry& reg, const pig::ui::BaseComponent& baseComponent, const pig::ui::RendererConfig& renderComponent, int& DEPRECATED_level)
+glm::vec4 pig::ui::GetGlobalBoundsForElementParent(pig::CheckedRegistryAccessor& accessor, const pig::ui::BaseComponent& baseComponent, const pig::ui::RendererConfig& renderComponent, int& DEPRECATED_level)
 {
 	glm::vec4 globalBounds(0.f, 0.f, renderComponent.m_Width, renderComponent.m_Height);
 
-	if (baseComponent.m_Parent != entt::null && reg.any_of<pig::ui::BaseComponent>(baseComponent.m_Parent))
+	if (baseComponent.m_Parent != entt::null && accessor.any_of<pig::ui::BaseComponent>(baseComponent.m_Parent))
 	{
-		const pig::ui::BaseComponent& parentComponent = reg.get<const pig::ui::BaseComponent>(baseComponent.m_Parent);
+		const pig::ui::BaseComponent& parentComponent = accessor.get<const pig::ui::BaseComponent>(baseComponent.m_Parent);
 		DEPRECATED_level += 1;
-		globalBounds = GetGlobalBoundsForElementParent(reg, parentComponent, renderComponent, DEPRECATED_level);
+		globalBounds = GetGlobalBoundsForElementParent(accessor, parentComponent, renderComponent, DEPRECATED_level);
 
 		if (parentComponent.m_HAlign == pig::ui::EHAlignType::eRight)
 		{
@@ -45,9 +45,9 @@ glm::vec4 pig::ui::GetGlobalBoundsForElementParent(entt::registry& reg, const pi
 	return globalBounds;
 }
 
-glm::vec4 pig::ui::GetGlobalBoundsForElement(entt::registry& reg, const pig::ui::BaseComponent& baseComponent, const pig::ui::RendererConfig& renderComponent, const glm::vec2& uiBoundsSize, int& DEPRECATED_level)
+glm::vec4 pig::ui::GetGlobalBoundsForElement(pig::CheckedRegistryAccessor& accessor, const pig::ui::BaseComponent& baseComponent, const pig::ui::RendererConfig& renderComponent, const glm::vec2& uiBoundsSize, int& DEPRECATED_level)
 {
-	const glm::vec4 bounds = pig::ui::GetGlobalBoundsForElementParent(reg, baseComponent, renderComponent, DEPRECATED_level);
+	const glm::vec4 bounds = pig::ui::GetGlobalBoundsForElementParent(accessor, baseComponent, renderComponent, DEPRECATED_level);
 	glm::vec2 posFinal = glm::vec2(bounds.x, bounds.y);
 
 	if (baseComponent.m_HAlign == EHAlignType::eRight)
@@ -78,24 +78,24 @@ glm::vec4 pig::ui::GetGlobalBoundsForElement(entt::registry& reg, const pig::ui:
 	return glm::vec4(posFinal, uiBoundsSize);
 }
 
-bool pig::ui::IsUIElementEnabled(entt::registry& reg, const pig::ui::BaseComponent& baseComponent)
+bool pig::ui::IsUIElementEnabled(pig::CheckedRegistryAccessor& accessor, const pig::ui::BaseComponent& baseComponent)
 {
 	bool enabled = baseComponent.m_Enabled;
 	entt::entity parentEntity = baseComponent.m_Parent;
 	while (enabled && parentEntity != entt::null)
 	{
-		PG_CORE_EXCEPT(reg.any_of<pig::ui::BaseComponent>(parentEntity), "parent entity does not have base component");
-		const pig::ui::BaseComponent& parentComponent = reg.get<const pig::ui::BaseComponent>(parentEntity);
+		PG_CORE_EXCEPT(accessor.any_of<pig::ui::BaseComponent>(parentEntity), "parent entity does not have base component");
+		const pig::ui::BaseComponent& parentComponent = accessor.get<const pig::ui::BaseComponent>(parentEntity);
 		enabled = parentComponent.m_Enabled;
 		parentEntity = parentComponent.m_Parent;
 	}
 	return enabled;
 }
 
-std::vector<entt::entity> pig::ui::GetUIChildrenForElement(entt::registry& reg, entt::entity ent)
+std::vector<entt::entity> pig::ui::GetUIChildrenForElement(pig::CheckedRegistryAccessor& accessor, entt::entity ent)
 {
 	std::vector<entt::entity> children{};
-	auto view = reg.view<const pig::ui::BaseComponent>();
+	auto view = accessor.view<const pig::ui::BaseComponent>();
 	for (auto child : view)
 	{
 		const pig::ui::BaseComponent& baseComponent = view.get<const pig::ui::BaseComponent>(child);

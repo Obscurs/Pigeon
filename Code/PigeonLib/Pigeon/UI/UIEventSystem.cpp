@@ -14,6 +14,25 @@ namespace
 	{
 		return pos.x >= bounds.x && pos.y >= bounds.y && pos.x <= bounds.x + bounds.z && pos.y <= bounds.y + bounds.w;
 	}
+
+	void CleanOneFrameComponents(pig::CheckedRegistryAccessor& accessor)
+	{
+		auto viewClick = accessor.view<const pig::ui::UIOnClickOneFrameComponent>();
+		for (auto ent : viewClick)
+		{
+			accessor.remove_deferred<pig::ui::UIOnClickOneFrameComponent>(ent);
+		}
+		auto viewHover = accessor.view<const pig::ui::UIOnHoverOneFrameComponent>();
+		for (auto ent : viewHover)
+		{
+			accessor.remove_deferred<pig::ui::UIOnHoverOneFrameComponent>(ent);
+		}
+		auto viewRelease = accessor.view<const pig::ui::UIOnReleaseOneFrameComponent>();
+		for (auto ent : viewRelease)
+		{
+			accessor.remove_deferred<pig::ui::UIOnReleaseOneFrameComponent>(ent);
+		}
+	}
 }
 
 pig::SystemAccessDecl pig::ui::UIEventSystem::DeclareAccess() const
@@ -23,8 +42,6 @@ pig::SystemAccessDecl pig::ui::UIEventSystem::DeclareAccess() const
 		std::type_index(typeid(pig::InputStateSingletonComponent)),
 		std::type_index(typeid(pig::ui::RendererConfig)),
 		std::type_index(typeid(pig::ui::BaseComponent)),
-	};
-	decl.writeSet = {
 		std::type_index(typeid(pig::ui::UIOnClickOneFrameComponent)),
 		std::type_index(typeid(pig::ui::UIOnHoverOneFrameComponent)),
 		std::type_index(typeid(pig::ui::UIOnReleaseOneFrameComponent)),
@@ -34,15 +51,15 @@ pig::SystemAccessDecl pig::ui::UIEventSystem::DeclareAccess() const
 		std::type_index(typeid(pig::ui::UIOnHoverOneFrameComponent)),
 		std::type_index(typeid(pig::ui::UIOnReleaseOneFrameComponent)),
 	};
+
 	return decl;
 }
 
 void pig::ui::UIEventSystem::Update(const pig::Timestep& ts)
 {
 	auto accessor = pig::World::GetRegistry();
-	entt::registry& reg = accessor.GetInternalRegistry();
 
-	CleanOneFrameComponents(reg);
+	CleanOneFrameComponents(accessor);
 
 	auto viewInput = accessor.view<const pig::InputStateSingletonComponent>();
 	if (viewInput.size() != 1)
@@ -59,10 +76,10 @@ void pig::ui::UIEventSystem::Update(const pig::Timestep& ts)
 	for (auto ent : viewUI)
 	{
 		const pig::ui::BaseComponent& baseComponent = viewUI.get<pig::ui::BaseComponent>(ent);
-		if (pig::ui::IsUIElementEnabled(reg, baseComponent))
+		if (pig::ui::IsUIElementEnabled(accessor, baseComponent))
 		{
 			int level = 0;
-			const glm::vec4 uiBounds = pig::ui::GetGlobalBoundsForElement(reg, baseComponent, renderComponent, baseComponent.m_Size, level);
+			const glm::vec4 uiBounds = pig::ui::GetGlobalBoundsForElement(accessor, baseComponent, renderComponent, baseComponent.m_Size, level);
 
 			if (IsPosInsideBounds(inputComponent.m_MousePos, uiBounds))
 			{
@@ -84,25 +101,5 @@ void pig::ui::UIEventSystem::Update(const pig::Timestep& ts)
 				}
 			}
 		}
-	}
-}
-
-void pig::ui::UIEventSystem::CleanOneFrameComponents(entt::registry& reg)
-{
-	//ARNAU TODO: automatize one frame components?
-	auto viewClick = reg.view<const pig::ui::UIOnClickOneFrameComponent>();
-	for (auto ent : viewClick)
-	{
-		reg.remove<pig::ui::UIOnClickOneFrameComponent>(ent);
-	}
-	auto viewHover = reg.view<const pig::ui::UIOnHoverOneFrameComponent>();
-	for (auto ent : viewHover)
-	{
-		reg.remove<pig::ui::UIOnHoverOneFrameComponent>(ent);
-	}
-	auto viewRelease = reg.view<const pig::ui::UIOnReleaseOneFrameComponent>();
-	for (auto ent : viewRelease)
-	{
-		reg.remove<pig::ui::UIOnReleaseOneFrameComponent>(ent);
 	}
 }

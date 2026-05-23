@@ -1,14 +1,13 @@
 #pragma once
-#include <entt/entt.hpp>
 #include "Pigeon/ECS/System.h"
 
-namespace pig::ui
+namespace pig
 {
-	class UIEventSystem : public pig::System
+	class InputSystem : public pig::System
 	{
 	public:
-		UIEventSystem() = default;
-		~UIEventSystem() = default;
+		InputSystem() = default;
+		~InputSystem() = default;
 		void Update(const pig::Timestep& ts) override;
 		pig::SystemAccessDecl DeclareAccess() const override;
 	};

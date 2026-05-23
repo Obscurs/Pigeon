@@ -69,13 +69,32 @@ namespace pig
 
 			// Static template instantiations — no per-call heap allocation for the trampolines.
 			// Non-capturing lambdas are implicitly convertible to function pointers in C++17.
-			pushDeferredAdd(e, payload,
+			pushDeferredRequest(e, payload,
 				+[](entt::registry& reg, entt::entity ent, void* p)
 				{
 					// Double-add assertion lives here where Component is in scope.
 					PG_CORE_ASSERT(!reg.all_of<Component>(ent),
 						"Deferred add: entity already has component");
 					reg.emplace<Component>(ent, std::move(*static_cast<Component*>(p)));
+				},
+				+[](void* p) { delete static_cast<Component*>(p); });
+		}
+
+		void destroy_deferred(const entt::entity& e)
+		{
+			pushDeferredDestroy(e);
+		}
+
+		// Deferred remove — buffers the operation until end-of-frame.
+		template<typename Component, typename... Args>
+		void remove_deferred(entt::entity e, Args&&... args)
+		{
+			auto* payload = new Component(std::forward<Args>(args)...);
+
+			pushDeferredRequest(e, payload,
+				+[](entt::registry& reg, entt::entity ent, void* p)
+				{
+					reg.remove<Component>(ent);
 				},
 				+[](void* p) { delete static_cast<Component*>(p); });
 		}
@@ -93,7 +112,7 @@ namespace pig
 			entt::entity e = reg.create();
 			// Static template instantiations — no per-call heap allocation for the trampolines.
 			// Non-capturing lambdas are implicitly convertible to function pointers in C++17.
-			pushDeferredAdd(e, payload,
+			pushDeferredRequest(e, payload,
 				+[](entt::registry& reg, entt::entity ent, void* p)
 				{
 					// Double-add assertion lives here where Component is in scope.
@@ -103,46 +122,6 @@ namespace pig
 					reg.emplace<Component>(ent, std::move(*static_cast<Component*>(p)));
 				},
 				+[](void* p) { delete static_cast<Component*>(p); });
-		}
-
-		// patch — asserts Component is in writeSet.
-		template<typename Component, typename... Func>
-		void patch(entt::entity e, Func&&... func)
-		{
-			PG_CORE_ASSERT(
-				m_Decl.writeSet.count(std::type_index(typeid(Component))),
-				"System attempted to patch a component not in writeSet");
-			m_Registry.patch<Component>(e, std::forward<Func>(func)...);
-		}
-
-		// replace — asserts Component is in writeSet.
-		template<typename Component>
-		Component& replace(entt::entity e, const Component& value)
-		{
-			PG_CORE_ASSERT(
-				m_Decl.writeSet.count(std::type_index(typeid(Component))),
-				"System attempted to replace a component not in writeSet");
-			return m_Registry.replace<Component>(e, value);
-		}
-
-		// erase — asserts Component is in writeSet.
-		template<typename Component>
-		void erase(entt::entity e)
-		{
-			PG_CORE_ASSERT(
-				m_Decl.writeSet.count(std::type_index(typeid(Component))),
-				"System attempted to erase a component not in writeSet");
-			m_Registry.erase<Component>(e);
-		}
-
-		// remove — asserts Component is in writeSet. remove<> returns the number of removed components.
-		template<typename Component>
-		size_t remove(entt::entity e)
-		{
-			PG_CORE_ASSERT(
-				m_Decl.writeSet.count(std::type_index(typeid(Component))),
-				"System attempted to remove a component not in writeSet");
-			return m_Registry.remove<Component>(e);
 		}
 
 		// Entity lifecycle — no component access restriction.
@@ -174,10 +153,6 @@ namespace pig
 			return m_Registry.all_of<Components...>(e);
 		}
 
-		// Expose the raw registry so system code can pass it to free helper functions that
-		// need registry access but are not systems themselves.
-		entt::registry& GetInternalRegistry() { return m_Registry; }
-
 	private:
 		template<typename Component>
 		void assertReadOrWrite()
@@ -189,9 +164,11 @@ namespace pig
 		}
 
 		// Defined out-of-line in World.cpp to avoid circular include with World.h.
-		void pushDeferredAdd(entt::entity e, void* payload,
+		void pushDeferredRequest(entt::entity e, void* payload,
 			void(*apply)(entt::registry&, entt::entity, void*),
 			void(*destroy)(void*));
+
+		void pushDeferredDestroy(const entt::entity& e);
 
 		entt::registry&  m_Registry;
 		SystemAccessDecl m_Decl;

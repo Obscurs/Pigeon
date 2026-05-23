@@ -10,7 +10,7 @@
 
 namespace pig
 {
-	struct DeferredAdd
+	struct DeferredRequest
 	{
 		entt::entity entity;
 		void*        payload;                                // heap-allocated component value
@@ -43,8 +43,8 @@ namespace pig
 
 		inline static entt::dispatcher& GetDispatcher() { return s_Instance->m_Dispatcher; }
 
-		// Called by CheckedRegistryAccessor::emplace_deferred to buffer a deferred add.
-		void PushDeferredAdd(DeferredAdd op);
+		void PushDeferredRequest(DeferredRequest op);
+		void PushDeferredDestroy(const entt::entity& entity);
 
 		// Deferred add — asserts Component is in addSet, buffers the operation until end-of-frame.
 		template<typename Component, typename... Args>
@@ -56,7 +56,7 @@ namespace pig
 			entt::entity e = m_Registry.create();
 			// Static template instantiations — no per-call heap allocation for the trampolines.
 			// Non-capturing lambdas are implicitly convertible to function pointers in C++17.
-			PushDeferredAdd({ e, payload,
+			PushDeferredRequest({ e, payload,
 				+[](entt::registry& reg, entt::entity ent, void* p)
 				{
 					// Double-add assertion lives here where Component is in scope.
@@ -71,7 +71,7 @@ namespace pig
 	private:
 		void Init();
 		void SortSystems();
-		void FlushDeferredAdds();
+		void FlushDeferredRequests();
 		void ClearEvents();
 
 		struct SystemEntry
@@ -92,8 +92,8 @@ namespace pig
 		bool m_Sorted = false;
 
 		// Buffer for deferred component adds (flushed after all systems Update()).
-		std::vector<DeferredAdd> m_DeferredAdds;
-
+		std::vector<DeferredRequest> m_DeferredRequests;
+		std::vector<entt::entity> m_DeferredDestroys;
 		static pig::U_Ptr<World> s_Instance;
 	};
 }

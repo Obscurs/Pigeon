@@ -33,16 +33,11 @@ namespace pig::ui
 		void Update(const pig::Timestep& ts) override;
 		pig::SystemAccessDecl DeclareAccess() const override;
 	private:
-		//ARNAU TODO: this clean should not be in this system, rethink
-		void CleanOneFrameComponents(entt::registry& reg);
-
 		void LoadLayoutFromFile(const std::string& path);
 		void ParseJsonUIElement(pig::CheckedRegistryAccessor& accessor, const json& jsonObject, entt::entity parent);
 		void ParseBaseComponentFromJson(pig::CheckedRegistryAccessor& accessor, const json& jsonObject, entt::entity ent, entt::entity parent);
 		void ParseImageComponentFromJson(pig::CheckedRegistryAccessor& accessor, const json& jsonObject, entt::entity ent);
 		void ParseTextComponentFromJson(pig::CheckedRegistryAccessor& accessor, const json& jsonObject, entt::entity ent);
-
-		void DestroyUI(entt::registry& reg, entt::entity ent);
 
 		pig::S_Ptr<IUIControlSystemHelper> m_Helper;
 	};
