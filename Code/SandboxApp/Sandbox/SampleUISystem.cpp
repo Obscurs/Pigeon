@@ -12,7 +12,6 @@
 
 namespace
 {
-	static const char* s_SampleTexturePath = "Assets/Textures/Checkerboard.png";
 	static const char* s_SampleFontPath = "Assets/Fonts/opensans/OpenSans-Regular.ttf";
 }
 
@@ -20,19 +19,17 @@ pig::SystemAccessDecl sbx::SampleUISystem::DeclareAccess() const
 {
 	pig::SystemAccessDecl decl;
 	decl.writeSet = {
-		std::type_index(typeid(pig::ui::BaseComponent)),
-		std::type_index(typeid(pig::ui::ImageComponent)),
-		std::type_index(typeid(pig::ui::TextComponent)),
 		std::type_index(typeid(sbx::SampleUIComponent)),
 	};
 	decl.addSet = {
 		std::type_index(typeid(pig::OrthographicCameraComponent)),
-		std::type_index(typeid(pig::ui::BaseComponent)),
-		std::type_index(typeid(pig::ui::ImageComponent)),
-		std::type_index(typeid(pig::ui::TextComponent)),
+		std::type_index(typeid(pig::ui::LoadLayoutOneFrameComponent)),
 		std::type_index(typeid(sbx::SampleUIComponent)),
 	};
 	decl.readSet = {
+		std::type_index(typeid(pig::ui::BaseComponent)),
+		std::type_index(typeid(pig::ui::ImageComponent)),
+		std::type_index(typeid(pig::ui::TextComponent)),
 		std::type_index(typeid(pig::OrthographicCameraComponent)),
 	};
 	return decl;
@@ -49,6 +46,8 @@ void sbx::SampleUISystem::Update(const pig::Timestep& ts)
 		entt::entity entity = accessor.create();
 
 		entt::entity cameraEntity = accessor.create();
+		entt::entity layoutEntity = accessor.create();
+
 		pig::OrthographicCameraComponent cameraComponent;
 
 		cameraComponent.m_AspectRatio = 1280.0f / 720.0f;
@@ -71,40 +70,22 @@ void sbx::SampleUISystem::Update(const pig::Timestep& ts)
 		component.m_ScaleText = glm::vec3(0.3f, 0.3f, 1.f);
 		component.m_ColorText = glm::vec3(1.f, 0.f, 0.f);
 
-		component.m_TextureID1 = pig::Renderer2D::AddTexture(s_SampleTexturePath, pig::EMappedTextureType::eQuad);
 		component.m_Font = std::make_shared<pig::Font>(s_SampleFontPath);
-
-		component.m_UIEntity1 = accessor.create();
-		component.m_UIEntity2 = accessor.create();
-
-		pig::ui::BaseComponent baseComponent1;
-		pig::ui::BaseComponent baseComponent2;
-		pig::ui::TextComponent textComponent1;
-		pig::ui::ImageComponent imageComponent2;
-
-		baseComponent1.m_Parent = component.m_UIEntity2;
-		baseComponent1.m_Size = { 100.f, 100.f };
-		baseComponent2.m_Size = { 400.f, 400.f };
-		baseComponent1.m_HAlign = pig::ui::EHAlignType::eCenter;
-		baseComponent1.m_VAlign = pig::ui::EVAlignType::eCenter;
-
-		textComponent1.m_Text = "Sample\nUI";
-		textComponent1.m_Kerning = 0.1f;
-		textComponent1.m_Spacing = 0.1f;
-		textComponent1.m_Color = { 0.f, 0.f, 1.f, 1.f };
-
-		imageComponent2.m_TextureHandle = component.m_TextureID1;
+		component.m_UUIDUI1 = pig::UUID("92345678-9abc-def0-1234-56789abcdef2");
+		component.m_UUIDUI1 = pig::UUID("92345678-9abc-def0-1234-56789abcdef1");
 
 		accessor.emplace_deferred<sbx::SampleUIComponent>(entity, std::move(component));
-		accessor.emplace_deferred<pig::ui::BaseComponent>(component.m_UIEntity1, std::move(baseComponent1));
-		accessor.emplace_deferred<pig::ui::BaseComponent>(component.m_UIEntity2, std::move(baseComponent2));
-		accessor.emplace_deferred<pig::ui::TextComponent>(component.m_UIEntity1, std::move(textComponent1));
-		accessor.emplace_deferred<pig::ui::ImageComponent>(component.m_UIEntity2, std::move(imageComponent2));
+
+		pig::ui::LoadLayoutOneFrameComponent layoutComponent;
+		layoutComponent.m_LayoutFilePath = "Assets/UI/SandboxUI.json";
+		accessor.emplace_deferred<pig::ui::LoadLayoutOneFrameComponent>(layoutEntity, std::move(layoutComponent));
+
 		accessor.emplace_deferred<pig::OrthographicCameraComponent>(cameraEntity, std::move(cameraComponent));
 	}
 	else
 	{
-		pig::Renderer2D::Clear({ 0.3f, 0.3f, 0.3f, 1.f });
+		//ARNAU TODO Move to render system
+		//pig::Renderer2D::Clear({ 0.3f, 0.3f, 0.3f, 1.f });
 		
 		auto viewCamera = accessor.view<const pig::OrthographicCameraComponent>();
 		bool init = false;
@@ -129,15 +110,24 @@ void sbx::SampleUISystem::Update(const pig::Timestep& ts)
 
 			pig::Renderer2D::DrawQuad(transformQuad1, component.m_ColorQuad1, glm::vec3(0.f, 0.f, 0.f));
 
-			const pig::Texture2D& texture = pig::Renderer2D::GetTexture(component.m_TextureID1);
+			auto viewImageUI = accessor.view<const pig::ui::BaseComponent, const pig::ui::ImageComponent>();
+			for (auto ent : viewImageUI)
+			{
+				const pig::ui::BaseComponent& baseComponent = viewImageUI.get<const pig::ui::BaseComponent>(ent);
+				const pig::ui::ImageComponent& imageComponent = viewImageUI.get<const pig::ui::ImageComponent>(ent);
+				if (baseComponent.m_UUID == pig::UUID("92345678-9abc-def0-1234-56789abcdef1"))
+				{
+					const pig::Texture2D& texture = pig::Renderer2D::GetTexture(imageComponent.m_TextureHandle);
 
-			const glm::vec4 texCoordsRect = texture.GetTexCoordsRect(glm::vec2(512, 128), glm::vec2(128, 256)); //B5 C5
+					const glm::vec4 texCoordsRect = texture.GetTexCoordsRect(glm::vec2(512, 128), glm::vec2(128, 256)); //B5 C5
 
-			glm::mat4 transformQuad2(1.f);
-			transformQuad2 = glm::translate(transformQuad2, component.m_PosQuad2);
-			transformQuad2 = glm::scale(transformQuad2, component.m_ScaleQuad2);
-			pig::Sprite sprite(transformQuad2, texCoordsRect, component.m_TextureID1, component.m_OriginQuad2);
-			pig::Renderer2D::DrawSprite(sprite);
+					glm::mat4 transformQuad2(1.f);
+					transformQuad2 = glm::translate(transformQuad2, component.m_PosQuad2);
+					transformQuad2 = glm::scale(transformQuad2, component.m_ScaleQuad2);
+					pig::Sprite sprite(transformQuad2, texCoordsRect, imageComponent.m_TextureHandle, component.m_OriginQuad2);
+					pig::Renderer2D::DrawSprite(sprite);
+				}
+			}
 
 			std::string textString("This is a fucking text\nEven with multiple lines");
 
@@ -179,4 +169,5 @@ void sbx::SampleUISystem::Update(const pig::Timestep& ts)
 			ImGui::End();
 		}
 	}
+	
 }

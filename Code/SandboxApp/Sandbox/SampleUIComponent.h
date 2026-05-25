@@ -26,12 +26,9 @@ namespace sbx
 		glm::vec3 m_OriginQuad1 { 0.f,0.f,0.f };
 		glm::vec3 m_OriginQuad2 { 0.f,0.f,0.f };
 
-		pig::S_Ptr<pig::Texture2D> m_Texture;
-
-		pig::UUID m_TextureID1{};
 		pig::S_Ptr<pig::Font> m_Font;
 
-		entt::entity m_UIEntity1{ entt::null };
-		entt::entity m_UIEntity2{ entt::null };
+		pig::UUID m_UUIDUI1;
+		entt::entity m_UUIDUI2;
 	};
 }
