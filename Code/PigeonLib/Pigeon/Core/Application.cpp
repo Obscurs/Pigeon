@@ -19,7 +19,7 @@
 #include "Pigeon/Events/ApplicationEvent.h"
 #include "Pigeon/ImGui/ImGuiLayer.h"
 #include "Pigeon/Renderer/Renderer.h"
-#include "Pigeon/Renderer/Renderer2D.h"
+#include "Pigeon/Renderer/Renderer2DSystem.h"
 #include "Pigeon/UI/UIControlSystem.h"
 #include "Pigeon/UI/UIEventSystem.h"
 #include "Pigeon/UI/UIRenderSystem.h"
@@ -145,7 +145,6 @@ void pig::Application::Run()
 void pig::Application::Shutdown()
 {	
 	m_Data.m_LayerStack.Shutdown();
-	pig::Renderer2D::Destroy();
 }
 
 void pig::Application::Init()
@@ -156,12 +155,12 @@ void pig::Application::Init()
 
 	world.RegisterSystem(std::move(std::make_unique<pig::CameraSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pig::InputSystem>()));
-	world.RegisterSystem(std::move(std::make_unique<pig::ui::UIControlSystem>(std::make_shared<pig::ui::UIControlSystemHelper>())));
+	world.RegisterSystem(std::move(std::make_unique<pig::Renderer2DSystem>()));
+	world.RegisterSystem(std::move(std::make_unique<pig::ui::UIControlSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pig::ui::UIEventSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pig::ui::UIRenderSystem>(std::make_shared<pig::ui::UIRenderSystemHelper>())));
 
 	pig::Renderer::Init();
-	pig::Renderer2D::Init();
 
 #ifndef TESTS_ENABLED
 	m_Data.m_ImGuiLayer = std::make_shared<ImGuiLayer>();
@@ -194,7 +193,6 @@ void pig::Application::Update(const Timestep& ts)
 
 bool pig::Application::OnWindowClose(const pig::WindowCloseEvent& e)
 {
-	pig::Renderer2D::Destroy();
 	m_Data.m_Running = false;
 	return false;
 }

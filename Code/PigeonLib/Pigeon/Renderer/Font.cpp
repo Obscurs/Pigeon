@@ -2,8 +2,8 @@
 
 #include "Font.h"
 
+#include "Pigeon/Renderer/AddUIFontTextureInFrameEvent.h"
 #include "Pigeon/Renderer/MSDFData.h"
-#include "Pigeon/Renderer/Renderer2D.h"
 #include "FontGeometry.h"
 #include "GlyphGeometry.h"
 
@@ -26,8 +26,8 @@ namespace
 }
 
 template<typename T, typename S, int N, msdf_atlas::GeneratorFunction<S, N> GenFunc>
-pig::UUID CreateAndCacheAtlas(float fontSize, const std::vector<msdf_atlas::GlyphGeometry>& glyphs,
-	const msdf_atlas::FontGeometry& fontGeometry, uint32_t width, uint32_t height)
+void CreateAndCacheAtlas(float fontSize, const std::vector<msdf_atlas::GlyphGeometry>& glyphs,
+	const msdf_atlas::FontGeometry& fontGeometry, uint32_t width, uint32_t height, pig::TextureData& result)
 {
 	msdf_atlas::GeneratorAttributes attributes;
 	attributes.config.overlapSupport = true;
@@ -40,10 +40,16 @@ pig::UUID CreateAndCacheAtlas(float fontSize, const std::vector<msdf_atlas::Glyp
 
 	msdfgen::BitmapConstRef<T, N> bitmap = (msdfgen::BitmapConstRef<T, N>)generator.atlasStorage();
 	const unsigned char* data = bitmap.pixels;
-	return pig::Renderer2D::AddTexture(bitmap.width, bitmap.height, 3, data, pig::EMappedTextureType::eText);
+
+	result.m_TextureID = pig::UUID::Generate();
+	result.m_Texture = pig::Texture2D::Create(bitmap.width, bitmap.height, 3, data);
+	result.m_Width = bitmap.width;
+	result.m_Height = bitmap.height;
+	result.m_Channels = 3;
+	result.m_TextureType = pig::EMappedTextureType::eText;
 }
 
-pig::Font::Font(const std::filesystem::path& filepath)
+pig::Font::Font(const std::filesystem::path& filepath, pig::TextureData& textureData)
 	: m_Data(new pig::MSDFData())
 {
 	msdfgen::FreetypeHandle* ft = msdfgen::initializeFreetype();
@@ -106,8 +112,8 @@ pig::Font::Font(const std::filesystem::path& filepath)
 		}
 	}
 	
-	m_FontID = CreateAndCacheAtlas<uint8_t, float, 3, msdf_atlas::msdfGenerator>((float)emSize, m_Data->Glyphs, m_Data->FontGeometry, width, height);
-
+	CreateAndCacheAtlas<uint8_t, float, 3, msdf_atlas::msdfGenerator>((float)emSize, m_Data->Glyphs, m_Data->FontGeometry, width, height, textureData);
+	m_FontID = textureData.m_TextureID;
 	//Uncomment to test single character
 	/*
 	msdfgen::Shape shape;

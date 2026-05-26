@@ -1,11 +1,11 @@
 #include "UIControlSystem.h"
 
+#include "Pigeon/Renderer/AddUITextureInFrameEvent.h"
 #include "Pigeon/UI/UIComponents.h"
 #include "Pigeon/UI/UIHelpers.h"
 
 #include "Pigeon/ECS/World.h"
 #include "Pigeon/ECS/CheckedRegistryAccessor.h"
-#include "Pigeon/Renderer/Renderer2D.h"
 
 namespace
 {
@@ -66,11 +66,6 @@ namespace
 	}
 }
 
-pig::ui::UIControlSystem::UIControlSystem(pig::S_Ptr<IUIControlSystemHelper> helper)
-	: m_Helper(helper)
-{
-}
-
 pig::SystemAccessDecl pig::ui::UIControlSystem::DeclareAccess() const
 {
 	pig::SystemAccessDecl decl;
@@ -102,6 +97,9 @@ pig::SystemAccessDecl pig::ui::UIControlSystem::DeclareAccess() const
 		std::type_index(typeid(pig::ui::BaseComponent)),
 		std::type_index(typeid(pig::ui::ImageComponent)),
 		std::type_index(typeid(pig::ui::TextComponent)),
+	};
+	decl.inframeAddSet = {
+		std::type_index(typeid(pig::AddUITextureInFrameEvent)),
 	};
 	return decl;
 }
@@ -299,8 +297,15 @@ void pig::ui::UIControlSystem::ParseImageComponentFromJson(pig::CheckedRegistryA
 	if (jsonObject.contains("path"))
 	{
 		PG_CORE_EXCEPT(jsonObject["path"].is_string(), "unable to parse json, image path is not a string");
-		component.m_TextureHandle = m_Helper->CreateUIImageFromPath(jsonObject["path"].get<std::string>());
+		pig::AddUITextureInFrameEvent uiTextureEvent;
+		uiTextureEvent.m_Path = jsonObject["path"].get<std::string>();
+		uiTextureEvent.m_IsVirtual = false;
+		uiTextureEvent.m_TextureData.m_TextureType = pig::EMappedTextureType::eQuad;
+		uiTextureEvent.m_TextureData.m_TextureID = pig::UUID::Generate();
+		accessor.EmplaceInframeEvent<pig::AddUITextureInFrameEvent>(std::move(uiTextureEvent));
+		component.m_TextureHandle = uiTextureEvent.m_TextureData.m_TextureID;
 	}
+	
 	accessor.emplace_deferred<pig::ui::ImageComponent>(ent, std::move(component));
 }
 
@@ -343,10 +348,4 @@ void pig::ui::UIControlSystem::ParseTextComponentFromJson(pig::CheckedRegistryAc
 		component.m_Text = jsonObject["string"].get<std::string>();
 	}
 	accessor.emplace_deferred<pig::ui::TextComponent>(ent, std::move(component));
-}
-
-pig::UUID pig::ui::UIControlSystemHelper::CreateUIImageFromPath(const std::string& path)
-{
-	//ARNAU TODO: maybe UI renderer should handle this, or have a image system
-	return pig::Renderer2D::AddTexture(path, pig::EMappedTextureType::eQuad);
 }

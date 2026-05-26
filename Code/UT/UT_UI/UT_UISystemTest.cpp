@@ -68,12 +68,6 @@ namespace
 			return m_LinesToReturn;
 		}
 
-		virtual pig::S_Ptr<pig::Font> CreateUIFont() override
-		{
-			m_FontCreated = true;
-			return nullptr;
-		}
-
 		void Reset()
 		{
 			m_SceneBegan = false;

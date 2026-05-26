@@ -4,9 +4,10 @@
 #include "Pigeon/UI/UIHelpers.h"
 
 #include "Pigeon/ECS/World.h"
-
+#include "Pigeon/Renderer/AddUIFontTextureInFrameEvent.h"
+#include "Pigeon/Renderer/DrawUIQuadInFrameEvent.h"
+#include "Pigeon/Renderer/DrawUIStringInFrameEvent.h"
 #include "Pigeon/Renderer/Font.h"
-#include <Pigeon/Renderer/Renderer2D.h>
 
 pig::ui::UIRenderSystem::UIRenderSystem(pig::S_Ptr<IUIRenderSystemHelper> helper)
 	: m_Helper(helper)
@@ -24,6 +25,11 @@ pig::SystemAccessDecl pig::ui::UIRenderSystem::DeclareAccess() const
 	};
 	decl.addSet = {
 		std::type_index(typeid(pig::ui::RendererConfig)),
+		std::type_index(typeid(pig::AddUIFontTextureInFrameEvent)),
+	};
+	decl.inframeAddSet = {
+		std::type_index(typeid(pig::DrawUIQuadInFrameEvent)),
+		std::type_index(typeid(pig::DrawUIStringInFrameEvent)),
 	};
 	return decl;
 }
@@ -36,15 +42,16 @@ void pig::ui::UIRenderSystem::Update(const pig::Timestep& ts)
 	if (viewRenderConfig.size() == 0)
 	{
 		pig::ui::RendererConfig config;
-		config.m_Font = m_Helper->CreateUIFont();
+		pig::AddUIFontTextureInFrameEvent textureEvent;
+		config.m_Font = std::make_shared<pig::Font>("Assets/Fonts/opensans/OpenSans-Regular.ttf", textureEvent.m_TextureData);
 		entt::entity configEntity = accessor.create();
 		accessor.emplace_deferred<pig::ui::RendererConfig>(configEntity, std::move(config));
+		accessor.EmplaceEvent<pig::AddUIFontTextureInFrameEvent>(std::move(textureEvent));
 		return;
 	}
 	PG_CORE_ASSERT(viewRenderConfig.size() == 1, "There should only be one ui render config component");
 	const pig::ui::RendererConfig& renderComponent = viewRenderConfig.get<const pig::ui::RendererConfig>(viewRenderConfig.front());
 
-	m_Helper->RendererBeginScene(renderComponent.m_Camera);
 	auto viewImages = accessor.view<const pig::ui::BaseComponent, const pig::ui::ImageComponent>();
 	for (auto ent : viewImages)
 	{
@@ -54,7 +61,12 @@ void pig::ui::UIRenderSystem::Update(const pig::Timestep& ts)
 			const pig::ui::ImageComponent& imageComponent = viewImages.get<pig::ui::ImageComponent>(ent);
 
 			const glm::mat4 transform = GetUIElementTransform(accessor, baseComponent, renderComponent, baseComponent.m_Size, baseComponent.m_Size);
-			m_Helper->RendererDrawQuad(transform, imageComponent.m_TextureHandle, { 0.f,0.f,0.f });
+			
+			pig::DrawUIQuadInFrameEvent quadEvent;
+			quadEvent.m_Transform = transform;
+			quadEvent.m_TextureID = imageComponent.m_TextureHandle;
+			quadEvent.m_Origin = { 0.f,0.f,0.f };
+			accessor.EmplaceInframeEvent<pig::DrawUIQuadInFrameEvent>(std::move(quadEvent));
 		}
 	}
 
@@ -69,10 +81,17 @@ void pig::ui::UIRenderSystem::Update(const pig::Timestep& ts)
 			const glm::vec2 stringBounds = m_Helper->GetStringBounds(textComponent.m_Text, textComponent.m_Kerning, textComponent.m_Spacing, renderComponent.m_Font);
 			const float fontSize = GetFontSizeFromStringBounds(baseComponent, stringBounds, numLines);
 			const glm::mat4 transform = GetUIElementTransform(accessor, baseComponent, renderComponent, glm::vec2(fontSize, fontSize), glm::vec2(stringBounds.x * fontSize, stringBounds.y * fontSize * numLines));
-			m_Helper->RendererDrawString(transform, textComponent.m_Text, renderComponent.m_Font, textComponent.m_Color, textComponent.m_Kerning, textComponent.m_Spacing);
+			
+			pig::DrawUIStringInFrameEvent stringEvent;
+			stringEvent.m_Transform = transform;
+			stringEvent.m_String = textComponent.m_Text;
+			stringEvent.m_Font = renderComponent.m_Font;
+			stringEvent.m_Color = textComponent.m_Color;
+			stringEvent.m_Kerning = textComponent.m_Kerning;
+			stringEvent.m_Linespacing = textComponent.m_Spacing;
+			accessor.EmplaceInframeEvent<pig::DrawUIStringInFrameEvent>(std::move(stringEvent));
 		}
 	}
-	m_Helper->RendererEndScene();
 }
 
 glm::mat4 pig::ui::UIRenderSystem::GetUIElementTransform(pig::CheckedRegistryAccessor& accessor, const pig::ui::BaseComponent& baseComponent, const pig::ui::RendererConfig& renderComponent, const glm::vec2& uiTransformScale, const glm::vec2& uiBoundsSize) const
@@ -103,34 +122,6 @@ float pig::ui::UIRenderSystem::GetFontSizeFromStringBounds(const pig::ui::BaseCo
 	}
 
 	return fontSize;
-}
-
-void pig::ui::UIRenderSystemHelper::RendererBeginScene(const pig::OrthographicCamera& camera)
-{
-	//ARNAU TODO Begin end scene in another system??? where do we do that?
-	pig::Renderer2D::Clear({ 0.0f, 0.0f, 0.0f, 0.f });
-	pig::Renderer2D::BeginScene(camera);
-}
-
-void pig::ui::UIRenderSystemHelper::RendererEndScene()
-{
-	pig::Renderer2D::EndScene();
-}
-
-void pig::ui::UIRenderSystemHelper::RendererDrawQuad(const glm::mat4& transform, const pig::UUID& textureID, const glm::vec3& origin)
-{
-	pig::Renderer2D::DrawQuad(transform, textureID, origin);
-}
-
-void pig::ui::UIRenderSystemHelper::RendererDrawString(const glm::mat4& transform, const std::string& string, pig::S_Ptr<pig::Font> font, const glm::vec4& color, float kerning, float linespacing)
-{
-	pig::Renderer2D::DrawString(transform, string, font, color, kerning, linespacing);
-}
-
-pig::S_Ptr<pig::Font> pig::ui::UIRenderSystemHelper::CreateUIFont()
-{
-	//ARNAU TODO get font path from system/component
-	return std::make_shared<pig::Font>("Assets/Fonts/opensans/OpenSans-Regular.ttf");
 }
 
 glm::vec2 pig::ui::UIRenderSystemHelper::GetStringBounds(const std::string& string, float kerning, float linespace, pig::S_Ptr<pig::Font> font)

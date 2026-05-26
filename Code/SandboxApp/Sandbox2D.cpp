@@ -4,7 +4,6 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "Pigeon/Renderer/Font.h"
-#include "Pigeon/Renderer/Renderer2D.h"
 #include "Pigeon/Renderer/Sprite.h"
 #include "Pigeon/UI/UIComponents.h"
 #include "Pigeon/Core/Clock.h"

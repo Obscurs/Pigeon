@@ -62,7 +62,7 @@ namespace pig
 					// Double-add assertion lives here where Component is in scope.
 					PG_CORE_ASSERT(!reg.all_of<Component>(ent),
 						"Deferred add: entity already has component");
-					reg.emplace<pig::EventComponent>(ent, std::move(*static_cast<pig::EventComponent*>(p)));
+					reg.emplace<pig::EventComponent>(ent);
 					reg.emplace<Component>(ent, std::move(*static_cast<Component*>(p)));
 				},
 				+[](void* p) { delete static_cast<Component*>(p); } });

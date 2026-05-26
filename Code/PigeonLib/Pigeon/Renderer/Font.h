@@ -18,7 +18,7 @@ namespace pig
 	class Font
 	{
 	public:
-		Font(const std::filesystem::path& font);
+		Font(const std::filesystem::path& font, pig::TextureData& textureData);
 		~Font();
 
 		const MSDFData* GetMSDFData() const { return m_Data; }

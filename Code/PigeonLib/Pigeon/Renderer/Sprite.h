@@ -12,7 +12,6 @@ namespace pig
 		{
 			glm::vec4 m_TexCoordsRect = glm::vec4(0.f, 0.f, 0.f, 0.f);;
 			pig::UUID m_TextureID{};
-			glm::vec2 m_TextureSize = glm::vec2(0.f, 0.f);
 			glm::mat4 m_Transform = glm::mat4(1.f);
 			glm::vec3 m_Origin = glm::vec3(0.f, 0.f, 0.f);
 		};
@@ -32,7 +31,6 @@ namespace pig
 		const glm::vec4& GetTexCoordsRect() const { return m_Data.m_TexCoordsRect; }
 		const glm::vec3& GetOrigin() const { return m_Data.m_Origin; }
 		const pig::UUID& GetTextureID() const { return m_Data.m_TextureID; }
-		const glm::vec2& GetTextureSize() const { return m_Data.m_TextureSize; }
 
 	private:
 		Data m_Data;

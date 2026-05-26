@@ -99,6 +99,15 @@ void pig::World::RegisterSystem(std::unique_ptr<pig::System> system)
 		{
 			PG_CORE_ASSERT(!entry.decl.addSet.count(t),
 				"One-writer rule violated: two systems add the same component type");
+			PG_CORE_ASSERT(!entry.decl.inframeAddSet.count(t),
+				"One-writer rule violated: two systems add the same component type");
+		}
+		for (const auto& t : decl.inframeAddSet)
+		{
+			PG_CORE_ASSERT(!entry.decl.inframeAddSet.count(t),
+				"One-writer rule violated: two systems add the same component type");
+			PG_CORE_ASSERT(!entry.decl.addSet.count(t),
+				"One-writer rule violated: two systems add the same component type");
 		}
 	}
 
@@ -128,6 +137,50 @@ void pig::World::SortSystems()
 
 	for (int a = 0; a < N; ++a)
 	{
+		for (const auto& t : m_Systems[a].decl.inframeAddSet)
+		{
+			for (int b = 0; b < N; ++b)
+			{
+				if (a == b) continue;
+				if (m_Systems[b].decl.readSet.count(t))
+				{
+					// Only add edge A->B once regardless of how many shared component types exist.
+					if (edgeSet[a].insert(b).second)
+					{
+						bool found = false;
+						for (int e : adj[a])
+						{
+							if (e == b)
+								found = true;
+						}
+						if (!found)
+						{
+							adj[a].push_back(b);
+							++inDegree[b];
+						}
+					}
+				}
+				if (m_Systems[b].decl.writeSet.count(t))
+				{
+					// Only add edge A->B once regardless of how many shared component types exist.
+					if (edgeSet[a].insert(b).second)
+					{
+						bool found = false;
+						for (int e : adj[a])
+						{
+							if (e == b)
+								found = true;
+						}
+						if (!found)
+						{
+							adj[a].push_back(b);
+							++inDegree[b];
+						}
+					}
+				}
+			}
+		}
+
 		for (const auto& t : m_Systems[a].decl.writeSet)
 		{
 			for (int b = 0; b < N; ++b)
@@ -138,8 +191,17 @@ void pig::World::SortSystems()
 					// Only add edge A->B once regardless of how many shared component types exist.
 					if (edgeSet[a].insert(b).second)
 					{
-						adj[a].push_back(b);
-						++inDegree[b];
+						bool found = false;
+						for (int e : adj[a])
+						{
+							if (e == b)
+								found = true;
+						}
+						if (!found)
+						{
+							adj[a].push_back(b);
+							++inDegree[b];
+						}
 					}
 				}
 			}

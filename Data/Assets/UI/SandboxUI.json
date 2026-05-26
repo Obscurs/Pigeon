@@ -4,6 +4,8 @@
     "height": 720.0,
     "spacing_x": 0,
     "spacing_y": 0,
+    "alignment_h": "left",
+    "alignment_v": "top",
     "uuid": "92345678-9abc-def0-1234-56789abcdef0",
     "children": [
       {
@@ -30,6 +32,8 @@
         "ui": {
           "width": 400,
           "height": 400,
+          "alignment_h": "left",
+          "alignment_v": "top",
           "uuid": "92345678-9abc-def0-1234-56789abcdef1",
           "image": {
             "path" : "Assets/Textures/Checkerboard.png"

@@ -114,7 +114,6 @@ namespace CatchTestsetFail
 			const pig::Sprite::Data& spriteData = sprite.GetData();
 
 			CHECK(sprite.GetTransform() == transform1);
-			CHECK(sprite.GetTextureSize() == glm::vec2(textureWidth, textureHeight));
 
 			CHECK(sprite.GetTextureID() == sampleTexture);
 			CHECK(sprite.GetTexCoordsRect() == texCoordsRect);

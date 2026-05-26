@@ -6,6 +6,12 @@
 
 namespace pig 
 {
+	enum class EMappedTextureType
+	{
+		eQuad,
+		eText
+	};
+
 	class Texture
 	{
 	public:
@@ -43,5 +49,15 @@ namespace pig
 		virtual void Append(const std::string& path) = 0;
 		virtual unsigned int GetCount() const = 0;
 		virtual unsigned int GetMaxCount() const = 0;
+	};
+
+	struct TextureData
+	{
+		pig::EMappedTextureType m_TextureType = pig::EMappedTextureType::eQuad;
+		unsigned int m_Width = 0;
+		unsigned int m_Height = 0;
+		unsigned int m_Channels = 0;
+		pig::S_Ptr<pig::Texture2D> m_Texture = nullptr;
+		pig::UUID m_TextureID;
 	};
 }

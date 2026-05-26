@@ -29,6 +29,6 @@ namespace sbx
 		pig::S_Ptr<pig::Font> m_Font;
 
 		pig::UUID m_UUIDUI1;
-		entt::entity m_UUIDUI2;
+		pig::UUID m_UUIDUI2;
 	};
 }

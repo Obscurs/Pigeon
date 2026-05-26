@@ -12,6 +12,7 @@ namespace pig
 		std::unordered_set<std::type_index> readSet;
 		std::unordered_set<std::type_index> writeSet;
 		std::unordered_set<std::type_index> addSet;
+		std::unordered_set<std::type_index> inframeAddSet;
 	};
 
 	class System

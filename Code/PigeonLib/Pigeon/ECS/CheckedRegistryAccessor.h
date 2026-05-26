@@ -80,6 +80,21 @@ namespace pig
 				+[](void* p) { delete static_cast<Component*>(p); });
 		}
 
+		// Deferred add — asserts Component is in inframeAddSet, buffers the operation until end-of-frame.
+		template<typename Component, typename... Args>
+		void emplace_inframe(entt::entity e, Args&&... args)
+		{
+			PG_CORE_ASSERT(
+				m_Decl.inframeAddSet.count(std::type_index(typeid(Component))),
+				"System attempted deferred add of a component not in addSet");
+			
+			PG_CORE_ASSERT(!m_Registry.all_of<Component>(ent),
+				"Deferred add: entity already has component");
+
+			auto* payload = new Component(std::forward<Args>(args)...);
+			m_Registry.emplace<Component>(e, std::move(*static_cast<Component*>(payload)));
+		}
+
 		void destroy_deferred(const entt::entity& e)
 		{
 			pushDeferredDestroy(e);
@@ -109,7 +124,7 @@ namespace pig
 			// Allocate the component value on the heap (unavoidable for type-erasure).
 			auto* payload = new Component(std::forward<Args>(args)...);
 
-			entt::entity e = reg.create();
+			entt::entity e = m_Registry.create();
 			// Static template instantiations — no per-call heap allocation for the trampolines.
 			// Non-capturing lambdas are implicitly convertible to function pointers in C++17.
 			pushDeferredRequest(e, payload,
@@ -118,10 +133,24 @@ namespace pig
 					// Double-add assertion lives here where Component is in scope.
 					PG_CORE_ASSERT(!reg.all_of<Component>(ent),
 						"Deferred add: entity already has component");
-					reg.emplace<pig::EventComponent>(ent, std::move(*static_cast<pig::EventComponent*>(p)));
+					reg.emplace<pig::EventComponent>(ent);
 					reg.emplace<Component>(ent, std::move(*static_cast<Component*>(p)));
 				},
 				+[](void* p) { delete static_cast<Component*>(p); });
+		}
+
+		// Deferred add — asserts Component is in inframeAddSet, buffers the operation until end-of-frame.
+		template<typename Component, typename... Args>
+		void EmplaceInframeEvent(Args&&... args)
+		{
+			PG_CORE_ASSERT(
+				m_Decl.inframeAddSet.count(std::type_index(typeid(Component))),
+				"System attempted deferred add of a component not in addSet");
+			auto* payload = new Component(std::forward<Args>(args)...);
+
+			entt::entity e = m_Registry.create();
+			m_Registry.emplace<Component>(e, std::move(*static_cast<Component*>(payload)));
+			m_Registry.emplace<pig::EventComponent>(e);
 		}
 
 		// Entity lifecycle — no component access restriction.
