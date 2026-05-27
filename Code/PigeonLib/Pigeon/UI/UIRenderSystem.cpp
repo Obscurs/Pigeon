@@ -43,7 +43,7 @@ void pig::ui::UIRenderSystem::Update(const pig::Timestep& ts)
 	{
 		pig::ui::RendererConfig config;
 		pig::AddUIFontTextureInFrameEvent textureEvent;
-		config.m_Font = std::make_shared<pig::Font>("Assets/Fonts/opensans/OpenSans-Regular.ttf", textureEvent.m_TextureData);
+		config.m_Font = std::make_shared<pig::Font>("Assets/Engine/Fonts/opensans/OpenSans-Regular.ttf", textureEvent.m_TextureData);
 		entt::entity configEntity = accessor.create();
 		accessor.emplace_deferred<pig::ui::RendererConfig>(configEntity, std::move(config));
 		accessor.EmplaceEvent<pig::AddUIFontTextureInFrameEvent>(std::move(textureEvent));

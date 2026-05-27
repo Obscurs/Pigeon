@@ -15,7 +15,7 @@
 
 namespace
 {
-	static const char* s_SampleFontPath = "Assets/Fonts/opensans/OpenSans-Regular.ttf";
+	static const char* s_SampleFontPath = "Assets/Sandbox/Fonts/opensans/OpenSans-Regular.ttf";
 }
 
 pig::SystemAccessDecl sbx::SampleUISystem::DeclareAccess() const
@@ -92,7 +92,7 @@ void sbx::SampleUISystem::Update(const pig::Timestep& ts)
 		accessor.emplace_deferred<sbx::SampleUIComponent>(entity, std::move(component));
 
 		pig::ui::LoadLayoutOneFrameComponent layoutComponent;
-		layoutComponent.m_LayoutFilePath = "Assets/UI/SandboxUI.json";
+		layoutComponent.m_LayoutFilePath = "Assets/Sandbox/UI/SandboxUI.json";
 		accessor.emplace_deferred<pig::ui::LoadLayoutOneFrameComponent>(layoutEntity, std::move(layoutComponent));
 
 		accessor.emplace_deferred<pig::OrthographicCameraComponent>(cameraEntity, std::move(cameraComponent));

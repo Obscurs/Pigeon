@@ -88,8 +88,8 @@ namespace
 
 		pig::MappedTexture mappedTexture = { std::move(pig::Texture2D::Create(2, 2, 4, data.data())), pig::EMappedTextureType::eQuad };
 		rendererDataComponent.m_TextureMap[rendererDataComponent.m_DefaultTexture] = std::move(mappedTexture);
-		rendererDataComponent.m_QuadShader = std::move(pig::Shader::Create("Assets/Shaders/Renderer2DQuad.shader"));
-		rendererDataComponent.m_TextShader = std::move(pig::Shader::Create("Assets/Shaders/Renderer2DText.shader"));
+		rendererDataComponent.m_QuadShader = std::move(pig::Shader::Create("Assets/Engine/Shaders/Renderer2DQuad.shader"));
+		rendererDataComponent.m_TextShader = std::move(pig::Shader::Create("Assets/Engine/Shaders/Renderer2DText.shader"));
 	}
 
 	void Clear(const glm::vec4& color)
