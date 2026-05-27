@@ -71,7 +71,6 @@ namespace pig::ui
 		//ARNAU TODO store fonts in some kind of resource manager and hold just a uuid here
 		pig::S_Ptr<pig::Font> m_Font;
 
-		//ARNAU TODO do not use hardcoded orto values
 		pig::OrthographicCamera m_Camera{0.f, 1280.0f, -720.0f, 0 };
 
 		float m_Width{ 1920.f };

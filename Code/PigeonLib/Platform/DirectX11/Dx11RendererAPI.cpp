@@ -44,6 +44,9 @@ void pig::Dx11RendererAPI::Init()
     const float blend_factor[4] = {0.f, 0.f, 0.f, 0.f};
     context->GetPd3dDeviceContext()->OMSetBlendState(pBlendState, blend_factor, 0xffffffff);
     context->GetPd3dDeviceContext()->OMSetDepthStencilState(pDepthStencilState, 0);
+
+	m_Data.m_Initialized = true;
+	CreateRenderTarget();
 }
 
 void pig::Dx11RendererAPI::CreateRenderTarget()
@@ -79,11 +82,6 @@ void pig::Dx11RendererAPI::Begin()
 {
 	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
 		
-	if (!m_Data.m_Initialized)
-	{
-		m_Data.m_Initialized = true;
-		CreateRenderTarget();
-	}
 	// Handle window resize (we don't resize directly in the WM_SIZE handler)
 	if (context->NeedsResize())
 	{
@@ -110,21 +108,19 @@ void pig::Dx11RendererAPI::Begin()
 
 void pig::Dx11RendererAPI::End()
 {
-
+	PG_CORE_ASSERT(m_Data.m_Initialized, "Renderer not initialized");
 }
 
 void pig::Dx11RendererAPI::Clear()
 {
-	//ARNAU TODO remove this hack
-	if (m_Data.m_ClearColor[3] != 0.f)
-	{
-		auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
-		context->GetPd3dDeviceContext()->ClearRenderTargetView(m_Data.m_MainRenderTargetView.get(), m_Data.m_ClearColor);
-	}
+	PG_CORE_ASSERT(m_Data.m_Initialized, "Renderer not initialized");
+	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
+	context->GetPd3dDeviceContext()->ClearRenderTargetView(m_Data.m_MainRenderTargetView.get(), m_Data.m_ClearColor);
 }
 
 void pig::Dx11RendererAPI::DrawIndexed(unsigned int count)
 {
+	PG_CORE_ASSERT(m_Data.m_Initialized, "Renderer not initialized");
 	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
 	context->GetPd3dDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	context->GetPd3dDeviceContext()->DrawIndexed(count, 0, 0);

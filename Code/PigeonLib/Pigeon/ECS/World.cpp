@@ -39,10 +39,12 @@ pig::CheckedRegistryAccessor pig::World::GetRegistry()
 	return CheckedRegistryAccessor(s_Instance->m_Registry, s_EmptyDecl);
 }
 
+#ifdef TESTS_ENABLED
 entt::registry& pig::World::GetRegistryDirect()
 {
 	return s_Instance->m_Registry;
 }
+#endif
 
 void pig::World::PushDeferredRequest(pig::DeferredRequest op)
 {

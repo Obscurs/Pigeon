@@ -279,7 +279,6 @@ namespace
 
 	void DrawQuad(pig::RendererDataSingletonComponent& rendererDataComponent, const glm::mat4& transform, const pig::UUID& textureID, const glm::vec3& origin)
 	{
-		//ARNAU TODO Assert if scene has not began
 		DrawLayerBatch(rendererDataComponent, transform, glm::vec3(1.f), textureID, glm::vec4(0.f, 0.f, 1.f, 1.f), origin);
 	}
 

@@ -6,10 +6,6 @@
 #include "Pigeon/Core/EventComponent.h"
 #include "Pigeon/ECS/System.h"
 
-// IMPORTANT: CheckedRegistryAccessor is a per-call transient. Do NOT store it across frames.
-// Obtain it each time via pig::World::GetRegistry() (inside a system Update()).
-// Non-system callers (Layers, tooling) use pig::World::GetRegistryDirect().
-
 namespace pig
 {
 	// Forward declaration so emplace_deferred can call World::Get().PushDeferredAdd(...)

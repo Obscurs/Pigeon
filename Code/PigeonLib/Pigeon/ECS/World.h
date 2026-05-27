@@ -38,9 +38,10 @@ namespace pig
 		// Call only from within a system Update().
 		static CheckedRegistryAccessor GetRegistry();
 
-		// For non-System callers (Layers, tooling). Does not enforce access declarations.
-		static entt::registry& GetRegistryDirect();
-
+		
+#ifdef TESTS_ENABLED
+		static entt::registry& GetRegistryDirect(); // ONLY FOR UT
+#endif
 		inline static entt::dispatcher& GetDispatcher() { return s_Instance->m_Dispatcher; }
 
 		void PushDeferredRequest(DeferredRequest op);

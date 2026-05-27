@@ -2,15 +2,15 @@
 
 #include "Pigeon/UI/UIComponents.h"
 
-glm::vec4 pig::ui::GetGlobalBoundsForElementParent(pig::CheckedRegistryAccessor& accessor, const pig::ui::BaseComponent& baseComponent, const pig::ui::RendererConfig& renderComponent, int& DEPRECATED_level)
+glm::vec4 pig::ui::GetGlobalBoundsForElementParent(pig::CheckedRegistryAccessor& accessor, const pig::ui::BaseComponent& baseComponent, const pig::ui::RendererConfig& renderComponent, int& level)
 {
 	glm::vec4 globalBounds(0.f, 0.f, renderComponent.m_Width, renderComponent.m_Height);
 
 	if (baseComponent.m_Parent != entt::null && accessor.any_of<pig::ui::BaseComponent>(baseComponent.m_Parent))
 	{
 		const pig::ui::BaseComponent& parentComponent = accessor.get<const pig::ui::BaseComponent>(baseComponent.m_Parent);
-		DEPRECATED_level += 1;
-		globalBounds = GetGlobalBoundsForElementParent(accessor, parentComponent, renderComponent, DEPRECATED_level);
+		level += 1;
+		globalBounds = GetGlobalBoundsForElementParent(accessor, parentComponent, renderComponent, level);
 
 		if (parentComponent.m_HAlign == pig::ui::EHAlignType::eRight)
 		{
@@ -45,9 +45,9 @@ glm::vec4 pig::ui::GetGlobalBoundsForElementParent(pig::CheckedRegistryAccessor&
 	return globalBounds;
 }
 
-glm::vec4 pig::ui::GetGlobalBoundsForElement(pig::CheckedRegistryAccessor& accessor, const pig::ui::BaseComponent& baseComponent, const pig::ui::RendererConfig& renderComponent, const glm::vec2& uiBoundsSize, int& DEPRECATED_level)
+glm::vec4 pig::ui::GetGlobalBoundsForElement(pig::CheckedRegistryAccessor& accessor, const pig::ui::BaseComponent& baseComponent, const pig::ui::RendererConfig& renderComponent, const glm::vec2& uiBoundsSize, int& level)
 {
-	const glm::vec4 bounds = pig::ui::GetGlobalBoundsForElementParent(accessor, baseComponent, renderComponent, DEPRECATED_level);
+	const glm::vec4 bounds = pig::ui::GetGlobalBoundsForElementParent(accessor, baseComponent, renderComponent, level);
 	glm::vec2 posFinal = glm::vec2(bounds.x, bounds.y);
 
 	if (baseComponent.m_HAlign == EHAlignType::eRight)
