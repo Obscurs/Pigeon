@@ -42,6 +42,7 @@ namespace pig::ui
 		TextComponent() = default;
 		TextComponent(const TextComponent&) = default;
 
+		pig::UUID m_FontID{};
 		std::string m_Text{ "" };
 		glm::vec4 m_Color{ 0.f, 0.f, 0.f, 1.f };
 		float m_Kerning{ 1.f };
@@ -60,16 +61,13 @@ namespace pig::ui
 	{
 		LoadLayoutOneFrameComponent() = default;
 		
-		std::string m_LayoutFilePath;
+		pig::UUID m_UUID;
 	};
 
 	struct RendererConfig
 	{
 		RendererConfig() = default;
 		RendererConfig(const RendererConfig&) = default;
-
-		//ARNAU TODO store fonts in some kind of resource manager and hold just a uuid here
-		pig::S_Ptr<pig::Font> m_Font;
 
 		pig::OrthographicCamera m_Camera{0.f, 1280.0f, -720.0f, 0 };
 
@@ -138,6 +136,7 @@ namespace pig::ui
 		UIUpdateTextOneFrameComponent() = default;
 		UIUpdateTextOneFrameComponent(const UIUpdateTextOneFrameComponent&) = default;
 
+		pig::UUID m_FontID{};
 		std::string m_Text{};
 		glm::vec4 m_Color{};
 		float m_Spacing{};

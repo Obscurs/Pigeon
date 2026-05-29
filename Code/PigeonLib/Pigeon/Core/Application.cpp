@@ -3,6 +3,7 @@
 #include "Application.h"
 
 #include "Pigeon/Core/CameraSystem.h"
+#include "Pigeon/Core/ConfigLoaderSystem.h"
 #include "Pigeon/Core/InputSystem.h"
 #include "Pigeon/Core/KeyPressedEventComponent.h"
 #include "Pigeon/Core/KeyReleasedEventComponent.h"
@@ -13,6 +14,7 @@
 #include "Pigeon/Core/MouseMovedEventComponent.h"
 #include "Pigeon/Core/MouseScrolledEventComponent.h"
 #include "Pigeon/Core/OrthographicCameraComponent.h"
+#include "Pigeon/Core/ResourceManagerSystem.h"
 #include "Pigeon/Core/WindowCloseEventComponent.h"
 #include "Pigeon/Core/WindowResizeEventComponent.h"
 #include "Pigeon/ECS/World.h"
@@ -154,8 +156,10 @@ void pig::Application::Init()
 	pig::World& world = pig::World::Create();
 
 	world.RegisterSystem(std::move(std::make_unique<pig::CameraSystem>()));
+	world.RegisterSystem(std::move(std::make_unique<pig::ConfigLoaderSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pig::InputSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pig::Renderer2DSystem>()));
+	world.RegisterSystem(std::move(std::make_unique<pig::ResourceManagerSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pig::ui::UIControlSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pig::ui::UIEventSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pig::ui::UIRenderSystem>(std::make_shared<pig::ui::UIRenderSystemHelper>())));

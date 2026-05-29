@@ -2,7 +2,6 @@
 
 #include "Font.h"
 
-#include "Pigeon/Renderer/AddUIFontTextureInFrameEvent.h"
 #include "Pigeon/Renderer/MSDFData.h"
 #include "FontGeometry.h"
 #include "GlyphGeometry.h"

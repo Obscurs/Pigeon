@@ -1,0 +1,20 @@
+{
+	"ui": [
+	],
+	"textures": [
+		{"id": "d499424f-f7fc-49a5-a3fd-e6513a41d44f", "path" : "alphaTest.png"},
+		{"id": "72b63a5a-a3cd-4820-967f-d810c58c4eea", "path" : "Checkerboard.png"},
+		{"id": "4b85f583-7821-46c3-abdb-bf47d2ed26df", "path" : "Checkerboard2.png"},
+		{"id": "d7666895-ff62-4eee-891d-2267928f13e9", "path" : "fontSprite.png"},
+		{"id": "ef306919-1eee-4bfc-9323-721481fa6987", "path" : "sampleSprite.png"}
+
+	],
+	"fonts": [
+		{"id": "1ecaf9b0-4326-4d1d-83fe-262ab556e85e", "path" : "opensans/OpenSans-Bold.ttf"},
+		{"id": "79e69fe7-4e41-42b0-a47f-a4bb8040f02f", "path" : "opensans/OpenSans-Regular.ttf"}
+	],
+	"shaders": [
+		{"id": "88375cdc-db88-408b-8c06-c0535198d3eb", "path" : "Renderer2DQuad.shader"},
+		{"id": "46b508b9-8b6a-452a-8180-30d7da6c0d5f", "path" : "Renderer2DText.shader"}
+	]
+}

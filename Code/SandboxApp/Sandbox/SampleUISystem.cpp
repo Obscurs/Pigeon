@@ -4,8 +4,8 @@
 
 #include "Pigeon/Core/Clock.h"
 #include "Pigeon/Core/OrthographicCameraComponent.h"
+#include "Pigeon/Core/ResourceMapSingletonComponent.h"
 #include "Pigeon/ECS/World.h"
-#include "Pigeon/Renderer/AddTextureInFrameEvent.h"
 #include "Pigeon/Renderer/DrawQuadInFrameEvent.h"
 #include "Pigeon/Renderer/DrawSpriteInFrameEvent.h"
 #include "Pigeon/Renderer/DrawStringInFrameEvent.h"
@@ -25,7 +25,6 @@ pig::SystemAccessDecl sbx::SampleUISystem::DeclareAccess() const
 		std::type_index(typeid(sbx::SampleUIComponent)),
 	};
 	decl.addSet = {
-		std::type_index(typeid(pig::AddTextureInFrameEvent)),
 		std::type_index(typeid(pig::OrthographicCameraComponent)),
 		std::type_index(typeid(pig::ui::LoadLayoutOneFrameComponent)),
 		std::type_index(typeid(sbx::SampleUIComponent)),
@@ -37,6 +36,7 @@ pig::SystemAccessDecl sbx::SampleUISystem::DeclareAccess() const
 		std::type_index(typeid(pig::DrawStringInFrameEvent)),
 	};
 	decl.readSet = {
+		std::type_index(typeid(pig::ResourceMapSingletonComponent)),
 		std::type_index(typeid(pig::ui::BaseComponent)),
 		std::type_index(typeid(pig::ui::ImageComponent)),
 		std::type_index(typeid(pig::ui::TextComponent)),
@@ -48,6 +48,12 @@ void sbx::SampleUISystem::Update(const pig::Timestep& ts)
 {
 	auto accessor = pig::World::GetRegistry();
 
+	auto resourcesView = accessor.view<const pig::ResourceMapSingletonComponent>();
+	if ( resourcesView.empty())
+	{
+		return;
+	}
+	const pig::ResourceMapSingletonComponent& resourcesComponent = resourcesView.get<const pig::ResourceMapSingletonComponent>(resourcesView.front());
 	auto view = accessor.view<sbx::SampleUIComponent>();
 	if (view.empty())
 	{
@@ -79,26 +85,22 @@ void sbx::SampleUISystem::Update(const pig::Timestep& ts)
 		component.m_ScaleText = glm::vec3(0.3f, 0.3f, 1.f);
 		component.m_ColorText = glm::vec3(1.f, 0.f, 0.f);
 
-		pig::AddTextureInFrameEvent textureEvent;
-		pig::TextureData textureData;
-		component.m_Font = std::make_shared<pig::Font>(s_SampleFontPath, textureData);
-		textureEvent.m_TextureData = textureData;
-		textureEvent.m_IsVirtual = true;
-		accessor.EmplaceEvent<pig::AddTextureInFrameEvent>(std::move(textureEvent));
-
+		//ARNAU TODO Replace these to be loaded from a Config.json file in Assets/App
+		component.m_FontID = pig::UUID("a60c36f6-3c65-4bc5-8279-30ce17d854c6"); 
 		component.m_UUIDUI1 = pig::UUID("92345678-9abc-def0-1234-56789abcdef2");
 		component.m_UUIDUI2 = pig::UUID("92345678-9abc-def0-1234-56789abcdef1");
 
 		accessor.emplace_deferred<sbx::SampleUIComponent>(entity, std::move(component));
 
 		pig::ui::LoadLayoutOneFrameComponent layoutComponent;
-		layoutComponent.m_LayoutFilePath = "Assets/Sandbox/UI/SandboxUI.json";
+		layoutComponent.m_UUID = "e48eb073-fcb1-44eb-a3b0-eb2f186a5831";
 		accessor.emplace_deferred<pig::ui::LoadLayoutOneFrameComponent>(layoutEntity, std::move(layoutComponent));
 
 		accessor.emplace_deferred<pig::OrthographicCameraComponent>(cameraEntity, std::move(cameraComponent));
 	}
 	else
 	{
+		
 		for (auto ent : view)
 		{
 			sbx::SampleUIComponent& component = view.get<sbx::SampleUIComponent>(ent);
@@ -144,7 +146,8 @@ void sbx::SampleUISystem::Update(const pig::Timestep& ts)
 			pig::DrawStringInFrameEvent stringEvent;
 			stringEvent.m_Transform = stringTransform;
 			stringEvent.m_String = textString;
-			stringEvent.m_Font = component.m_Font;
+			PG_CORE_EXCEPT(resourcesComponent.m_FontMap.find(component.m_FontID) != resourcesComponent.m_FontMap.end(), "Could not text font");
+			stringEvent.m_Font = resourcesComponent.m_FontMap.at(component.m_FontID);
 			stringEvent.m_Color = glm::vec4(component.m_ColorText, 1.f);
 			stringEvent.m_Kerning = 0.1f;
 			stringEvent.m_Linespacing = 0.1f;

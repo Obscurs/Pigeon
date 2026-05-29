@@ -5,8 +5,10 @@ file(GLOB ROOT
 file(GLOB PGCORE
     "Pigeon/Core/Application.cpp"
     "Pigeon/Core/CameraSystem.cpp"
+    "Pigeon/Core/ConfigLoaderSystem.cpp"
     "Pigeon/Core/Core.h"
     "Pigeon/Core/Clock.h"
+    "Pigeon/Core/EngineConfigSingletonComponent.h"
     "Pigeon/Core/EntryPoint.h"
     "Pigeon/Core/EventComponent.h"
     "Pigeon/Core/Input.h"
@@ -23,6 +25,8 @@ file(GLOB PGCORE
     "Pigeon/Core/MouseMovedEventComponent.h"
     "Pigeon/Core/MouseScrolledEventComponent.h"
     "Pigeon/Core/OrthographicCameraComponent.h"
+    "Pigeon/Core/ResourceManagerSystem.cpp"
+    "Pigeon/Core/ResourceMapSingletonComponent.h"
     "Pigeon/Core/Timestep.h"
     "Pigeon/Core/UUID.cpp"
     "Pigeon/Core/Window.h"
@@ -35,9 +39,6 @@ file(GLOB PGIMGUI
 )
 
 file(GLOB RENDERER
-    "Pigeon/Renderer/AddTextureInFrameEvent.h"
-    "Pigeon/Renderer/AddUITextureInFrameEvent.h"
-    "Pigeon/Renderer/AddUIFontTextureInFrameEvent.h"
     "Pigeon/Renderer/Buffer.cpp"
     "Pigeon/Renderer/DrawQuadInFrameEvent.h"
     "Pigeon/Renderer/DrawSpriteInFrameEvent.h"

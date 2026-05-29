@@ -26,7 +26,7 @@ namespace sbx
 		glm::vec3 m_OriginQuad1 { 0.f,0.f,0.f };
 		glm::vec3 m_OriginQuad2 { 0.f,0.f,0.f };
 
-		pig::S_Ptr<pig::Font> m_Font;
+		pig::UUID m_FontID;
 
 		pig::UUID m_UUIDUI1;
 		pig::UUID m_UUIDUI2;

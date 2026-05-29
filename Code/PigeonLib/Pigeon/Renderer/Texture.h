@@ -31,7 +31,6 @@ namespace pig
 		Data m_Data;
 	};
 
-	//ARNAU TODO: maybe some kind of resource manager with a refcount to prevent texture leaks
 	class Texture2D : public Texture
 	{
 	public:

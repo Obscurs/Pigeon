@@ -1,13 +1,13 @@
 #include "UIRenderSystem.h"
 
-#include "Pigeon/UI/UIComponents.h"
-#include "Pigeon/UI/UIHelpers.h"
-
+#include "Pigeon/Core/EngineConfigSingletonComponent.h"
+#include "Pigeon/Core/ResourceMapSingletonComponent.h"
 #include "Pigeon/ECS/World.h"
-#include "Pigeon/Renderer/AddUIFontTextureInFrameEvent.h"
 #include "Pigeon/Renderer/DrawUIQuadInFrameEvent.h"
 #include "Pigeon/Renderer/DrawUIStringInFrameEvent.h"
 #include "Pigeon/Renderer/Font.h"
+#include "Pigeon/UI/UIComponents.h"
+#include "Pigeon/UI/UIHelpers.h"
 
 pig::ui::UIRenderSystem::UIRenderSystem(pig::S_Ptr<IUIRenderSystemHelper> helper)
 	: m_Helper(helper)
@@ -18,6 +18,8 @@ pig::SystemAccessDecl pig::ui::UIRenderSystem::DeclareAccess() const
 {
 	pig::SystemAccessDecl decl;
 	decl.readSet = {
+		std::type_index(typeid(pig::EngineConfigSingletonComponent)),
+		std::type_index(typeid(pig::ResourceMapSingletonComponent)),
 		std::type_index(typeid(pig::ui::BaseComponent)),
 		std::type_index(typeid(pig::ui::ImageComponent)),
 		std::type_index(typeid(pig::ui::TextComponent)),
@@ -25,7 +27,6 @@ pig::SystemAccessDecl pig::ui::UIRenderSystem::DeclareAccess() const
 	};
 	decl.addSet = {
 		std::type_index(typeid(pig::ui::RendererConfig)),
-		std::type_index(typeid(pig::AddUIFontTextureInFrameEvent)),
 	};
 	decl.inframeAddSet = {
 		std::type_index(typeid(pig::DrawUIQuadInFrameEvent)),
@@ -42,23 +43,29 @@ void pig::ui::UIRenderSystem::Update(const pig::Timestep& ts)
 	if (viewRenderConfig.size() == 0)
 	{
 		pig::ui::RendererConfig config;
-		pig::AddUIFontTextureInFrameEvent textureEvent;
-		config.m_Font = std::make_shared<pig::Font>("Assets/Engine/Fonts/opensans/OpenSans-Regular.ttf", textureEvent.m_TextureData);
 		entt::entity configEntity = accessor.create();
 		accessor.emplace_deferred<pig::ui::RendererConfig>(configEntity, std::move(config));
-		accessor.EmplaceEvent<pig::AddUIFontTextureInFrameEvent>(std::move(textureEvent));
 		return;
 	}
 	PG_CORE_ASSERT(viewRenderConfig.size() == 1, "There should only be one ui render config component");
+
+	auto viewEngineConfig = accessor.view<const pig::EngineConfigSingletonComponent>();
+	auto viewResources = accessor.view<const pig::ResourceMapSingletonComponent>();
+	if (viewEngineConfig.empty() || viewResources.empty())
+	{
+		return;
+	}
+	const pig::ResourceMapSingletonComponent& resourcesComponent = viewResources.get<const pig::ResourceMapSingletonComponent>(viewResources.front());
+	const pig::EngineConfigSingletonComponent& engineConfigComponent = viewEngineConfig.get<const pig::EngineConfigSingletonComponent>(viewEngineConfig.front());
 	const pig::ui::RendererConfig& renderComponent = viewRenderConfig.get<const pig::ui::RendererConfig>(viewRenderConfig.front());
 
 	auto viewImages = accessor.view<const pig::ui::BaseComponent, const pig::ui::ImageComponent>();
 	for (auto ent : viewImages)
 	{
-		const pig::ui::BaseComponent& baseComponent = viewImages.get<pig::ui::BaseComponent>(ent);
+		const pig::ui::BaseComponent& baseComponent = viewImages.get<const pig::ui::BaseComponent>(ent);
 		if (pig::ui::IsUIElementEnabled(accessor, baseComponent))
 		{
-			const pig::ui::ImageComponent& imageComponent = viewImages.get<pig::ui::ImageComponent>(ent);
+			const pig::ui::ImageComponent& imageComponent = viewImages.get<const pig::ui::ImageComponent>(ent);
 
 			const glm::mat4 transform = GetUIElementTransform(accessor, baseComponent, renderComponent, baseComponent.m_Size, baseComponent.m_Size);
 			
@@ -77,15 +84,17 @@ void pig::ui::UIRenderSystem::Update(const pig::Timestep& ts)
 		if (pig::ui::IsUIElementEnabled(accessor, baseComponent))
 		{
 			const pig::ui::TextComponent& textComponent = viewText.get<pig::ui::TextComponent>(ent);
-			const unsigned int numLines = m_Helper->GetStringNumLines(textComponent.m_Text, renderComponent.m_Font);
-			const glm::vec2 stringBounds = m_Helper->GetStringBounds(textComponent.m_Text, textComponent.m_Kerning, textComponent.m_Spacing, renderComponent.m_Font);
+			const pig::UUID fontID = textComponent.m_FontID.IsNull() ? engineConfigComponent.m_DefaultFontID : textComponent.m_FontID;
+			PG_CORE_EXCEPT(resourcesComponent.m_FontMap.find(fontID) != resourcesComponent.m_FontMap.end(), "could not find font for ui text");
+			const unsigned int numLines = m_Helper->GetStringNumLines(textComponent.m_Text, resourcesComponent.m_FontMap.at(fontID));
+			const glm::vec2 stringBounds = m_Helper->GetStringBounds(textComponent.m_Text, textComponent.m_Kerning, textComponent.m_Spacing, resourcesComponent.m_FontMap.at(fontID));
 			const float fontSize = GetFontSizeFromStringBounds(baseComponent, stringBounds, numLines);
 			const glm::mat4 transform = GetUIElementTransform(accessor, baseComponent, renderComponent, glm::vec2(fontSize, fontSize), glm::vec2(stringBounds.x * fontSize, stringBounds.y * fontSize * numLines));
 			
 			pig::DrawUIStringInFrameEvent stringEvent;
 			stringEvent.m_Transform = transform;
 			stringEvent.m_String = textComponent.m_Text;
-			stringEvent.m_Font = renderComponent.m_Font;
+			stringEvent.m_FontID = fontID;
 			stringEvent.m_Color = textComponent.m_Color;
 			stringEvent.m_Kerning = textComponent.m_Kerning;
 			stringEvent.m_Linespacing = textComponent.m_Spacing;

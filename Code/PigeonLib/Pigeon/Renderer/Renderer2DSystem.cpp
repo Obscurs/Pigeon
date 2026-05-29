@@ -3,11 +3,10 @@
 #include "Renderer2DSystem.h"
 
 #include "Pigeon/Core/Clock.h"
+#include "Pigeon/Core/EngineConfigSingletonComponent.h"
 #include "Pigeon/Core/OrthographicCameraComponent.h"
+#include "Pigeon/Core/ResourceMapSingletonComponent.h"
 #include "Pigeon/ECS/World.h"
-#include "Pigeon/Renderer/AddTextureInFrameEvent.h"
-#include "Pigeon/Renderer/AddUIFontTextureInFrameEvent.h"
-#include "Pigeon/Renderer/AddUITextureInFrameEvent.h"
 #include "Pigeon/Renderer/DrawQuadInFrameEvent.h"
 #include "Pigeon/Renderer/DrawSpriteInFrameEvent.h"
 #include "Pigeon/Renderer/DrawStringInFrameEvent.h"
@@ -79,17 +78,15 @@ namespace
 		uint32_t m_SquareIndices[pig::QUAD_INDEX_COUNT];
 	};
 
-	void Init(pig::RendererDataSingletonComponent& rendererDataComponent)
+	void Init(pig::RendererDataSingletonComponent& rendererDataComponent, const pig::ResourceMapSingletonComponent& resourcesComponent, const pig::EngineConfigSingletonComponent& configComponent)
 	{
 		rendererDataComponent.m_VertexBuffer = std::move(pig::VertexBuffer::Create(s_SquareVerticesEmpty, pig::BATCH_MAX_COUNT * VERTEX_STRIDE, sizeof(float) * 10));
 		rendererDataComponent.m_IndexBuffer = std::move(pig::IndexBuffer::Create(s_SuareIndicesEmpty, (pig::BATCH_MAX_COUNT * INDEX_STRIDE) / sizeof(uint32_t)));
 
-		std::vector<unsigned char> data(2 * 2 * 4, 255);
-
-		pig::MappedTexture mappedTexture = { std::move(pig::Texture2D::Create(2, 2, 4, data.data())), pig::EMappedTextureType::eQuad };
-		rendererDataComponent.m_TextureMap[rendererDataComponent.m_DefaultTexture] = std::move(mappedTexture);
-		rendererDataComponent.m_QuadShader = std::move(pig::Shader::Create("Assets/Engine/Shaders/Renderer2DQuad.shader"));
-		rendererDataComponent.m_TextShader = std::move(pig::Shader::Create("Assets/Engine/Shaders/Renderer2DText.shader"));
+		PG_CORE_EXCEPT(resourcesComponent.m_ShaderMap.find(configComponent.m_DefaultQuadShaderID) != resourcesComponent.m_ShaderMap.end(), "Could not find default quad shader");
+		PG_CORE_EXCEPT(resourcesComponent.m_ShaderMap.find(configComponent.m_DefaultTextShaderID) != resourcesComponent.m_ShaderMap.end(), "Could not find default text shader");
+		rendererDataComponent.m_QuadShader = resourcesComponent.m_ShaderMap.at(configComponent.m_DefaultQuadShaderID);
+		rendererDataComponent.m_TextShader = resourcesComponent.m_ShaderMap.at(configComponent.m_DefaultTextShaderID);
 	}
 
 	void Clear(const glm::vec4& color)
@@ -98,13 +95,13 @@ namespace
 		pig::RenderCommand::Clear();
 	}
 
-	void BeginScene(const pig::OrthographicCamera& ortoCamera, pig::RendererDataSingletonComponent& rendererDataComponent)
+	void BeginScene(const pig::OrthographicCamera& ortoCamera, pig::RendererDataSingletonComponent& rendererDataComponent, const pig::ResourceMapSingletonComponent& resourcesComponent)
 	{
 		pig::RenderCommand::Begin();
 
 		rendererDataComponent.m_VertexBuffer->Bind();
 		rendererDataComponent.m_IndexBuffer->Bind();
-		rendererDataComponent.m_TextureMap[rendererDataComponent.m_DefaultTexture].m_Texture->Bind(0);
+		resourcesComponent.m_TextureMap.at(resourcesComponent.m_DefaultTexture).m_Texture->Bind(0);
 		rendererDataComponent.m_QuadShader->Bind();
 
 		glm::mat4 viewProjMat = ortoCamera.GetViewProjectionMatrix();
@@ -116,13 +113,13 @@ namespace
 		pig::RenderCommand::DrawIndexed(count);
 	}
 
-	void Flush(pig::RendererDataSingletonComponent& rendererDataComponent)
+	void Flush(pig::RendererDataSingletonComponent& rendererDataComponent, const pig::ResourceMapSingletonComponent& resourcesComponent)
 	{
 		for (auto& batch : rendererDataComponent.m_BatchMap)
 		{
-			auto& tex = rendererDataComponent.m_TextureMap.find(batch.first);
-			PG_CORE_ASSERT(tex != rendererDataComponent.m_TextureMap.end(), "unable to bind texture, texture not found");
-			if (tex != rendererDataComponent.m_TextureMap.end())
+			auto& tex = resourcesComponent.m_TextureMap.find(batch.first);
+			PG_CORE_ASSERT(tex != resourcesComponent.m_TextureMap.end(), "unable to bind texture, texture not found");
+			if (tex != resourcesComponent.m_TextureMap.end())
 			{
 				tex->second.m_Texture->Bind(0);
 				switch (tex->second.m_TextureType)
@@ -149,9 +146,9 @@ namespace
 				std::unordered_map<pig::UUID, pig::RendererDataSingletonComponent::BatchData>& texBatches = layer->second;
 				for (auto& batch : texBatches)
 				{
-					auto& tex = rendererDataComponent.m_TextureMap.find(batch.first);
-					PG_CORE_ASSERT(tex != rendererDataComponent.m_TextureMap.end(), "unable to bind texture, texture not found");
-					if (tex != rendererDataComponent.m_TextureMap.end())
+					auto& tex = resourcesComponent.m_TextureMap.find(batch.first);
+					PG_CORE_ASSERT(tex != resourcesComponent.m_TextureMap.end(), "unable to bind texture, texture not found");
+					if (tex != resourcesComponent.m_TextureMap.end())
 					{
 						tex->second.m_Texture->Bind(0);
 						switch (tex->second.m_TextureType)
@@ -174,18 +171,18 @@ namespace
 		rendererDataComponent.m_LayerBatchMap.clear();
 	}
 
-	void EndScene(pig::RendererDataSingletonComponent& rendererDataComponent)
+	void EndScene(pig::RendererDataSingletonComponent& rendererDataComponent, const pig::ResourceMapSingletonComponent& resourcesComponent)
 	{
-		Flush(rendererDataComponent);
+		Flush(rendererDataComponent, resourcesComponent);
 
 		pig::RenderCommand::End();
 		rendererDataComponent.m_VertexBuffer->Unbind();
 		rendererDataComponent.m_IndexBuffer->Unbind();
 	}
-	const pig::Texture2D& GetTexture(pig::RendererDataSingletonComponent& rendererDataComponent, const pig::UUID& textureID)
+	const pig::Texture2D& GetTexture(const pig::ResourceMapSingletonComponent& resourcesComponent, const pig::UUID& textureID)
 	{
-		const auto it = rendererDataComponent.m_TextureMap.find(textureID);
-		if (it != rendererDataComponent.m_TextureMap.end())
+		const auto it = resourcesComponent.m_TextureMap.find(textureID);
+		if (it != resourcesComponent.m_TextureMap.end())
 		{
 			return *it->second.m_Texture.get();
 		}
@@ -193,25 +190,13 @@ namespace
 		{
 			PG_CORE_ASSERT(false, "Texture not found returning default one");
 
-			return *rendererDataComponent.m_TextureMap[rendererDataComponent.m_DefaultTexture].m_Texture.get();
+			return *resourcesComponent.m_TextureMap.at(resourcesComponent.m_DefaultTexture).m_Texture.get();
 		}
 	}
 
-	void AddTexture(pig::RendererDataSingletonComponent& rendererDataComponent, const std::string& path, pig::EMappedTextureType type, const pig::UUID& textureId)
+	void DrawLayerBatch(pig::RendererDataSingletonComponent& rendererDataComponent, const pig::ResourceMapSingletonComponent& resourcesComponent, const glm::mat4& transform, const glm::vec3& col, const pig::UUID& textureID, glm::vec4 texRect, const glm::vec3& origin)
 	{
-		pig::MappedTexture mappedTexture = { std::move(pig::Texture2D::Create(path)), type };
-		rendererDataComponent.m_TextureMap[textureId] = std::move(mappedTexture);
-	}
-
-	void AddTexture(pig::RendererDataSingletonComponent& rendererDataComponent, pig::S_Ptr<pig::Texture2D> texture, pig::EMappedTextureType type, const pig::UUID& textureId)
-	{
-		pig::MappedTexture mappedTexture = { texture, type };
-		rendererDataComponent.m_TextureMap[textureId] = std::move(mappedTexture);
-	}
-
-	void DrawLayerBatch(pig::RendererDataSingletonComponent& rendererDataComponent, const glm::mat4& transform, const glm::vec3& col, const pig::UUID& textureID, glm::vec4 texRect, const glm::vec3& origin)
-	{
-		if (rendererDataComponent.m_TextureMap.find(textureID) != rendererDataComponent.m_TextureMap.end())
+		if (resourcesComponent.m_TextureMap.find(textureID) != resourcesComponent.m_TextureMap.end())
 		{
 			int layer = int(transform[3][2]);
 			glm::mat4 finalTransform = transform;
@@ -235,19 +220,19 @@ namespace
 		}
 	}
 
-	void DrawQuad(pig::RendererDataSingletonComponent& rendererDataComponent, const glm::mat4& transform, const glm::vec3& col, const glm::vec3& origin)
+	void DrawQuad(pig::RendererDataSingletonComponent& rendererDataComponent, const pig::ResourceMapSingletonComponent& resourcesComponent, const glm::mat4& transform, const glm::vec3& col, const glm::vec3& origin)
 	{
-		DrawLayerBatch(rendererDataComponent, transform, col, rendererDataComponent.m_DefaultTexture, glm::vec4(0.f, 0.f, 1.f, 1.f), origin);
+		DrawLayerBatch(rendererDataComponent, resourcesComponent, transform, col, resourcesComponent.m_DefaultTexture, glm::vec4(0.f, 0.f, 1.f, 1.f), origin);
 	}
 
-	void DrawSprite(pig::RendererDataSingletonComponent& rendererDataComponent, const pig::Sprite& sprite)
+	void DrawSprite(pig::RendererDataSingletonComponent& rendererDataComponent, const pig::ResourceMapSingletonComponent& resourcesComponent, const pig::Sprite& sprite)
 	{
-		DrawLayerBatch(rendererDataComponent, sprite.GetTransform(), glm::vec3(1.f), sprite.GetTextureID(), sprite.GetTexCoordsRect(), sprite.GetOrigin());
+		DrawLayerBatch(rendererDataComponent, resourcesComponent, sprite.GetTransform(), glm::vec3(1.f), sprite.GetTextureID(), sprite.GetTexCoordsRect(), sprite.GetOrigin());
 	}
 
-	void DrawString(pig::RendererDataSingletonComponent& rendererDataComponent, const glm::mat4& transform, const std::string& string, pig::S_Ptr<pig::Font> font, const glm::vec4& color, float kerning, float linespacing)
+	void DrawString(pig::RendererDataSingletonComponent& rendererDataComponent, const pig::ResourceMapSingletonComponent& resourcesComponent, const glm::mat4& transform, const std::string& string, pig::S_Ptr<pig::Font> font, const glm::vec4& color, float kerning, float linespacing)
 	{
-		const pig::Texture2D& fontAtlas = GetTexture(rendererDataComponent, font->GetFontID());
+		const pig::Texture2D& fontAtlas = GetTexture(resourcesComponent, font->GetFontID());
 
 		glm::dvec2 charOffset{ 0.0, 0.0 };
 		const glm::vec3 originSprite(0.f, 0.0f, 0.f);
@@ -262,7 +247,7 @@ namespace
 				const glm::vec4 charQuad = font->GetCharacterVertexQuad(character, charOffset);
 				const glm::mat4 charTransform = font->GetCharacterTransform(charQuad, transform);
 
-				DrawLayerBatch(rendererDataComponent, charTransform, color, font->GetFontID(), texCoords, originSprite);
+				DrawLayerBatch(rendererDataComponent, resourcesComponent, charTransform, color, font->GetFontID(), texCoords, originSprite);
 			}
 
 			if (font->IsCharacterNewLine(character))
@@ -277,21 +262,21 @@ namespace
 		}
 	}
 
-	void DrawQuad(pig::RendererDataSingletonComponent& rendererDataComponent, const glm::mat4& transform, const pig::UUID& textureID, const glm::vec3& origin)
+	void DrawQuad(pig::RendererDataSingletonComponent& rendererDataComponent, const pig::ResourceMapSingletonComponent& resourcesComponent, const glm::mat4& transform, const pig::UUID& textureID, const glm::vec3& origin)
 	{
-		DrawLayerBatch(rendererDataComponent, transform, glm::vec3(1.f), textureID, glm::vec4(0.f, 0.f, 1.f, 1.f), origin);
+		DrawLayerBatch(rendererDataComponent, resourcesComponent, transform, glm::vec3(1.f), textureID, glm::vec4(0.f, 0.f, 1.f, 1.f), origin);
 	}
 
-	void DrawBatch(pig::RendererDataSingletonComponent& rendererDataComponent, const glm::mat4& transform, const glm::vec3& col, const pig::UUID& textureID, glm::vec4 texRect, const glm::vec3& origin)
+	void DrawBatch(pig::RendererDataSingletonComponent& rendererDataComponent, const pig::ResourceMapSingletonComponent& resourcesComponent, const glm::mat4& transform, const glm::vec3& col, const pig::UUID& textureID, glm::vec4 texRect, const glm::vec3& origin)
 	{
-		if (rendererDataComponent.m_TextureMap.find(textureID) != rendererDataComponent.m_TextureMap.end())
+		if (resourcesComponent.m_TextureMap.find(textureID) != resourcesComponent.m_TextureMap.end())
 		{
 			pig::RendererDataSingletonComponent::BatchData& texBatch = rendererDataComponent.m_BatchMap[textureID];
 
 			if (texBatch.m_IndexCount == pig::BATCH_MAX_COUNT * pig::QUAD_INDEX_COUNT)
 			{
-				Flush(rendererDataComponent);
-				DrawBatch(rendererDataComponent, transform, col, textureID, texRect, origin);
+				Flush(rendererDataComponent, resourcesComponent);
+				DrawBatch(rendererDataComponent, resourcesComponent, transform, col, textureID, texRect, origin);
 			}
 			else
 			{
@@ -316,58 +301,21 @@ namespace
 	{
 		rendererDataComponent.m_BatchMap.clear();
 		rendererDataComponent.m_LayerBatchMap.clear();
-		rendererDataComponent.m_TextureMap.clear();
 	}
 
-	void ProcessRenderRequests(pig::CheckedRegistryAccessor& accessor, pig::RendererDataSingletonComponent& rendererDataComponent)
+	void ProcessRenderRequests(pig::CheckedRegistryAccessor& accessor, pig::RendererDataSingletonComponent& rendererDataComponent, const pig::ResourceMapSingletonComponent& resourcesComponent)
 	{
-		auto viewAddTextures = accessor.view<const pig::AddTextureInFrameEvent>();
-		for (auto ent : viewAddTextures)
-		{
-			const pig::AddTextureInFrameEvent& event = viewAddTextures.get<const pig::AddTextureInFrameEvent>(ent);
-			if (event.m_IsVirtual)
-			{
-				AddTexture(rendererDataComponent, event.m_TextureData.m_Texture, event.m_TextureData.m_TextureType, event.m_TextureData.m_TextureID);
-			}
-			else
-			{
-				AddTexture(rendererDataComponent, event.m_Path, event.m_TextureData.m_TextureType, event.m_TextureData.m_TextureID);
-			}
-		}
-
-		auto viewAddUITextures = accessor.view<const pig::AddUITextureInFrameEvent>();
-		for (auto ent : viewAddUITextures)
-		{
-			const pig::AddUITextureInFrameEvent& event = viewAddUITextures.get<const pig::AddUITextureInFrameEvent>(ent);
-			if (event.m_IsVirtual)
-			{
-				AddTexture(rendererDataComponent, event.m_TextureData.m_Texture, event.m_TextureData.m_TextureType, event.m_TextureData.m_TextureID);
-			}
-			else
-			{
-				AddTexture(rendererDataComponent, event.m_Path, event.m_TextureData.m_TextureType, event.m_TextureData.m_TextureID);
-			}
-		}
-
-		auto viewAddUIFontTextures = accessor.view<const pig::AddUIFontTextureInFrameEvent>();
-		for (auto ent : viewAddUIFontTextures)
-		{
-			const pig::AddUIFontTextureInFrameEvent& event = viewAddUIFontTextures.get<const pig::AddUIFontTextureInFrameEvent>(ent);
-
-			AddTexture(rendererDataComponent, event.m_TextureData.m_Texture, event.m_TextureData.m_TextureType, event.m_TextureData.m_TextureID);
-			
-		}
 		auto viewDrawQuad = accessor.view<const pig::DrawQuadInFrameEvent>();
 		for (auto ent : viewDrawQuad)
 		{
 			const pig::DrawQuadInFrameEvent& event = viewDrawQuad.get<const pig::DrawQuadInFrameEvent>(ent);
 			if (event.m_TextureID.IsNull())
 			{
-				DrawQuad(rendererDataComponent, event.m_Transform, event.m_Color, event.m_Origin);
+				DrawQuad(rendererDataComponent, resourcesComponent, event.m_Transform, event.m_Color, event.m_Origin);
 			}
 			else
 			{
-				DrawQuad(rendererDataComponent, event.m_Transform, event.m_TextureID, event.m_Origin);
+				DrawQuad(rendererDataComponent, resourcesComponent, event.m_Transform, event.m_TextureID, event.m_Origin);
 			}
 		}
 		auto viewDrawUIQuad = accessor.view<const pig::DrawUIQuadInFrameEvent>();
@@ -376,11 +324,11 @@ namespace
 			const pig::DrawUIQuadInFrameEvent& event = viewDrawUIQuad.get<const pig::DrawUIQuadInFrameEvent>(ent);
 			if (event.m_TextureID.IsNull())
 			{
-				DrawQuad(rendererDataComponent, event.m_Transform, event.m_Color, event.m_Origin);
+				DrawQuad(rendererDataComponent, resourcesComponent, event.m_Transform, event.m_Color, event.m_Origin);
 			}
 			else
 			{
-				DrawQuad(rendererDataComponent, event.m_Transform, event.m_TextureID, event.m_Origin);
+				DrawQuad(rendererDataComponent, resourcesComponent, event.m_Transform, event.m_TextureID, event.m_Origin);
 			}
 		}
 		auto viewDrawSprite = accessor.view<const pig::DrawSpriteInFrameEvent>();
@@ -388,30 +336,30 @@ namespace
 		{
 			const pig::DrawSpriteInFrameEvent& event = viewDrawSprite.get<const pig::DrawSpriteInFrameEvent>(ent);
 			
-			DrawSprite(rendererDataComponent, event.m_Sprite);
+			DrawSprite(rendererDataComponent, resourcesComponent, event.m_Sprite);
 		}
 		auto viewDrawString = accessor.view<const pig::DrawStringInFrameEvent>();
 		for (auto ent : viewDrawString)
 		{
 			const pig::DrawStringInFrameEvent& event = viewDrawString.get<const pig::DrawStringInFrameEvent>(ent);
 
-			DrawString(rendererDataComponent, event.m_Transform, event.m_String, event.m_Font, event.m_Color, event.m_Kerning, event.m_Linespacing);
+			DrawString(rendererDataComponent, resourcesComponent, event.m_Transform, event.m_String, event.m_Font, event.m_Color, event.m_Kerning, event.m_Linespacing);
 		}
 
 		auto viewDrawUIString = accessor.view<const pig::DrawUIStringInFrameEvent>();
 		for (auto ent : viewDrawUIString)
 		{
 			const pig::DrawUIStringInFrameEvent& event = viewDrawUIString.get<const pig::DrawUIStringInFrameEvent>(ent);
-
-			DrawString(rendererDataComponent, event.m_Transform, event.m_String, event.m_Font, event.m_Color, event.m_Kerning, event.m_Linespacing);
+			PG_CORE_EXCEPT(resourcesComponent.m_FontMap.find(event.m_FontID) != resourcesComponent.m_FontMap.end(), "Could not find font");
+			DrawString(rendererDataComponent, resourcesComponent, event.m_Transform, event.m_String, resourcesComponent.m_FontMap.at(event.m_FontID), event.m_Color, event.m_Kerning, event.m_Linespacing);
 		}
 	}
-	void Render(pig::CheckedRegistryAccessor& accessor, const pig::OrthographicCamera& ortoCamera, pig::RendererDataSingletonComponent& rendererDataComponent)
+	void Render(pig::CheckedRegistryAccessor& accessor, const pig::OrthographicCamera& ortoCamera, pig::RendererDataSingletonComponent& rendererDataComponent, const pig::ResourceMapSingletonComponent& resourcesComponent)
 	{
 		Clear({ 0.3f, 0.3f, 0.3f, 1.f });
-		BeginScene(ortoCamera, rendererDataComponent);
-		ProcessRenderRequests(accessor, rendererDataComponent);
-		EndScene(rendererDataComponent);
+		BeginScene(ortoCamera, rendererDataComponent, resourcesComponent);
+		ProcessRenderRequests(accessor, rendererDataComponent, resourcesComponent);
+		EndScene(rendererDataComponent, resourcesComponent);
 	}
 }
 
@@ -425,10 +373,9 @@ pig::SystemAccessDecl pig::Renderer2DSystem::DeclareAccess() const
 		std::type_index(typeid(pig::RendererDataSingletonComponent)),
 	};
 	decl.readSet = {
+		std::type_index(typeid(pig::EngineConfigSingletonComponent)),
 		std::type_index(typeid(pig::OrthographicCameraComponent)),
-		std::type_index(typeid(pig::AddTextureInFrameEvent)),
-		std::type_index(typeid(pig::AddUIFontTextureInFrameEvent)),
-		std::type_index(typeid(pig::AddUITextureInFrameEvent)),
+		std::type_index(typeid(pig::ResourceMapSingletonComponent)),
 		std::type_index(typeid(pig::DrawQuadInFrameEvent)),
 		std::type_index(typeid(pig::DrawSpriteInFrameEvent)),
 		std::type_index(typeid(pig::DrawStringInFrameEvent)),
@@ -444,23 +391,27 @@ void pig::Renderer2DSystem::Update(const pig::Timestep& ts)
 
 	auto rendererDataView = accessor.view<pig::RendererDataSingletonComponent>();
 	auto viewCamera = accessor.view<const pig::OrthographicCameraComponent>();
-	if (viewCamera.empty())
+	auto resourcesView = accessor.view<const pig::ResourceMapSingletonComponent>();
+	auto configView = accessor.view<const pig::EngineConfigSingletonComponent>();
+	if (viewCamera.empty() || resourcesView.empty() || configView.empty())
 	{
 		return;
 	}
 	const pig::OrthographicCamera& ortoCamera = viewCamera.get<const pig::OrthographicCameraComponent>(viewCamera.front()).m_Camera;
+	const pig::ResourceMapSingletonComponent& resourcesComponent = resourcesView.get<const pig::ResourceMapSingletonComponent>(resourcesView.front());
+	const pig::EngineConfigSingletonComponent& configComponent = configView.get<const pig::EngineConfigSingletonComponent>(configView.front());
 	if (rendererDataView.empty())
 	{
 		pig::RendererDataSingletonComponent rendererDataComponent;
 		entt::entity singletonEntity = accessor.create();
-		Init(rendererDataComponent);
-		Render(accessor, ortoCamera, rendererDataComponent);
+		Init(rendererDataComponent, resourcesComponent, configComponent);
+		Render(accessor, ortoCamera, rendererDataComponent, resourcesComponent);
 		accessor.emplace_deferred<pig::RendererDataSingletonComponent>(singletonEntity, std::move(rendererDataComponent));
 	}
 	else
 	{
 		pig::RendererDataSingletonComponent& rendererDataComponent = rendererDataView.get<pig::RendererDataSingletonComponent>(rendererDataView.front());
-		Render(accessor, ortoCamera, rendererDataComponent);
+		Render(accessor, ortoCamera, rendererDataComponent, resourcesComponent);
 	}
 }
 

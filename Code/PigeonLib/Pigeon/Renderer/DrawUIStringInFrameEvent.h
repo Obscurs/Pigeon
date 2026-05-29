@@ -1,6 +1,6 @@
 #pragma once
 #include "Pigeon/Core/Core.h"
-#include "Pigeon/Renderer/Font.h"
+#include "Pigeon/Core/UUID.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -12,7 +12,7 @@ namespace pig
 		DrawUIStringInFrameEvent() {};
 		DrawUIStringInFrameEvent(const DrawUIStringInFrameEvent&) = default;
 
-		pig::S_Ptr<pig::Font> m_Font;
+		pig::UUID m_FontID;
 		std::string m_String = "";
 		glm::mat4 m_Transform;
 		glm::vec4 m_Color{ 0.f, 0.f, 0.f, 0.f };

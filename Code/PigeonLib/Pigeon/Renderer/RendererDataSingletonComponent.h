@@ -24,12 +24,6 @@ namespace pig
 	static const unsigned int QUAD_INDEX_COUNT = 6;
 	static const unsigned int BATCH_MAX_COUNT = 1000; //ARNAU TODO: this is hardcoded
 
-	struct MappedTexture
-	{
-		pig::S_Ptr<pig::Texture2D> m_Texture;
-		EMappedTextureType m_TextureType;
-	};
-
 	struct RendererDataSingletonComponent
 	{
 		struct BatchData
@@ -50,10 +44,7 @@ namespace pig
 		pig::S_Ptr<pig::Shader> m_QuadShader = nullptr;
 		pig::S_Ptr<pig::Shader> m_TextShader = nullptr;
 
-		std::unordered_map<pig::UUID, MappedTexture> m_TextureMap;
 		std::unordered_map<pig::UUID, BatchData> m_BatchMap;
 		std::unordered_map<int, std::unordered_map<pig::UUID, BatchData>> m_LayerBatchMap;
-
-		pig::UUID m_DefaultTexture = pig::UUID::Generate();
 	};
 }

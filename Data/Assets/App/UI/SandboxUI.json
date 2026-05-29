@@ -36,7 +36,7 @@
           "alignment_v": "top",
           "uuid": "92345678-9abc-def0-1234-56789abcdef1",
           "image": {
-            "path" : "Assets/Sandbox/Textures/Checkerboard.png"
+            "id" : "e3afff59-1ee8-4396-b9ed-b093dd521f91"
           }
         }
       }      
