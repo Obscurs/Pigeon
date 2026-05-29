@@ -8,11 +8,19 @@
 pig::U_Ptr<pig::World> pig::World::s_Instance = nullptr;
 
 void pig::CheckedRegistryAccessor::pushDeferredRequest(
-	entt::entity e, void* payload,
-	void(*apply)(entt::registry&, entt::entity, void*),
+	entt::entity e, void* payload, CheckedRegistryAccessor* self,
+	void(*apply)(CheckedRegistryAccessor*, entt::registry&, entt::entity, void*),
 	void(*destroy)(void*))
 {
-	pig::World::Get().PushDeferredRequest({ e, payload, apply, destroy });
+	pig::World::Get().PushDeferredRequest({ e, payload, self, apply, destroy });
+}
+
+void pig::CheckedRegistryAccessor::pushDeferredOneFrameRequest(
+	entt::entity e, void* payload, CheckedRegistryAccessor* self,
+	void(*apply)(CheckedRegistryAccessor*, entt::registry&, entt::entity, void*),
+	void(*destroy)(void*))
+{
+	pig::World::Get().PushDeferredOneFrameRequest({ e, payload, self, apply, destroy });
 }
 
 void pig::CheckedRegistryAccessor::pushDeferredDestroy(const entt::entity& e)
@@ -49,6 +57,10 @@ entt::registry& pig::World::GetRegistryDirect()
 void pig::World::PushDeferredRequest(pig::DeferredRequest op)
 {
 	m_DeferredRequests.push_back(std::move(op));
+}
+void pig::World::PushDeferredOneFrameRequest(pig::DeferredRequest op)
+{
+	m_DeferredOneFrameComponents.push_back(std::move(op));
 }
 
 void pig::World::PushDeferredDestroy(const entt::entity& entity)
@@ -246,10 +258,18 @@ void pig::World::FlushDeferredRequests()
 	// Must not be called while a system Update() is in progress.
 	PG_CORE_ASSERT(m_ActiveSystem == nullptr, "FlushDeferredRequests called during Update");
 
+	for (auto& op : m_DeferredOneFrameComponents)
+	{
+		if (m_Registry.valid(op.entity))
+			op.apply(op.accessor, m_Registry, op.entity, op.payload);
+		op.destroy(op.payload);
+	}
+	m_DeferredOneFrameComponents.clear();
+
 	for (auto& op : m_DeferredRequests)
 	{
 		if (m_Registry.valid(op.entity))
-			op.apply(m_Registry, op.entity, op.payload);
+			op.apply(op.accessor, m_Registry, op.entity, op.payload);
 		op.destroy(op.payload);
 	}
 	m_DeferredRequests.clear();
@@ -278,6 +298,9 @@ void pig::World::Init()
 	PG_CORE_ASSERT(!m_ActiveSystem, "Init called during Update");
 
 	// Clean up any outstanding deferred payloads to avoid leaks.
+	for (auto& op : m_DeferredOneFrameComponents)
+		op.destroy(op.payload);
+	m_DeferredOneFrameComponents.clear();
 	for (auto& op : m_DeferredRequests)
 		op.destroy(op.payload);
 	m_DeferredRequests.clear();

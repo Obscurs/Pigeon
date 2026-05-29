@@ -4,7 +4,7 @@
 
 #include "Utils/TestApp.h"
 
-#include <Pigeon/Core/InputComponents.h>
+#include <Pigeon/Core/InputStateSingletonComponent.h>
 
 #include <Pigeon/ECS/World.h>
 #include <Pigeon/ECS/System.h>
@@ -716,7 +716,7 @@ namespace CatchTestsetFail
 
 		SECTION("Load layout from file")
 		{
-			pig::ui::LoadLayoutOneFrameComponent& layoutJson = pig::World::GetRegistryDirect().emplace<pig::ui::LoadLayoutOneFrameComponent>(pig::World::GetRegistryDirect().create());
+			pig::ui::LoadLayoutEvent& layoutJson = pig::World::GetRegistryDirect().emplace<pig::ui::LoadLayoutEvent>(pig::World::GetRegistryDirect().create());
 
 			SECTION("Load single element image layout")
 			{

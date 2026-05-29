@@ -7,6 +7,7 @@
 #include "Pigeon/Renderer/Sprite.h"
 #include "Pigeon/UI/UIComponents.h"
 #include "Pigeon/Core/Clock.h"
+#include "Sandbox/ConfigLoaderSystem.h"
 #include "Sandbox/SampleUISystem.h"
 
 class Sandbox : public pig::Application
@@ -19,6 +20,7 @@ public:
 pig::Application& pig::CreateApplication()
 {
 	pig::Application& sandbox = Sandbox::Create();
+	pig::World::Get().RegisterSystem(std::move(std::make_unique<sbx::ConfigLoaderSystem>()));
 	pig::World::Get().RegisterSystem(std::move(std::make_unique<sbx::SampleUISystem>()));
 	
 	return sandbox;

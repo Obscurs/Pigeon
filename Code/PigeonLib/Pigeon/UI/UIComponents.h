@@ -57,17 +57,17 @@ namespace pig::ui
 		pig::UUID m_TextureHandle;
 	};
 
-	struct LoadLayoutOneFrameComponent
+	struct LoadLayoutEvent
 	{
-		LoadLayoutOneFrameComponent() = default;
+		LoadLayoutEvent() = default;
 		
 		pig::UUID m_UUID;
 	};
 
-	struct RendererConfig
+	struct RendererConfigSingletonComponent
 	{
-		RendererConfig() = default;
-		RendererConfig(const RendererConfig&) = default;
+		RendererConfigSingletonComponent() = default;
+		RendererConfigSingletonComponent(const RendererConfigSingletonComponent&) = default;
 
 		pig::OrthographicCamera m_Camera{0.f, 1280.0f, -720.0f, 0 };
 
@@ -126,9 +126,6 @@ namespace pig::ui
 		UIUpdateImageUUIDOneFrameComponent(const UIUpdateImageUUIDOneFrameComponent&) = default;
 
 		pig::UUID m_UUID{};
-
-		//ARNAU TODO use this to destroy previous images in UI render system? or rethink 
-		pig::UUID m_PreviousImageToDestroy{};
 	};
 
 	struct UIUpdateTextOneFrameComponent
@@ -143,7 +140,6 @@ namespace pig::ui
 		float m_Kerning{};
 	};
 
-	//ARNAU TODO rethink, maybe we do not need OFC for this
 	struct UIOnClickOneFrameComponent
 	{
 		UIOnClickOneFrameComponent() = default;

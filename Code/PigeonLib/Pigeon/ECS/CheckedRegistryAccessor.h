@@ -65,13 +65,50 @@ namespace pig
 
 			// Static template instantiations — no per-call heap allocation for the trampolines.
 			// Non-capturing lambdas are implicitly convertible to function pointers in C++17.
-			pushDeferredRequest(e, payload,
-				+[](entt::registry& reg, entt::entity ent, void* p)
+			pushDeferredRequest(e, payload, this,
+				+[](CheckedRegistryAccessor* self, entt::registry& reg, entt::entity ent, void* p)
 				{
 					// Double-add assertion lives here where Component is in scope.
 					PG_CORE_ASSERT(!reg.all_of<Component>(ent),
 						"Deferred add: entity already has component");
 					reg.emplace<Component>(ent, std::move(*static_cast<Component*>(p)));
+				},
+				+[](void* p) { delete static_cast<Component*>(p); });
+		}
+
+		// Deferred add — asserts Component is in addSet, buffers the operation until end-of-frame.
+		template<typename Component, typename... Args>
+		void emplace_oneframe(entt::entity e, Args&&... args)
+		{
+			PG_CORE_ASSERT(
+				m_Decl.addSet.count(std::type_index(typeid(Component))),
+				"System attempted deferred add of a component not in addSet");
+			// Allocate the component value on the heap (unavoidable for type-erasure).
+			auto* payload = new Component(std::forward<Args>(args)...);
+
+			// Static template instantiations — no per-call heap allocation for the trampolines.
+			// Non-capturing lambdas are implicitly convertible to function pointers in C++17.
+			pushDeferredRequest(e, payload, this,
+				+[](CheckedRegistryAccessor* self, entt::registry& reg, entt::entity ent, void* p)
+				{
+					auto* comp = static_cast<Component*>(p);
+
+					PG_CORE_ASSERT(!reg.all_of<Component>(ent),
+						"Deferred add: entity already has component");
+
+					reg.emplace<Component>(ent, std::move(*comp));
+
+					auto* payload2 = new Component(*comp);
+
+					// Static template instantiations — no per-call heap allocation for the trampolines.
+					// Non-capturing lambdas are implicitly convertible to function pointers in C++17.
+					self->pushDeferredOneFrameRequest(ent, payload2, self,
+						+[](CheckedRegistryAccessor* self, entt::registry& reg2, entt::entity ent2, void*)
+						{
+							reg2.remove<Component>(ent2);
+						},
+						+[](void* p2) { delete static_cast<Component*>(p2); });
+
 				},
 				+[](void* p) { delete static_cast<Component*>(p); });
 		}
@@ -102,8 +139,8 @@ namespace pig
 		{
 			auto* payload = new Component(std::forward<Args>(args)...);
 
-			pushDeferredRequest(e, payload,
-				+[](entt::registry& reg, entt::entity ent, void* p)
+			pushDeferredRequest(e, payload, this,
+				+[](CheckedRegistryAccessor* self, entt::registry& reg, entt::entity ent, void* p)
 				{
 					reg.remove<Component>(ent);
 				},
@@ -123,8 +160,8 @@ namespace pig
 			entt::entity e = m_Registry.create();
 			// Static template instantiations — no per-call heap allocation for the trampolines.
 			// Non-capturing lambdas are implicitly convertible to function pointers in C++17.
-			pushDeferredRequest(e, payload,
-				+[](entt::registry& reg, entt::entity ent, void* p)
+			pushDeferredRequest(e, payload, this,
+				+[](CheckedRegistryAccessor* self, entt::registry& reg, entt::entity ent, void* p)
 				{
 					// Double-add assertion lives here where Component is in scope.
 					PG_CORE_ASSERT(!reg.all_of<Component>(ent),
@@ -189,8 +226,12 @@ namespace pig
 		}
 
 		// Defined out-of-line in World.cpp to avoid circular include with World.h.
-		void pushDeferredRequest(entt::entity e, void* payload,
-			void(*apply)(entt::registry&, entt::entity, void*),
+		void pushDeferredRequest(entt::entity e, void* payload, CheckedRegistryAccessor* self,
+			void(*apply)(CheckedRegistryAccessor*, entt::registry&, entt::entity, void*),
+			void(*destroy)(void*));
+
+		void pushDeferredOneFrameRequest(entt::entity e, void* payload, CheckedRegistryAccessor* self,
+			void(*apply)(CheckedRegistryAccessor*, entt::registry&, entt::entity, void*),
 			void(*destroy)(void*));
 
 		void pushDeferredDestroy(const entt::entity& e);

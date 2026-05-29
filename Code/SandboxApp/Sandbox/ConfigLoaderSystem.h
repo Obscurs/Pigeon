@@ -1,14 +1,16 @@
 #pragma once
+
 #include "Pigeon/ECS/System.h"
 
-namespace pig 
+namespace sbx
 {
-	class Renderer2DSystem : public pig::System
+	class ConfigLoaderSystem : public pig::System
 	{
 	public:
-		Renderer2DSystem() = default;
-		~Renderer2DSystem() = default;
+		ConfigLoaderSystem() = default;
+		~ConfigLoaderSystem() = default;
 		void Update(const pig::Timestep& ts) override;
 		pig::SystemAccessDecl DeclareAccess() const override;
+	private:
 	};
 }

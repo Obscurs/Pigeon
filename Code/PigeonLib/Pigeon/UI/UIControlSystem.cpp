@@ -32,38 +32,6 @@ namespace
 		accessor.destroy_deferred(ent);
 	}
 
-	void CleanOneFrameComponents(pig::CheckedRegistryAccessor& accessor)
-	{
-		for (auto ent : accessor.view<const pig::ui::UIUpdateTransformOneFrameComponent>())
-		{
-			accessor.remove_deferred<pig::ui::UIUpdateTransformOneFrameComponent>(ent);
-		}
-		for (auto ent : accessor.view<const pig::ui::UIUpdateParentOneFrameComponent>())
-		{
-			accessor.remove_deferred<pig::ui::UIUpdateParentOneFrameComponent>(ent);
-		}
-		for (auto ent : accessor.view<const pig::ui::UIUpdateEnableOneFrameComponent>())
-		{
-			accessor.remove_deferred<pig::ui::UIUpdateEnableOneFrameComponent>(ent);
-		}
-		for (auto ent : accessor.view<const pig::ui::UIUpdateUUIDOneFrameComponent>())
-		{
-			accessor.remove_deferred<pig::ui::UIUpdateUUIDOneFrameComponent>(ent);
-		}
-		for (auto ent : accessor.view<const pig::ui::UIUpdateImageUUIDOneFrameComponent>())
-		{
-			accessor.remove_deferred<pig::ui::UIUpdateImageUUIDOneFrameComponent>(ent);
-		}
-		for (auto ent : accessor.view<const pig::ui::UIUpdateTextOneFrameComponent>())
-		{
-			accessor.remove_deferred<pig::ui::UIUpdateTextOneFrameComponent>(ent);
-		}
-		for (auto ent : accessor.view<const pig::ui::LoadLayoutOneFrameComponent>())
-		{
-			accessor.destroy_deferred(ent);
-		}
-	}
-
 	void ParseImageComponentFromJson(pig::CheckedRegistryAccessor& accessor, const json& jsonObject, entt::entity ent)
 	{
 		pig::ui::ImageComponent component;
@@ -257,7 +225,7 @@ pig::SystemAccessDecl pig::ui::UIControlSystem::DeclareAccess() const
 		std::type_index(typeid(pig::ui::UIUpdateUUIDOneFrameComponent)),
 		std::type_index(typeid(pig::ui::UIUpdateImageUUIDOneFrameComponent)),
 		std::type_index(typeid(pig::ui::UIUpdateTextOneFrameComponent)),
-		std::type_index(typeid(pig::ui::LoadLayoutOneFrameComponent)),
+		std::type_index(typeid(pig::ui::LoadLayoutEvent)),
 		std::type_index(typeid(pig::ui::UIDestroyOneFrameComponent)),
 		std::type_index(typeid(pig::ui::BaseComponent)),
 		std::type_index(typeid(pig::ui::ImageComponent)),
@@ -348,10 +316,10 @@ void pig::ui::UIControlSystem::Update(const pig::Timestep& ts)
 		textComponent.m_Text = updateComponent.m_Text;
 	}
 
-	auto viewLoad = accessor.view<const pig::ui::LoadLayoutOneFrameComponent>();
+	auto viewLoad = accessor.view<const pig::ui::LoadLayoutEvent>();
 	for (auto entJson : viewLoad)
 	{
-		LoadLayoutFromUUID(resourcesComponent, viewLoad.get<const pig::ui::LoadLayoutOneFrameComponent>(entJson).m_UUID);
+		LoadLayoutFromUUID(resourcesComponent, viewLoad.get<const pig::ui::LoadLayoutEvent>(entJson).m_UUID);
 	}
 
 	auto viewDestroy = accessor.view<const pig::ui::UIDestroyOneFrameComponent>();
@@ -359,7 +327,6 @@ void pig::ui::UIControlSystem::Update(const pig::Timestep& ts)
 	{
 		DestroyUI(accessor, ent);
 	}
-	CleanOneFrameComponents(accessor);
 }
 
 

@@ -1,15 +1,11 @@
 #include "Pigeon/Core/UUID.h"
-#include "Pigeon/ECS/World.h"
-#include "Pigeon/Renderer/Font.h"
-#include "Pigeon/Renderer/Shader.h"
-#include "Pigeon/Renderer/Texture.h"
 
 namespace sbx
 {
-	struct SampleUIComponent
+	struct SampleUISingletonComponent
 	{
-		SampleUIComponent() {};
-		SampleUIComponent(const SampleUIComponent&) = default;
+		SampleUISingletonComponent() {};
+		SampleUISingletonComponent(const SampleUISingletonComponent&) = default;
 
 		glm::vec3 m_ColorQuad1 { 0.f,0.f,0.f };
 		glm::vec3 m_PosQuad1 { 0.f,0.f,0.f };

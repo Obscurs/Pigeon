@@ -1,5 +1,4 @@
 #include "pch.h"
-
 #include "Renderer2DSystem.h"
 
 #include "Pigeon/Core/Clock.h"
@@ -14,6 +13,7 @@
 #include "Pigeon/Renderer/DrawUIStringInFrameEvent.h"
 #include "Pigeon/Renderer/Font.h"
 #include "Pigeon/Renderer/Msdfdata.h"
+#include "Pigeon/Renderer/RenderCommand.h"
 #include "Pigeon/Renderer/RendererDataSingletonComponent.h"
 #include "Pigeon/Renderer/Texture.h"
 
@@ -208,6 +208,9 @@ namespace
 			const unsigned int vertexBufferOffset = texBatch.m_VertexCount * pig::VERTEX_ATRIB_COUNT;
 			const unsigned int indexBufferOffset = texBatch.m_IndexCount;
 
+			if (texBatch.m_IndexCount == pig::BATCH_MAX_COUNT * pig::QUAD_INDEX_COUNT)
+			{
+				PG_CORE_EXCEPT(texBatch.m_IndexCount < pig::BATCH_MAX_COUNT * pig::QUAD_INDEX_COUNT, "We are trying to allocate out of bounds, increase the limit or change the implementation to do not depend on a fixed size");
 			memcpy(&texBatch.m_VertexBuffer[vertexBufferOffset], quad.m_SquareVertices, VERTEX_STRIDE);
 			memcpy(&texBatch.m_IndexBuffer[indexBufferOffset], quad.m_SquareIndices, INDEX_STRIDE);
 

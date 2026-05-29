@@ -1,5 +1,7 @@
 file(GLOB SRCS
-    "Sandbox/SampleUIComponent.h"
+    "Sandbox/ConfigLoaderSystem.cpp"
+    "Sandbox/SampleUIConfigSingletonComponent.h"
+    "Sandbox/SampleUISingletonComponent.h"
     "Sandbox/SampleUISystem.cpp"
     "Sandbox2D.cpp"
 )

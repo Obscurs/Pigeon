@@ -11,23 +11,19 @@
 #include "Pigeon/Renderer/DrawStringInFrameEvent.h"
 #include "Pigeon/Renderer/Sprite.h"
 #include "Pigeon/UI/UIComponents.h"
-#include "Sandbox/SampleUIComponent.h"
-
-namespace
-{
-	static const char* s_SampleFontPath = "Assets/Sandbox/Fonts/opensans/OpenSans-Regular.ttf";
-}
+#include "Sandbox/SampleUIConfigSingletonComponent.h"
+#include "Sandbox/SampleUISingletonComponent.h"
 
 pig::SystemAccessDecl sbx::SampleUISystem::DeclareAccess() const
 {
 	pig::SystemAccessDecl decl;
 	decl.writeSet = {
-		std::type_index(typeid(sbx::SampleUIComponent)),
+		std::type_index(typeid(sbx::SampleUISingletonComponent)),
 	};
 	decl.addSet = {
 		std::type_index(typeid(pig::OrthographicCameraComponent)),
-		std::type_index(typeid(pig::ui::LoadLayoutOneFrameComponent)),
-		std::type_index(typeid(sbx::SampleUIComponent)),
+		std::type_index(typeid(pig::ui::LoadLayoutEvent)),
+		std::type_index(typeid(sbx::SampleUISingletonComponent)),
 	};
 	decl.inframeAddSet = {
 
@@ -36,6 +32,7 @@ pig::SystemAccessDecl sbx::SampleUISystem::DeclareAccess() const
 		std::type_index(typeid(pig::DrawStringInFrameEvent)),
 	};
 	decl.readSet = {
+		std::type_index(typeid(sbx::SampleUIConfigSingletonComponent)),
 		std::type_index(typeid(pig::ResourceMapSingletonComponent)),
 		std::type_index(typeid(pig::ui::BaseComponent)),
 		std::type_index(typeid(pig::ui::ImageComponent)),
@@ -49,19 +46,20 @@ void sbx::SampleUISystem::Update(const pig::Timestep& ts)
 	auto accessor = pig::World::GetRegistry();
 
 	auto resourcesView = accessor.view<const pig::ResourceMapSingletonComponent>();
-	if ( resourcesView.empty())
+	auto configView = accessor.view<const sbx::SampleUIConfigSingletonComponent>();
+	if (resourcesView.empty() || configView.empty())
 	{
 		return;
 	}
 	const pig::ResourceMapSingletonComponent& resourcesComponent = resourcesView.get<const pig::ResourceMapSingletonComponent>(resourcesView.front());
-	auto view = accessor.view<sbx::SampleUIComponent>();
+	const sbx::SampleUIConfigSingletonComponent& configComponent = configView.get<const sbx::SampleUIConfigSingletonComponent>(configView.front());
+	auto view = accessor.view<sbx::SampleUISingletonComponent>();
 	if (view.empty())
 	{
-		sbx::SampleUIComponent component;
+		sbx::SampleUISingletonComponent component;
 		entt::entity entity = accessor.create();
 
 		entt::entity cameraEntity = accessor.create();
-		entt::entity layoutEntity = accessor.create();
 
 		pig::OrthographicCameraComponent cameraComponent;
 
@@ -85,25 +83,23 @@ void sbx::SampleUISystem::Update(const pig::Timestep& ts)
 		component.m_ScaleText = glm::vec3(0.3f, 0.3f, 1.f);
 		component.m_ColorText = glm::vec3(1.f, 0.f, 0.f);
 
-		//ARNAU TODO Replace these to be loaded from a Config.json file in Assets/App
-		component.m_FontID = pig::UUID("a60c36f6-3c65-4bc5-8279-30ce17d854c6"); 
-		component.m_UUIDUI1 = pig::UUID("92345678-9abc-def0-1234-56789abcdef2");
-		component.m_UUIDUI2 = pig::UUID("92345678-9abc-def0-1234-56789abcdef1");
+		component.m_FontID = pig::UUID(configComponent.m_DefaultFontID);
+		component.m_UUIDUI1 = pig::UUID(configComponent.m_UUIDUI1);
+		component.m_UUIDUI2 = pig::UUID(configComponent.m_UUIDUI2);
 
-		accessor.emplace_deferred<sbx::SampleUIComponent>(entity, std::move(component));
+		accessor.emplace_deferred<sbx::SampleUISingletonComponent>(entity, std::move(component));
 
-		pig::ui::LoadLayoutOneFrameComponent layoutComponent;
-		layoutComponent.m_UUID = "e48eb073-fcb1-44eb-a3b0-eb2f186a5831";
-		accessor.emplace_deferred<pig::ui::LoadLayoutOneFrameComponent>(layoutEntity, std::move(layoutComponent));
+		pig::ui::LoadLayoutEvent layoutEvent;
+		layoutEvent.m_UUID = configComponent.m_MainLayoutID;
+		accessor.EmplaceEvent<pig::ui::LoadLayoutEvent>(std::move(layoutEvent));
 
 		accessor.emplace_deferred<pig::OrthographicCameraComponent>(cameraEntity, std::move(cameraComponent));
 	}
 	else
 	{
-		
 		for (auto ent : view)
 		{
-			sbx::SampleUIComponent& component = view.get<sbx::SampleUIComponent>(ent);
+			sbx::SampleUISingletonComponent& component = view.get<sbx::SampleUISingletonComponent>(ent);
 
 			glm::mat4 transformQuad1(1.f);
 			transformQuad1 = glm::translate(transformQuad1, component.m_PosQuad1);
@@ -124,7 +120,7 @@ void sbx::SampleUISystem::Update(const pig::Timestep& ts)
 			{
 				const pig::ui::BaseComponent& baseComponent = viewImageUI.get<const pig::ui::BaseComponent>(ent);
 				const pig::ui::ImageComponent& imageComponent = viewImageUI.get<const pig::ui::ImageComponent>(ent);
-				if (baseComponent.m_UUID == pig::UUID("92345678-9abc-def0-1234-56789abcdef1"))
+				if (baseComponent.m_UUID == pig::UUID(configComponent.m_UUIDUI1))
 				{
 					const glm::vec4 texCoordsRect(32, 32, 64, 64);
 

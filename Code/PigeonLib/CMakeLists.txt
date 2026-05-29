@@ -12,6 +12,7 @@ file(GLOB PGCORE
     "Pigeon/Core/EntryPoint.h"
     "Pigeon/Core/EventComponent.h"
     "Pigeon/Core/Input.h"
+    "Pigeon/Core/InputStateSingletonComponent.h"
     "Pigeon/Core/InputSystem.cpp"
     "Pigeon/Core/KeyCodes.h"
     "Pigeon/Core/KeyPressedEventComponent.h"

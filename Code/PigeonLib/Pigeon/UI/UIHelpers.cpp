@@ -2,7 +2,7 @@
 
 #include "Pigeon/UI/UIComponents.h"
 
-glm::vec4 pig::ui::GetGlobalBoundsForElementParent(pig::CheckedRegistryAccessor& accessor, const pig::ui::BaseComponent& baseComponent, const pig::ui::RendererConfig& renderComponent, int& level)
+glm::vec4 pig::ui::GetGlobalBoundsForElementParent(pig::CheckedRegistryAccessor& accessor, const pig::ui::BaseComponent& baseComponent, const pig::ui::RendererConfigSingletonComponent& renderComponent, int& level)
 {
 	glm::vec4 globalBounds(0.f, 0.f, renderComponent.m_Width, renderComponent.m_Height);
 
@@ -45,7 +45,7 @@ glm::vec4 pig::ui::GetGlobalBoundsForElementParent(pig::CheckedRegistryAccessor&
 	return globalBounds;
 }
 
-glm::vec4 pig::ui::GetGlobalBoundsForElement(pig::CheckedRegistryAccessor& accessor, const pig::ui::BaseComponent& baseComponent, const pig::ui::RendererConfig& renderComponent, const glm::vec2& uiBoundsSize, int& level)
+glm::vec4 pig::ui::GetGlobalBoundsForElement(pig::CheckedRegistryAccessor& accessor, const pig::ui::BaseComponent& baseComponent, const pig::ui::RendererConfigSingletonComponent& renderComponent, const glm::vec2& uiBoundsSize, int& level)
 {
 	const glm::vec4 bounds = pig::ui::GetGlobalBoundsForElementParent(accessor, baseComponent, renderComponent, level);
 	glm::vec2 posFinal = glm::vec2(bounds.x, bounds.y);

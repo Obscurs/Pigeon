@@ -14,7 +14,8 @@ namespace pig
 	{
 		entt::entity entity;
 		void*        payload;                                // heap-allocated component value
-		void(*apply)(entt::registry&, entt::entity, void*); // typed trampoline, no virtual dispatch
+		CheckedRegistryAccessor* accessor;
+		void(*apply)(CheckedRegistryAccessor* accessor, entt::registry&, entt::entity, void*); // typed trampoline, no virtual dispatch
 		void(*destroy)(void*);                               // cleanup if entity is invalid at flush time
 	};
 
@@ -45,6 +46,7 @@ namespace pig
 		inline static entt::dispatcher& GetDispatcher() { return s_Instance->m_Dispatcher; }
 
 		void PushDeferredRequest(DeferredRequest op);
+		void PushDeferredOneFrameRequest(DeferredRequest op);
 		void PushDeferredDestroy(const entt::entity& entity);
 
 		// Deferred add — asserts Component is in addSet, buffers the operation until end-of-frame.
@@ -57,8 +59,8 @@ namespace pig
 			entt::entity e = m_Registry.create();
 			// Static template instantiations — no per-call heap allocation for the trampolines.
 			// Non-capturing lambdas are implicitly convertible to function pointers in C++17.
-			PushDeferredRequest({ e, payload,
-				+[](entt::registry& reg, entt::entity ent, void* p)
+			PushDeferredRequest({ e, payload, nullptr,
+				+[](CheckedRegistryAccessor*, entt::registry& reg, entt::entity ent, void* p)
 				{
 					// Double-add assertion lives here where Component is in scope.
 					PG_CORE_ASSERT(!reg.all_of<Component>(ent),
@@ -94,6 +96,7 @@ namespace pig
 
 		// Buffer for deferred component adds (flushed after all systems Update()).
 		std::vector<DeferredRequest> m_DeferredRequests;
+		std::vector<DeferredRequest> m_DeferredOneFrameComponents;
 		std::vector<entt::entity> m_DeferredDestroys;
 		static pig::U_Ptr<World> s_Instance;
 	};

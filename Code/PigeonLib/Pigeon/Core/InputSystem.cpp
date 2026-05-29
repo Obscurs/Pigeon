@@ -5,7 +5,7 @@
 
 #include "Pigeon/Core/Application.h"
 #include "Pigeon/Core/Input.h"
-#include "Pigeon/Core/InputComponents.h"
+#include "Pigeon/Core/InputStateSingletonComponent.h"
 #include "Pigeon/Core/KeyCodes.h"
 #include "Pigeon/Core/KeyPressedEventComponent.h"
 #include "Pigeon/Core/KeyReleasedEventComponent.h"

@@ -162,7 +162,7 @@ void pig::Application::Init()
 	world.RegisterSystem(std::move(std::make_unique<pig::ResourceManagerSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pig::ui::UIControlSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pig::ui::UIEventSystem>()));
-	world.RegisterSystem(std::move(std::make_unique<pig::ui::UIRenderSystem>(std::make_shared<pig::ui::UIRenderSystemHelper>())));
+	world.RegisterSystem(std::move(std::make_unique<pig::ui::UIRenderSystem>()));
 
 	pig::Renderer::Init();
 
