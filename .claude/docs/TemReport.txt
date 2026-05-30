@@ -1,4 +1,4 @@
-Task: Rewrite and expand the test suite to cover every registered system (PLAN.md step 1 — full coverage pass)
+Task: Complete test coverage for every concrete system; rename all legacy test files
 Iteration: 1
 Verdict: APPROVED
 
@@ -8,11 +8,11 @@ No source changes in this task. SAB review not applicable.
 --- DYM (tests) ---
 APPROVED with suggestions. No blocking issues.
 
-[SUGGESTION] Code/UT/UT_UI/UIControlSystemTest.cpp:1, Code/UT/UT_UI/UIEventSystemTest.cpp:1, Code/UT/UT_UI/UIRenderSystemTest.cpp:1, Code/UT/UT_Core/InputSystemTest.cpp:1, Code/UT/UT_Core/CameraSystemTest.cpp:1 — All five new test files open with `#pragma once`. This directive has no effect in a .cpp translation unit and should be removed. It is harmless but misleading.
+[SUGGESTION] Code/UT/UT_Core/ConfigLoaderSystemTest.cpp:1, Code/UT/UT_Core/ResourceManagerSystemTest.cpp:1, Code/UT/UT_Renderer/Renderer2DSystemTest.cpp:1, Code/UT/UT_Sandbox/ConfigLoaderSystemTest.cpp:1, Code/UT/UT_Sandbox/SampleUISystemTest.cpp:1 — All five new test files open with `#pragma once`. This directive has no effect in a .cpp translation unit. This was raised in the previous iteration and remains unfixed across all five new files.
 
-[SUGGESTION] Code/UT/UT_UI/UIControlSystemTest.cpp:312-315 (DeclareAccessIsCorrect writeSet block) — The writeSet assertions only check BaseComponent, ImageComponent, and TextComponent. The actual DeclareAccess() writeSet also contains the six one-frame update components (UIUpdateTransformOneFrameComponent, UIUpdateParentOneFrameComponent, UIUpdateEnableOneFrameComponent, UIUpdateUUIDOneFrameComponent, UIUpdateImageUUIDOneFrameComponent, UIUpdateTextOneFrameComponent). The test is incomplete but not wrong.
+[SUGGESTION] Code/UT/UT_Renderer/Renderer2DSystemTest.cpp — pig::Renderer2DSystem is an engine system (PigeonLib), not a SandboxApp module system. The testing guidelines list "renderer" explicitly under UT_Core as an engine primitive folder. Placing the file in a new UT_Renderer folder is structurally consistent with how SandboxApp modules are organised, but deviates from the guidelines which group all PigeonLib engine systems under UT_Core. Consider moving to UT_Core if strict guideline alignment is required.
 
-[SUGGESTION] Code/UT/UT_UI/UIRenderSystemTest.cpp:102-104 (DisabledImageDoesNotProduceDrawEvent) — The assertion `view<BaseComponent>().size() == 1` is used as a proxy for "no draw event was emitted." DrawUIQuadInFrameEvent entities do not carry BaseComponent, so this check does not actually verify the absence of draw events — it only confirms the BaseComponent entity count is unchanged. A stronger assertion would count entities carrying DrawUIQuadInFrameEvent (or the EventComponent tag) directly.
+[SUGGESTION] Code/UT/UT_Core/WorldTest.cpp:163,176,199,221 — The renamed legacy file uses test name formats that do not follow the required `"<ModuleName>.<SystemName>::<Description>"` pattern. Examples: "Core.ECS::World" (SystemName missing), "Core.ECS.SystemOrdering::WriterRunsBeforeReader" (extra dot segment). World is infrastructure not a system, so exact conformance is not enforceable here, but the inconsistency is visible.
 
 Summary:
-All five new system test files are structurally correct: one file per system, naming follows the spec, isolated world per test case, state seeded via GetRegistryDirect(), test name format matches the required convention, and CMakeLists.txt requires no change since all new files land in existing glob-covered folders. Coverage spans happy paths, guard conditions, edge cases, and DeclareAccess verification for every system under test. The three suggestions above are quality improvements with no functional impact; none are blocking.
+All five new system test files are structurally correct: one file per system, correct folder placement (with the UT_Renderer note above), isolated world per test case, state seeded via GetRegistryDirect(), only the system under test is registered, CMakeLists.txt correctly adds UT_Renderer and UT_Sandbox globs and compiles the two SandboxApp system sources. Coverage is adequate across happy paths, guard conditions, and DeclareAccess verification for all five systems. The four renamed files preserve their original test content without loss. The deleted UT_UISystemTest.cpp was confirmed empty. No blocking issues exist.
