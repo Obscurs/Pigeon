@@ -10,7 +10,6 @@
 #include <Pigeon/Core/KeyCodes.h>
 
 #include <Pigeon/Renderer/OrthographicCamera.h>
-#include <Pigeon/Renderer/Renderer2D.h>
 #include <Pigeon/Renderer/Texture.h>
 
 #include <Platform/Testing/TestingWindow.h>

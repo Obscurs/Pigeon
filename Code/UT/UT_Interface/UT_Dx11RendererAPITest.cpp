@@ -8,7 +8,6 @@
 #include "Utils/TestApp.h"
 
 #include <Pigeon/Renderer/OrthographicCamera.h>
-#include <Pigeon/Renderer/Renderer2D.h>
 #include <Pigeon/Renderer/Texture.h>
 
 #include <Platform/DirectX11/Dx11Buffer.h>

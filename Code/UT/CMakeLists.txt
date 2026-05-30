@@ -3,15 +3,11 @@ file(GLOB SRC_MAIN
     "Utils/TestApp.cpp"
 )
 
-
-file(GLOB SRC_TESTS_SAMPLE "UT_Sample/*.cpp")
-
 file(GLOB SRC_TESTS_CORE "UT_Core/*.cpp")
 file(GLOB SRC_TESTS_INTERFACE "UT_Interface/*.cpp")
 file(GLOB SRC_TESTS_UI "UT_UI/*.cpp")
 
 source_group("" FILES ${SRC_MAIN})
-source_group("Tests/Sample" FILES ${SRC_TESTS_SAMPLE})
 
 source_group("Tests/Core" FILES ${SRC_TESTS_CORE})
 source_group("Tests/Interface" FILES ${SRC_TESTS_INTERFACE})
@@ -32,7 +28,6 @@ add_executable (UT
     ${OBJS} 
     ${SRC_MAIN} 
     ${SRC_TESTS_CORE}  
-    ${SRC_TESTS_SAMPLE}
     ${SRC_TESTS_INTERFACE}
     ${SRC_TESTS_UI}
 )

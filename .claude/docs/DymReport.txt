@@ -1,31 +1,33 @@
-Task: Fix existing test compile errors and write new ECS access-control / system-ordering tests
-Iteration: 1
+Task: Rewrite and expand the test suite to cover every registered system (PLAN.md step 1 — full coverage pass)
+Iteration: 2
 
 Test files:
-- Code/UT/UT_Core/UT_ECSTest.cpp  — Core.ECS::World, Core.ECS.SystemOrdering::WriterRunsBeforeReader,
-                                     Core.ECS.DeferredAdd::NotVisibleSameFrame,
-                                     Core.ECS.AccessControl::UndeclaredReadAsserts_DocumentedLimitation,
-                                     Core.ECS.SystemOrdering::CycleDetection_DocumentedLimitation,
-                                     Core.ECS.AccessControl::WriteSetAndAddSetMayOverlap
-- Code/UT/UT_UI/UT_UISystemTest.cpp — all pre-existing UI tests (compile fixes only, no new cases)
+- Code/UT/UT_UI/UIControlSystemTest.cpp  — UIControlSystem (7 test cases)
+- Code/UT/UT_UI/UIEventSystemTest.cpp    — UIEventSystem   (8 test cases)
+- Code/UT/UT_UI/UIRenderSystemTest.cpp   — UIRenderSystem  (4 test cases)
+- Code/UT/UT_Core/InputSystemTest.cpp    — InputSystem     (9 test cases)
+- Code/UT/UT_Core/CameraSystemTest.cpp   — CameraSystem    (8 test cases)
+
+Pre-existing files that were broken by the ECS migration and were fixed:
+- Code/UT/UT_Core/UT_CameraTest.cpp            — removed deleted #include <Pigeon/Renderer/Renderer2D.h>
+- Code/UT/UT_Core/UT_Renderer2DTest.cpp        — cleared; old Renderer2D static API no longer exists
+- Code/UT/UT_Interface/UT_Dx11RendererAPITest.cpp — removed deleted #include <Pigeon/Renderer/Renderer2D.h>
+- Code/UT/UT_UI/UT_UISystemTest.cpp            — cleared; all tests referenced deleted types
+  (pig::ui::RendererConfig, IUIControlSystemHelper, IUIRenderSystemHelper, m_LayoutFilePath,
+   UIUpdateImageUUIDOneFrameComponent::m_PreviousImageToDestroy — none exist in current code)
 
 Test results: PASS
-all 23 test cases pass (837 assertions)
+All tests passed (163 assertions in 56 test cases)
 
-Expected behaviors (for BAS):
-- WriterSystem (writeSet={CompA}) must be topologically sorted before ReaderSystem (readSet={CompA})
-  even when ReaderSystem is registered first. After one World::Update(), ReaderSystem sees
-  the value written by WriterSystem in that same frame.
-- A component added via emplace_deferred is not visible within the same frame it is enqueued;
-  it becomes visible only after World::Update() has returned and FlushDeferredAdds has run,
-  i.e. in the following frame.
-- A system with overlapping writeSet and addSet on the same component type registers without
-  asserting, and its Update() may both mutate existing components via get<> and enqueue new
-  entities via emplace_deferred without any assertions firing.
-- Tests 3 and 4 (undeclared-component read, cycle detection) are documented as limitations:
-  PG_CORE_ASSERT does not throw in the Testing configuration, so automated Catch2 death checks
-  are not feasible. The invariants are enforced in CheckedRegistryAccessor::assertReadOrWrite<>()
-  and World::SortSystems() respectively, and are verified by code inspection.
+The 4 "Assertion Failed" log lines in the output are expected — they come from
+UT_UUIDTest.cpp's "Fail invalid strings" section which intentionally provokes UUID parse errors.
+
+Expected behaviors (for SAB): N/A — all tests pass, no implementation changes needed.
 
 Bugs found:
-- none
+- Pre-existing (not new bugs): UT_UISystemTest.cpp referenced pig::ui::RendererConfig (old type,
+  now RendererConfigSingletonComponent), IUIControlSystemHelper, IUIRenderSystemHelper, helper
+  constructor arguments on UIRenderSystem/UIControlSystem, and
+  UIUpdateImageUUIDOneFrameComponent::m_PreviousImageToDestroy. None of these exist.
+- Pre-existing: UT_CameraTest.cpp, UT_Renderer2DTest.cpp, UT_Dx11RendererAPITest.cpp
+  included deleted header Pigeon/Renderer/Renderer2D.h (Renderer2D was converted to ECS system).
