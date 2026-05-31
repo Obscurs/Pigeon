@@ -1,18 +1,50 @@
-Task: Complete test coverage for every concrete system; rename all legacy test files
+Task: Codebase-wide compliance audit (general review — not a TDD task)
 Iteration: 1
-Verdict: APPROVED
+Verdict: CHANGES REQUIRED
 
 --- SAB (application/engine) ---
-No source changes in this task. SAB review not applicable.
+
+[BLOCKING] Code/SandboxApp/SampleUISystem.cpp — Stale/orphaned system file at wrong location (SandboxApp root, not Sandbox/). References m_Helper->... which is a member variable on a system class, directly violating ECS Hard Rule 3 (no member variables on systems). This file must be removed or the violations corrected.
+
+[BLOCKING] Code/SandboxApp/SampleUIComponent.h — Component struct contains pig::OrthographicCameraController m_CameraController which is a class with behaviour/logic, violating ECS Hard Rule 4 (components are pure data). This file is in the wrong folder (SandboxApp root) and is not referenced by any registered system.
+
+[BLOCKING] Code/SandboxApp/Sandbox/SampleUISingletonComponent.h:1 — Missing #pragma once. Every header must have an include guard.
+
+[BLOCKING] Code/PigeonLib/Pigeon/Core/InputStateSingletonComponent.h:1 — Missing #pragma once.
+
+[BLOCKING] Code/SandboxApp/Sandbox/SampleUISystem.cpp:46 — `auto accessor = pig::World::GetRegistry();`. The coding guidelines forbid `auto` except for range-for iterators. The explicit type must be written: `pig::CheckedRegistryAccessor accessor = pig::World::GetRegistry();`. Same violation appears in: ConfigLoaderSystem.cpp (SandboxApp):40, CameraSystem.cpp:28, InputSystem.cpp:100, ConfigLoaderSystem.cpp (PigeonLib):39, ResourceManagerSystem.cpp:115, Renderer2DSystem.cpp:391, UIControlSystem.cpp:255, UIEventSystem.cpp:39, UIRenderSystem.cpp:87.
+
+[BLOCKING] Code/SandboxApp/Sandbox/SampleUISystem.cpp:153 — `static pig::Clock clock;` inside Update(). A static local inside a system method is effectively a hidden member variable, violating Hard Rule 3. Clock state must be stored outside the system or in a component.
+
+[BLOCKING] Code/PigeonLib/Pigeon/UI/UIHelpers.cpp:53,63,66,69 — Enum names used without full namespace qualification: `EHAlignType::eRight`, `EHAlignType::eCenter`, `EVAlignType::eBottom`, `EVAlignType::eCenter`. The guideline requires always writing the full namespace: `pig::ui::EHAlignType::eRight`, etc.
+
+[BLOCKING] Code/SandboxApp/Sandbox/SampleUISystem.cpp — Include order: line 1 is `"SampleUISystem.h"` but without the full path from project root. The guideline requires `"Sandbox/SampleUISystem.h"` (full path from project root). Same pattern in ConfigLoaderSystem.cpp (SandboxApp):1 (`"ConfigLoaderSystem.h"` should be `"Sandbox/ConfigLoaderSystem.h"`).
+
+[BLOCKING] Code/SandboxApp/Sandbox/SampleUISystem.cpp:167,168,169 — What-comments: `// Identity matrix`, `// Apply translation`, `// Apply scaling`. Comments must only explain non-obvious WHY, not describe what the code does.
+
+[SUGGESTION] Code/SandboxApp/Sandbox/SampleUISystem.cpp:136 — Profanity in a string literal ("This is a fucking text"). This is a user-visible string and should be replaced with neutral placeholder text.
+
+[SUGGESTION] Code/PigeonLib/Pigeon/UI/UIControlSystem.cpp:12 — Brace style: `if (!file.is_open()) {` places `{` on the same line as the `if`, violating the Allman brace rule. Same pattern in ResourceManagerSystem.cpp:18 and ConfigLoaderSystem.cpp (both).
+
+[SUGGESTION] Code/PigeonLib/Pigeon/Renderer/Renderer2DSystem.cpp — Typo in variable name: `s_SuareIndices` (should be `s_SquareIndices`) at lines 25, 68–73, 83. Same typo in comment: "not fount" should be "not found" at lines 221, 297.
+
+[SUGGESTION] Code/SandboxApp/Sandbox/SampleUIConfigSingletonComponent.h:8 — Constructor body is `{}` instead of `= default;`. Cosmetically inconsistent with the rest of the codebase where default constructors use `= default;`.
 
 --- DYM (tests) ---
-APPROVED with suggestions. No blocking issues.
 
-[SUGGESTION] Code/UT/UT_Core/ConfigLoaderSystemTest.cpp:1, Code/UT/UT_Core/ResourceManagerSystemTest.cpp:1, Code/UT/UT_Renderer/Renderer2DSystemTest.cpp:1, Code/UT/UT_Sandbox/ConfigLoaderSystemTest.cpp:1, Code/UT/UT_Sandbox/SampleUISystemTest.cpp:1 — All five new test files open with `#pragma once`. This directive has no effect in a .cpp translation unit. This was raised in the previous iteration and remains unfixed across all five new files.
+[BLOCKING] Code/UT/UT_Core/UUIDTest.cpp — Uses SECTION blocks (lines 23, 32, 40, 54). The testing guidelines explicitly forbid SECTION; separate TEST_CASE entries must be used instead.
 
-[SUGGESTION] Code/UT/UT_Renderer/Renderer2DSystemTest.cpp — pig::Renderer2DSystem is an engine system (PigeonLib), not a SandboxApp module system. The testing guidelines list "renderer" explicitly under UT_Core as an engine primitive folder. Placing the file in a new UT_Renderer folder is structurally consistent with how SandboxApp modules are organised, but deviates from the guidelines which group all PigeonLib engine systems under UT_Core. Consider moving to UT_Core if strict guideline alignment is required.
+[BLOCKING] Code/UT/UT_Interface/Dx11RendererAPITest.cpp — The entire test body is commented out across all three TEST_CASE entries. The file provides zero coverage and tests nothing. The commented code also uses SECTION. Either the tests must be implemented or the file removed.
 
-[SUGGESTION] Code/UT/UT_Core/WorldTest.cpp:163,176,199,221 — The renamed legacy file uses test name formats that do not follow the required `"<ModuleName>.<SystemName>::<Description>"` pattern. Examples: "Core.ECS::World" (SystemName missing), "Core.ECS.SystemOrdering::WriterRunsBeforeReader" (extra dot segment). World is infrastructure not a system, so exact conformance is not enforceable here, but the inconsistency is visible.
+[BLOCKING] All test files (CameraSystemTest.cpp:1, ConfigLoaderSystemTest.cpp:1 (Core), InputSystemTest.cpp:1, OrthographicCameraTest.cpp:1, ResourceManagerSystemTest.cpp:1, UUIDTest.cpp:1, WorldTest.cpp:1, Dx11RendererAPITest.cpp:1, Renderer2DSystemTest.cpp:1, ConfigLoaderSystemTest.cpp:1 (Sandbox), SampleUISystemTest.cpp:1, UIControlSystemTest.cpp:1, UIEventSystemTest.cpp:1, UIRenderSystemTest.cpp:1) — #pragma once on a .cpp file has no effect and is incorrect. This has been flagged as a SUGGESTION in a prior review iteration but remains unfixed across every test file. Escalated to BLOCKING because it is a persistent and universal violation.
+
+[BLOCKING] Code/UT/UT_Core/WorldTest.cpp:103 — Test-local AdderSystem class has a member variable `bool m_Added = false;`. While this is a test-only helper class, it teaches and normalises exactly the pattern the ECS rules prohibit. The bool flag should be carried in a component in the registry.
+
+[SUGGESTION] Code/UT/UT_Core/OrthographicCameraTest.cpp:24 — Calls `pig::CreateApplication()` for test setup. The testing guidelines require `pig::World::Create()` per test case. OrthographicCamera is a pure-math class so no world is strictly needed, but the call to CreateApplication is inconsistent with the pattern used everywhere else.
+
+[SUGGESTION] Code/UT/UT_Core/WorldTest.cpp:163 — Test name "Core.ECS::World" does not follow the required format "<ModuleName>.<SystemName>::<Description>". Similarly "Core.ECS.SystemOrdering::WriterRunsBeforeReader" has an extra dot segment. Not strictly a system test, so minor, but inconsistent.
+
+[SUGGESTION] Code/UT/UT_UI/UIRenderSystemTest.cpp — The DrawUIQuadInFrameEvent guard test (line 67) verifies the absence of draw events indirectly by counting BaseComponent entities rather than directly inspecting the inframe event view. The check is fragile and would pass even if draw events were silently attached to other entities.
 
 Summary:
-All five new system test files are structurally correct: one file per system, correct folder placement (with the UT_Renderer note above), isolated world per test case, state seeded via GetRegistryDirect(), only the system under test is registered, CMakeLists.txt correctly adds UT_Renderer and UT_Sandbox globs and compiles the two SandboxApp system sources. Coverage is adequate across happy paths, guard conditions, and DeclareAccess verification for all five systems. The four renamed files preserve their original test content without loss. The deleted UT_UISystemTest.cpp was confirmed empty. No blocking issues exist.
+The pervasive `auto` usage on accessor variables, the orphaned stale files at the SandboxApp root, the missing #pragma once guards on component headers, and the static Clock inside a system Update() are the most critical production-code violations. On the test side, the universal #pragma once on .cpp files (carried over unresolved from a prior iteration), SECTION usage in UUIDTest, and the entirely commented-out Dx11 test file are the primary blockers. All blocking items must be resolved before an APPROVED verdict can be issued.

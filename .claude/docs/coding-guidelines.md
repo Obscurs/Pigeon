@@ -1,23 +1,57 @@
 # Coding Guidelines
 
-## Language and Style
+## Language
 
 - C++17. No exceptions in hot paths.
-- Prefer `entt::registry` views for system queries.
-- Avoid raw owning pointers. Use `const` wherever applicable. Avoid unnecessary copies of entt components.
+
+---
 
 ## Naming Conventions
 
-| Type | Convention | Example |
+| Target | Convention | Example |
 |---|---|---|
-| Component | `*Component` | `StatsComponent`, `CurrentActionComponent` |
-| System | `*System` | `CandidateScoreSystem`, `StatsUpdateSystem` |
-| Event | `*Event` | `RequestActionEvent`, `ClockChangedEvent` |
-| File | matches class name | `StatsUpdateSystem.cpp` / `.h` |
+| Local variable | `lowerCamelCase` | `entityCount`, `inputValue` |
+| Function, class, struct | `UpperCamelCase` | `UpdatePosition`, `PhysicsSystem` |
+| Member variable | `m_UpperCamelCase` | `m_Position`, `m_EntityCount` |
+| Static variable | `s_UpperCamelCase` | `s_Instance`, `s_MaxSize` |
+| System class and file | `<Name>System` | `PhysicsSystem`, `UIRenderSystem` |
+| Regular component | `<Name>Component` | `PositionComponent`, `VelocityComponent` |
+| One-frame component | `<Name>OneFrameComponent` | `CollisionOneFrameComponent` |
+| In-frame component | `<Name>InFrameComponent` | `MovementInFrameComponent` |
+| Singleton component | `<Name>SingletonComponent` | `CameraConfigSingletonComponent` |
+| Event | `<Name>Event` | `JumpEvent`, `SpawnRequestEvent` |
+| In-frame event | `<Name>InFrameEvent` | `DrawQuadInFrameEvent` |
 
-## Comments
+---
 
-Only add a comment when the **WHY** is non-obvious — a hidden constraint, a subtle invariant, a workaround for a specific bug. Do not describe what the code does; well-named identifiers already do that.
+## Style Rules
+
+- Avoid `auto` — always write the explicit type. Exception: range-for iterators where the type is immediately obvious from context.
+- Opening brace `{` always goes on its own line (Allman style).
+- Use `const` and `const&` whenever applicable.
+- Always write the full namespace — do not rely on `using namespace`.
+- Do not add `TODO` comments or placeholder code.
+
+---
+
+## Include Directives
+
+- Use `""` for all project headers and any header reachable via the configured include paths. Reserve `<>` for system and standard-library headers (e.g., `<vector>`, `<cstdint>`).
+- In a `.cpp` file, the **corresponding header** comes first on its own line, followed by all other includes sorted **alphabetically**.
+- Project headers are written with their **full path from the project root** (e.g., `"Pigeon/ECS/World.h"`, not `"World.h"`).
+
+---
+
+## CMakeLists.txt
+
+- Source files in `file(GLOB ...)` and explicit source lists are sorted **alphabetically**.
+- Do **not** list ECS system header files in CMakeLists sources — only the `.cpp` implementation file.
+
+---
+
+## General Architecture
+
+- Everything should go through ECS when possible. Do not bypass ECS for shared state or cross-system communication.
 
 ---
 
@@ -25,153 +59,106 @@ Only add a comment when the **WHY** is non-obvious — a hidden constraint, a su
 
 Plain structs only — no methods, no logic. Constructors are allowed.
 
-One system owns writes to a component; any system may read it. The system that attaches a component to an entity may differ from the system that later modifies its values — but each responsibility belongs to exactly one system.
+**Every component must have at least one data member.** For tag-only components, add `bool m_Dummy = true;` to satisfy the compiler.
 
-**A component must always have at least one data member.** EnTT does not support empty types as components and they will not compile. If a component is purely a tag (carries no data), add `bool m_Dummy = true;` as a placeholder.
+Each component lives in its **own file**, named identically to the struct (e.g., `PositionComponent.h`).
 
-```cpp
-// Good — pure data, no logic
-struct PausedStateComponent
-{
-    PausedStateComponent() = default;
-    PausedStateComponent(PausedStateComponent&&) = default;
-    PausedStateComponent& operator=(PausedStateComponent&&) = default;
+### Component Types
 
-    entt::entity m_LoadButtonEntity  = entt::null;
-    entt::entity m_SaveButtonEntity  = entt::null;
-    entt::entity m_PlayButtonEntity  = entt::null;
-    entt::entity m_ExitButtonEntity  = entt::null;
-};
+There are six component types with distinct lifetime and accessor semantics:
 
-// Tag component — no meaningful data, so use m_Dummy to satisfy the compiler
-struct GameLoadedComponent
-{
-    bool m_Dummy = true;
-};
-```
+| Type | Naming | Add accessor | Lifetime |
+|---|---|---|---|
+| Regular | `*Component` | `addSet` / `emplace_deferred` | Permanent; visible from the **next** frame |
+| One-frame | `*OneFrameComponent` | `addSet` / `emplace_oneframe` | Visible from next frame; auto-removed at the **end of that next frame** |
+| In-frame | `*InFrameComponent` | `inframeAddSet` / `emplace_inframe` | Permanent; visible to later systems **within the same frame** it is added |
+| Singleton | `*SingletonComponent` | `addSet` / `emplace_deferred` | Permanent; typically one entity, created at startup, lives until shutdown |
+| Event | `*Event` | `addSet` / `EmplaceEvent` | Like one-frame; not attached to a real entity |
+| In-frame event | `*InFrameEvent` | `inframeAddSet` / `EmplaceInframeEvent` | Visible to later systems in the same frame; removed at end of that frame |
 
----
-
-## Events
-
-Declare in a dedicated header (`*Event.h`). Dispatch via `entt::dispatcher`. Only **one** system may dispatch a specific event type. Every subscribing system must process and **clear its queue every frame**.
-
-Events follow the same rule as tag components: they must have at least one member. Use `bool m_Dummy = true;` when the event carries no payload.
-
-```cpp
-// GameLoadRequestEvent.h — no payload needed, m_Dummy satisfies the compiler
-struct GameLoadRequestEvent
-{
-    bool m_Dummy = true;
-};
-```
-
-Subscribe in the system constructor:
-
-```cpp
-pig::World::GetDispatcher()
-    .sink<ds::state::GameLoadRequestEvent>()
-    .connect<&GameStateChangeSystem::QueueLoadGameEvent>(*this);
-```
+Component removal via `remove_deferred` is also deferred to the next frame.
 
 ---
 
 ## Systems
 
-A system reads components and events as input, and writes to components and/or events as output.
+A system reads components and events as input and writes components and events as output.
 
-### Hard rules
+### Hard Rules
 
-1. **Single responsibility.** A system does one thing. If it needs to do more, split it into additional systems.
-2. **No data members except event queues.** The only allowed member variables are the vectors/lists used to batch incoming events. No other fields, no helper methods on the class.
-3. **One writer per component.** Only one system modifies a given component type.
-4. **One dispatcher per event.** Only one system dispatches a given event type.
-5. **Clear queues every frame.** Every system must clear every event queue it holds at the end of `Update()` — even if nothing was processed.
+1. **Constructor, destructor, and parent overrides only.** A system class may only contain a `public` constructor, destructor, and the parent class virtual overrides (`Update` and `DeclareAccess`). No additional member functions are allowed on the class.
+2. **No member variables.** System classes never hold data. All helper functions live in the **unnamed namespace** of the `.cpp` file.
+3. **Single responsibility.** Each system does one thing. If it grows too large, split it into smaller systems.
+4. **Communicate via components only.** Systems communicate through ECS components and events — never by calling each other directly.
+5. **One writer per component.** Only one system may modify a given component type. Only one system may add a specific component or event type.
+6. **Minimal accessor.** `DeclareAccess()` must declare only the components strictly necessary for the system's logic — nothing extra.
+7. **Conflicting writers → intermediate system.** When two systems would both need to add the same component or event, neither can do so directly. Each emits a distinct request component/event, and an intermediate system aggregates those into the single canonical output.
 
-### System header — allowed shape
-
-```cpp
-// GameStateChangeSystem.h
-class GameStateChangeSystem : public pig::System
-{
-public:
-    GameStateChangeSystem();
-    ~GameStateChangeSystem() = default;
-    void Update(const pig::Timestep& ts) override;
-
-    // Public queue methods — one per subscribed event type
-    void QueueLoadGameEvent(const GameLoadRequestEvent& event) { m_LoadEvents.push_back(event); }
-    void QueueSaveGameEvent(const GameSaveRequestEvent& event) { m_SaveEvents.push_back(event); }
-    void QueueRunGameEvent (const GameRunRequestEvent&  event) { m_RunEvents.push_back(event);  }
-    void QueuePauseGameEvent(const GamePauseRequestEvent& event) { m_PauseEvents.push_back(event); }
-
-private:
-    // ONLY allowed members: event queues
-    std::vector<GameLoadRequestEvent>  m_LoadEvents;
-    std::vector<GameSaveRequestEvent>  m_SaveEvents;
-    std::vector<GameRunRequestEvent>   m_RunEvents;
-    std::vector<GamePauseRequestEvent> m_PauseEvents;
-};
-```
-
-### System implementation — required queue-clearing pattern
+### System Class Shape
 
 ```cpp
-void GameStateChangeSystem::Update(const pig::Timestep& /*ts*/)
+// MySystem.h
+#include "Pigeon/ECS/System.h"
+
+namespace sbx
 {
-    // Inside Update(): use GetRegistry() — access assertions are active.
-    auto accessor = pig::World::GetRegistry();
-
-    for (const GameLoadRequestEvent& event : m_LoadEvents)
+    class MySystem : public pig::System
     {
-        // handle event...
-    }
-    for (const GameRunRequestEvent& event : m_RunEvents)
-    {
-        // handle event...
-    }
-
-    // Always clear at the end of Update — never skip this
-    m_LoadEvents.clear();
-    m_RunEvents.clear();
-    m_SaveEvents.clear();
-    m_PauseEvents.clear();
+    public:
+        MySystem() = default;
+        ~MySystem() = default;
+        void Update(const pig::Timestep& ts) override;
+        pig::SystemAccessDecl DeclareAccess() const override;
+    };
 }
 ```
 
-### Registry access outside of Update() (constructors, OnAttach, tooling)
-
-Outside of a system `Update()` — in constructors, `OnAttach`, `OnDetach`, serialization, or any non-system code — use `GetRegistryUnchecked()`. Using `GetRegistry()` outside `Update()` will fire a `PG_CORE_ASSERT`.
-
 ```cpp
-MySystem::MySystem()
+// MySystem.cpp
+#include "Sandbox/MySystem.h"
+
+#include "Pigeon/ECS/World.h"
+#include "Sandbox/InputComponent.h"
+#include "Sandbox/PositionComponent.h"
+
+namespace
 {
-    // Outside Update(): use GetRegistryUnchecked() — no active-system assertion.
-    auto accessor = pig::World::GetRegistryUnchecked();
-    entt::entity e = accessor.create();
-    accessor.emplace<MyComponent>(e);
+    void MoveEntity(pig::CheckedRegistryAccessor& accessor, entt::entity e) { ... }
 }
-```
 
-### Access declarations (DeclareAccess)
-
-Every system should override `DeclareAccess()` to declare the components it reads, writes, or adds. Systems without an override receive no access enforcement (unchecked mode).
-
-```cpp
-pig::SystemAccessDecl MySystem::DeclareAccess() const
+pig::SystemAccessDecl sbx::MySystem::DeclareAccess() const
 {
     pig::SystemAccessDecl decl;
-    decl.readSet  = { std::type_index(typeid(InputComponent)) };
-    decl.writeSet = { std::type_index(typeid(PositionComponent)) };
-    // addSet: components this system deferred-adds to NEW entities this frame
+    decl.readSet       = { std::type_index(typeid(sbx::InputComponent)) };
+    decl.writeSet      = { std::type_index(typeid(sbx::PositionComponent)) };
+    decl.inframeAddSet = { std::type_index(typeid(sbx::DrawQuadInFrameEvent)) };
     return decl;
+}
+
+void sbx::MySystem::Update(const pig::Timestep& ts)
+{
+    pig::CheckedRegistryAccessor accessor = pig::World::GetRegistry();
+    for (entt::entity e : accessor.view<const sbx::InputComponent, sbx::PositionComponent>())
+    {
+        // ...
+    }
 }
 ```
 
-- `readSet`: components this system reads (via `view<>` or `get<>`).
-- `writeSet`: components this system modifies in-place this frame.
-- `addSet`: components this system attaches to entities via `emplace_deferred<>` (visible next frame).
-- A type MAY appear in both `writeSet` and `addSet` on the same system — this covers the case where one system both creates new instances of the component (deferred, via `addSet`) and modifies existing instances (immediate, via `writeSet`).
+### Access Declarations (`DeclareAccess`)
+
+| Field | Purpose | Accessor methods |
+|---|---|---|
+| `readSet` | Read components via `view<>` / `get<>` | — |
+| `writeSet` | Modify existing component values in-place | — |
+| `addSet` | Add components/events deferred to the next frame | `emplace_deferred`, `emplace_oneframe`, `EmplaceEvent` |
+| `inframeAddSet` | Add in-frame components/events visible within this frame | `emplace_inframe`, `EmplaceInframeEvent` |
+
+A type may appear in both `writeSet` and `addSet` when one system both creates new instances (deferred, via `addSet`) and modifies existing instances in-place (via `writeSet`).
+
+### Automatic Execution Order
+
+Systems are sorted automatically based on their `DeclareAccess` declarations. A system that has a component in its `readSet` is guaranteed to run **after** all systems that have that component in their `writeSet` or `inframeAddSet`. Declare access correctly and the correct order follows automatically.
 
 ---
 
@@ -179,8 +166,15 @@ pig::SystemAccessDecl MySystem::DeclareAccess() const
 
 Before implementing a new system:
 
-1. Read `Documentation/<ModuleName>.info` — understand what this system does and how it relates to others.
-2. Inherit from `pig::System` and implement `Update(const pig::Timestep& ts)`.
-3. Implement required components (pure data structs, no logic, at least one member each).
-4. Override `DeclareAccess()` and populate `readSet`, `writeSet`, and `addSet` appropriately.
-5. Use `auto accessor = pig::World::GetRegistry()` inside `Update()`; use `GetRegistryUnchecked()` in constructors and `OnAttach`.
+1. Read `Documentation/<ModuleName>.info` — understand the system's role and its relationships.
+2. Inherit from `pig::System`; implement `Update(const pig::Timestep& ts)` and `DeclareAccess() const`.
+3. Implement required components as pure-data structs in dedicated header files.
+4. Declare the minimal `readSet`, `writeSet`, `addSet`, `inframeAddSet` in `DeclareAccess()`.
+5. Place all helper functions in the unnamed namespace of the `.cpp` — not as class methods.
+6. Use `pig::World::GetRegistry()` inside `Update()`.
+
+---
+
+## Comments
+
+Only add a comment when the **why** is non-obvious — a hidden constraint, a subtle invariant, a workaround for a specific bug. Do not describe what the code does; well-named identifiers already do that.
