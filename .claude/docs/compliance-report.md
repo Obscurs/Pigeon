@@ -1,4 +1,4 @@
-# Pigeon Codebase Compliance Report
+﻿# Pigeon Codebase Compliance Report
 
 ## Section 1: Violations
 
@@ -14,7 +14,7 @@ The struct `SampleUIComponent` lives at the SandboxApp root rather than under a 
 
 ### Style — `auto` Usage
 
-The guideline forbids `auto` except for range-for iterators. The following lines use `auto accessor = pig::World::GetRegistry();` — must be the explicit type `pig::CheckedRegistryAccessor`:
+The guideline forbids `auto` except for range-for iterators. The following lines use `auto accessor = pg::World::GetRegistry();` — must be the explicit type `pg::CheckedRegistryAccessor`:
 
 - `Code/SandboxApp/Sandbox/SampleUISystem.cpp:46`
 - `Code/SandboxApp/Sandbox/ConfigLoaderSystem.cpp:40`
@@ -44,7 +44,7 @@ Opening `{` must be on its own line. Same-line braces found at:
 
 ### Style — Namespace Qualification
 
-- `Code/PigeonLib/Pigeon/UI/UIHelpers.cpp:53,57,63,66,69,72,76` — Enum values written without full namespace (e.g., `EHAlignType::eRight` instead of `pig::ui::EHAlignType::eRight`).
+- `Code/PigeonLib/Pigeon/UI/UIHelpers.cpp:53,57,63,66,69,72,76` — Enum values written without full namespace (e.g., `EHAlignType::eRight` instead of `pg::ui::EHAlignType::eRight`).
 
 ---
 
@@ -89,7 +89,7 @@ Every test file in `UT/UT_Core/`, `UT/UT_UI/`, `UT/UT_Renderer/`, `UT/UT_Sandbox
 
 **CO-1. Component holds a logic class as a member:**
 
-- `Code/SandboxApp/SampleUIComponent.h:16` — `pig::OrthographicCameraController m_CameraController` is a class with methods and input-processing logic, violating "components are pure data" (ECS Hard Rule 4). This file also appears to be dead code.
+- `Code/SandboxApp/SampleUIComponent.h:16` — `pg::OrthographicCameraController m_CameraController` is a class with methods and input-processing logic, violating "components are pure data" (ECS Hard Rule 4). This file also appears to be dead code.
 
 **CO-2. Multiple components defined in one file:**
 
@@ -101,7 +101,7 @@ Every test file in `UT/UT_Core/`, `UT/UT_UI/`, `UT/UT_Renderer/`, `UT/UT_Sandbox
 
 **S-1. Hidden state via `static` local variable:**
 
-- `Code/SandboxApp/Sandbox/SampleUISystem.cpp:153` — `static pig::Clock clock;` inside `Update()`. A static local persists across calls and is effectively a member variable. The clock state belongs in a singleton component.
+- `Code/SandboxApp/Sandbox/SampleUISystem.cpp:153` — `static pg::Clock clock;` inside `Update()`. A static local persists across calls and is effectively a member variable. The clock state belongs in a singleton component.
 
 **S-2. Orphaned stale file with member variables on system class:**
 
@@ -140,9 +140,9 @@ All 14 test files have `#pragma once` as the first line. This has no effect in a
 
 - `Code/UT/UT_Core/WorldTest.cpp:162,176,199,221` — Names like `"Core.ECS::World"` and `"Core.ECS.SystemOrdering::WriterRunsBeforeReader"` use extra dot segments. The expected format is `<ModuleName>.<SystemName>::<Description>`.
 
-**T-7. `pig::CreateApplication()` in a World test:**
+**T-7. `pg::CreateApplication()` in a World test:**
 
-- `Code/UT/UT_Core/OrthographicCameraTest.cpp:24` — Uses `pig::CreateApplication()` instead of `pig::World::Create()`. Every test case must create a fresh ECS world via `pig::World::Create()`.
+- `Code/UT/UT_Core/OrthographicCameraTest.cpp:24` — Uses `pg::CreateApplication()` instead of `pg::World::Create()`. Every test case must create a fresh ECS world via `pg::World::Create()`.
 
 ---
 
@@ -160,10 +160,10 @@ Systems responsible for a singleton component detect its absence on the first fr
 Every test file wraps its `TEST_CASE` entries in `namespace CatchTestsetFail { ... }`. Proposed rule: *"All test cases must be wrapped in `namespace CatchTestsetFail` to avoid linker collisions."*
 
 **SR-4. Test state setup via `GetRegistryDirect()`**
-Tests seed pre-conditions using `pig::World::GetRegistryDirect().create()` and `.emplace<>()`, bypassing the checked accessor. Proposed rule: *"Test cases seed component state using `pig::World::GetRegistryDirect()` directly, bypassing the access-check layer."*
+Tests seed pre-conditions using `pg::World::GetRegistryDirect().create()` and `.emplace<>()`, bypassing the checked accessor. Proposed rule: *"Test cases seed component state using `pg::World::GetRegistryDirect()` directly, bypassing the access-check layer."*
 
 **SR-5. Components reference resources by UUID only**
-All resource references in components are `pig::UUID` handles; actual resources live in `ResourceMapSingletonComponent`. No raw or shared pointers appear in component definitions. Proposed rule: *"Components reference resources by UUID only; direct resource pointers (`shared_ptr`, raw ptr) must not appear in component definitions."*
+All resource references in components are `pg::UUID` handles; actual resources live in `ResourceMapSingletonComponent`. No raw or shared pointers appear in component definitions. Proposed rule: *"Components reference resources by UUID only; direct resource pointers (`shared_ptr`, raw ptr) must not appear in component definitions."*
 
 **SR-6. Views stored in named variables before iteration**
 In all systems, `accessor.view<...>()` is called once and stored in a named variable before being iterated — never created inline inside a range-for. Proposed rule: *"Store view results in named variables before iterating; do not create views inline in range-for expressions."*

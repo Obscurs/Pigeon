@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <catch2/catch.hpp>
 #include "Utils/TestApp.h"
 
@@ -20,19 +20,19 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Core.CameraSystem::NoEventsNoCameraMovement")
 	{
-		pig::World& world = pig::World::Create();
-		world.RegisterSystem(std::make_unique<pig::CameraSystem>());
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::CameraSystem>());
 
-		entt::entity camEnt = pig::World::GetRegistryDirect().create();
-		pig::OrthographicCameraComponent& cam =
-			pig::World::GetRegistryDirect().emplace<pig::OrthographicCameraComponent>(camEnt);
+		entt::entity camEnt = pg::World::GetRegistryDirect().create();
+		pg::OrthographicCameraComponent& cam =
+			pg::World::GetRegistryDirect().emplace<pg::OrthographicCameraComponent>(camEnt);
 		cam.m_CameraPosition = { 0.f, 0.f, 0.f };
 		cam.m_ReactsToInput  = true;
 
-		world.Update(pig::Timestep(100));
+		world.Update(pg::Timestep(100));
 
-		const pig::OrthographicCameraComponent& camAfter =
-			pig::World::GetRegistryDirect().get<pig::OrthographicCameraComponent>(camEnt);
+		const pg::OrthographicCameraComponent& camAfter =
+			pg::World::GetRegistryDirect().get<pg::OrthographicCameraComponent>(camEnt);
 		CHECK(FLOAT_EQ(camAfter.m_CameraPosition.x, 0.f));
 		CHECK(FLOAT_EQ(camAfter.m_CameraPosition.y, 0.f));
 	}
@@ -42,26 +42,26 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Core.CameraSystem::KeyAMovesCameraLeft")
 	{
-		pig::World& world = pig::World::Create();
-		world.RegisterSystem(std::make_unique<pig::CameraSystem>());
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::CameraSystem>());
 
-		entt::entity camEnt = pig::World::GetRegistryDirect().create();
-		pig::OrthographicCameraComponent& cam =
-			pig::World::GetRegistryDirect().emplace<pig::OrthographicCameraComponent>(camEnt);
+		entt::entity camEnt = pg::World::GetRegistryDirect().create();
+		pg::OrthographicCameraComponent& cam =
+			pg::World::GetRegistryDirect().emplace<pg::OrthographicCameraComponent>(camEnt);
 		cam.m_CameraPosition        = { 0.f, 0.f, 0.f };
 		cam.m_CameraTranslationSpeed = 5.f;
 		cam.m_ReactsToInput          = true;
 
-		entt::entity evtEnt = pig::World::GetRegistryDirect().create();
-		pig::KeyPressedEventComponent& evt =
-			pig::World::GetRegistryDirect().emplace<pig::KeyPressedEventComponent>(evtEnt);
-		evt.m_KeyCode = pig::PG_KEY_A;
+		entt::entity evtEnt = pg::World::GetRegistryDirect().create();
+		pg::KeyPressedEventComponent& evt =
+			pg::World::GetRegistryDirect().emplace<pg::KeyPressedEventComponent>(evtEnt);
+		evt.m_KeyCode = pg::PG_KEY_A;
 
-		pig::Timestep ts(1000); // 1 second
+		pg::Timestep ts(1000); // 1 second
 		world.Update(ts);
 
-		const pig::OrthographicCameraComponent& camAfter =
-			pig::World::GetRegistryDirect().get<pig::OrthographicCameraComponent>(camEnt);
+		const pg::OrthographicCameraComponent& camAfter =
+			pg::World::GetRegistryDirect().get<pg::OrthographicCameraComponent>(camEnt);
 		CHECK(camAfter.m_CameraPosition.x < 0.f);
 		CHECK(FLOAT_EQ(camAfter.m_CameraPosition.y, 0.f));
 	}
@@ -71,26 +71,26 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Core.CameraSystem::KeyDMovesCameraRight")
 	{
-		pig::World& world = pig::World::Create();
-		world.RegisterSystem(std::make_unique<pig::CameraSystem>());
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::CameraSystem>());
 
-		entt::entity camEnt = pig::World::GetRegistryDirect().create();
-		pig::OrthographicCameraComponent& cam =
-			pig::World::GetRegistryDirect().emplace<pig::OrthographicCameraComponent>(camEnt);
+		entt::entity camEnt = pg::World::GetRegistryDirect().create();
+		pg::OrthographicCameraComponent& cam =
+			pg::World::GetRegistryDirect().emplace<pg::OrthographicCameraComponent>(camEnt);
 		cam.m_CameraPosition        = { 0.f, 0.f, 0.f };
 		cam.m_CameraTranslationSpeed = 5.f;
 		cam.m_ReactsToInput          = true;
 
-		entt::entity evtEnt = pig::World::GetRegistryDirect().create();
-		pig::KeyPressedEventComponent& evt =
-			pig::World::GetRegistryDirect().emplace<pig::KeyPressedEventComponent>(evtEnt);
-		evt.m_KeyCode = pig::PG_KEY_D;
+		entt::entity evtEnt = pg::World::GetRegistryDirect().create();
+		pg::KeyPressedEventComponent& evt =
+			pg::World::GetRegistryDirect().emplace<pg::KeyPressedEventComponent>(evtEnt);
+		evt.m_KeyCode = pg::PG_KEY_D;
 
-		pig::Timestep ts(1000);
+		pg::Timestep ts(1000);
 		world.Update(ts);
 
-		const pig::OrthographicCameraComponent& camAfter =
-			pig::World::GetRegistryDirect().get<pig::OrthographicCameraComponent>(camEnt);
+		const pg::OrthographicCameraComponent& camAfter =
+			pg::World::GetRegistryDirect().get<pg::OrthographicCameraComponent>(camEnt);
 		CHECK(camAfter.m_CameraPosition.x > 0.f);
 		CHECK(FLOAT_EQ(camAfter.m_CameraPosition.y, 0.f));
 	}
@@ -100,26 +100,26 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Core.CameraSystem::KeyWMovesCameraUp")
 	{
-		pig::World& world = pig::World::Create();
-		world.RegisterSystem(std::make_unique<pig::CameraSystem>());
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::CameraSystem>());
 
-		entt::entity camEnt = pig::World::GetRegistryDirect().create();
-		pig::OrthographicCameraComponent& cam =
-			pig::World::GetRegistryDirect().emplace<pig::OrthographicCameraComponent>(camEnt);
+		entt::entity camEnt = pg::World::GetRegistryDirect().create();
+		pg::OrthographicCameraComponent& cam =
+			pg::World::GetRegistryDirect().emplace<pg::OrthographicCameraComponent>(camEnt);
 		cam.m_CameraPosition        = { 0.f, 0.f, 0.f };
 		cam.m_CameraTranslationSpeed = 5.f;
 		cam.m_ReactsToInput          = true;
 
-		entt::entity evtEnt = pig::World::GetRegistryDirect().create();
-		pig::KeyPressedEventComponent& evt =
-			pig::World::GetRegistryDirect().emplace<pig::KeyPressedEventComponent>(evtEnt);
-		evt.m_KeyCode = pig::PG_KEY_W;
+		entt::entity evtEnt = pg::World::GetRegistryDirect().create();
+		pg::KeyPressedEventComponent& evt =
+			pg::World::GetRegistryDirect().emplace<pg::KeyPressedEventComponent>(evtEnt);
+		evt.m_KeyCode = pg::PG_KEY_W;
 
-		pig::Timestep ts(1000);
+		pg::Timestep ts(1000);
 		world.Update(ts);
 
-		const pig::OrthographicCameraComponent& camAfter =
-			pig::World::GetRegistryDirect().get<pig::OrthographicCameraComponent>(camEnt);
+		const pg::OrthographicCameraComponent& camAfter =
+			pg::World::GetRegistryDirect().get<pg::OrthographicCameraComponent>(camEnt);
 		CHECK(FLOAT_EQ(camAfter.m_CameraPosition.x, 0.f));
 		CHECK(camAfter.m_CameraPosition.y > 0.f);
 	}
@@ -129,26 +129,26 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Core.CameraSystem::KeySMovesCameraDown")
 	{
-		pig::World& world = pig::World::Create();
-		world.RegisterSystem(std::make_unique<pig::CameraSystem>());
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::CameraSystem>());
 
-		entt::entity camEnt = pig::World::GetRegistryDirect().create();
-		pig::OrthographicCameraComponent& cam =
-			pig::World::GetRegistryDirect().emplace<pig::OrthographicCameraComponent>(camEnt);
+		entt::entity camEnt = pg::World::GetRegistryDirect().create();
+		pg::OrthographicCameraComponent& cam =
+			pg::World::GetRegistryDirect().emplace<pg::OrthographicCameraComponent>(camEnt);
 		cam.m_CameraPosition        = { 0.f, 0.f, 0.f };
 		cam.m_CameraTranslationSpeed = 5.f;
 		cam.m_ReactsToInput          = true;
 
-		entt::entity evtEnt = pig::World::GetRegistryDirect().create();
-		pig::KeyPressedEventComponent& evt =
-			pig::World::GetRegistryDirect().emplace<pig::KeyPressedEventComponent>(evtEnt);
-		evt.m_KeyCode = pig::PG_KEY_S;
+		entt::entity evtEnt = pg::World::GetRegistryDirect().create();
+		pg::KeyPressedEventComponent& evt =
+			pg::World::GetRegistryDirect().emplace<pg::KeyPressedEventComponent>(evtEnt);
+		evt.m_KeyCode = pg::PG_KEY_S;
 
-		pig::Timestep ts(1000);
+		pg::Timestep ts(1000);
 		world.Update(ts);
 
-		const pig::OrthographicCameraComponent& camAfter =
-			pig::World::GetRegistryDirect().get<pig::OrthographicCameraComponent>(camEnt);
+		const pg::OrthographicCameraComponent& camAfter =
+			pg::World::GetRegistryDirect().get<pg::OrthographicCameraComponent>(camEnt);
 		CHECK(FLOAT_EQ(camAfter.m_CameraPosition.x, 0.f));
 		CHECK(camAfter.m_CameraPosition.y < 0.f);
 	}
@@ -158,24 +158,24 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Core.CameraSystem::ScrollEventChangesZoomLevel")
 	{
-		pig::World& world = pig::World::Create();
-		world.RegisterSystem(std::make_unique<pig::CameraSystem>());
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::CameraSystem>());
 
-		entt::entity camEnt = pig::World::GetRegistryDirect().create();
-		pig::OrthographicCameraComponent& cam =
-			pig::World::GetRegistryDirect().emplace<pig::OrthographicCameraComponent>(camEnt);
+		entt::entity camEnt = pg::World::GetRegistryDirect().create();
+		pg::OrthographicCameraComponent& cam =
+			pg::World::GetRegistryDirect().emplace<pg::OrthographicCameraComponent>(camEnt);
 		cam.m_ZoomLevel     = 2.f;
 		cam.m_ReactsToInput = true;
 
-		entt::entity evtEnt = pig::World::GetRegistryDirect().create();
-		pig::MouseScrolledEventComponent& scroll =
-			pig::World::GetRegistryDirect().emplace<pig::MouseScrolledEventComponent>(evtEnt);
+		entt::entity evtEnt = pg::World::GetRegistryDirect().create();
+		pg::MouseScrolledEventComponent& scroll =
+			pg::World::GetRegistryDirect().emplace<pg::MouseScrolledEventComponent>(evtEnt);
 		scroll.m_YOffset = 4.f; // zoom in
 
-		world.Update(pig::Timestep(0));
+		world.Update(pg::Timestep(0));
 
-		const pig::OrthographicCameraComponent& camAfter =
-			pig::World::GetRegistryDirect().get<pig::OrthographicCameraComponent>(camEnt);
+		const pg::OrthographicCameraComponent& camAfter =
+			pg::World::GetRegistryDirect().get<pg::OrthographicCameraComponent>(camEnt);
 		// ZoomLevel = 2.0 - 4.0 * 0.25 = 1.0
 		CHECK(FLOAT_EQ(camAfter.m_ZoomLevel, 1.f));
 	}
@@ -185,24 +185,24 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Core.CameraSystem::ScrollZoomClampedToMinimum")
 	{
-		pig::World& world = pig::World::Create();
-		world.RegisterSystem(std::make_unique<pig::CameraSystem>());
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::CameraSystem>());
 
-		entt::entity camEnt = pig::World::GetRegistryDirect().create();
-		pig::OrthographicCameraComponent& cam =
-			pig::World::GetRegistryDirect().emplace<pig::OrthographicCameraComponent>(camEnt);
+		entt::entity camEnt = pg::World::GetRegistryDirect().create();
+		pg::OrthographicCameraComponent& cam =
+			pg::World::GetRegistryDirect().emplace<pg::OrthographicCameraComponent>(camEnt);
 		cam.m_ZoomLevel     = 0.5f;
 		cam.m_ReactsToInput = true;
 
-		entt::entity evtEnt = pig::World::GetRegistryDirect().create();
-		pig::MouseScrolledEventComponent& scroll =
-			pig::World::GetRegistryDirect().emplace<pig::MouseScrolledEventComponent>(evtEnt);
+		entt::entity evtEnt = pg::World::GetRegistryDirect().create();
+		pg::MouseScrolledEventComponent& scroll =
+			pg::World::GetRegistryDirect().emplace<pg::MouseScrolledEventComponent>(evtEnt);
 		scroll.m_YOffset = 100.f; // large zoom in
 
-		world.Update(pig::Timestep(0));
+		world.Update(pg::Timestep(0));
 
-		const pig::OrthographicCameraComponent& camAfter =
-			pig::World::GetRegistryDirect().get<pig::OrthographicCameraComponent>(camEnt);
+		const pg::OrthographicCameraComponent& camAfter =
+			pg::World::GetRegistryDirect().get<pg::OrthographicCameraComponent>(camEnt);
 		CHECK(FLOAT_EQ(camAfter.m_ZoomLevel, 0.25f));
 	}
 
@@ -211,25 +211,25 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Core.CameraSystem::ResizeEventUpdatesAspectRatio")
 	{
-		pig::World& world = pig::World::Create();
-		world.RegisterSystem(std::make_unique<pig::CameraSystem>());
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::CameraSystem>());
 
-		entt::entity camEnt = pig::World::GetRegistryDirect().create();
-		pig::OrthographicCameraComponent& cam =
-			pig::World::GetRegistryDirect().emplace<pig::OrthographicCameraComponent>(camEnt);
+		entt::entity camEnt = pg::World::GetRegistryDirect().create();
+		pg::OrthographicCameraComponent& cam =
+			pg::World::GetRegistryDirect().emplace<pg::OrthographicCameraComponent>(camEnt);
 		cam.m_AspectRatio   = 1.f;
 		cam.m_ReactsToInput = true;
 
-		entt::entity evtEnt = pig::World::GetRegistryDirect().create();
-		pig::WindowResizeEventComponent& resize =
-			pig::World::GetRegistryDirect().emplace<pig::WindowResizeEventComponent>(evtEnt);
+		entt::entity evtEnt = pg::World::GetRegistryDirect().create();
+		pg::WindowResizeEventComponent& resize =
+			pg::World::GetRegistryDirect().emplace<pg::WindowResizeEventComponent>(evtEnt);
 		resize.m_Width  = 1280;
 		resize.m_Height = 720;
 
-		world.Update(pig::Timestep(0));
+		world.Update(pg::Timestep(0));
 
-		const pig::OrthographicCameraComponent& camAfter =
-			pig::World::GetRegistryDirect().get<pig::OrthographicCameraComponent>(camEnt);
+		const pg::OrthographicCameraComponent& camAfter =
+			pg::World::GetRegistryDirect().get<pg::OrthographicCameraComponent>(camEnt);
 		const float expectedAspect = 1280.f / 720.f;
 		CHECK(std::fabs(camAfter.m_AspectRatio - expectedAspect) < 1e-4f);
 	}
@@ -239,26 +239,26 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Core.CameraSystem::NonReactingCameraIgnoresInput")
 	{
-		pig::World& world = pig::World::Create();
-		world.RegisterSystem(std::make_unique<pig::CameraSystem>());
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::CameraSystem>());
 
-		entt::entity camEnt = pig::World::GetRegistryDirect().create();
-		pig::OrthographicCameraComponent& cam =
-			pig::World::GetRegistryDirect().emplace<pig::OrthographicCameraComponent>(camEnt);
+		entt::entity camEnt = pg::World::GetRegistryDirect().create();
+		pg::OrthographicCameraComponent& cam =
+			pg::World::GetRegistryDirect().emplace<pg::OrthographicCameraComponent>(camEnt);
 		cam.m_CameraPosition        = { 0.f, 0.f, 0.f };
 		cam.m_CameraTranslationSpeed = 5.f;
 		cam.m_ReactsToInput          = false; // <-- does not react
 
-		entt::entity evtEnt = pig::World::GetRegistryDirect().create();
-		pig::KeyPressedEventComponent& evt =
-			pig::World::GetRegistryDirect().emplace<pig::KeyPressedEventComponent>(evtEnt);
-		evt.m_KeyCode = pig::PG_KEY_D;
+		entt::entity evtEnt = pg::World::GetRegistryDirect().create();
+		pg::KeyPressedEventComponent& evt =
+			pg::World::GetRegistryDirect().emplace<pg::KeyPressedEventComponent>(evtEnt);
+		evt.m_KeyCode = pg::PG_KEY_D;
 
-		pig::Timestep ts(1000);
+		pg::Timestep ts(1000);
 		world.Update(ts);
 
-		const pig::OrthographicCameraComponent& camAfter =
-			pig::World::GetRegistryDirect().get<pig::OrthographicCameraComponent>(camEnt);
+		const pg::OrthographicCameraComponent& camAfter =
+			pg::World::GetRegistryDirect().get<pg::OrthographicCameraComponent>(camEnt);
 		CHECK(FLOAT_EQ(camAfter.m_CameraPosition.x, 0.f));
 		CHECK(FLOAT_EQ(camAfter.m_CameraPosition.y, 0.f));
 	}
@@ -268,13 +268,13 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Core.CameraSystem::DeclareAccessIsCorrect")
 	{
-		pig::CameraSystem sys;
-		pig::SystemAccessDecl decl = sys.DeclareAccess();
+		pg::CameraSystem sys;
+		pg::SystemAccessDecl decl = sys.DeclareAccess();
 
-		CHECK(decl.readSet.count(std::type_index(typeid(pig::KeyPressedEventComponent))) > 0);
-		CHECK(decl.readSet.count(std::type_index(typeid(pig::MouseScrolledEventComponent))) > 0);
-		CHECK(decl.readSet.count(std::type_index(typeid(pig::WindowResizeEventComponent))) > 0);
-		CHECK(decl.writeSet.count(std::type_index(typeid(pig::OrthographicCameraComponent))) > 0);
+		CHECK(decl.readSet.count(std::type_index(typeid(pg::KeyPressedEventComponent))) > 0);
+		CHECK(decl.readSet.count(std::type_index(typeid(pg::MouseScrolledEventComponent))) > 0);
+		CHECK(decl.readSet.count(std::type_index(typeid(pg::WindowResizeEventComponent))) > 0);
+		CHECK(decl.writeSet.count(std::type_index(typeid(pg::OrthographicCameraComponent))) > 0);
 	}
 
 } // namespace CatchTestsetFail

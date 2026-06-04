@@ -1,24 +1,24 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "Sprite.h"
 
 #include "Pigeon/Renderer/Texture.h"
 
-pig::Sprite::Sprite(const glm::mat4 transform, const glm::vec4 texCoordsRect, const pig::UUID& textureID, const glm::vec3 origin)
+pg::Sprite::Sprite(const glm::mat4 transform, const glm::vec4 texCoordsRect, const pg::UUID& textureID, const glm::vec3 origin)
 {
 	m_Data = { texCoordsRect, textureID, transform, std::move(origin) };
 }
 
-void pig::Sprite::SetTransform(const glm::mat4& transform)
+void pg::Sprite::SetTransform(const glm::mat4& transform)
 {
 	m_Data.m_Transform = transform;
 }
 
-void pig::Sprite::SetTexCoords(const glm::vec4& texCoords)
+void pg::Sprite::SetTexCoords(const glm::vec4& texCoords)
 {
 	m_Data.m_TexCoordsRect = texCoords;
 }
 
-void pig::Sprite::SetOrigin(const glm::vec3& origin)
+void pg::Sprite::SetOrigin(const glm::vec3& origin)
 {
 	m_Data.m_Origin = origin;
 }

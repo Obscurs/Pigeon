@@ -1,8 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "Pigeon/Renderer/Buffer.h"
 
-namespace pig 
+namespace pg 
 {
 	class TestingVertexBuffer : public VertexBuffer
 	{

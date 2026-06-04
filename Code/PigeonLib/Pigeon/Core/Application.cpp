@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 
 #include "Application.h"
 
@@ -27,104 +27,104 @@
 #include "Pigeon/UI/UIRenderSystem.h"
 #include <chrono>
 
-pig::U_Ptr<pig::Application> pig::Application::s_Instance = nullptr;
+pg::U_Ptr<pg::Application> pg::Application::s_Instance = nullptr;
 
-pig::Application::~Application()
+pg::Application::~Application()
 {
 	Shutdown();
 }
 
-void pig::Application::PushLayer(pig::S_Ptr<pig::Layer> layer)
+void pg::Application::PushLayer(pg::S_Ptr<pg::Layer> layer)
 {
 	m_Data.m_LayerStack.PushLayer(layer);
 	layer->OnAttach();
 }
 
-void pig::Application::PushOverlay(pig::S_Ptr<pig::Layer> layer)
+void pg::Application::PushOverlay(pg::S_Ptr<pg::Layer> layer)
 {
 	m_Data.m_LayerStack.PushOverlay(layer);
 	layer->OnAttach();
 }
 
-void pig::Application::OnEvent(const pig::Event& e)
+void pg::Application::OnEvent(const pg::Event& e)
 {
 	if (m_Data.m_Initialized)
 	{
-		if (e.GetEventType() == pig::WindowResizeEvent::GetStaticType())
+		if (e.GetEventType() == pg::WindowResizeEvent::GetStaticType())
 		{
-			OnWindowResize(dynamic_cast<const pig::WindowResizeEvent&>(e));
+			OnWindowResize(dynamic_cast<const pg::WindowResizeEvent&>(e));
 		}
-		else if (e.GetEventType() == pig::WindowCloseEvent::GetStaticType())
+		else if (e.GetEventType() == pg::WindowCloseEvent::GetStaticType())
 		{
-			OnWindowClose(dynamic_cast<const pig::WindowCloseEvent&>(e));
+			OnWindowClose(dynamic_cast<const pg::WindowCloseEvent&>(e));
 		}
 
 		if (!m_Data.m_Minimized)
 		{
-			if (e.GetEventType() == pig::WindowResizeEvent::GetStaticType())
+			if (e.GetEventType() == pg::WindowResizeEvent::GetStaticType())
 			{
-				const pig::WindowResizeEvent& resolvedEvent = dynamic_cast<const pig::WindowResizeEvent&>(e);
-				pig::WindowResizeEventComponent comp;
+				const pg::WindowResizeEvent& resolvedEvent = dynamic_cast<const pg::WindowResizeEvent&>(e);
+				pg::WindowResizeEventComponent comp;
 				comp.m_Height = resolvedEvent.GetHeight();
 				comp.m_Width = resolvedEvent.GetWidth();
-				pig::World::Get().EmplaceExternalEvent<pig::WindowResizeEventComponent>(std::move(comp));
+				pg::World::Get().EmplaceExternalEvent<pg::WindowResizeEventComponent>(std::move(comp));
 			}
-			else if (e.GetEventType() == pig::WindowCloseEvent::GetStaticType())
+			else if (e.GetEventType() == pg::WindowCloseEvent::GetStaticType())
 			{
-				const pig::WindowCloseEvent& resolvedEvent = dynamic_cast<const pig::WindowCloseEvent&>(e);
-				pig::WindowCloseEventComponent comp;
-				pig::World::Get().EmplaceExternalEvent<pig::WindowCloseEventComponent>(std::move(comp));
+				const pg::WindowCloseEvent& resolvedEvent = dynamic_cast<const pg::WindowCloseEvent&>(e);
+				pg::WindowCloseEventComponent comp;
+				pg::World::Get().EmplaceExternalEvent<pg::WindowCloseEventComponent>(std::move(comp));
 			}
-			else if (e.GetEventType() == pig::MouseButtonPressedEvent::GetStaticType())
+			else if (e.GetEventType() == pg::MouseButtonPressedEvent::GetStaticType())
 			{
-				const pig::MouseButtonPressedEvent& resolvedEvent = dynamic_cast<const pig::MouseButtonPressedEvent&>(e);
-				pig::MouseButtonPressedEventComponent comp;
+				const pg::MouseButtonPressedEvent& resolvedEvent = dynamic_cast<const pg::MouseButtonPressedEvent&>(e);
+				pg::MouseButtonPressedEventComponent comp;
 				comp.m_Button = resolvedEvent.GetMouseButton();
-				pig::World::Get().EmplaceExternalEvent<pig::MouseButtonPressedEventComponent>(std::move(comp));
+				pg::World::Get().EmplaceExternalEvent<pg::MouseButtonPressedEventComponent>(std::move(comp));
 			}
-			else if (e.GetEventType() == pig::MouseButtonReleasedEvent::GetStaticType())
+			else if (e.GetEventType() == pg::MouseButtonReleasedEvent::GetStaticType())
 			{
-				const pig::MouseButtonReleasedEvent& resolvedEvent = dynamic_cast<const pig::MouseButtonReleasedEvent&>(e);
-				pig::MouseButtonReleasedEventComponent comp;
+				const pg::MouseButtonReleasedEvent& resolvedEvent = dynamic_cast<const pg::MouseButtonReleasedEvent&>(e);
+				pg::MouseButtonReleasedEventComponent comp;
 				comp.m_Button = resolvedEvent.GetMouseButton();
-				pig::World::Get().EmplaceExternalEvent<pig::MouseButtonReleasedEventComponent>(std::move(comp));
+				pg::World::Get().EmplaceExternalEvent<pg::MouseButtonReleasedEventComponent>(std::move(comp));
 			}
-			else if (e.GetEventType() == pig::MouseMovedEvent::GetStaticType())
+			else if (e.GetEventType() == pg::MouseMovedEvent::GetStaticType())
 			{
-				const pig::MouseMovedEvent& resolvedEvent = dynamic_cast<const pig::MouseMovedEvent&>(e);
-				pig::MouseMovedEventComponent comp;
+				const pg::MouseMovedEvent& resolvedEvent = dynamic_cast<const pg::MouseMovedEvent&>(e);
+				pg::MouseMovedEventComponent comp;
 				comp.m_MouseX = resolvedEvent.GetX();
 				comp.m_MouseY = resolvedEvent.GetY();
-				pig::World::Get().EmplaceExternalEvent<pig::MouseMovedEventComponent>(std::move(comp));
+				pg::World::Get().EmplaceExternalEvent<pg::MouseMovedEventComponent>(std::move(comp));
 			}
-			else if (e.GetEventType() == pig::MouseScrolledEvent::GetStaticType())
+			else if (e.GetEventType() == pg::MouseScrolledEvent::GetStaticType())
 			{
-				const pig::MouseScrolledEvent& resolvedEvent = dynamic_cast<const pig::MouseScrolledEvent&>(e);
-				pig::MouseScrolledEventComponent comp;
+				const pg::MouseScrolledEvent& resolvedEvent = dynamic_cast<const pg::MouseScrolledEvent&>(e);
+				pg::MouseScrolledEventComponent comp;
 				comp.m_XOffset = resolvedEvent.GetXOffset();
 				comp.m_YOffset = resolvedEvent.GetYOffset();
-				pig::World::Get().EmplaceExternalEvent<pig::MouseScrolledEventComponent>(std::move(comp));
+				pg::World::Get().EmplaceExternalEvent<pg::MouseScrolledEventComponent>(std::move(comp));
 			}
-			else if (e.GetEventType() == pig::KeyPressedEvent::GetStaticType())
+			else if (e.GetEventType() == pg::KeyPressedEvent::GetStaticType())
 			{
-				const pig::KeyPressedEvent& resolvedEvent = dynamic_cast<const pig::KeyPressedEvent&>(e);
-				pig::KeyPressedEventComponent comp;
+				const pg::KeyPressedEvent& resolvedEvent = dynamic_cast<const pg::KeyPressedEvent&>(e);
+				pg::KeyPressedEventComponent comp;
 				comp.m_KeyCode = resolvedEvent.GetKeyCode();
-				pig::World::Get().EmplaceExternalEvent<pig::KeyPressedEventComponent>(std::move(comp));
+				pg::World::Get().EmplaceExternalEvent<pg::KeyPressedEventComponent>(std::move(comp));
 			}
-			else if (e.GetEventType() == pig::KeyReleasedEvent::GetStaticType())
+			else if (e.GetEventType() == pg::KeyReleasedEvent::GetStaticType())
 			{
-				const pig::KeyReleasedEvent& resolvedEvent = dynamic_cast<const pig::KeyReleasedEvent&>(e);
-				pig::KeyReleasedEventComponent comp;
+				const pg::KeyReleasedEvent& resolvedEvent = dynamic_cast<const pg::KeyReleasedEvent&>(e);
+				pg::KeyReleasedEventComponent comp;
 				comp.m_KeyCode = resolvedEvent.GetKeyCode();
-				pig::World::Get().EmplaceExternalEvent<pig::KeyReleasedEventComponent>(std::move(comp));
+				pg::World::Get().EmplaceExternalEvent<pg::KeyReleasedEventComponent>(std::move(comp));
 			}
-			else if (e.GetEventType() == pig::KeyTypedEvent::GetStaticType())
+			else if (e.GetEventType() == pg::KeyTypedEvent::GetStaticType())
 			{
-				const pig::KeyTypedEvent& resolvedEvent = dynamic_cast<const pig::KeyTypedEvent&>(e);
-				pig::KeyTypedEventComponent comp;
+				const pg::KeyTypedEvent& resolvedEvent = dynamic_cast<const pg::KeyTypedEvent&>(e);
+				pg::KeyTypedEventComponent comp;
 				comp.m_KeyCode = resolvedEvent.GetKeyCode();
-				pig::World::Get().EmplaceExternalEvent<pig::KeyTypedEventComponent>(std::move(comp));
+				pg::World::Get().EmplaceExternalEvent<pg::KeyTypedEventComponent>(std::move(comp));
 			}
 			else
 			{
@@ -135,7 +135,7 @@ void pig::Application::OnEvent(const pig::Event& e)
 }
 
 #ifndef TESTS_ENABLED
-void pig::Application::Run()
+void pg::Application::Run()
 {
 	while (m_Data.m_Running)
 	{
@@ -144,27 +144,27 @@ void pig::Application::Run()
 }
 #endif
 
-void pig::Application::Shutdown()
+void pg::Application::Shutdown()
 {	
 	m_Data.m_LayerStack.Shutdown();
 }
 
-void pig::Application::Init()
+void pg::Application::Init()
 {
 	m_Data.m_Window = std::move(Window::Create());
-	m_Data.m_Window->SetEventCallback(pig::BindEventFn<&Application::OnEvent, Application>(this));
-	pig::World& world = pig::World::Create();
+	m_Data.m_Window->SetEventCallback(pg::BindEventFn<&Application::OnEvent, Application>(this));
+	pg::World& world = pg::World::Create();
 
-	world.RegisterSystem(std::move(std::make_unique<pig::CameraSystem>()));
-	world.RegisterSystem(std::move(std::make_unique<pig::ConfigLoaderSystem>()));
-	world.RegisterSystem(std::move(std::make_unique<pig::InputSystem>()));
-	world.RegisterSystem(std::move(std::make_unique<pig::Renderer2DSystem>()));
-	world.RegisterSystem(std::move(std::make_unique<pig::ResourceManagerSystem>()));
-	world.RegisterSystem(std::move(std::make_unique<pig::ui::UIControlSystem>()));
-	world.RegisterSystem(std::move(std::make_unique<pig::ui::UIEventSystem>()));
-	world.RegisterSystem(std::move(std::make_unique<pig::ui::UIRenderSystem>()));
+	world.RegisterSystem(std::move(std::make_unique<pg::CameraSystem>()));
+	world.RegisterSystem(std::move(std::make_unique<pg::ConfigLoaderSystem>()));
+	world.RegisterSystem(std::move(std::make_unique<pg::InputSystem>()));
+	world.RegisterSystem(std::move(std::make_unique<pg::Renderer2DSystem>()));
+	world.RegisterSystem(std::move(std::make_unique<pg::ResourceManagerSystem>()));
+	world.RegisterSystem(std::move(std::make_unique<pg::ui::UIControlSystem>()));
+	world.RegisterSystem(std::move(std::make_unique<pg::ui::UIEventSystem>()));
+	world.RegisterSystem(std::move(std::make_unique<pg::ui::UIRenderSystem>()));
 
-	pig::Renderer::Init();
+	pg::Renderer::Init();
 
 #ifndef TESTS_ENABLED
 	m_Data.m_ImGuiLayer = std::make_shared<ImGuiLayer>();
@@ -173,35 +173,35 @@ void pig::Application::Init()
 	m_Data.m_Initialized = true;
 }
 
-void pig::Application::UpdateApp()
+void pg::Application::UpdateApp()
 {
 	Update(m_Data.m_ClockFrameTime.Restart());
 }
 
-void pig::Application::Update(const Timestep& ts)
+void pg::Application::Update(const Timestep& ts)
 {
 	m_Data.m_LastFrameTime = ts;
-	for (pig::S_Ptr<pig::Layer> layer : m_Data.m_LayerStack)
+	for (pg::S_Ptr<pg::Layer> layer : m_Data.m_LayerStack)
 		layer->Begin();
 
-	for (pig::S_Ptr<pig::Layer> layer : m_Data.m_LayerStack)
+	for (pg::S_Ptr<pg::Layer> layer : m_Data.m_LayerStack)
 		layer->OnUpdate(ts);
 
-	pig::World::Get().Update(ts);
+	pg::World::Get().Update(ts);
 
-	for (pig::S_Ptr<pig::Layer> layer : m_Data.m_LayerStack)
+	for (pg::S_Ptr<pg::Layer> layer : m_Data.m_LayerStack)
 		layer->End();
 
 	m_Data.m_Window->OnUpdate();
 }
 
-bool pig::Application::OnWindowClose(const pig::WindowCloseEvent& e)
+bool pg::Application::OnWindowClose(const pg::WindowCloseEvent& e)
 {
 	m_Data.m_Running = false;
 	return false;
 }
 
-bool pig::Application::OnWindowResize(const pig::WindowResizeEvent& e)
+bool pg::Application::OnWindowResize(const pg::WindowResizeEvent& e)
 {
 	if (e.GetWidth() == 0 || e.GetHeight() == 0)
 	{

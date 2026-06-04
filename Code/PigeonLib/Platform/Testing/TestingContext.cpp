@@ -1,23 +1,23 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "TestingContext.h"
 
-pig::TestingContext::TestingContext(HWND windowHandle)
+pg::TestingContext::TestingContext(HWND windowHandle)
 {
 }
 
-void pig::TestingContext::Shutdown()
+void pg::TestingContext::Shutdown()
 {
 }
 
-void pig::TestingContext::Init()
+void pg::TestingContext::Init()
 {
 }
 
-void pig::TestingContext::SwapBuffers()
+void pg::TestingContext::SwapBuffers()
 {
 }
 
-void pig::TestingContext::SetSize(unsigned int width, unsigned int height)
+void pg::TestingContext::SetSize(unsigned int width, unsigned int height)
 {
 
 }

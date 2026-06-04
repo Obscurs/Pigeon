@@ -1,10 +1,10 @@
-#pragma once
+﻿#pragma once
 
 #include "Pigeon/Renderer/GraphicsContext.h"
 
 #include <d3d11.h>
 
-namespace pig 
+namespace pg 
 {
 	class Dx11Context : public GraphicsContext
 	{
@@ -12,9 +12,9 @@ namespace pig
 		struct Data
 		{
 			HWND m_HWnd = nullptr;
-			pig::U_Ptr<ID3D11Device, pig::ReleaseDeleter> m_Pd3dDevice = nullptr;
-			pig::U_Ptr<ID3D11DeviceContext, pig::ReleaseDeleter> m_Pd3dDeviceContext = nullptr;
-			pig::U_Ptr<IDXGISwapChain, pig::ReleaseDeleter> m_PSwapChain = nullptr;
+			pg::U_Ptr<ID3D11Device, pg::ReleaseDeleter> m_Pd3dDevice = nullptr;
+			pg::U_Ptr<ID3D11DeviceContext, pg::ReleaseDeleter> m_Pd3dDeviceContext = nullptr;
+			pg::U_Ptr<IDXGISwapChain, pg::ReleaseDeleter> m_PSwapChain = nullptr;
 			UINT m_ResizeWidth = 0, m_ResizeHeight = 0;
 			UINT m_Width = 0, m_Height = 0;
 		};

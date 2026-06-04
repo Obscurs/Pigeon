@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 
 #include "Dx11Texture.h"
 
@@ -28,7 +28,7 @@ namespace
 	};
 }
 
-glm::vec4 pig::Dx11Texture2D::GetTexCoordsRect(glm::vec2 pixelsOffset, glm::vec2 pixelsSize) const
+glm::vec4 pg::Dx11Texture2D::GetTexCoordsRect(glm::vec2 pixelsOffset, glm::vec2 pixelsSize) const
 {
 	const glm::vec2 offsetNormalized(pixelsOffset.x / m_Data.m_Width, pixelsOffset.y / m_Data.m_Height);
 	const glm::vec2 sizeNormalized(pixelsSize.x / m_Data.m_Width, pixelsSize.y / m_Data.m_Height);
@@ -36,7 +36,7 @@ glm::vec4 pig::Dx11Texture2D::GetTexCoordsRect(glm::vec2 pixelsOffset, glm::vec2
 	return glm::vec4(offsetNormalized.x, offsetNormalized.y, offsetNormalized.x + sizeNormalized.x, offsetNormalized.y + sizeNormalized.y);
 }
 
-pig::Dx11Texture2D::Dx11Texture2D(const std::string& path)
+pg::Dx11Texture2D::Dx11Texture2D(const std::string& path)
 {
 	int width, height, channels;
     RAIIHelperStbi dataLoaded;
@@ -45,12 +45,12 @@ pig::Dx11Texture2D::Dx11Texture2D(const std::string& path)
 	CreateTextue(width, height, channels, dataLoaded.value);
 }
 
-pig::Dx11Texture2D::Dx11Texture2D(unsigned int width, unsigned int height, unsigned int channels, const unsigned char* data)
+pg::Dx11Texture2D::Dx11Texture2D(unsigned int width, unsigned int height, unsigned int channels, const unsigned char* data)
 {
 	CreateTextue(width, height, channels, data);
 }
 
-void pig::Dx11Texture2D::CreateTextue(unsigned int width, unsigned int height, unsigned int channels, const unsigned char* data)
+void pg::Dx11Texture2D::CreateTextue(unsigned int width, unsigned int height, unsigned int channels, const unsigned char* data)
 {
 	PG_CORE_ASSERT(channels == 3 || channels == 4, "Unsupported image format!");
 
@@ -92,7 +92,7 @@ void pig::Dx11Texture2D::CreateTextue(unsigned int width, unsigned int height, u
 	}
 
 	ID3D11Texture2D* pTexture = nullptr;
-	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
+	auto context = static_cast<pg::Dx11Context*>(pg::Application::Get().GetWindow().GetGraphicsContext());
 	ID3D11Device* device = context->GetPd3dDevice();
 	HRESULT hr = device->CreateTexture2D(&textureDesc, &initData, &pTexture);
 	PG_CORE_ASSERT(!FAILED(hr), "Failed to create texture!");
@@ -120,26 +120,26 @@ void pig::Dx11Texture2D::CreateTextue(unsigned int width, unsigned int height, u
 	device->CreateSamplerState(&sampDesc, &m_DxData.m_SamplerState);
 }
 
-void pig::Dx11Texture2D::Bind(uint32_t slot) const
+void pg::Dx11Texture2D::Bind(uint32_t slot) const
 {
-    auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
+    auto context = static_cast<pg::Dx11Context*>(pg::Application::Get().GetWindow().GetGraphicsContext());
     ID3D11DeviceContext* deviceContext = context->GetPd3dDeviceContext();
     deviceContext->PSSetShaderResources(slot, 1, m_DxData.m_TextureView.GetAddressOf());
     deviceContext->PSSetSamplers(slot, 1, &m_DxData.m_SamplerState);
 }
 
 
-pig::Dx11Texture2DArray::Dx11Texture2DArray(unsigned int count)
+pg::Dx11Texture2DArray::Dx11Texture2DArray(unsigned int count)
 {
 	PG_CORE_ASSERT(false, "NOT IMPLEMENTED");
 }
 
-void pig::Dx11Texture2DArray::Append(const std::string& path)
+void pg::Dx11Texture2DArray::Append(const std::string& path)
 {
 	PG_CORE_ASSERT(false, "NOT IMPLEMENTED");
 }
 
-void pig::Dx11Texture2DArray::Bind(uint32_t slot) const
+void pg::Dx11Texture2DArray::Bind(uint32_t slot) const
 {
 	PG_CORE_ASSERT(false, "NOT IMPLEMENTED");
 }

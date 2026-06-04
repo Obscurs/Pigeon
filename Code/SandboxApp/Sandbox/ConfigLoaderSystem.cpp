@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "ConfigLoaderSystem.h"
 
 #include "Pigeon/Core/Clock.h"
@@ -22,9 +22,9 @@ namespace
 	}
 }
 
-pig::SystemAccessDecl sbx::ConfigLoaderSystem::DeclareAccess() const
+pg::SystemAccessDecl sbx::ConfigLoaderSystem::DeclareAccess() const
 {
-	pig::SystemAccessDecl decl;
+	pg::SystemAccessDecl decl;
 
 	decl.readSet = {
 		std::type_index(typeid(sbx::SampleUIConfigSingletonComponent)),
@@ -35,9 +35,9 @@ pig::SystemAccessDecl sbx::ConfigLoaderSystem::DeclareAccess() const
 	return decl;
 }
 
-void sbx::ConfigLoaderSystem::Update(const pig::Timestep& ts)
+void sbx::ConfigLoaderSystem::Update(const pg::Timestep& ts)
 {
-	auto accessor = pig::World::GetRegistry();
+	auto accessor = pg::World::GetRegistry();
 
 	if (accessor.view<const sbx::SampleUIConfigSingletonComponent>().empty())
 	{
@@ -51,10 +51,10 @@ void sbx::ConfigLoaderSystem::Update(const pig::Timestep& ts)
 		PG_CORE_EXCEPT(jsonObject.contains("defaultFont") && jsonObject["defaultFont"].is_string(), "Missing defaultFont in app config");
 		PG_CORE_EXCEPT(jsonObject.contains("mainLayoutId") && jsonObject["mainLayoutId"].is_string(), "Missing mainLayoutId in app config");
 
-		component.m_DefaultFontID = pig::UUID(jsonObject["defaultFont"].get<std::string>());
-		component.m_UUIDUI1 = pig::UUID(jsonObject["uuidui1"].get<std::string>());
-		component.m_UUIDUI2 = pig::UUID(jsonObject["uuidui2"].get<std::string>());
-		component.m_MainLayoutID = pig::UUID(jsonObject["mainLayoutId"].get<std::string>());
+		component.m_DefaultFontID = pg::UUID(jsonObject["defaultFont"].get<std::string>());
+		component.m_UUIDUI1 = pg::UUID(jsonObject["uuidui1"].get<std::string>());
+		component.m_UUIDUI2 = pg::UUID(jsonObject["uuidui2"].get<std::string>());
+		component.m_MainLayoutID = pg::UUID(jsonObject["mainLayoutId"].get<std::string>());
 		accessor.emplace_deferred<sbx::SampleUIConfigSingletonComponent>(ent, std::move(component));
 	}
 }

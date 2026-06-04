@@ -1,16 +1,16 @@
-#pragma once
+﻿#pragma once
 
 #include "Pigeon/ECS/System.h"
 
-namespace pig
+namespace pg
 {
-	class ResourceManagerSystem : public pig::System
+	class ResourceManagerSystem : public pg::System
 	{
 	public:
 		ResourceManagerSystem() = default;
 		~ResourceManagerSystem() = default;
-		void Update(const pig::Timestep& ts) override;
-		pig::SystemAccessDecl DeclareAccess() const override;
+		void Update(const pg::Timestep& ts) override;
+		pg::SystemAccessDecl DeclareAccess() const override;
 	private:
 	};
 }

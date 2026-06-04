@@ -1,8 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "Pigeon/Core/Core.h"
 
-namespace pig 
+namespace pg 
 {
 	class PIGEON_API PlatformInput
 	{
@@ -26,6 +26,6 @@ namespace pig
 		virtual unsigned char GetKeyCodeImpl(unsigned char keyCode) = 0;
 		virtual unsigned char GetMouseButtonCodeImpl(unsigned char keyCode) = 0;
 	private:
-		static pig::S_Ptr<PlatformInput> s_Instance;
+		static pg::S_Ptr<PlatformInput> s_Instance;
 	};
 }

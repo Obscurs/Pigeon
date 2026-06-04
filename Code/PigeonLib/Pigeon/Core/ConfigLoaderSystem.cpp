@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "ConfigLoaderSystem.h"
 
 #include "Pigeon/Core/Clock.h"
@@ -22,26 +22,26 @@ namespace
 	}
 }
 
-pig::SystemAccessDecl pig::ConfigLoaderSystem::DeclareAccess() const
+pg::SystemAccessDecl pg::ConfigLoaderSystem::DeclareAccess() const
 {
-	pig::SystemAccessDecl decl;
+	pg::SystemAccessDecl decl;
 
 	decl.readSet = {
-		std::type_index(typeid(pig::EngineConfigSingletonComponent)),
+		std::type_index(typeid(pg::EngineConfigSingletonComponent)),
 	};
 	decl.addSet = {
-		std::type_index(typeid(pig::EngineConfigSingletonComponent)),
+		std::type_index(typeid(pg::EngineConfigSingletonComponent)),
 	};
 	return decl;
 }
 
-void pig::ConfigLoaderSystem::Update(const pig::Timestep& ts)
+void pg::ConfigLoaderSystem::Update(const pg::Timestep& ts)
 {
-	auto accessor = pig::World::GetRegistry();
+	auto accessor = pg::World::GetRegistry();
 
-	if (accessor.view<const pig::EngineConfigSingletonComponent>().empty())
+	if (accessor.view<const pg::EngineConfigSingletonComponent>().empty())
 	{
-		pig::EngineConfigSingletonComponent component;
+		pg::EngineConfigSingletonComponent component;
 		entt::entity ent = accessor.create();
 		std::string configStr = ReadJSONFileToString("Assets/Engine/Config.json");
 		json jsonObject = json::parse(configStr);
@@ -50,9 +50,9 @@ void pig::ConfigLoaderSystem::Update(const pig::Timestep& ts)
 		PG_CORE_EXCEPT(jsonObject.contains("defaultTextShader") && jsonObject["defaultTextShader"].is_string(), "Missing defaultTextShader in engine config");
 		PG_CORE_EXCEPT(jsonObject.contains("defaultFont") && jsonObject["defaultFont"].is_string(), "Missing defaultFont in engine config");
 		
-		component.m_DefaultFontID = pig::UUID(jsonObject["defaultFont"].get<std::string>());
-		component.m_DefaultQuadShaderID = pig::UUID(jsonObject["defaultQuadShader"].get<std::string>());
-		component.m_DefaultTextShaderID = pig::UUID(jsonObject["defaultTextShader"].get<std::string>());
-		accessor.emplace_deferred<pig::EngineConfigSingletonComponent>(ent, std::move(component));
+		component.m_DefaultFontID = pg::UUID(jsonObject["defaultFont"].get<std::string>());
+		component.m_DefaultQuadShaderID = pg::UUID(jsonObject["defaultQuadShader"].get<std::string>());
+		component.m_DefaultTextShaderID = pg::UUID(jsonObject["defaultTextShader"].get<std::string>());
+		accessor.emplace_deferred<pg::EngineConfigSingletonComponent>(ent, std::move(component));
 	}
 }

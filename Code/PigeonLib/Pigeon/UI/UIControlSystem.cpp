@@ -1,4 +1,4 @@
-#include "UIControlSystem.h"
+﻿#include "UIControlSystem.h"
 
 #include "Pigeon/Core/ResourceMapSingletonComponent.h"
 #include "Pigeon/UI/UIComponents.h"
@@ -22,9 +22,9 @@ namespace
 		return ss.str();
 	}
 
-	void DestroyUI(pig::CheckedRegistryAccessor& accessor, entt::entity ent)
+	void DestroyUI(pg::CheckedRegistryAccessor& accessor, entt::entity ent)
 	{
-		std::vector<entt::entity> children = pig::ui::GetUIChildrenForElement(accessor, ent);
+		std::vector<entt::entity> children = pg::ui::GetUIChildrenForElement(accessor, ent);
 		for (entt::entity& child : children)
 		{
 			DestroyUI(accessor, child);
@@ -32,21 +32,21 @@ namespace
 		accessor.destroy_deferred(ent);
 	}
 
-	void ParseImageComponentFromJson(pig::CheckedRegistryAccessor& accessor, const json& jsonObject, entt::entity ent)
+	void ParseImageComponentFromJson(pg::CheckedRegistryAccessor& accessor, const json& jsonObject, entt::entity ent)
 	{
-		pig::ui::ImageComponent component;
+		pg::ui::ImageComponent component;
 		if (jsonObject.contains("id"))
 		{
 			PG_CORE_EXCEPT(jsonObject["id"].is_string(), "unable to parse json, image id is not a string");
-			component.m_TextureHandle = pig::UUID(jsonObject["id"].get<std::string>());
+			component.m_TextureHandle = pg::UUID(jsonObject["id"].get<std::string>());
 		}
 
-		accessor.emplace_deferred<pig::ui::ImageComponent>(ent, std::move(component));
+		accessor.emplace_deferred<pg::ui::ImageComponent>(ent, std::move(component));
 	}
 
-	void ParseTextComponentFromJson(pig::CheckedRegistryAccessor& accessor, const json& jsonObject, entt::entity ent)
+	void ParseTextComponentFromJson(pg::CheckedRegistryAccessor& accessor, const json& jsonObject, entt::entity ent)
 	{
-		pig::ui::TextComponent component;
+		pg::ui::TextComponent component;
 		if (jsonObject.contains("colR"))
 		{
 			PG_CORE_EXCEPT(jsonObject["colR"].is_number(), "unable to parse json, colR is not a number");
@@ -85,18 +85,18 @@ namespace
 		if (jsonObject.contains("font"))
 		{
 			PG_CORE_EXCEPT(jsonObject["font"].is_string(), "unable to parse json, font is not a string");
-			component.m_FontID = pig::UUID(jsonObject["font"].get<std::string>());
+			component.m_FontID = pg::UUID(jsonObject["font"].get<std::string>());
 		}
-		accessor.emplace_deferred<pig::ui::TextComponent>(ent, std::move(component));
+		accessor.emplace_deferred<pg::ui::TextComponent>(ent, std::move(component));
 	}
 
-	void ParseJsonUIElement(pig::CheckedRegistryAccessor& accessor, const json& jsonObject, entt::entity parent)
+	void ParseJsonUIElement(pg::CheckedRegistryAccessor& accessor, const json& jsonObject, entt::entity parent)
 	{
 		if (jsonObject.contains("ui") && jsonObject["ui"].is_object())
 		{
 			const json& uiJsonObject = jsonObject["ui"];
 			entt::entity ent = accessor.create();
-			pig::ui::BaseComponent baseComp;
+			pg::ui::BaseComponent baseComp;
 			baseComp.m_Parent = parent;
 
 			if (jsonObject.contains("width"))
@@ -126,15 +126,15 @@ namespace
 				std::string alignmentStr = jsonObject["alignment_h"].get<std::string>();
 				if (alignmentStr == "left")
 				{
-					baseComp.m_HAlign = pig::ui::EHAlignType::eLeft;
+					baseComp.m_HAlign = pg::ui::EHAlignType::eLeft;
 				}
 				else if (alignmentStr == "right")
 				{
-					baseComp.m_HAlign = pig::ui::EHAlignType::eRight;
+					baseComp.m_HAlign = pg::ui::EHAlignType::eRight;
 				}
 				else if (alignmentStr == "center")
 				{
-					baseComp.m_HAlign = pig::ui::EHAlignType::eCenter;
+					baseComp.m_HAlign = pg::ui::EHAlignType::eCenter;
 				}
 			}
 
@@ -144,24 +144,24 @@ namespace
 				std::string alignmentStr = jsonObject["alignment_v"].get<std::string>();
 				if (alignmentStr == "top")
 				{
-					baseComp.m_VAlign = pig::ui::EVAlignType::eTop;
+					baseComp.m_VAlign = pg::ui::EVAlignType::eTop;
 				}
 				else if (alignmentStr == "bottom")
 				{
-					baseComp.m_VAlign = pig::ui::EVAlignType::eBottom;
+					baseComp.m_VAlign = pg::ui::EVAlignType::eBottom;
 				}
 				else if (alignmentStr == "center")
 				{
-					baseComp.m_VAlign = pig::ui::EVAlignType::eCenter;
+					baseComp.m_VAlign = pg::ui::EVAlignType::eCenter;
 				}
 			}
 
 			if (jsonObject.contains("uuid"))
 			{
-				baseComp.m_UUID = pig::UUID(jsonObject["uuid"].get<std::string>());
+				baseComp.m_UUID = pg::UUID(jsonObject["uuid"].get<std::string>());
 			}
 
-			accessor.emplace_deferred<pig::ui::BaseComponent>(ent, std::move(baseComp));
+			accessor.emplace_deferred<pg::ui::BaseComponent>(ent, std::move(baseComp));
 
 			if (jsonObject.contains("children"))
 			{
@@ -192,12 +192,12 @@ namespace
 		}
 	}
 
-	void LoadLayoutFromUUID(const pig::ResourceMapSingletonComponent& resourcesComponent, const pig::UUID& layoutID)
+	void LoadLayoutFromUUID(const pg::ResourceMapSingletonComponent& resourcesComponent, const pg::UUID& layoutID)
 	{
 		PG_CORE_EXCEPT(resourcesComponent.m_UILayoutMap.find(layoutID) != resourcesComponent.m_UILayoutMap.end(), "Could not find layout");
 		const std::string jsonString = ReadFileToString(resourcesComponent.m_UILayoutMap.at(layoutID));
 		json jsonObject = json::parse(jsonString);
-		auto accessor = pig::World::GetRegistry();
+		auto accessor = pg::World::GetRegistry();
 		ParseJsonUIElement(accessor, jsonObject, entt::null);
 	}
 
@@ -205,7 +205,7 @@ namespace
 	{
 		const std::string jsonString = ReadFileToString(path);
 		json jsonObject = json::parse(jsonString);
-		auto accessor = pig::World::GetRegistry();
+		auto accessor = pg::World::GetRegistry();
 		ParseJsonUIElement(accessor, jsonObject, entt::null);
 	}
 
@@ -214,101 +214,101 @@ namespace
 	
 }
 
-pig::SystemAccessDecl pig::ui::UIControlSystem::DeclareAccess() const
+pg::SystemAccessDecl pg::ui::UIControlSystem::DeclareAccess() const
 {
-	pig::SystemAccessDecl decl;
+	pg::SystemAccessDecl decl;
 	decl.readSet = {
-		std::type_index(typeid(pig::ResourceMapSingletonComponent)),
-		std::type_index(typeid(pig::ui::UIUpdateTransformOneFrameComponent)),
-		std::type_index(typeid(pig::ui::UIUpdateParentOneFrameComponent)),
-		std::type_index(typeid(pig::ui::UIUpdateEnableOneFrameComponent)),
-		std::type_index(typeid(pig::ui::UIUpdateUUIDOneFrameComponent)),
-		std::type_index(typeid(pig::ui::UIUpdateImageUUIDOneFrameComponent)),
-		std::type_index(typeid(pig::ui::UIUpdateTextOneFrameComponent)),
-		std::type_index(typeid(pig::ui::LoadLayoutEvent)),
-		std::type_index(typeid(pig::ui::UIDestroyOneFrameComponent)),
-		std::type_index(typeid(pig::ui::BaseComponent)),
-		std::type_index(typeid(pig::ui::ImageComponent)),
-		std::type_index(typeid(pig::ui::TextComponent)),
+		std::type_index(typeid(pg::ResourceMapSingletonComponent)),
+		std::type_index(typeid(pg::ui::UIUpdateTransformOneFrameComponent)),
+		std::type_index(typeid(pg::ui::UIUpdateParentOneFrameComponent)),
+		std::type_index(typeid(pg::ui::UIUpdateEnableOneFrameComponent)),
+		std::type_index(typeid(pg::ui::UIUpdateUUIDOneFrameComponent)),
+		std::type_index(typeid(pg::ui::UIUpdateImageUUIDOneFrameComponent)),
+		std::type_index(typeid(pg::ui::UIUpdateTextOneFrameComponent)),
+		std::type_index(typeid(pg::ui::LoadLayoutEvent)),
+		std::type_index(typeid(pg::ui::UIDestroyOneFrameComponent)),
+		std::type_index(typeid(pg::ui::BaseComponent)),
+		std::type_index(typeid(pg::ui::ImageComponent)),
+		std::type_index(typeid(pg::ui::TextComponent)),
 	};
 	decl.writeSet = {
-		std::type_index(typeid(pig::ui::BaseComponent)),
-		std::type_index(typeid(pig::ui::ImageComponent)),
-		std::type_index(typeid(pig::ui::TextComponent)),
-		std::type_index(typeid(pig::ui::UIUpdateTransformOneFrameComponent)),
-		std::type_index(typeid(pig::ui::UIUpdateParentOneFrameComponent)),
-		std::type_index(typeid(pig::ui::UIUpdateEnableOneFrameComponent)),
-		std::type_index(typeid(pig::ui::UIUpdateUUIDOneFrameComponent)),
-		std::type_index(typeid(pig::ui::UIUpdateImageUUIDOneFrameComponent)),
-		std::type_index(typeid(pig::ui::UIUpdateTextOneFrameComponent)),
+		std::type_index(typeid(pg::ui::BaseComponent)),
+		std::type_index(typeid(pg::ui::ImageComponent)),
+		std::type_index(typeid(pg::ui::TextComponent)),
+		std::type_index(typeid(pg::ui::UIUpdateTransformOneFrameComponent)),
+		std::type_index(typeid(pg::ui::UIUpdateParentOneFrameComponent)),
+		std::type_index(typeid(pg::ui::UIUpdateEnableOneFrameComponent)),
+		std::type_index(typeid(pg::ui::UIUpdateUUIDOneFrameComponent)),
+		std::type_index(typeid(pg::ui::UIUpdateImageUUIDOneFrameComponent)),
+		std::type_index(typeid(pg::ui::UIUpdateTextOneFrameComponent)),
 	};
 	decl.addSet = {
-		std::type_index(typeid(pig::ui::BaseComponent)),
-		std::type_index(typeid(pig::ui::ImageComponent)),
-		std::type_index(typeid(pig::ui::TextComponent)),
+		std::type_index(typeid(pg::ui::BaseComponent)),
+		std::type_index(typeid(pg::ui::ImageComponent)),
+		std::type_index(typeid(pg::ui::TextComponent)),
 	};
 	return decl;
 }
 
-void pig::ui::UIControlSystem::Update(const pig::Timestep& ts)
+void pg::ui::UIControlSystem::Update(const pg::Timestep& ts)
 {
-	auto accessor = pig::World::GetRegistry();
+	auto accessor = pg::World::GetRegistry();
 
-	auto resourcesView = accessor.view<const pig::ResourceMapSingletonComponent>();
+	auto resourcesView = accessor.view<const pg::ResourceMapSingletonComponent>();
 	if (resourcesView.empty())
 	{
 		return;
 	}
-	const pig::ResourceMapSingletonComponent& resourcesComponent = resourcesView.get<const pig::ResourceMapSingletonComponent>(resourcesView.front());
+	const pg::ResourceMapSingletonComponent& resourcesComponent = resourcesView.get<const pg::ResourceMapSingletonComponent>(resourcesView.front());
 
-	auto viewTransform = accessor.view<pig::ui::BaseComponent, const pig::ui::UIUpdateTransformOneFrameComponent>();
+	auto viewTransform = accessor.view<pg::ui::BaseComponent, const pg::ui::UIUpdateTransformOneFrameComponent>();
 	for (auto ent : viewTransform)
 	{
-		pig::ui::BaseComponent& baseComponent = viewTransform.get<pig::ui::BaseComponent>(ent);
-		const pig::ui::UIUpdateTransformOneFrameComponent& updateComponent = viewTransform.get<const pig::ui::UIUpdateTransformOneFrameComponent>(ent);
+		pg::ui::BaseComponent& baseComponent = viewTransform.get<pg::ui::BaseComponent>(ent);
+		const pg::ui::UIUpdateTransformOneFrameComponent& updateComponent = viewTransform.get<const pg::ui::UIUpdateTransformOneFrameComponent>(ent);
 		baseComponent.m_HAlign = updateComponent.m_HAlign;
 		baseComponent.m_VAlign = updateComponent.m_VAlign;
 		baseComponent.m_Size = updateComponent.m_Size;
 		baseComponent.m_Spacing = updateComponent.m_Spacing;
 	}
 
-	auto viewParent = accessor.view<pig::ui::BaseComponent, const pig::ui::UIUpdateParentOneFrameComponent>();
+	auto viewParent = accessor.view<pg::ui::BaseComponent, const pg::ui::UIUpdateParentOneFrameComponent>();
 	for (auto ent : viewParent)
 	{
-		pig::ui::BaseComponent& baseComponent = viewParent.get<pig::ui::BaseComponent>(ent);
-		const pig::ui::UIUpdateParentOneFrameComponent& updateComponent = viewParent.get<const pig::ui::UIUpdateParentOneFrameComponent>(ent);
+		pg::ui::BaseComponent& baseComponent = viewParent.get<pg::ui::BaseComponent>(ent);
+		const pg::ui::UIUpdateParentOneFrameComponent& updateComponent = viewParent.get<const pg::ui::UIUpdateParentOneFrameComponent>(ent);
 		baseComponent.m_Parent = updateComponent.m_Parent;
 	}
 
-	auto viewEnable = accessor.view<pig::ui::BaseComponent, const pig::ui::UIUpdateEnableOneFrameComponent>();
+	auto viewEnable = accessor.view<pg::ui::BaseComponent, const pg::ui::UIUpdateEnableOneFrameComponent>();
 	for (auto ent : viewEnable)
 	{
-		pig::ui::BaseComponent& baseComponent = viewEnable.get<pig::ui::BaseComponent>(ent);
-		const pig::ui::UIUpdateEnableOneFrameComponent& updateComponent = viewEnable.get<const pig::ui::UIUpdateEnableOneFrameComponent>(ent);
+		pg::ui::BaseComponent& baseComponent = viewEnable.get<pg::ui::BaseComponent>(ent);
+		const pg::ui::UIUpdateEnableOneFrameComponent& updateComponent = viewEnable.get<const pg::ui::UIUpdateEnableOneFrameComponent>(ent);
 		baseComponent.m_Enabled = updateComponent.m_Enabled;
 	}
 
-	auto viewUUID = accessor.view<pig::ui::BaseComponent, const pig::ui::UIUpdateUUIDOneFrameComponent>();
+	auto viewUUID = accessor.view<pg::ui::BaseComponent, const pg::ui::UIUpdateUUIDOneFrameComponent>();
 	for (auto ent : viewUUID)
 	{
-		pig::ui::BaseComponent& baseComponent = viewUUID.get<pig::ui::BaseComponent>(ent);
-		const pig::ui::UIUpdateUUIDOneFrameComponent& updateComponent = viewUUID.get<const pig::ui::UIUpdateUUIDOneFrameComponent>(ent);
+		pg::ui::BaseComponent& baseComponent = viewUUID.get<pg::ui::BaseComponent>(ent);
+		const pg::ui::UIUpdateUUIDOneFrameComponent& updateComponent = viewUUID.get<const pg::ui::UIUpdateUUIDOneFrameComponent>(ent);
 		baseComponent.m_UUID = updateComponent.m_UUID;
 	}
 
-	auto viewImage = accessor.view<pig::ui::ImageComponent, const pig::ui::UIUpdateImageUUIDOneFrameComponent>();
+	auto viewImage = accessor.view<pg::ui::ImageComponent, const pg::ui::UIUpdateImageUUIDOneFrameComponent>();
 	for (auto ent : viewImage)
 	{
-		pig::ui::ImageComponent& imageComponent = viewImage.get<pig::ui::ImageComponent>(ent);
-		const pig::ui::UIUpdateImageUUIDOneFrameComponent& updateComponent = viewImage.get<const pig::ui::UIUpdateImageUUIDOneFrameComponent>(ent);
+		pg::ui::ImageComponent& imageComponent = viewImage.get<pg::ui::ImageComponent>(ent);
+		const pg::ui::UIUpdateImageUUIDOneFrameComponent& updateComponent = viewImage.get<const pg::ui::UIUpdateImageUUIDOneFrameComponent>(ent);
 		imageComponent.m_TextureHandle = updateComponent.m_UUID;
 	}
 
-	auto viewText = accessor.view<pig::ui::TextComponent, const pig::ui::UIUpdateTextOneFrameComponent>();
+	auto viewText = accessor.view<pg::ui::TextComponent, const pg::ui::UIUpdateTextOneFrameComponent>();
 	for (auto ent : viewText)
 	{
-		pig::ui::TextComponent& textComponent = viewText.get<pig::ui::TextComponent>(ent);
-		const pig::ui::UIUpdateTextOneFrameComponent& updateComponent = viewText.get<const pig::ui::UIUpdateTextOneFrameComponent>(ent);
+		pg::ui::TextComponent& textComponent = viewText.get<pg::ui::TextComponent>(ent);
+		const pg::ui::UIUpdateTextOneFrameComponent& updateComponent = viewText.get<const pg::ui::UIUpdateTextOneFrameComponent>(ent);
 		textComponent.m_FontID = updateComponent.m_FontID;
 		textComponent.m_Color = updateComponent.m_Color;
 		textComponent.m_Kerning = updateComponent.m_Kerning;
@@ -316,13 +316,13 @@ void pig::ui::UIControlSystem::Update(const pig::Timestep& ts)
 		textComponent.m_Text = updateComponent.m_Text;
 	}
 
-	auto viewLoad = accessor.view<const pig::ui::LoadLayoutEvent>();
+	auto viewLoad = accessor.view<const pg::ui::LoadLayoutEvent>();
 	for (auto entJson : viewLoad)
 	{
-		LoadLayoutFromUUID(resourcesComponent, viewLoad.get<const pig::ui::LoadLayoutEvent>(entJson).m_UUID);
+		LoadLayoutFromUUID(resourcesComponent, viewLoad.get<const pg::ui::LoadLayoutEvent>(entJson).m_UUID);
 	}
 
-	auto viewDestroy = accessor.view<const pig::ui::UIDestroyOneFrameComponent>();
+	auto viewDestroy = accessor.view<const pg::ui::UIDestroyOneFrameComponent>();
 	for (auto ent : viewDestroy)
 	{
 		DestroyUI(accessor, ent);

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Pigeon/Core/Core.h"
 #include "Pigeon/Renderer/Buffer.h"
 #include "Pigeon/Renderer/OrthographicCamera.h"
@@ -6,7 +6,7 @@
 #include "Pigeon/Renderer/Sprite.h"
 #include "Pigeon/Renderer/Texture.h"
 
-namespace pig
+namespace pg
 {
 	static const unsigned int ATRIB_POS_X_INDEX = 0;
 	static const unsigned int ATRIB_POS_Y_INDEX = 1;
@@ -38,13 +38,13 @@ namespace pig
 		RendererDataSingletonComponent() {};
 		RendererDataSingletonComponent(const RendererDataSingletonComponent&) = default;
 
-		pig::S_Ptr<pig::VertexBuffer> m_VertexBuffer = nullptr;
-		pig::S_Ptr<pig::IndexBuffer> m_IndexBuffer = nullptr;
+		pg::S_Ptr<pg::VertexBuffer> m_VertexBuffer = nullptr;
+		pg::S_Ptr<pg::IndexBuffer> m_IndexBuffer = nullptr;
 
-		pig::S_Ptr<pig::Shader> m_QuadShader = nullptr;
-		pig::S_Ptr<pig::Shader> m_TextShader = nullptr;
+		pg::S_Ptr<pg::Shader> m_QuadShader = nullptr;
+		pg::S_Ptr<pg::Shader> m_TextShader = nullptr;
 
-		std::unordered_map<pig::UUID, BatchData> m_BatchMap;
-		std::unordered_map<int, std::unordered_map<pig::UUID, BatchData>> m_LayerBatchMap;
+		std::unordered_map<pg::UUID, BatchData> m_BatchMap;
+		std::unordered_map<int, std::unordered_map<pg::UUID, BatchData>> m_LayerBatchMap;
 	};
 }

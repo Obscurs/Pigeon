@@ -1,17 +1,17 @@
-#pragma once
+﻿#pragma once
 
 #include "Pigeon/Renderer/RendererAPI.h"
 
 #include <d3d11.h>
 
-namespace pig 
+namespace pg 
 {
 	class Dx11RendererAPI : public RendererAPI
 	{
 	public:
 		struct Data
 		{
-			pig::U_Ptr<ID3D11RenderTargetView, pig::ReleaseDeleter> m_MainRenderTargetView = nullptr;
+			pg::U_Ptr<ID3D11RenderTargetView, pg::ReleaseDeleter> m_MainRenderTargetView = nullptr;
 
 			float m_ClearColor[4] = { 1.f, 1.f, 1.f, 1.f };
 			bool m_Initialized = false;

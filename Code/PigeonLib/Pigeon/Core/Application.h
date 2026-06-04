@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core.h"
 
@@ -9,14 +9,14 @@
 #include "Pigeon/Renderer/Buffer.h"
 #include "Pigeon/Core/Clock.h"
 
-namespace pig
+namespace pg
 {
 	class ImGuiLayer;
 	class InputLayer;
 	class Shader;
 }
 
-namespace pig
+namespace pg
 {
 	class Application
 	{
@@ -24,10 +24,10 @@ namespace pig
 		struct Data
 		{
 #ifndef TESTS_ENABLED
-			pig::S_Ptr<ImGuiLayer> m_ImGuiLayer;
+			pg::S_Ptr<ImGuiLayer> m_ImGuiLayer;
 #endif
-			pig::S_Ptr<InputLayer> m_InputLayer;
-			pig::S_Ptr<Window> m_Window;
+			pg::S_Ptr<InputLayer> m_InputLayer;
+			pg::S_Ptr<Window> m_Window;
 			bool m_Running = true;
 			bool m_Initialized = false;
 			Clock m_ClockUptime;
@@ -54,8 +54,8 @@ namespace pig
 		void Run();
 #endif
 		void OnEvent(const Event& e);
-		void PushLayer(pig::S_Ptr<Layer> layer);
-		void PushOverlay(pig::S_Ptr<Layer> layer);
+		void PushLayer(pg::S_Ptr<Layer> layer);
+		void PushOverlay(pg::S_Ptr<Layer> layer);
 
 		inline Window& GetWindow() { return *m_Data.m_Window; }
 		inline InputLayer& GetInputLayer() { return *m_Data.m_InputLayer; }
@@ -73,7 +73,7 @@ namespace pig
 
 		Data m_Data;
 	private:
-		static pig::U_Ptr<Application> s_Instance;
+		static pg::U_Ptr<Application> s_Instance;
 	};
 
 	// To be defined in CLIENT

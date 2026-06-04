@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <catch2/catch.hpp>
 #include "Utils/TestApp.h"
 
@@ -15,15 +15,15 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Sandbox.ConfigLoaderSystem::CreatesConfigOnFirstFrame")
 	{
-		pig::World& world = pig::World::Create();
+		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<sbx::ConfigLoaderSystem>());
 
-		auto viewBefore = pig::World::GetRegistryDirect().view<sbx::SampleUIConfigSingletonComponent>();
+		auto viewBefore = pg::World::GetRegistryDirect().view<sbx::SampleUIConfigSingletonComponent>();
 		CHECK(viewBefore.size() == 0);
 
-		world.Update(pig::Timestep(0));
+		world.Update(pg::Timestep(0));
 
-		auto viewAfter = pig::World::GetRegistryDirect().view<sbx::SampleUIConfigSingletonComponent>();
+		auto viewAfter = pg::World::GetRegistryDirect().view<sbx::SampleUIConfigSingletonComponent>();
 		REQUIRE(viewAfter.size() == 1);
 	}
 
@@ -33,16 +33,16 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Sandbox.ConfigLoaderSystem::DoesNotDuplicateWhenConfigExists")
 	{
-		pig::World& world = pig::World::Create();
+		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<sbx::ConfigLoaderSystem>());
 
 		// Pre-seed a SampleUIConfigSingletonComponent so the system guard fires.
-		entt::entity ent = pig::World::GetRegistryDirect().create();
-		pig::World::GetRegistryDirect().emplace<sbx::SampleUIConfigSingletonComponent>(ent);
+		entt::entity ent = pg::World::GetRegistryDirect().create();
+		pg::World::GetRegistryDirect().emplace<sbx::SampleUIConfigSingletonComponent>(ent);
 
-		world.Update(pig::Timestep(0));
+		world.Update(pg::Timestep(0));
 
-		auto viewAfter = pig::World::GetRegistryDirect().view<sbx::SampleUIConfigSingletonComponent>();
+		auto viewAfter = pg::World::GetRegistryDirect().view<sbx::SampleUIConfigSingletonComponent>();
 		CHECK(viewAfter.size() == 1);
 	}
 
@@ -51,12 +51,12 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Sandbox.ConfigLoaderSystem::LoadedConfigHasNonNullUUIDs")
 	{
-		pig::World& world = pig::World::Create();
+		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<sbx::ConfigLoaderSystem>());
 
-		world.Update(pig::Timestep(0));
+		world.Update(pg::Timestep(0));
 
-		auto view = pig::World::GetRegistryDirect().view<sbx::SampleUIConfigSingletonComponent>();
+		auto view = pg::World::GetRegistryDirect().view<sbx::SampleUIConfigSingletonComponent>();
 		REQUIRE(view.size() == 1);
 
 		const sbx::SampleUIConfigSingletonComponent& cfg =
@@ -74,7 +74,7 @@ namespace CatchTestsetFail
 	TEST_CASE("Sandbox.ConfigLoaderSystem::DeclareAccessIsCorrect")
 	{
 		sbx::ConfigLoaderSystem sys;
-		pig::SystemAccessDecl decl = sys.DeclareAccess();
+		pg::SystemAccessDecl decl = sys.DeclareAccess();
 
 		CHECK(decl.readSet.count(std::type_index(typeid(sbx::SampleUIConfigSingletonComponent))) > 0);
 		CHECK(decl.addSet.count(std::type_index(typeid(sbx::SampleUIConfigSingletonComponent))) > 0);

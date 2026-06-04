@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "pigeon/Renderer/Shader.h"
 
@@ -6,16 +6,16 @@
 #include <d3d11.h>
 #include <DirectXMath.h>
 
-namespace pig
+namespace pg
 {
 	class Dx11Shader : public Shader
 	{
 	public:
 		struct Data
 		{
-			pig::U_Ptr<ID3D11InputLayout, pig::ReleaseDeleter> m_InputLayout = nullptr;
-			pig::U_Ptr<ID3D11VertexShader, pig::ReleaseDeleter> m_VertexShader = nullptr;
-			pig::U_Ptr<ID3D11PixelShader, pig::ReleaseDeleter> m_PixelShader = nullptr;
+			pg::U_Ptr<ID3D11InputLayout, pg::ReleaseDeleter> m_InputLayout = nullptr;
+			pg::U_Ptr<ID3D11VertexShader, pg::ReleaseDeleter> m_VertexShader = nullptr;
+			pg::U_Ptr<ID3D11PixelShader, pg::ReleaseDeleter> m_PixelShader = nullptr;
 
 			std::string m_Name;
 		};

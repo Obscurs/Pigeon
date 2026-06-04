@@ -1,12 +1,12 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "Dx11RendererAPI.h"
 #include "Pigeon/Core/Application.h"
 
 #include "Platform/DirectX11/Dx11Context.h"
 
-void pig::Dx11RendererAPI::Init()
+void pg::Dx11RendererAPI::Init()
 {
-    auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
+    auto context = static_cast<pg::Dx11Context*>(pg::Application::Get().GetWindow().GetGraphicsContext());
 
     ID3D11BlendState* pBlendState;
     ID3D11DepthStencilState* pDepthStencilState;
@@ -49,28 +49,28 @@ void pig::Dx11RendererAPI::Init()
 	CreateRenderTarget();
 }
 
-void pig::Dx11RendererAPI::CreateRenderTarget()
+void pg::Dx11RendererAPI::CreateRenderTarget()
 {
-	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
-	pig::RAII_PtrRelease<ID3D11Texture2D> pBackBuffer;
+	auto context = static_cast<pg::Dx11Context*>(pg::Application::Get().GetWindow().GetGraphicsContext());
+	pg::RAII_PtrRelease<ID3D11Texture2D> pBackBuffer;
 	context->GetSwapChain()->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer.value));
 	ID3D11RenderTargetView* renderView;
 	context->GetPd3dDevice()->CreateRenderTargetView(pBackBuffer.value, nullptr, &renderView);
 	m_Data.m_MainRenderTargetView.reset(renderView);
 }
 
-void pig::Dx11RendererAPI::CleanupRenderTarget()
+void pg::Dx11RendererAPI::CleanupRenderTarget()
 {
 	if (m_Data.m_MainRenderTargetView) { m_Data.m_MainRenderTargetView.reset(); }
 }
 
-void pig::Dx11RendererAPI::SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
+void pg::Dx11RendererAPI::SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
 {
-	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
+	auto context = static_cast<pg::Dx11Context*>(pg::Application::Get().GetWindow().GetGraphicsContext());
 	context->SetSize(width, height);
 }
 
-void pig::Dx11RendererAPI::SetClearColor(const glm::vec4& color)
+void pg::Dx11RendererAPI::SetClearColor(const glm::vec4& color)
 {
 	m_Data.m_ClearColor[0] = color.r;
 	m_Data.m_ClearColor[1] = color.g;
@@ -78,9 +78,9 @@ void pig::Dx11RendererAPI::SetClearColor(const glm::vec4& color)
 	m_Data.m_ClearColor[3] = color.a;
 }
 
-void pig::Dx11RendererAPI::Begin()
+void pg::Dx11RendererAPI::Begin()
 {
-	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
+	auto context = static_cast<pg::Dx11Context*>(pg::Application::Get().GetWindow().GetGraphicsContext());
 		
 	// Handle window resize (we don't resize directly in the WM_SIZE handler)
 	if (context->NeedsResize())
@@ -90,7 +90,7 @@ void pig::Dx11RendererAPI::Begin()
 		CreateRenderTarget();
 	}
 
-	context->GetPd3dDeviceContext()->OMSetRenderTargets(1, pig::U_PtrToPtr<ID3D11RenderTargetView, pig::ReleaseDeleter>(m_Data.m_MainRenderTargetView), nullptr);
+	context->GetPd3dDeviceContext()->OMSetRenderTargets(1, pg::U_PtrToPtr<ID3D11RenderTargetView, pg::ReleaseDeleter>(m_Data.m_MainRenderTargetView), nullptr);
 	Clear();
 
 	D3D11_VIEWPORT viewport;
@@ -106,22 +106,22 @@ void pig::Dx11RendererAPI::Begin()
 	context->GetPd3dDeviceContext()->RSSetViewports(1, &viewport);
 }
 
-void pig::Dx11RendererAPI::End()
+void pg::Dx11RendererAPI::End()
 {
 	PG_CORE_ASSERT(m_Data.m_Initialized, "Renderer not initialized");
 }
 
-void pig::Dx11RendererAPI::Clear()
+void pg::Dx11RendererAPI::Clear()
 {
 	PG_CORE_ASSERT(m_Data.m_Initialized, "Renderer not initialized");
-	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
+	auto context = static_cast<pg::Dx11Context*>(pg::Application::Get().GetWindow().GetGraphicsContext());
 	context->GetPd3dDeviceContext()->ClearRenderTargetView(m_Data.m_MainRenderTargetView.get(), m_Data.m_ClearColor);
 }
 
-void pig::Dx11RendererAPI::DrawIndexed(unsigned int count)
+void pg::Dx11RendererAPI::DrawIndexed(unsigned int count)
 {
 	PG_CORE_ASSERT(m_Data.m_Initialized, "Renderer not initialized");
-	auto context = static_cast<pig::Dx11Context*>(pig::Application::Get().GetWindow().GetGraphicsContext());
+	auto context = static_cast<pg::Dx11Context*>(pg::Application::Get().GetWindow().GetGraphicsContext());
 	context->GetPd3dDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	context->GetPd3dDeviceContext()->DrawIndexed(count, 0, 0);
 }

@@ -1,8 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "Pigeon/Renderer/Texture.h"
 
-namespace pig 
+namespace pg 
 {
 	class TestingTexture2D : public Texture2D
 	{

@@ -1,16 +1,16 @@
-#pragma once
+﻿#pragma once
 
 #ifdef PG_PLATFORM_WINDOWS
 
-extern pig::Application& pig::CreateApplication();
+extern pg::Application& pg::CreateApplication();
 
 #ifndef TESTS_ENABLED
 int main(int argc, char** argv)
 {
-	pig::Log::Init();
+	pg::Log::Init();
 	PG_CORE_WARN("Initialized Log!");
 
-	auto& app = pig::CreateApplication();
+	auto& app = pg::CreateApplication();
 	app.Run();
 }
 #endif

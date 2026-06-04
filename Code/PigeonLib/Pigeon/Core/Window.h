@@ -1,11 +1,11 @@
-#pragma once
+﻿#pragma once
 
 #include "pch.h"
 
 #include "Pigeon/Core/Core.h"
 #include "Pigeon/Events/Event.h"
 
-namespace pig {
+namespace pg {
 
 	struct WindowProps
 	{
@@ -49,7 +49,7 @@ namespace pig {
 		virtual void* GetNativeWindow() const = 0;
 		virtual void* GetGraphicsContext() const = 0;
 
-		static pig::S_Ptr<Window> Create(const WindowProps& props = WindowProps());
+		static pg::S_Ptr<Window> Create(const WindowProps& props = WindowProps());
 	protected:
 		static Data m_Data;
 	};

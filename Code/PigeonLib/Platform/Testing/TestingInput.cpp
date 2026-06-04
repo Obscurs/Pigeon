@@ -1,11 +1,11 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "TestingInput.h"
 
 #ifdef TESTS_ENABLED
-pig::S_Ptr<pig::PlatformInput> pig::PlatformInput::s_Instance = std::make_shared<pig::TestingInput>();
+pg::S_Ptr<pg::PlatformInput> pg::PlatformInput::s_Instance = std::make_shared<pg::TestingInput>();
 #endif
 
-bool pig::TestingInput::IsKeyPressedImpl(int keycode)
+bool pg::TestingInput::IsKeyPressedImpl(int keycode)
 {
 	for (int code : TESTING_KeysPressed)
 	{
@@ -15,7 +15,7 @@ bool pig::TestingInput::IsKeyPressedImpl(int keycode)
 	return false;
 }
 
-bool pig::TestingInput::IsMouseButtonPressedImpl(int button)
+bool pg::TestingInput::IsMouseButtonPressedImpl(int button)
 {
 	for (int code : TESTING_MouseButtonKeysPressed)
 	{
@@ -25,27 +25,27 @@ bool pig::TestingInput::IsMouseButtonPressedImpl(int button)
 	return false;
 }
 
-std::pair<float, float> pig::TestingInput::GetMousePositionImpl()
+std::pair<float, float> pg::TestingInput::GetMousePositionImpl()
 {
 	return TESTING_MousePos;
 }
 
-float pig::TestingInput::GetMouseXImpl()
+float pg::TestingInput::GetMouseXImpl()
 {
 	return TESTING_MousePos.first;
 }
 
-float pig::TestingInput::GetMouseYImpl()
+float pg::TestingInput::GetMouseYImpl()
 {
 	return TESTING_MousePos.second;
 }
 
-unsigned char pig::TestingInput::GetKeyCodeImpl(unsigned char keyCode)
+unsigned char pg::TestingInput::GetKeyCodeImpl(unsigned char keyCode)
 {
 	return keyCode;
 }
 
-unsigned char pig::TestingInput::GetMouseButtonCodeImpl(unsigned char keyCode)
+unsigned char pg::TestingInput::GetMouseButtonCodeImpl(unsigned char keyCode)
 {
 	return keyCode;
 }

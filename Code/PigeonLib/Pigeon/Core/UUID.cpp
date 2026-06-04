@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "UUID.h"
 
 #include <iostream>
@@ -6,36 +6,36 @@
 #include <sstream>
 #include <random>
 
-const pig::UUID pig::UUID::s_NullUUID{};
+const pg::UUID pg::UUID::s_NullUUID{};
 
-pig::UUID::UUID(std::string& uuidStr)
+pg::UUID::UUID(std::string& uuidStr)
 {
 	GenerateFromString(uuidStr);
 }
 
-pig::UUID::UUID(const char* uuidStr)
+pg::UUID::UUID(const char* uuidStr)
 {
 	GenerateFromString(std::string(uuidStr));
 }
 
-pig::UUID::UUID()
+pg::UUID::UUID()
 {
 	*this = s_NullUUID;
 }
 
-pig::UUID pig::UUID::Generate()
+pg::UUID pg::UUID::Generate()
 {
-	pig::UUID uuid;
+	pg::UUID uuid;
 	uuid.GenerateRandom();
 	return std::move(uuid);
 }
 
-bool pig::UUID::IsNull() const
+bool pg::UUID::IsNull() const
 {
 	return *this == s_NullUUID;
 }
 
-std::string pig::UUID::ToString() const
+std::string pg::UUID::ToString() const
 {
 	std::stringstream ss;
 	ss << std::hex << std::setfill('0');
@@ -51,7 +51,7 @@ std::string pig::UUID::ToString() const
 	return ss.str();
 }
 
-void pig::UUID::GenerateFromString(std::string& uuidStr)
+void pg::UUID::GenerateFromString(std::string& uuidStr)
 {
 	PG_CORE_EXCEPT(uuidStr.size() == 36, "Invalid UUID string length");
 
@@ -80,17 +80,17 @@ void pig::UUID::GenerateFromString(std::string& uuidStr)
 	PG_CORE_EXCEPT(index == 16, "Invalid UUID string format");
 }
 
-bool pig::UUID::operator!=(const UUID& other) const
+bool pg::UUID::operator!=(const UUID& other) const
 {
 	return !(*this == other);
 }
 
-bool pig::UUID::operator==(const UUID& other) const
+bool pg::UUID::operator==(const UUID& other) const
 {
 	return m_Data == other.m_Data;
 }
 
-void pig::UUID::GenerateRandom()
+void pg::UUID::GenerateRandom()
 {
 	// Seed with a real random value, if available
 	std::random_device rd;

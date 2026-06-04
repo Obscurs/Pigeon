@@ -1,14 +1,14 @@
-#pragma once
+﻿#pragma once
 #include "Pigeon/ECS/System.h"
 
-namespace pig
+namespace pg
 {
-	class InputSystem : public pig::System
+	class InputSystem : public pg::System
 	{
 	public:
 		InputSystem() = default;
 		~InputSystem() = default;
-		void Update(const pig::Timestep& ts) override;
-		pig::SystemAccessDecl DeclareAccess() const override;
+		void Update(const pg::Timestep& ts) override;
+		pg::SystemAccessDecl DeclareAccess() const override;
 	};
 }

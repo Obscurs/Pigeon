@@ -1,11 +1,11 @@
-#pragma once
+﻿#pragma once
 
 #include <vector>
 
 #undef INFINITE
 #include "msdf-atlas-gen.h"
 
-namespace pig 
+namespace pg 
 {
 	struct MSDFData
 	{

@@ -1,10 +1,10 @@
-#include "TestApp.h"
+﻿#include "TestApp.h"
 
 #include <Platform/Testing/TestingHelper.h>
 
-pig::Application& pig::CreateApplication()
+pg::Application& pg::CreateApplication()
 {
-	pig::Log::Init();
-	pig::TestingHelper::Reset();
+	pg::Log::Init();
+	pg::TestingHelper::Reset();
 	return TestApp::Create();
 }

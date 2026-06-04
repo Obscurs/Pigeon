@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "ImGuiLayer.h"
 
 #include <imgui.h>
@@ -14,18 +14,18 @@
 static bool s_show_demo_window = true;
 static bool s_show_another_window = false;
 
-pig::ImGuiLayer::ImGuiLayer()
+pg::ImGuiLayer::ImGuiLayer()
 	: Layer("ImGuiLayer"),
 	m_Attached(false)
 {
 }
 
-pig::ImGuiLayer::~ImGuiLayer()
+pg::ImGuiLayer::~ImGuiLayer()
 {
 
 }
 
-void pig::ImGuiLayer::OnAttach()
+void pg::ImGuiLayer::OnAttach()
 {
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
@@ -58,7 +58,7 @@ void pig::ImGuiLayer::OnAttach()
 	m_Attached = true;
 }
 
-void pig::ImGuiLayer::OnDetach()
+void pg::ImGuiLayer::OnDetach()
 {
 	// Cleanup
 	ImGui_ImplDX11_Shutdown();
@@ -67,14 +67,14 @@ void pig::ImGuiLayer::OnDetach()
 	m_Attached = false;
 }
 
-void pig::ImGuiLayer::Begin()
+void pg::ImGuiLayer::Begin()
 {
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 }
 
-void pig::ImGuiLayer::End()
+void pg::ImGuiLayer::End()
 {
 	ImGuiIO& io = ImGui::GetIO();
 	Application& app = Application::Get();

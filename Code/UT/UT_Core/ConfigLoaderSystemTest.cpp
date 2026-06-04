@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <catch2/catch.hpp>
 #include "Utils/TestApp.h"
 
@@ -15,15 +15,15 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Core.ConfigLoaderSystem::CreatesEngineConfigOnFirstFrame")
 	{
-		pig::World& world = pig::World::Create();
-		world.RegisterSystem(std::make_unique<pig::ConfigLoaderSystem>());
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ConfigLoaderSystem>());
 
-		auto viewBefore = pig::World::GetRegistryDirect().view<pig::EngineConfigSingletonComponent>();
+		auto viewBefore = pg::World::GetRegistryDirect().view<pg::EngineConfigSingletonComponent>();
 		CHECK(viewBefore.size() == 0);
 
-		world.Update(pig::Timestep(0));
+		world.Update(pg::Timestep(0));
 
-		auto viewAfter = pig::World::GetRegistryDirect().view<pig::EngineConfigSingletonComponent>();
+		auto viewAfter = pg::World::GetRegistryDirect().view<pg::EngineConfigSingletonComponent>();
 		REQUIRE(viewAfter.size() == 1);
 	}
 
@@ -33,16 +33,16 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Core.ConfigLoaderSystem::DoesNotDuplicateWhenConfigExists")
 	{
-		pig::World& world = pig::World::Create();
-		world.RegisterSystem(std::make_unique<pig::ConfigLoaderSystem>());
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ConfigLoaderSystem>());
 
 		// Pre-seed an EngineConfigSingletonComponent so the system guard fires.
-		entt::entity ent = pig::World::GetRegistryDirect().create();
-		pig::World::GetRegistryDirect().emplace<pig::EngineConfigSingletonComponent>(ent);
+		entt::entity ent = pg::World::GetRegistryDirect().create();
+		pg::World::GetRegistryDirect().emplace<pg::EngineConfigSingletonComponent>(ent);
 
-		world.Update(pig::Timestep(0));
+		world.Update(pg::Timestep(0));
 
-		auto viewAfter = pig::World::GetRegistryDirect().view<pig::EngineConfigSingletonComponent>();
+		auto viewAfter = pg::World::GetRegistryDirect().view<pg::EngineConfigSingletonComponent>();
 		CHECK(viewAfter.size() == 1);
 	}
 
@@ -51,16 +51,16 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Core.ConfigLoaderSystem::LoadedConfigHasNonNullUUIDs")
 	{
-		pig::World& world = pig::World::Create();
-		world.RegisterSystem(std::make_unique<pig::ConfigLoaderSystem>());
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ConfigLoaderSystem>());
 
-		world.Update(pig::Timestep(0));
+		world.Update(pg::Timestep(0));
 
-		auto view = pig::World::GetRegistryDirect().view<pig::EngineConfigSingletonComponent>();
+		auto view = pg::World::GetRegistryDirect().view<pg::EngineConfigSingletonComponent>();
 		REQUIRE(view.size() == 1);
 
-		const pig::EngineConfigSingletonComponent& cfg =
-			view.get<pig::EngineConfigSingletonComponent>(view.front());
+		const pg::EngineConfigSingletonComponent& cfg =
+			view.get<pg::EngineConfigSingletonComponent>(view.front());
 
 		CHECK(!cfg.m_DefaultQuadShaderID.IsNull());
 		CHECK(!cfg.m_DefaultTextShaderID.IsNull());
@@ -72,11 +72,11 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Core.ConfigLoaderSystem::DeclareAccessIsCorrect")
 	{
-		pig::ConfigLoaderSystem sys;
-		pig::SystemAccessDecl decl = sys.DeclareAccess();
+		pg::ConfigLoaderSystem sys;
+		pg::SystemAccessDecl decl = sys.DeclareAccess();
 
-		CHECK(decl.readSet.count(std::type_index(typeid(pig::EngineConfigSingletonComponent))) > 0);
-		CHECK(decl.addSet.count(std::type_index(typeid(pig::EngineConfigSingletonComponent))) > 0);
+		CHECK(decl.readSet.count(std::type_index(typeid(pg::EngineConfigSingletonComponent))) > 0);
+		CHECK(decl.addSet.count(std::type_index(typeid(pg::EngineConfigSingletonComponent))) > 0);
 	}
 
 } // namespace CatchTestsetFail

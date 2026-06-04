@@ -1,7 +1,7 @@
-#pragma once
+﻿#pragma once
 #include "Pigeon/Core/Input.h"
 
-namespace pig 
+namespace pg 
 {
 	class WindowsInput : public PlatformInput
 	{

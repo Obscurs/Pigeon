@@ -1,4 +1,4 @@
-# Testing Guidelines
+﻿# Testing Guidelines
 
 ## Module Documentation (Source of Truth)
 
@@ -42,9 +42,9 @@ Each test file must register **only** the system under test. If the system's beh
 
 ## Running Without a Window
 
-Use `pig::World::Create()` and `UT/Utils/TestApp.h` together with the `Platform/Testing/` mocks to instantiate systems and run ECS logic without a real window, renderer, or DirectX context.
+Use `pg::World::Create()` and `UT/Utils/TestApp.h` together with the `Platform/Testing/` mocks to instantiate systems and run ECS logic without a real window, renderer, or DirectX context.
 
-Each test case must call `pig::World::Create()` to get a fresh, isolated ECS world. Never share world state between test cases.
+Each test case must call `pg::World::Create()` to get a fresh, isolated ECS world. Never share world state between test cases.
 
 ---
 
@@ -72,7 +72,7 @@ Every system test file must include a dedicated test case that instantiates the 
 TEST_CASE("Module.MySystem::DeclareAccessIsCorrect")
 {
     sbx::MySystem sys;
-    pig::SystemAccessDecl decl = sys.DeclareAccess();
+    pg::SystemAccessDecl decl = sys.DeclareAccess();
 
     CHECK(decl.readSet.count(std::type_index(typeid(sbx::InputComponent))) > 0);
     CHECK(decl.writeSet.count(std::type_index(typeid(sbx::PositionComponent))) > 0);

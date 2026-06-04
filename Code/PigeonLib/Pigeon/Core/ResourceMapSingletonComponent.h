@@ -1,15 +1,15 @@
-#pragma once
+﻿#pragma once
 #include "Pigeon/Core/Core.h"
 #include "Pigeon/Core/UUID.h"
 #include "Pigeon/Renderer/Font.h"
 #include "Pigeon/Renderer/Shader.h"
 #include "Pigeon/Renderer/Texture.h"
 
-namespace pig
+namespace pg
 {
 	struct MappedTexture
 	{
-		pig::S_Ptr<pig::Texture2D> m_Texture;
+		pg::S_Ptr<pg::Texture2D> m_Texture;
 		EMappedTextureType m_TextureType;
 	};
 
@@ -18,11 +18,11 @@ namespace pig
 		ResourceMapSingletonComponent() {};
 		ResourceMapSingletonComponent(const ResourceMapSingletonComponent&) = default;
 
-		std::unordered_map<pig::UUID, MappedTexture> m_TextureMap;
-		std::unordered_map<pig::UUID, pig::S_Ptr<pig::Shader>> m_ShaderMap;
-		std::unordered_map<pig::UUID, pig::S_Ptr<pig::Font>> m_FontMap;
-		std::unordered_map<pig::UUID, std::string> m_UILayoutMap;
+		std::unordered_map<pg::UUID, MappedTexture> m_TextureMap;
+		std::unordered_map<pg::UUID, pg::S_Ptr<pg::Shader>> m_ShaderMap;
+		std::unordered_map<pg::UUID, pg::S_Ptr<pg::Font>> m_FontMap;
+		std::unordered_map<pg::UUID, std::string> m_UILayoutMap;
 
-		pig::UUID m_DefaultTexture = pig::UUID::Generate();
+		pg::UUID m_DefaultTexture = pg::UUID::Generate();
 	};
 }

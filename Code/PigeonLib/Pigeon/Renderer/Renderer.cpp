@@ -1,27 +1,27 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "Renderer.h"
 
-void pig::Renderer::Init()
+void pg::Renderer::Init()
 {
-	pig::RenderCommand::Init();
+	pg::RenderCommand::Init();
 }
 
-void pig::Renderer::OnWindowResize(uint32_t width, uint32_t height)
+void pg::Renderer::OnWindowResize(uint32_t width, uint32_t height)
 {
-	pig::RenderCommand::SetViewport(0, 0, width, height);
+	pg::RenderCommand::SetViewport(0, 0, width, height);
 }
 
-void pig::Renderer::BeginScene()
+void pg::Renderer::BeginScene()
 {
-	pig::RenderCommand::Begin();
+	pg::RenderCommand::Begin();
 }
 
-void pig::Renderer::EndScene()
+void pg::Renderer::EndScene()
 {
-	pig::RenderCommand::End();
+	pg::RenderCommand::End();
 }
 
-void pig::Renderer::Submit(unsigned int count)
+void pg::Renderer::Submit(unsigned int count)
 {
-	pig::RenderCommand::DrawIndexed(count);
+	pg::RenderCommand::DrawIndexed(count);
 }

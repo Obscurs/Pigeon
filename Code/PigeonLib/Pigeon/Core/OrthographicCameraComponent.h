@@ -1,7 +1,7 @@
-#pragma once
+﻿#pragma once
 #include "Pigeon/Renderer/OrthographicCamera.h"
 
-namespace pig
+namespace pg
 {
 	struct OrthographicCameraComponent
 	{
@@ -10,7 +10,7 @@ namespace pig
 
 		float m_AspectRatio = 1.0f;
 		float m_ZoomLevel = 1.0f;
-		pig::OrthographicCamera m_Camera = pig::OrthographicCamera(0, 0, 0, 0);
+		pg::OrthographicCamera m_Camera = pg::OrthographicCamera(0, 0, 0, 0);
 
 		bool m_Rotation = false;
 

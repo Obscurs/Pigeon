@@ -1,8 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "Pigeon/Core/Window.h"
 
-namespace pig
+namespace pg
 {
 	class MouseButtonEvent;
 	class MouseButtonPressedEvent;
@@ -18,7 +18,7 @@ namespace pig
 	class WindowResizeEvent;
 }
 
-namespace pig 
+namespace pg 
 {
 	class TestingWindow : public Window
 	{
@@ -39,6 +39,6 @@ namespace pig
 		inline virtual void* GetNativeWindow() const override { return nullptr; }
 		inline virtual void* GetGraphicsContext() const override { return nullptr; }
 
-		void TESTING_TriggerEvent(pig::Event* event);
+		void TESTING_TriggerEvent(pg::Event* event);
 	};
 }

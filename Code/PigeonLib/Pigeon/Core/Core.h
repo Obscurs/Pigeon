@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #define PG_ENABLE_ASSERTS
 
 #ifdef PG_PLATFORM_WINDOWS
@@ -30,7 +30,7 @@
 	#define PG_CORE_ASSERT(x, ...)
 #endif
 
-namespace pig
+namespace pg
 {
 	constexpr int BIT(int x) noexcept
 	{

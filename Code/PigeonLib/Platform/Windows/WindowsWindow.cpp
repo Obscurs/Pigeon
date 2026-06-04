@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "WindowsWindow.h"
 
 #include <imgui.h>
@@ -15,27 +15,27 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 static bool s_WindowInitialized = false;
 
 #ifndef TESTS_ENABLED
-pig::Window::Data pig::Window::m_Data;
-pig::S_Ptr<pig::Window> pig::Window::Create(const pig::WindowProps& props)
+pg::Window::Data pg::Window::m_Data;
+pg::S_Ptr<pg::Window> pg::Window::Create(const pg::WindowProps& props)
 {
-	return std::make_unique<pig::WindowsWindow>(props);
+	return std::make_unique<pg::WindowsWindow>(props);
 }
 #endif
-pig::WindowsWindow::WindowsData pig::WindowsWindow::m_WindowsData;
+pg::WindowsWindow::WindowsData pg::WindowsWindow::m_WindowsData;
 
-pig::WindowsWindow::WindowsWindow(const pig::WindowProps& props)
+pg::WindowsWindow::WindowsWindow(const pg::WindowProps& props)
 {
 	m_Data.m_Title = props.Title.c_str();
 	m_WindowsData.m_HInstance = GetModuleHandle(nullptr);
 	Init(props);
 }
 
-pig::WindowsWindow::~WindowsWindow()
+pg::WindowsWindow::~WindowsWindow()
 {
 	Shutdown();
 }
 
-void pig::WindowsWindow::Init(const pig::WindowProps& props)
+void pg::WindowsWindow::Init(const pg::WindowProps& props)
 {
 	WNDCLASS wc = {};
 	wc.lpfnWndProc = WindowProc;
@@ -64,7 +64,7 @@ void pig::WindowsWindow::Init(const pig::WindowProps& props)
 		// You might want to convert it to a human-readable error message.
 	}
 
-	m_Context = std::move(pig::GraphicsContext::Create(this));
+	m_Context = std::move(pg::GraphicsContext::Create(this));
 	m_Context->Init();
 	m_Context->SetSize(props.Width, props.Height);
 
@@ -79,7 +79,7 @@ void pig::WindowsWindow::Init(const pig::WindowProps& props)
 	}
 }
 
-void pig::WindowsWindow::Shutdown()
+void pg::WindowsWindow::Shutdown()
 {
 	if (m_Context)
 	{
@@ -92,30 +92,30 @@ void pig::WindowsWindow::Shutdown()
 		DestroyWindow(m_Window);
 		m_Window = nullptr;
 	}
-	m_Data = pig::Window::Data();
-	m_WindowsData = pig::WindowsWindow::WindowsData();
+	m_Data = pg::Window::Data();
+	m_WindowsData = pg::WindowsWindow::WindowsData();
 }
 
 
-unsigned int pig::WindowsWindow::GetWidth() const
+unsigned int pg::WindowsWindow::GetWidth() const
 {
 	PG_CORE_ASSERT(m_Context, "context is null");
 	return m_Context->GetWidth();
 }
 
-unsigned int pig::WindowsWindow::GetHeight() const
+unsigned int pg::WindowsWindow::GetHeight() const
 {
 	PG_CORE_ASSERT(m_Context, "context is null");
 	return m_Context->GetHeight();
 }
 
-void pig::WindowsWindow::OnUpdate()
+void pg::WindowsWindow::OnUpdate()
 {
 	ProcessMessages();
 	m_Context->SwapBuffers();
 }
 
-std::optional<int> pig::WindowsWindow::ProcessMessages()
+std::optional<int> pg::WindowsWindow::ProcessMessages()
 {
 	MSG msg = {};
 	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
@@ -130,7 +130,7 @@ std::optional<int> pig::WindowsWindow::ProcessMessages()
 	return {};
 }
 
-LRESULT __stdcall pig::WindowsWindow::WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+LRESULT __stdcall pg::WindowsWindow::WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
 		return true;
@@ -142,7 +142,7 @@ LRESULT __stdcall pig::WindowsWindow::WindowProc(HWND hWnd, UINT msg, WPARAM wPa
 	return 0;
 }
 
-bool pig::WindowsWindow::ProcessEvent(UINT msg, WPARAM wParam, LPARAM lParam)
+bool pg::WindowsWindow::ProcessEvent(UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
 	{
@@ -173,111 +173,111 @@ bool pig::WindowsWindow::ProcessEvent(UINT msg, WPARAM wParam, LPARAM lParam)
 	return true;
 }
 
-void pig::WindowsWindow::ProcessCharPressedEvent(WPARAM wParam)
+void pg::WindowsWindow::ProcessCharPressedEvent(WPARAM wParam)
 {
-	pig::KeyTypedEvent event(static_cast<int>(wParam));
+	pg::KeyTypedEvent event(static_cast<int>(wParam));
 	m_Data.EventCallback(event);
 }
 
-void pig::WindowsWindow::ProcessKeyUpEvent(WPARAM wParam)
+void pg::WindowsWindow::ProcessKeyUpEvent(WPARAM wParam)
 {
-	pig::KeyReleasedEvent event(static_cast<int>(wParam));
+	pg::KeyReleasedEvent event(static_cast<int>(wParam));
 	m_Data.EventCallback(event);
 }
 
-void pig::WindowsWindow::ProcessKeyDownEvent(LPARAM lParam, WPARAM wParam)
+void pg::WindowsWindow::ProcessKeyDownEvent(LPARAM lParam, WPARAM wParam)
 {
 	// SYSKEYDOWN is used for ALT key combinations
 	bool isRepeat = (lParam & 0x40000000) != 0;
 	if (!isRepeat) {
 		// Key has been pressed (not a repeat)
-		pig::KeyPressedEvent event(static_cast<int>(wParam), 0);
+		pg::KeyPressedEvent event(static_cast<int>(wParam), 0);
 		m_Data.EventCallback(event);
 	}
 	else
 	{
-		pig::KeyPressedEvent event(static_cast<int>(wParam), 1);
+		pg::KeyPressedEvent event(static_cast<int>(wParam), 1);
 		m_Data.EventCallback(event);
 	}
 }
 
-void pig::WindowsWindow::ProcessMouseButtonEvent(UINT msg)
+void pg::WindowsWindow::ProcessMouseButtonEvent(UINT msg)
 {
 	switch (msg)
 	{
 	case WM_LBUTTONDOWN:
 	{
-		pig::MouseButtonPressedEvent event(WIN_PG_MOUSE_BUTTON_LEFT);
+		pg::MouseButtonPressedEvent event(WIN_PG_MOUSE_BUTTON_LEFT);
 		m_Data.EventCallback(event);
 		break;
 	}
 	case WM_RBUTTONDOWN:
 	{
-		pig::MouseButtonPressedEvent event(WIN_PG_MOUSE_BUTTON_RIGHT);
+		pg::MouseButtonPressedEvent event(WIN_PG_MOUSE_BUTTON_RIGHT);
 		m_Data.EventCallback(event);
 		break;
 	}
 	case WM_MBUTTONDOWN:
 	{
-		pig::MouseButtonPressedEvent event(WIN_PG_MOUSE_BUTTON_MIDDLE);
+		pg::MouseButtonPressedEvent event(WIN_PG_MOUSE_BUTTON_MIDDLE);
 		m_Data.EventCallback(event);
 		break;
 	}
 	case WM_LBUTTONUP:
 	{
-		pig::MouseButtonReleasedEvent event(WIN_PG_MOUSE_BUTTON_LEFT);
+		pg::MouseButtonReleasedEvent event(WIN_PG_MOUSE_BUTTON_LEFT);
 		m_Data.EventCallback(event);
 		break;
 	}
 	case WM_RBUTTONUP:
 	{
-		pig::MouseButtonReleasedEvent event(WIN_PG_MOUSE_BUTTON_RIGHT);
+		pg::MouseButtonReleasedEvent event(WIN_PG_MOUSE_BUTTON_RIGHT);
 		m_Data.EventCallback(event);
 		break;
 	}
 	case WM_MBUTTONUP:
 	{
-		pig::MouseButtonReleasedEvent event(WIN_PG_MOUSE_BUTTON_MIDDLE);
+		pg::MouseButtonReleasedEvent event(WIN_PG_MOUSE_BUTTON_MIDDLE);
 		m_Data.EventCallback(event);
 		break;
 	}
 	}
 }
 
-void pig::WindowsWindow::ProcessMouseWheelEvent(WPARAM wParam)
+void pg::WindowsWindow::ProcessMouseWheelEvent(WPARAM wParam)
 {
 	float yOffset = static_cast<float>(GET_WHEEL_DELTA_WPARAM(wParam)) / static_cast<float>(WHEEL_DELTA);
 	// Since there's no horizontal scrolling in this message, the xOffset is 0
 	float xOffset = 0.0f;
 
-	pig::MouseScrolledEvent event((float)xOffset, (float)yOffset);
+	pg::MouseScrolledEvent event((float)xOffset, (float)yOffset);
 	m_Data.EventCallback(event);
 }
 
-void pig::WindowsWindow::ProcessMouseMoveEvent(LPARAM lParam)
+void pg::WindowsWindow::ProcessMouseMoveEvent(LPARAM lParam)
 {
 	int x = LOWORD(lParam);
 	int y = HIWORD(lParam);
 	// Do something with x and y, like creating a mouse event and dispatching it.
-	pig::MouseMovedEvent event((float)x, (float)y);
+	pg::MouseMovedEvent event((float)x, (float)y);
 	m_Data.EventCallback(event);
 }
 
-void pig::WindowsWindow::ProcessWindowResizeEvent(LPARAM lParam)
+void pg::WindowsWindow::ProcessWindowResizeEvent(LPARAM lParam)
 {
 	// The LOWORD and HIWORD macros extract the width and height
 	unsigned int width = LOWORD(lParam);
 	unsigned int height = HIWORD(lParam);
 
 	// Now create a WindowResizeEvent and dispatch it
-	pig::WindowResizeEvent event(width, height);
+	pg::WindowResizeEvent event(width, height);
 	if (m_Data.EventCallback)
 		m_Data.EventCallback(event);
 }
 
-bool pig::WindowsWindow::ProcessWindowDestroyEvent()
+bool pg::WindowsWindow::ProcessWindowDestroyEvent()
 {
-	pig::WindowCloseEvent event;
+	pg::WindowCloseEvent event;
 	if (m_Data.EventCallback)
 		m_Data.EventCallback(event);
 	PostQuitMessage(0);

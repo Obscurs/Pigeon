@@ -1,14 +1,14 @@
-#pragma once
+﻿#pragma once
 #include "Pigeon/Core/Core.h"
 #include "Pigeon/Renderer/Sprite.h"
 
-namespace pig
+namespace pg
 {
 	struct DrawSpriteInFrameEvent
 	{
-		DrawSpriteInFrameEvent(const pig::Sprite& sprite) : m_Sprite(sprite) {};
+		DrawSpriteInFrameEvent(const pg::Sprite& sprite) : m_Sprite(sprite) {};
 		DrawSpriteInFrameEvent(const DrawSpriteInFrameEvent&) = default;
 
-		pig::Sprite m_Sprite;
+		pg::Sprite m_Sprite;
 	};
 }

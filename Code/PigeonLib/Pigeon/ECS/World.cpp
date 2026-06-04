@@ -1,35 +1,35 @@
-#include "pch.h"
+﻿#include "pch.h"
 
 #include "World.h"
 
 #include "Pigeon/ECS/System.h"
 #include "Pigeon/ECS/CheckedRegistryAccessor.h"
 
-pig::U_Ptr<pig::World> pig::World::s_Instance = nullptr;
+pg::U_Ptr<pg::World> pg::World::s_Instance = nullptr;
 
-void pig::CheckedRegistryAccessor::pushDeferredRequest(
+void pg::CheckedRegistryAccessor::pushDeferredRequest(
 	entt::entity e, void* payload, CheckedRegistryAccessor* self,
 	void(*apply)(CheckedRegistryAccessor*, entt::registry&, entt::entity, void*),
 	void(*destroy)(void*))
 {
-	pig::World::Get().PushDeferredRequest({ e, payload, self, apply, destroy });
+	pg::World::Get().PushDeferredRequest({ e, payload, self, apply, destroy });
 }
 
-void pig::CheckedRegistryAccessor::pushDeferredOneFrameRequest(
+void pg::CheckedRegistryAccessor::pushDeferredOneFrameRequest(
 	entt::entity e, void* payload, CheckedRegistryAccessor* self,
 	void(*apply)(CheckedRegistryAccessor*, entt::registry&, entt::entity, void*),
 	void(*destroy)(void*))
 {
-	pig::World::Get().PushDeferredOneFrameRequest({ e, payload, self, apply, destroy });
+	pg::World::Get().PushDeferredOneFrameRequest({ e, payload, self, apply, destroy });
 }
 
-void pig::CheckedRegistryAccessor::pushDeferredDestroy(const entt::entity& e)
+void pg::CheckedRegistryAccessor::pushDeferredDestroy(const entt::entity& e)
 {
-	pig::World::Get().PushDeferredDestroy(e);
+	pg::World::Get().PushDeferredDestroy(e);
 }
 
 // ---- World::GetRegistry ----
-pig::CheckedRegistryAccessor pig::World::GetRegistry()
+pg::CheckedRegistryAccessor pg::World::GetRegistry()
 {
 	PG_CORE_ASSERT(s_Instance->m_ActiveSystem != nullptr,
 		"GetRegistry() called outside of a system Update().");
@@ -48,28 +48,28 @@ pig::CheckedRegistryAccessor pig::World::GetRegistry()
 }
 
 #ifdef TESTS_ENABLED
-entt::registry& pig::World::GetRegistryDirect()
+entt::registry& pg::World::GetRegistryDirect()
 {
 	return s_Instance->m_Registry;
 }
 #endif
 
-void pig::World::PushDeferredRequest(pig::DeferredRequest op)
+void pg::World::PushDeferredRequest(pg::DeferredRequest op)
 {
 	m_DeferredRequests.push_back(std::move(op));
 }
-void pig::World::PushDeferredOneFrameRequest(pig::DeferredRequest op)
+void pg::World::PushDeferredOneFrameRequest(pg::DeferredRequest op)
 {
 	m_DeferredOneFrameComponents.push_back(std::move(op));
 }
 
-void pig::World::PushDeferredDestroy(const entt::entity& entity)
+void pg::World::PushDeferredDestroy(const entt::entity& entity)
 {
 	m_DeferredDestroys.push_back(entity);
 }
 
 // ---- World::Update ----
-void pig::World::Update(const pig::Timestep& ts)
+void pg::World::Update(const pg::Timestep& ts)
 {
 	if (!m_Sorted)
 	{
@@ -90,7 +90,7 @@ void pig::World::Update(const pig::Timestep& ts)
 }
 
 // ---- World::RegisterSystem ----
-void pig::World::RegisterSystem(std::unique_ptr<pig::System> system)
+void pg::World::RegisterSystem(std::unique_ptr<pg::System> system)
 {
 	// Guard: registering a system during Update would invalidate m_Systems iterators.
 	PG_CORE_ASSERT(!m_ActiveSystem, "RegisterSystem called during Update — forbidden");
@@ -131,7 +131,7 @@ void pig::World::RegisterSystem(std::unique_ptr<pig::System> system)
 }
 
 // ---- World::SortSystems ----
-void pig::World::SortSystems()
+void pg::World::SortSystems()
 {
 	// addSet components are visible next frame only; writeSet components are visible same frame.
 	// Only writeSet generates ordering edges.
@@ -253,7 +253,7 @@ void pig::World::SortSystems()
 	m_Systems = std::move(sorted);
 }
 
-void pig::World::FlushDeferredRequests()
+void pg::World::FlushDeferredRequests()
 {
 	// Must not be called while a system Update() is in progress.
 	PG_CORE_ASSERT(m_ActiveSystem == nullptr, "FlushDeferredRequests called during Update");
@@ -282,9 +282,9 @@ void pig::World::FlushDeferredRequests()
 	m_DeferredDestroys.clear();
 }
 
-void pig::World::ClearEvents()
+void pg::World::ClearEvents()
 {
-	auto view = m_Registry.view<const pig::EventComponent>();
+	auto view = m_Registry.view<const pg::EventComponent>();
 	for (auto ent : view)
 	{
 		m_Registry.destroy(ent);
@@ -292,7 +292,7 @@ void pig::World::ClearEvents()
 }
 
 // ---- World::Init ----
-void pig::World::Init()
+void pg::World::Init()
 {
 	// Guard against mid-frame teardown.
 	PG_CORE_ASSERT(!m_ActiveSystem, "Init called during Update");

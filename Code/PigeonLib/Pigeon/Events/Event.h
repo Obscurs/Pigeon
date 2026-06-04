@@ -1,8 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "Pigeon/Core/Core.h"
 
-namespace pig {
+namespace pg {
 
 	// Events in Pigeon are currently blocking, meaning when an event occurs it
 	// immediately gets dispatched and must be dealt with right then an there.
@@ -32,7 +32,7 @@ namespace pig {
 	};
 
 	template<EventType Type>
-	class EventClassType : public virtual pig::Event
+	class EventClassType : public virtual pg::Event
 	{
 	public:
 		static EventType GetStaticType() { return Type; }
@@ -43,15 +43,15 @@ namespace pig {
 	enum EventCategory
 	{
 		None = 0,
-		EventCategoryApplication    = pig::BIT(0),
-		EventCategoryInput          = pig::BIT(1),
-		EventCategoryKeyboard       = pig::BIT(2),
-		EventCategoryMouse          = pig::BIT(3),
-		EventCategoryMouseButton    = pig::BIT(4)
+		EventCategoryApplication    = pg::BIT(0),
+		EventCategoryInput          = pg::BIT(1),
+		EventCategoryKeyboard       = pg::BIT(2),
+		EventCategoryMouse          = pg::BIT(3),
+		EventCategoryMouseButton    = pg::BIT(4)
 	};
 
 	template<int Category>
-	class EventClassCategory : public virtual pig::Event
+	class EventClassCategory : public virtual pg::Event
 	{
 	public:
 		int GetCategoryFlags() const override { return Category; };

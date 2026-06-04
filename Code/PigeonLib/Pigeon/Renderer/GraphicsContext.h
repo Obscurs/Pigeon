@@ -1,15 +1,15 @@
-#pragma once
+﻿#pragma once
 
-namespace pig
+namespace pg
 {
 	class WindowsWindow;
 }
-namespace pig 
+namespace pg 
 {
 	class GraphicsContext
 	{
 	public:
-		static pig::S_Ptr<GraphicsContext> Create(const WindowsWindow* window);
+		static pg::S_Ptr<GraphicsContext> Create(const WindowsWindow* window);
 
 		virtual void Shutdown() = 0;
 		virtual void Init() = 0;

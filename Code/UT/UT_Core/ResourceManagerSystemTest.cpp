@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <catch2/catch.hpp>
 #include "Utils/TestApp.h"
 
@@ -15,15 +15,15 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Core.ResourceManagerSystem::CreatesResourceMapOnFirstFrame")
 	{
-		pig::World& world = pig::World::Create();
-		world.RegisterSystem(std::make_unique<pig::ResourceManagerSystem>());
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ResourceManagerSystem>());
 
-		auto viewBefore = pig::World::GetRegistryDirect().view<pig::ResourceMapSingletonComponent>();
+		auto viewBefore = pg::World::GetRegistryDirect().view<pg::ResourceMapSingletonComponent>();
 		CHECK(viewBefore.size() == 0);
 
-		world.Update(pig::Timestep(0));
+		world.Update(pg::Timestep(0));
 
-		auto viewAfter = pig::World::GetRegistryDirect().view<pig::ResourceMapSingletonComponent>();
+		auto viewAfter = pg::World::GetRegistryDirect().view<pg::ResourceMapSingletonComponent>();
 		REQUIRE(viewAfter.size() == 1);
 	}
 
@@ -33,16 +33,16 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Core.ResourceManagerSystem::DoesNotDuplicateWhenMapExists")
 	{
-		pig::World& world = pig::World::Create();
-		world.RegisterSystem(std::make_unique<pig::ResourceManagerSystem>());
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ResourceManagerSystem>());
 
 		// Pre-seed a ResourceMapSingletonComponent so the system guard fires.
-		entt::entity ent = pig::World::GetRegistryDirect().create();
-		pig::World::GetRegistryDirect().emplace<pig::ResourceMapSingletonComponent>(ent);
+		entt::entity ent = pg::World::GetRegistryDirect().create();
+		pg::World::GetRegistryDirect().emplace<pg::ResourceMapSingletonComponent>(ent);
 
-		world.Update(pig::Timestep(0));
+		world.Update(pg::Timestep(0));
 
-		auto viewAfter = pig::World::GetRegistryDirect().view<pig::ResourceMapSingletonComponent>();
+		auto viewAfter = pg::World::GetRegistryDirect().view<pg::ResourceMapSingletonComponent>();
 		CHECK(viewAfter.size() == 1);
 	}
 
@@ -51,16 +51,16 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Core.ResourceManagerSystem::LoadedMapHasDefaultTexture")
 	{
-		pig::World& world = pig::World::Create();
-		world.RegisterSystem(std::make_unique<pig::ResourceManagerSystem>());
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ResourceManagerSystem>());
 
-		world.Update(pig::Timestep(0));
+		world.Update(pg::Timestep(0));
 
-		auto view = pig::World::GetRegistryDirect().view<pig::ResourceMapSingletonComponent>();
+		auto view = pg::World::GetRegistryDirect().view<pg::ResourceMapSingletonComponent>();
 		REQUIRE(view.size() == 1);
 
-		const pig::ResourceMapSingletonComponent& map =
-			view.get<pig::ResourceMapSingletonComponent>(view.front());
+		const pg::ResourceMapSingletonComponent& map =
+			view.get<pg::ResourceMapSingletonComponent>(view.front());
 
 		// Default texture must always be present in the texture map.
 		CHECK(map.m_TextureMap.find(map.m_DefaultTexture) != map.m_TextureMap.end());
@@ -71,16 +71,16 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Core.ResourceManagerSystem::LoadedMapHasShaders")
 	{
-		pig::World& world = pig::World::Create();
-		world.RegisterSystem(std::make_unique<pig::ResourceManagerSystem>());
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ResourceManagerSystem>());
 
-		world.Update(pig::Timestep(0));
+		world.Update(pg::Timestep(0));
 
-		auto view = pig::World::GetRegistryDirect().view<pig::ResourceMapSingletonComponent>();
+		auto view = pg::World::GetRegistryDirect().view<pg::ResourceMapSingletonComponent>();
 		REQUIRE(view.size() == 1);
 
-		const pig::ResourceMapSingletonComponent& map =
-			view.get<pig::ResourceMapSingletonComponent>(view.front());
+		const pg::ResourceMapSingletonComponent& map =
+			view.get<pg::ResourceMapSingletonComponent>(view.front());
 
 		CHECK(!map.m_ShaderMap.empty());
 	}
@@ -90,11 +90,11 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Core.ResourceManagerSystem::DeclareAccessIsCorrect")
 	{
-		pig::ResourceManagerSystem sys;
-		pig::SystemAccessDecl decl = sys.DeclareAccess();
+		pg::ResourceManagerSystem sys;
+		pg::SystemAccessDecl decl = sys.DeclareAccess();
 
-		CHECK(decl.readSet.count(std::type_index(typeid(pig::ResourceMapSingletonComponent))) > 0);
-		CHECK(decl.addSet.count(std::type_index(typeid(pig::ResourceMapSingletonComponent))) > 0);
+		CHECK(decl.readSet.count(std::type_index(typeid(pg::ResourceMapSingletonComponent))) > 0);
+		CHECK(decl.addSet.count(std::type_index(typeid(pg::ResourceMapSingletonComponent))) > 0);
 	}
 
 } // namespace CatchTestsetFail

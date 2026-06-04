@@ -1,8 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "Event.h"
 
-namespace pig {
+namespace pg {
 
 	class PIGEON_API KeyEvent :
 		public EventClassCategory< EventCategoryKeyboard | EventCategoryInput >

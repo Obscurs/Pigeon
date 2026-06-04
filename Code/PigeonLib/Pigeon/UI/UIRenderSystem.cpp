@@ -1,4 +1,4 @@
-#include "UIRenderSystem.h"
+﻿#include "UIRenderSystem.h"
 
 #include "Pigeon/Core/EngineConfigSingletonComponent.h"
 #include "Pigeon/Core/ResourceMapSingletonComponent.h"
@@ -11,10 +11,10 @@
 
 namespace
 {
-	glm::mat4 GetUIElementTransform(pig::CheckedRegistryAccessor& accessor, const pig::ui::BaseComponent& baseComponent, const pig::ui::RendererConfigSingletonComponent& renderComponent, const glm::vec2& uiTransformScale, const glm::vec2& uiBoundsSize)
+	glm::mat4 GetUIElementTransform(pg::CheckedRegistryAccessor& accessor, const pg::ui::BaseComponent& baseComponent, const pg::ui::RendererConfigSingletonComponent& renderComponent, const glm::vec2& uiTransformScale, const glm::vec2& uiBoundsSize)
 	{
 		int level = 0;
-		const glm::vec4 bounds = pig::ui::GetGlobalBoundsForElement(accessor, baseComponent, renderComponent, uiBoundsSize, level);
+		const glm::vec4 bounds = pg::ui::GetGlobalBoundsForElement(accessor, baseComponent, renderComponent, uiBoundsSize, level);
 
 		glm::mat4 transform(1.f);
 		transform = glm::translate(transform, glm::vec3(bounds.x, bounds.y, level));
@@ -22,7 +22,7 @@ namespace
 		return transform;
 	}
 
-	float GetFontSizeFromStringBounds(const pig::ui::BaseComponent& baseComponent, const glm::vec2 stringBounds, unsigned int numLines)
+	float GetFontSizeFromStringBounds(const pg::ui::BaseComponent& baseComponent, const glm::vec2 stringBounds, unsigned int numLines)
 	{
 		const float aspectUIBox = baseComponent.m_Size.x / baseComponent.m_Size.y;
 		const float aspectStringBounds = stringBounds.x / stringBounds.y;
@@ -41,12 +41,12 @@ namespace
 		return fontSize;
 	}
 
-	glm::vec2 GetStringBounds(const std::string& string, float kerning, float linespace, pig::S_Ptr<pig::Font> font)
+	glm::vec2 GetStringBounds(const std::string& string, float kerning, float linespace, pg::S_Ptr<pg::Font> font)
 	{
 		return font->GetStringBounds(string, kerning, linespace);
 	}
 
-	unsigned int GetStringNumLines(const std::string& string, pig::S_Ptr<pig::Font> font)
+	unsigned int GetStringNumLines(const std::string& string, pg::S_Ptr<pg::Font> font)
 	{
 		if (string.empty())
 			return 0;
@@ -61,91 +61,91 @@ namespace
 	}
 }
 
-pig::SystemAccessDecl pig::ui::UIRenderSystem::DeclareAccess() const
+pg::SystemAccessDecl pg::ui::UIRenderSystem::DeclareAccess() const
 {
-	pig::SystemAccessDecl decl;
+	pg::SystemAccessDecl decl;
 	decl.readSet = {
-		std::type_index(typeid(pig::EngineConfigSingletonComponent)),
-		std::type_index(typeid(pig::ResourceMapSingletonComponent)),
-		std::type_index(typeid(pig::ui::BaseComponent)),
-		std::type_index(typeid(pig::ui::ImageComponent)),
-		std::type_index(typeid(pig::ui::TextComponent)),
-		std::type_index(typeid(pig::ui::RendererConfigSingletonComponent)),
+		std::type_index(typeid(pg::EngineConfigSingletonComponent)),
+		std::type_index(typeid(pg::ResourceMapSingletonComponent)),
+		std::type_index(typeid(pg::ui::BaseComponent)),
+		std::type_index(typeid(pg::ui::ImageComponent)),
+		std::type_index(typeid(pg::ui::TextComponent)),
+		std::type_index(typeid(pg::ui::RendererConfigSingletonComponent)),
 	};
 	decl.addSet = {
-		std::type_index(typeid(pig::ui::RendererConfigSingletonComponent)),
+		std::type_index(typeid(pg::ui::RendererConfigSingletonComponent)),
 	};
 	decl.inframeAddSet = {
-		std::type_index(typeid(pig::DrawUIQuadInFrameEvent)),
-		std::type_index(typeid(pig::DrawUIStringInFrameEvent)),
+		std::type_index(typeid(pg::DrawUIQuadInFrameEvent)),
+		std::type_index(typeid(pg::DrawUIStringInFrameEvent)),
 	};
 	return decl;
 }
 
-void pig::ui::UIRenderSystem::Update(const pig::Timestep& ts)
+void pg::ui::UIRenderSystem::Update(const pg::Timestep& ts)
 {
-	auto accessor = pig::World::GetRegistry();
+	auto accessor = pg::World::GetRegistry();
 
-	auto viewRenderConfig = accessor.view<const pig::ui::RendererConfigSingletonComponent>();
+	auto viewRenderConfig = accessor.view<const pg::ui::RendererConfigSingletonComponent>();
 	if (viewRenderConfig.size() == 0)
 	{
-		pig::ui::RendererConfigSingletonComponent config;
+		pg::ui::RendererConfigSingletonComponent config;
 		entt::entity configEntity = accessor.create();
-		accessor.emplace_deferred<pig::ui::RendererConfigSingletonComponent>(configEntity, std::move(config));
+		accessor.emplace_deferred<pg::ui::RendererConfigSingletonComponent>(configEntity, std::move(config));
 		return;
 	}
 	PG_CORE_ASSERT(viewRenderConfig.size() == 1, "There should only be one ui render config component");
 
-	auto viewEngineConfig = accessor.view<const pig::EngineConfigSingletonComponent>();
-	auto viewResources = accessor.view<const pig::ResourceMapSingletonComponent>();
+	auto viewEngineConfig = accessor.view<const pg::EngineConfigSingletonComponent>();
+	auto viewResources = accessor.view<const pg::ResourceMapSingletonComponent>();
 	if (viewEngineConfig.empty() || viewResources.empty())
 	{
 		return;
 	}
-	const pig::ResourceMapSingletonComponent& resourcesComponent = viewResources.get<const pig::ResourceMapSingletonComponent>(viewResources.front());
-	const pig::EngineConfigSingletonComponent& engineConfigComponent = viewEngineConfig.get<const pig::EngineConfigSingletonComponent>(viewEngineConfig.front());
-	const pig::ui::RendererConfigSingletonComponent& renderComponent = viewRenderConfig.get<const pig::ui::RendererConfigSingletonComponent>(viewRenderConfig.front());
+	const pg::ResourceMapSingletonComponent& resourcesComponent = viewResources.get<const pg::ResourceMapSingletonComponent>(viewResources.front());
+	const pg::EngineConfigSingletonComponent& engineConfigComponent = viewEngineConfig.get<const pg::EngineConfigSingletonComponent>(viewEngineConfig.front());
+	const pg::ui::RendererConfigSingletonComponent& renderComponent = viewRenderConfig.get<const pg::ui::RendererConfigSingletonComponent>(viewRenderConfig.front());
 
-	auto viewImages = accessor.view<const pig::ui::BaseComponent, const pig::ui::ImageComponent>();
+	auto viewImages = accessor.view<const pg::ui::BaseComponent, const pg::ui::ImageComponent>();
 	for (auto ent : viewImages)
 	{
-		const pig::ui::BaseComponent& baseComponent = viewImages.get<const pig::ui::BaseComponent>(ent);
-		if (pig::ui::IsUIElementEnabled(accessor, baseComponent))
+		const pg::ui::BaseComponent& baseComponent = viewImages.get<const pg::ui::BaseComponent>(ent);
+		if (pg::ui::IsUIElementEnabled(accessor, baseComponent))
 		{
-			const pig::ui::ImageComponent& imageComponent = viewImages.get<const pig::ui::ImageComponent>(ent);
+			const pg::ui::ImageComponent& imageComponent = viewImages.get<const pg::ui::ImageComponent>(ent);
 
 			const glm::mat4 transform = GetUIElementTransform(accessor, baseComponent, renderComponent, baseComponent.m_Size, baseComponent.m_Size);
 			
-			pig::DrawUIQuadInFrameEvent quadEvent;
+			pg::DrawUIQuadInFrameEvent quadEvent;
 			quadEvent.m_Transform = transform;
 			quadEvent.m_TextureID = imageComponent.m_TextureHandle;
 			quadEvent.m_Origin = { 0.f,0.f,0.f };
-			accessor.EmplaceInframeEvent<pig::DrawUIQuadInFrameEvent>(std::move(quadEvent));
+			accessor.EmplaceInframeEvent<pg::DrawUIQuadInFrameEvent>(std::move(quadEvent));
 		}
 	}
 
-	auto viewText = accessor.view<const pig::ui::BaseComponent, const pig::ui::TextComponent>();
+	auto viewText = accessor.view<const pg::ui::BaseComponent, const pg::ui::TextComponent>();
 	for (auto ent : viewText)
 	{
-		const pig::ui::BaseComponent& baseComponent = viewText.get<pig::ui::BaseComponent>(ent);
-		if (pig::ui::IsUIElementEnabled(accessor, baseComponent))
+		const pg::ui::BaseComponent& baseComponent = viewText.get<pg::ui::BaseComponent>(ent);
+		if (pg::ui::IsUIElementEnabled(accessor, baseComponent))
 		{
-			const pig::ui::TextComponent& textComponent = viewText.get<pig::ui::TextComponent>(ent);
-			const pig::UUID fontID = textComponent.m_FontID.IsNull() ? engineConfigComponent.m_DefaultFontID : textComponent.m_FontID;
+			const pg::ui::TextComponent& textComponent = viewText.get<pg::ui::TextComponent>(ent);
+			const pg::UUID fontID = textComponent.m_FontID.IsNull() ? engineConfigComponent.m_DefaultFontID : textComponent.m_FontID;
 			PG_CORE_EXCEPT(resourcesComponent.m_FontMap.find(fontID) != resourcesComponent.m_FontMap.end(), "could not find font for ui text");
 			const unsigned int numLines = GetStringNumLines(textComponent.m_Text, resourcesComponent.m_FontMap.at(fontID));
 			const glm::vec2 stringBounds = GetStringBounds(textComponent.m_Text, textComponent.m_Kerning, textComponent.m_Spacing, resourcesComponent.m_FontMap.at(fontID));
 			const float fontSize = GetFontSizeFromStringBounds(baseComponent, stringBounds, numLines);
 			const glm::mat4 transform = GetUIElementTransform(accessor, baseComponent, renderComponent, glm::vec2(fontSize, fontSize), glm::vec2(stringBounds.x * fontSize, stringBounds.y * fontSize * numLines));
 			
-			pig::DrawUIStringInFrameEvent stringEvent;
+			pg::DrawUIStringInFrameEvent stringEvent;
 			stringEvent.m_Transform = transform;
 			stringEvent.m_String = textComponent.m_Text;
 			stringEvent.m_FontID = fontID;
 			stringEvent.m_Color = textComponent.m_Color;
 			stringEvent.m_Kerning = textComponent.m_Kerning;
 			stringEvent.m_Linespacing = textComponent.m_Spacing;
-			accessor.EmplaceInframeEvent<pig::DrawUIStringInFrameEvent>(std::move(stringEvent));
+			accessor.EmplaceInframeEvent<pg::DrawUIStringInFrameEvent>(std::move(stringEvent));
 		}
 	}
 }

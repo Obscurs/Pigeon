@@ -1,14 +1,14 @@
-#pragma once
+﻿#pragma once
 
 #include "RendererAPI.h"
 
-namespace pig 
+namespace pg 
 {
 	class RenderCommand
 	{
 	public:
 #ifdef TESTS_ENABLED
-		static const pig::S_Ptr<RendererAPI> GetRenderAPI() { return s_RendererAPI; }
+		static const pg::S_Ptr<RendererAPI> GetRenderAPI() { return s_RendererAPI; }
 #endif
 
 		inline static void Init()
@@ -46,7 +46,7 @@ namespace pig
 			s_RendererAPI->DrawIndexed(count);
 		}
 	private:
-		static pig::S_Ptr<RendererAPI> s_RendererAPI;
+		static pg::S_Ptr<RendererAPI> s_RendererAPI;
 	};
 
 }

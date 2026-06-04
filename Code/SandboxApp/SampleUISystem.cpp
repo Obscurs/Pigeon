@@ -1,60 +1,60 @@
-#include "SampleUISystem.h"
+﻿#include "SampleUISystem.h"
 
 #include "Pigeon/ECS/World.h"
 
-pig::SystemAccessDecl sbx::SampleUISystem::DeclareAccess() const
+pg::SystemAccessDecl sbx::SampleUISystem::DeclareAccess() const
 {
-	pig::SystemAccessDecl decl;
+	pg::SystemAccessDecl decl;
 	decl.writeSet = {
-		std::type_index(typeid(pig::ui::BaseComponent)),
-		std::type_index(typeid(pig::ui::ImageComponent)),
-		std::type_index(typeid(pig::ui::TextComponent)),
-		std::type_index(typeid(pig::ui::RendererConfig)),
+		std::type_index(typeid(pg::ui::BaseComponent)),
+		std::type_index(typeid(pg::ui::ImageComponent)),
+		std::type_index(typeid(pg::ui::TextComponent)),
+		std::type_index(typeid(pg::ui::RendererConfig)),
 	};
 	decl.addSet = {
-		std::type_index(typeid(pig::ui::RendererConfig)),
+		std::type_index(typeid(pg::ui::RendererConfig)),
 	};
 	return decl;
 }
 
-void sbx::SampleUISystem::Update(const pig::Timestep& ts)
+void sbx::SampleUISystem::Update(const pg::Timestep& ts)
 {
-	auto accessor = pig::World::GetRegistry();
+	auto accessor = pg::World::GetRegistry();
 	entt::registry& reg = accessor.GetInternalRegistry();
 
-	auto viewRenderConfig = accessor.view<const pig::ui::RendererConfig>();
+	auto viewRenderConfig = accessor.view<const pg::ui::RendererConfig>();
 	if (viewRenderConfig.size() == 0)
 	{
-		pig::ui::RendererConfig config;
+		pg::ui::RendererConfig config;
 		config.m_Font = m_Helper->CreateUIFont();
 		entt::entity configEntity = accessor.create();
-		accessor.emplace_deferred<pig::ui::RendererConfig>(configEntity, std::move(config));
+		accessor.emplace_deferred<pg::ui::RendererConfig>(configEntity, std::move(config));
 		return;
 	}
 	PG_CORE_ASSERT(viewRenderConfig.size() == 1, "There should only be one ui render config component");
-	const pig::ui::RendererConfig& renderComponent = viewRenderConfig.get<const pig::ui::RendererConfig>(viewRenderConfig.front());
+	const pg::ui::RendererConfig& renderComponent = viewRenderConfig.get<const pg::ui::RendererConfig>(viewRenderConfig.front());
 
 	m_Helper->RendererBeginScene(renderComponent.m_Camera);
-	auto viewImages = accessor.view<const pig::ui::BaseComponent, const pig::ui::ImageComponent>();
+	auto viewImages = accessor.view<const pg::ui::BaseComponent, const pg::ui::ImageComponent>();
 	for (auto ent : viewImages)
 	{
-		const pig::ui::BaseComponent& baseComponent = viewImages.get<pig::ui::BaseComponent>(ent);
-		if (pig::ui::IsUIElementEnabled(reg, baseComponent))
+		const pg::ui::BaseComponent& baseComponent = viewImages.get<pg::ui::BaseComponent>(ent);
+		if (pg::ui::IsUIElementEnabled(reg, baseComponent))
 		{
-			const pig::ui::ImageComponent& imageComponent = viewImages.get<pig::ui::ImageComponent>(ent);
+			const pg::ui::ImageComponent& imageComponent = viewImages.get<pg::ui::ImageComponent>(ent);
 
 			const glm::mat4 transform = GetUIElementTransform(reg, baseComponent, renderComponent, baseComponent.m_Size, baseComponent.m_Size);
 			m_Helper->RendererDrawQuad(transform, imageComponent.m_TextureHandle, { 0.f,0.f,0.f });
 		}
 	}
 
-	auto viewText = accessor.view<const pig::ui::BaseComponent, const pig::ui::TextComponent>();
+	auto viewText = accessor.view<const pg::ui::BaseComponent, const pg::ui::TextComponent>();
 	for (auto ent : viewText)
 	{
-		const pig::ui::BaseComponent& baseComponent = viewText.get<pig::ui::BaseComponent>(ent);
-		if (pig::ui::IsUIElementEnabled(reg, baseComponent))
+		const pg::ui::BaseComponent& baseComponent = viewText.get<pg::ui::BaseComponent>(ent);
+		if (pg::ui::IsUIElementEnabled(reg, baseComponent))
 		{
-			const pig::ui::TextComponent& textComponent = viewText.get<pig::ui::TextComponent>(ent);
+			const pg::ui::TextComponent& textComponent = viewText.get<pg::ui::TextComponent>(ent);
 			const unsigned int numLines = m_Helper->GetStringNumLines(textComponent.m_Text, renderComponent.m_Font);
 			const glm::vec2 stringBounds = m_Helper->GetStringBounds(textComponent.m_Text, textComponent.m_Kerning, textComponent.m_Spacing, renderComponent.m_Font);
 			const float fontSize = GetFontSizeFromStringBounds(baseComponent, stringBounds, numLines);

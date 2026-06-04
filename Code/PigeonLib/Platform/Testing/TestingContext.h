@@ -1,9 +1,9 @@
-#pragma once
+﻿#pragma once
 
 #include "Pigeon/Renderer/GraphicsContext.h"
 
 
-namespace pig 
+namespace pg 
 {
 	class TestingContext : public GraphicsContext
 	{

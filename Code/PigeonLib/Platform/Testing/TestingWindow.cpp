@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "TestingWindow.h"
 
 #include <Pigeon/Events/ApplicationEvent.h>
@@ -6,32 +6,32 @@
 #include <Pigeon/Events/KeyEvent.h>
 
 #ifdef TESTS_ENABLED
-pig::Window::Data pig::Window::m_Data;
-pig::S_Ptr<pig::Window> pig::Window::Create(const pig::WindowProps& props)
+pg::Window::Data pg::Window::m_Data;
+pg::S_Ptr<pg::Window> pg::Window::Create(const pg::WindowProps& props)
 {
-	return std::make_unique<pig::TestingWindow>(props);
+	return std::make_unique<pg::TestingWindow>(props);
 }
 #endif
 
-pig::TestingWindow::TestingWindow(const pig::WindowProps& props)
+pg::TestingWindow::TestingWindow(const pg::WindowProps& props)
 {
 }
 
-pig::TestingWindow::~TestingWindow()
+pg::TestingWindow::~TestingWindow()
 {
 }
 
-void pig::TestingWindow::Shutdown()
+void pg::TestingWindow::Shutdown()
 {
 	
 }
 
-void pig::TestingWindow::TESTING_TriggerEvent(pig::Event* event)
+void pg::TestingWindow::TESTING_TriggerEvent(pg::Event* event)
 {
 	m_Data.EventCallback(*event);
 }
 
-void pig::TestingWindow::OnUpdate()
+void pg::TestingWindow::OnUpdate()
 {
 	
 }

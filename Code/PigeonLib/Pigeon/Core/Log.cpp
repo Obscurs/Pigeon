@@ -1,13 +1,13 @@
-#include "pch.h"
+﻿#include "pch.h"
 
 #include "Log.h"
 
 #include "spdlog/sinks/stdout_color_sinks.h"
 
-std::shared_ptr<spdlog::logger> pig::Log::s_CoreLogger;
-std::shared_ptr<spdlog::logger> pig::Log::s_ClientLogger;
+std::shared_ptr<spdlog::logger> pg::Log::s_CoreLogger;
+std::shared_ptr<spdlog::logger> pg::Log::s_ClientLogger;
 
-void pig::Log::Init()
+void pg::Log::Init()
 {
 	if (!s_CoreLogger)
 	{

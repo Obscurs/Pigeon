@@ -1,11 +1,11 @@
-#pragma once
+﻿#pragma once
 
 #include <string>
 #include <unordered_map>
 
 #include <glm/glm.hpp>
 
-namespace pig 
+namespace pg 
 {
 	enum class ShaderDataType
 	{
@@ -121,8 +121,8 @@ namespace pig
 
 		virtual const std::string& GetName() const = 0;
 
-		static pig::S_Ptr<Shader> Create(const std::string& filepath);
-		static pig::S_Ptr<Shader> Create(const std::string& name, const char* vertexSrc, const char* fragmentSrc, const char* buffLayout);
+		static pg::S_Ptr<Shader> Create(const std::string& filepath);
+		static pg::S_Ptr<Shader> Create(const std::string& name, const char* vertexSrc, const char* fragmentSrc, const char* buffLayout);
 
 		virtual void UploadUniformInt(const std::string& name, int value) const = 0;
 
@@ -144,16 +144,16 @@ namespace pig
 	class ShaderLibrary
 	{
 	public:
-		void Add(const std::string& name, const pig::S_Ptr<Shader>& shader);
-		void Add(const pig::S_Ptr<Shader>& shader);
-		pig::S_Ptr<Shader> Load(const std::string& filepath);
-		pig::S_Ptr<Shader> Load(const std::string& name, const std::string& filepath);
+		void Add(const std::string& name, const pg::S_Ptr<Shader>& shader);
+		void Add(const pg::S_Ptr<Shader>& shader);
+		pg::S_Ptr<Shader> Load(const std::string& filepath);
+		pg::S_Ptr<Shader> Load(const std::string& name, const std::string& filepath);
 
-		pig::S_Ptr<Shader> Get(const std::string& name);
+		pg::S_Ptr<Shader> Get(const std::string& name);
 
 		bool Exists(const std::string& name) const;
 	private:
-		std::unordered_map<std::string, pig::S_Ptr<Shader>> m_Shaders;
+		std::unordered_map<std::string, pg::S_Ptr<Shader>> m_Shaders;
 	};
 
 

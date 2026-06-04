@@ -1,6 +1,6 @@
-#pragma once
+﻿#pragma once
 
-namespace pig
+namespace pg
 {
 	constexpr unsigned char PG_MOUSE_BUTTON_LEFT = 0x01; // VK_LBUTTON
 	constexpr unsigned char PG_MOUSE_BUTTON_RIGHT = 0x02; // VK_RBUTTON

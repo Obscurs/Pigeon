@@ -1,8 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "Pigeon/Renderer/RendererAPI.h"
 
-namespace pig 
+namespace pg 
 {
 	class TestingRendererAPI : public RendererAPI
 	{

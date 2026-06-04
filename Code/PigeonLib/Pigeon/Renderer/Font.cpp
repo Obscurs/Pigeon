@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 
 #include "Font.h"
 
@@ -26,7 +26,7 @@ namespace
 
 template<typename T, typename S, int N, msdf_atlas::GeneratorFunction<S, N> GenFunc>
 void CreateAndCacheAtlas(float fontSize, const std::vector<msdf_atlas::GlyphGeometry>& glyphs,
-	const msdf_atlas::FontGeometry& fontGeometry, uint32_t width, uint32_t height, pig::TextureData& result)
+	const msdf_atlas::FontGeometry& fontGeometry, uint32_t width, uint32_t height, pg::TextureData& result)
 {
 	msdf_atlas::GeneratorAttributes attributes;
 	attributes.config.overlapSupport = true;
@@ -40,16 +40,16 @@ void CreateAndCacheAtlas(float fontSize, const std::vector<msdf_atlas::GlyphGeom
 	msdfgen::BitmapConstRef<T, N> bitmap = (msdfgen::BitmapConstRef<T, N>)generator.atlasStorage();
 	const unsigned char* data = bitmap.pixels;
 
-	result.m_TextureID = pig::UUID::Generate();
-	result.m_Texture = pig::Texture2D::Create(bitmap.width, bitmap.height, 3, data);
+	result.m_TextureID = pg::UUID::Generate();
+	result.m_Texture = pg::Texture2D::Create(bitmap.width, bitmap.height, 3, data);
 	result.m_Width = bitmap.width;
 	result.m_Height = bitmap.height;
 	result.m_Channels = 3;
-	result.m_TextureType = pig::EMappedTextureType::eText;
+	result.m_TextureType = pg::EMappedTextureType::eText;
 }
 
-pig::Font::Font(const std::filesystem::path& filepath, pig::TextureData& textureData)
-	: m_Data(new pig::MSDFData())
+pg::Font::Font(const std::filesystem::path& filepath, pg::TextureData& textureData)
+	: m_Data(new pg::MSDFData())
 {
 	msdfgen::FreetypeHandle* ft = msdfgen::initializeFreetype();
 	PG_CORE_ASSERT(ft, "Failed to initialize freetype");
@@ -133,12 +133,12 @@ pig::Font::Font(const std::filesystem::path& filepath, pig::TextureData& texture
 	msdfgen::deinitializeFreetype(ft);
 }
 
-pig::Font::~Font()
+pg::Font::~Font()
 {
 	delete m_Data;
 }
 
-glm::dvec2 pig::Font::GetCharacterAdvance(char c1, char c2, float kerning, float linespacing) const
+glm::dvec2 pg::Font::GetCharacterAdvance(char c1, char c2, float kerning, float linespacing) const
 {
 	glm::dvec2 advance{ 0.0,0.0 };
 	const auto& fontGeometry = m_Data->FontGeometry;
@@ -162,7 +162,7 @@ glm::dvec2 pig::Font::GetCharacterAdvance(char c1, char c2, float kerning, float
 	return advance;
 }
 
-bool pig::Font::IsCharacterDrawable(char c) const
+bool pg::Font::IsCharacterDrawable(char c) const
 {
 	return
 		c != '\n' &&
@@ -172,12 +172,12 @@ bool pig::Font::IsCharacterDrawable(char c) const
 		m_Data->FontGeometry.getGlyph(c);
 }
 
-bool pig::Font::IsCharacterNewLine(char c) const
+bool pg::Font::IsCharacterNewLine(char c) const
 {
 	return c == '\n';
 }
 
-const msdf_atlas::GlyphGeometry* pig::Font::GetGlyph(char c) const
+const msdf_atlas::GlyphGeometry* pg::Font::GetGlyph(char c) const
 {
 	const msdf_atlas::GlyphGeometry* glyph = m_Data->FontGeometry.getGlyph(c);
 	if (!glyph)
@@ -187,7 +187,7 @@ const msdf_atlas::GlyphGeometry* pig::Font::GetGlyph(char c) const
 	return glyph;
 }
 
-glm::vec4 pig::Font::GetCharacterVertexQuad(char c, const glm::dvec2& offset) const
+glm::vec4 pg::Font::GetCharacterVertexQuad(char c, const glm::dvec2& offset) const
 {
 	glm::vec4 quad{};
 	if (const msdf_atlas::GlyphGeometry* glyph = GetGlyph(c))
@@ -207,7 +207,7 @@ glm::vec4 pig::Font::GetCharacterVertexQuad(char c, const glm::dvec2& offset) co
 	return quad;
 }
 
-glm::vec4 pig::Font::GetCharacterTexCoordsQuad(char c, const pig::Texture2D& fontAtlas) const
+glm::vec4 pg::Font::GetCharacterTexCoordsQuad(char c, const pg::Texture2D& fontAtlas) const
 {
 	glm::vec4 texCoords{};
 	if (const msdf_atlas::GlyphGeometry* glyph = GetGlyph(c))
@@ -227,7 +227,7 @@ glm::vec4 pig::Font::GetCharacterTexCoordsQuad(char c, const pig::Texture2D& fon
 	return texCoords;
 }
 
-glm::mat4 pig::Font::GetCharacterTransform(const glm::vec4& charQuad, const glm::mat4& stringTransform) const
+glm::mat4 pg::Font::GetCharacterTransform(const glm::vec4& charQuad, const glm::mat4& stringTransform) const
 {
 	glm::mat4 transform = glm::mat4(1.0f); // Identity matrix
 	transform = glm::translate(transform, glm::vec3(charQuad.x, charQuad.y, 0.0f)); // Apply translation
@@ -236,7 +236,7 @@ glm::mat4 pig::Font::GetCharacterTransform(const glm::vec4& charQuad, const glm:
 	return transform;
 }
 
-glm::vec2 pig::Font::GetStringBounds(std::string string, float kerning, float linespacing) const
+glm::vec2 pg::Font::GetStringBounds(std::string string, float kerning, float linespacing) const
 {
 	double maxWidth = 0.0;
 	glm::dvec2 charOffset{ 0.0, 0.0 };
@@ -264,7 +264,7 @@ glm::vec2 pig::Font::GetStringBounds(std::string string, float kerning, float li
 	return glm::vec2(maxWidth, charOffset.y);
 }
 
-double pig::Font::GetFsScale() const
+double pg::Font::GetFsScale() const
 {
 	const auto& metrics = m_Data->FontGeometry.getMetrics();
 	return 1.0 / (metrics.ascenderY - metrics.descenderY);

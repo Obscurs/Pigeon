@@ -1,12 +1,12 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "Layer.h"
 
-pig::Layer::Layer(const std::string& debugName)
+pg::Layer::Layer(const std::string& debugName)
 	: m_DebugName(debugName)
 {
 }
 
-pig::Layer::~Layer()
+pg::Layer::~Layer()
 {
 
 }

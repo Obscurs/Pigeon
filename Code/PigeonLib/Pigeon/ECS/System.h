@@ -1,11 +1,11 @@
-#pragma once
+﻿#pragma once
 #include <entt/entt.hpp>
 #include <typeindex>
 #include <unordered_set>
 
 #include "Pigeon/Core/Timestep.h"
 
-namespace pig
+namespace pg
 {
 	struct SystemAccessDecl
 	{
@@ -20,7 +20,7 @@ namespace pig
 	public:
 		System() = default;
 		~System() = default;
-		virtual void Update(const pig::Timestep& ts) = 0;
+		virtual void Update(const pg::Timestep& ts) = 0;
 
 		// Systems that do not override this will assert on any component access.
 		// Every concrete system must override DeclareAccess() and declare its readSet, writeSet, and addSet.

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <catch2/catch.hpp>
 #include "Utils/TestApp.h"
 
@@ -21,16 +21,16 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Sandbox.SampleUISystem::NoOpWithoutResourceMap")
 	{
-		pig::World& world = pig::World::Create();
+		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<sbx::SampleUISystem>());
 
 		// Provide config but NOT resource map.
-		entt::entity cfgEnt = pig::World::GetRegistryDirect().create();
-		pig::World::GetRegistryDirect().emplace<sbx::SampleUIConfigSingletonComponent>(cfgEnt);
+		entt::entity cfgEnt = pg::World::GetRegistryDirect().create();
+		pg::World::GetRegistryDirect().emplace<sbx::SampleUIConfigSingletonComponent>(cfgEnt);
 
-		world.Update(pig::Timestep(0));
+		world.Update(pg::Timestep(0));
 
-		auto view = pig::World::GetRegistryDirect().view<sbx::SampleUISingletonComponent>();
+		auto view = pg::World::GetRegistryDirect().view<sbx::SampleUISingletonComponent>();
 		CHECK(view.size() == 0);
 	}
 
@@ -39,16 +39,16 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Sandbox.SampleUISystem::NoOpWithoutConfig")
 	{
-		pig::World& world = pig::World::Create();
+		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<sbx::SampleUISystem>());
 
 		// Provide resources but NOT config.
-		entt::entity resEnt = pig::World::GetRegistryDirect().create();
-		pig::World::GetRegistryDirect().emplace<pig::ResourceMapSingletonComponent>(resEnt);
+		entt::entity resEnt = pg::World::GetRegistryDirect().create();
+		pg::World::GetRegistryDirect().emplace<pg::ResourceMapSingletonComponent>(resEnt);
 
-		world.Update(pig::Timestep(0));
+		world.Update(pg::Timestep(0));
 
-		auto view = pig::World::GetRegistryDirect().view<sbx::SampleUISingletonComponent>();
+		auto view = pg::World::GetRegistryDirect().view<sbx::SampleUISingletonComponent>();
 		CHECK(view.size() == 0);
 	}
 
@@ -59,21 +59,21 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Sandbox.SampleUISystem::CreatesComponentsOnFirstFrame")
 	{
-		pig::World& world = pig::World::Create();
+		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<sbx::SampleUISystem>());
 
-		entt::entity resEnt = pig::World::GetRegistryDirect().create();
-		pig::World::GetRegistryDirect().emplace<pig::ResourceMapSingletonComponent>(resEnt);
+		entt::entity resEnt = pg::World::GetRegistryDirect().create();
+		pg::World::GetRegistryDirect().emplace<pg::ResourceMapSingletonComponent>(resEnt);
 
-		entt::entity cfgEnt = pig::World::GetRegistryDirect().create();
-		pig::World::GetRegistryDirect().emplace<sbx::SampleUIConfigSingletonComponent>(cfgEnt);
+		entt::entity cfgEnt = pg::World::GetRegistryDirect().create();
+		pg::World::GetRegistryDirect().emplace<sbx::SampleUIConfigSingletonComponent>(cfgEnt);
 
-		auto viewBefore = pig::World::GetRegistryDirect().view<sbx::SampleUISingletonComponent>();
+		auto viewBefore = pg::World::GetRegistryDirect().view<sbx::SampleUISingletonComponent>();
 		CHECK(viewBefore.size() == 0);
 
-		world.Update(pig::Timestep(0));
+		world.Update(pg::Timestep(0));
 
-		auto viewAfter = pig::World::GetRegistryDirect().view<sbx::SampleUISingletonComponent>();
+		auto viewAfter = pg::World::GetRegistryDirect().view<sbx::SampleUISingletonComponent>();
 		REQUIRE(viewAfter.size() == 1);
 	}
 
@@ -82,20 +82,20 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Sandbox.SampleUISystem::CreatedComponentHasFontIDFromConfig")
 	{
-		pig::World& world = pig::World::Create();
+		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<sbx::SampleUISystem>());
 
-		entt::entity resEnt = pig::World::GetRegistryDirect().create();
-		pig::World::GetRegistryDirect().emplace<pig::ResourceMapSingletonComponent>(resEnt);
+		entt::entity resEnt = pg::World::GetRegistryDirect().create();
+		pg::World::GetRegistryDirect().emplace<pg::ResourceMapSingletonComponent>(resEnt);
 
-		entt::entity cfgEnt = pig::World::GetRegistryDirect().create();
+		entt::entity cfgEnt = pg::World::GetRegistryDirect().create();
 		sbx::SampleUIConfigSingletonComponent& cfg =
-			pig::World::GetRegistryDirect().emplace<sbx::SampleUIConfigSingletonComponent>(cfgEnt);
-		cfg.m_DefaultFontID = pig::UUID::Generate();
+			pg::World::GetRegistryDirect().emplace<sbx::SampleUIConfigSingletonComponent>(cfgEnt);
+		cfg.m_DefaultFontID = pg::UUID::Generate();
 
-		world.Update(pig::Timestep(0));
+		world.Update(pg::Timestep(0));
 
-		auto view = pig::World::GetRegistryDirect().view<sbx::SampleUISingletonComponent>();
+		auto view = pg::World::GetRegistryDirect().view<sbx::SampleUISingletonComponent>();
 		REQUIRE(view.size() == 1);
 
 		const sbx::SampleUISingletonComponent& comp =
@@ -108,21 +108,21 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Sandbox.SampleUISystem::CreatesOrthographicCameraOnFirstFrame")
 	{
-		pig::World& world = pig::World::Create();
+		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<sbx::SampleUISystem>());
 
-		entt::entity resEnt = pig::World::GetRegistryDirect().create();
-		pig::World::GetRegistryDirect().emplace<pig::ResourceMapSingletonComponent>(resEnt);
+		entt::entity resEnt = pg::World::GetRegistryDirect().create();
+		pg::World::GetRegistryDirect().emplace<pg::ResourceMapSingletonComponent>(resEnt);
 
-		entt::entity cfgEnt = pig::World::GetRegistryDirect().create();
-		pig::World::GetRegistryDirect().emplace<sbx::SampleUIConfigSingletonComponent>(cfgEnt);
+		entt::entity cfgEnt = pg::World::GetRegistryDirect().create();
+		pg::World::GetRegistryDirect().emplace<sbx::SampleUIConfigSingletonComponent>(cfgEnt);
 
-		auto viewBefore = pig::World::GetRegistryDirect().view<pig::OrthographicCameraComponent>();
+		auto viewBefore = pg::World::GetRegistryDirect().view<pg::OrthographicCameraComponent>();
 		CHECK(viewBefore.size() == 0);
 
-		world.Update(pig::Timestep(0));
+		world.Update(pg::Timestep(0));
 
-		auto viewAfter = pig::World::GetRegistryDirect().view<pig::OrthographicCameraComponent>();
+		auto viewAfter = pg::World::GetRegistryDirect().view<pg::OrthographicCameraComponent>();
 		CHECK(viewAfter.size() == 1);
 	}
 
@@ -132,23 +132,23 @@ namespace CatchTestsetFail
 	TEST_CASE("Sandbox.SampleUISystem::DeclareAccessIsCorrect")
 	{
 		sbx::SampleUISystem sys;
-		pig::SystemAccessDecl decl = sys.DeclareAccess();
+		pg::SystemAccessDecl decl = sys.DeclareAccess();
 
 		CHECK(decl.writeSet.count(std::type_index(typeid(sbx::SampleUISingletonComponent))) > 0);
 
-		CHECK(decl.addSet.count(std::type_index(typeid(pig::OrthographicCameraComponent))) > 0);
-		CHECK(decl.addSet.count(std::type_index(typeid(pig::ui::LoadLayoutEvent))) > 0);
+		CHECK(decl.addSet.count(std::type_index(typeid(pg::OrthographicCameraComponent))) > 0);
+		CHECK(decl.addSet.count(std::type_index(typeid(pg::ui::LoadLayoutEvent))) > 0);
 		CHECK(decl.addSet.count(std::type_index(typeid(sbx::SampleUISingletonComponent))) > 0);
 
-		CHECK(decl.inframeAddSet.count(std::type_index(typeid(pig::DrawQuadInFrameEvent))) > 0);
-		CHECK(decl.inframeAddSet.count(std::type_index(typeid(pig::DrawSpriteInFrameEvent))) > 0);
-		CHECK(decl.inframeAddSet.count(std::type_index(typeid(pig::DrawStringInFrameEvent))) > 0);
+		CHECK(decl.inframeAddSet.count(std::type_index(typeid(pg::DrawQuadInFrameEvent))) > 0);
+		CHECK(decl.inframeAddSet.count(std::type_index(typeid(pg::DrawSpriteInFrameEvent))) > 0);
+		CHECK(decl.inframeAddSet.count(std::type_index(typeid(pg::DrawStringInFrameEvent))) > 0);
 
 		CHECK(decl.readSet.count(std::type_index(typeid(sbx::SampleUIConfigSingletonComponent))) > 0);
-		CHECK(decl.readSet.count(std::type_index(typeid(pig::ResourceMapSingletonComponent))) > 0);
-		CHECK(decl.readSet.count(std::type_index(typeid(pig::ui::BaseComponent))) > 0);
-		CHECK(decl.readSet.count(std::type_index(typeid(pig::ui::ImageComponent))) > 0);
-		CHECK(decl.readSet.count(std::type_index(typeid(pig::ui::TextComponent))) > 0);
+		CHECK(decl.readSet.count(std::type_index(typeid(pg::ResourceMapSingletonComponent))) > 0);
+		CHECK(decl.readSet.count(std::type_index(typeid(pg::ui::BaseComponent))) > 0);
+		CHECK(decl.readSet.count(std::type_index(typeid(pg::ui::ImageComponent))) > 0);
+		CHECK(decl.readSet.count(std::type_index(typeid(pg::ui::TextComponent))) > 0);
 	}
 
 } // namespace CatchTestsetFail

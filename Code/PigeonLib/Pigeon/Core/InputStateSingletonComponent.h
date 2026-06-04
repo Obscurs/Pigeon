@@ -1,5 +1,5 @@
-
-namespace pig
+﻿
+namespace pg
 {
 	struct InputStateSingletonComponent
 	{

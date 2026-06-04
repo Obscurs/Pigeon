@@ -1,10 +1,10 @@
-#pragma once
+﻿#pragma once
 
 #include "Pigeon/Core/Core.h"
 #include "Pigeon/Core/Timestep.h"
 #include "Pigeon/Events/Event.h"
 
-namespace pig 
+namespace pg 
 {
 	class PIGEON_API Layer
 	{

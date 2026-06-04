@@ -1,9 +1,9 @@
-#include "TestingHelper.h"
+﻿#include "TestingHelper.h"
 
-pig::S_Ptr<pig::TestingHelper> pig::TestingHelper::s_Instance = std::make_shared<pig::TestingHelper>();
+pg::S_Ptr<pg::TestingHelper> pg::TestingHelper::s_Instance = std::make_shared<pg::TestingHelper>();
 
-void pig::TestingHelper::Reset()
+void pg::TestingHelper::Reset()
 {
-	s_Instance = std::make_shared<pig::TestingHelper>();
+	s_Instance = std::make_shared<pg::TestingHelper>();
 }
 

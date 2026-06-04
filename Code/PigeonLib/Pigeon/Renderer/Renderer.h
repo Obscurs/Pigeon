@@ -1,8 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "RenderCommand.h"
 
-namespace pig 
+namespace pg 
 {
 	class Renderer
 	{

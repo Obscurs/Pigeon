@@ -1,15 +1,15 @@
-#pragma once
+﻿#pragma once
 #include <entt/entt.hpp>
 #include "Pigeon/ECS/System.h"
 
-namespace pig::ui
+namespace pg::ui
 {
-	class UIEventSystem : public pig::System
+	class UIEventSystem : public pg::System
 	{
 	public:
 		UIEventSystem() = default;
 		~UIEventSystem() = default;
-		void Update(const pig::Timestep& ts) override;
-		pig::SystemAccessDecl DeclareAccess() const override;
+		void Update(const pg::Timestep& ts) override;
+		pg::SystemAccessDecl DeclareAccess() const override;
 	};
 }

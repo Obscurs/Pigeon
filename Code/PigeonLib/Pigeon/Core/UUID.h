@@ -1,6 +1,6 @@
-#pragma once
+﻿#pragma once
 
-namespace pig
+namespace pg
 {
 	class PIGEON_API UUID
 	{
@@ -34,9 +34,9 @@ namespace pig
 namespace std
 {
 	template<>
-	struct hash<pig::UUID>
+	struct hash<pg::UUID>
 	{
-		std::size_t operator()(const pig::UUID& uuid) const noexcept
+		std::size_t operator()(const pg::UUID& uuid) const noexcept
 		{
 			std::size_t hash = 0;
 			for (const auto& byte : uuid.m_Data) {

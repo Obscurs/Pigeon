@@ -1,4 +1,4 @@
-#include <Pigeon.h>
+﻿#include <Pigeon.h>
 #include <imgui.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -10,18 +10,18 @@
 #include "Sandbox/ConfigLoaderSystem.h"
 #include "Sandbox/SampleUISystem.h"
 
-class Sandbox : public pig::Application
+class Sandbox : public pg::Application
 {
 public:
 	Sandbox() = default;
 	~Sandbox() = default;
 };
 
-pig::Application& pig::CreateApplication()
+pg::Application& pg::CreateApplication()
 {
-	pig::Application& sandbox = Sandbox::Create();
-	pig::World::Get().RegisterSystem(std::move(std::make_unique<sbx::ConfigLoaderSystem>()));
-	pig::World::Get().RegisterSystem(std::move(std::make_unique<sbx::SampleUISystem>()));
+	pg::Application& sandbox = Sandbox::Create();
+	pg::World::Get().RegisterSystem(std::move(std::make_unique<sbx::ConfigLoaderSystem>()));
+	pg::World::Get().RegisterSystem(std::move(std::make_unique<sbx::SampleUISystem>()));
 	
 	return sandbox;
 }

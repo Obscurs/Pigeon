@@ -1,19 +1,19 @@
-#include "pch.h"
+﻿#include "pch.h"
 
 #include "Dx11Context.h"
 
-pig::Dx11Context::Dx11Context(HWND windowHandle)
+pg::Dx11Context::Dx11Context(HWND windowHandle)
 {
 	m_Data.m_HWnd = windowHandle;
 	PG_CORE_ASSERT(windowHandle, "Window handle is null!")
 }
 
-void pig::Dx11Context::Shutdown()
+void pg::Dx11Context::Shutdown()
 {
 	CleanupDeviceD3D();
 }
 
-void pig::Dx11Context::Init()
+void pg::Dx11Context::Init()
 {
 	if (!CreateDeviceD3D(m_Data.m_HWnd))
 	{
@@ -22,12 +22,12 @@ void pig::Dx11Context::Init()
 	}
 }
 
-void pig::Dx11Context::SwapBuffers()
+void pg::Dx11Context::SwapBuffers()
 {
 	m_Data.m_PSwapChain->Present(1, 0);
 }
 
-void pig::Dx11Context::SetSize(unsigned int width, unsigned int height)
+void pg::Dx11Context::SetSize(unsigned int width, unsigned int height)
 {
 	m_Data.m_ResizeHeight = height;
 	m_Data.m_ResizeWidth = width;
@@ -37,12 +37,12 @@ void pig::Dx11Context::SetSize(unsigned int width, unsigned int height)
 	}
 }
 
-bool pig::Dx11Context::NeedsResize() const
+bool pg::Dx11Context::NeedsResize() const
 {
 	return m_Data.m_ResizeWidth != 0 && m_Data.m_ResizeHeight != 0;
 }
 
-void pig::Dx11Context::ResizeBuffers()
+void pg::Dx11Context::ResizeBuffers()
 {
 	PG_CORE_ASSERT(m_Data.m_ResizeWidth != 0 || m_Data.m_ResizeHeight != 0, "Called resized but no resize was needed");
 	m_Data.m_PSwapChain->ResizeBuffers(0, m_Data.m_ResizeWidth, m_Data.m_ResizeHeight, DXGI_FORMAT_UNKNOWN, 0);
@@ -51,7 +51,7 @@ void pig::Dx11Context::ResizeBuffers()
 	m_Data.m_ResizeWidth = m_Data.m_ResizeHeight = 0;
 }
 
-void pig::Dx11Context::CleanupDeviceD3D()
+void pg::Dx11Context::CleanupDeviceD3D()
 {
 	if (m_Data.m_PSwapChain) { m_Data.m_PSwapChain.reset(); }
 	if (m_Data.m_Pd3dDeviceContext) { m_Data.m_Pd3dDeviceContext.reset(); }
@@ -59,7 +59,7 @@ void pig::Dx11Context::CleanupDeviceD3D()
 	m_Data.m_HWnd = nullptr;
 }
 
-bool pig::Dx11Context::CreateDeviceD3D(HWND hWnd)
+bool pg::Dx11Context::CreateDeviceD3D(HWND hWnd)
 {
 	// Setup swap chain
 	DXGI_SWAP_CHAIN_DESC sd;

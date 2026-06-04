@@ -1,13 +1,13 @@
-#pragma once
+﻿#pragma once
 #include "Pigeon/Events/Event.h"
-namespace pig
+namespace pg
 {
 	struct ApplicationEventComponent
 	{
 		ApplicationEventComponent() {};
 		ApplicationEventComponent(const ApplicationEventComponent&) = default;
 
-		pig::Event m_Event;
+		pg::Event m_Event;
 	};
 }
 

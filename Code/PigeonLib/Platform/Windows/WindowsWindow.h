@@ -1,9 +1,9 @@
-#pragma once
+﻿#pragma once
 
 #include "Pigeon/Core/Window.h"
 #include "Pigeon/Renderer/GraphicsContext.h"
 
-namespace pig 
+namespace pg 
 {
 	class WindowsWindow : public Window
 	{
@@ -62,7 +62,7 @@ namespace pig
 		static void ProcessWindowResizeEvent(LPARAM lParam);
 		static bool ProcessWindowDestroyEvent();
 
-		pig::S_Ptr<GraphicsContext> m_Context = nullptr;
+		pg::S_Ptr<GraphicsContext> m_Context = nullptr;
 		HWND m_Window = nullptr;
 
 		static WindowsData m_WindowsData;

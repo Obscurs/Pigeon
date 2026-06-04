@@ -1,14 +1,14 @@
-#pragma once
+﻿#pragma once
 #include "Pigeon/ECS/System.h"
 
-namespace pig 
+namespace pg 
 {
-	class Renderer2DSystem : public pig::System
+	class Renderer2DSystem : public pg::System
 	{
 	public:
 		Renderer2DSystem() = default;
 		~Renderer2DSystem() = default;
-		void Update(const pig::Timestep& ts) override;
-		pig::SystemAccessDecl DeclareAccess() const override;
+		void Update(const pg::Timestep& ts) override;
+		pg::SystemAccessDecl DeclareAccess() const override;
 	};
 }

@@ -1,4 +1,4 @@
-================================================================================
+﻿================================================================================
   PIGEON ENGINE — SENIOR PROGRAMMER REVIEW
   Date: 2026-05-05
 ================================================================================
@@ -350,7 +350,7 @@ SECTION 2 — CODE INCONSISTENCIES AND CLEANUP
 --- 2.2 TWO PARALLEL EVENT SYSTEMS WITH NO UNIFICATION ---
 
   The engine has:
-    (a) pig::Event — a virtual class hierarchy dispatched through the Layer stack
+    (a) pg::Event — a virtual class hierarchy dispatched through the Layer stack
         for OS events (window, keyboard, mouse). Synchronous and blocking.
     (b) entt::dispatcher — used (or intended to be used) for game-domain events
         between ECS systems. World::Update() calls m_Dispatcher.update() each
@@ -470,7 +470,7 @@ SECTION 2 — CODE INCONSISTENCIES AND CLEANUP
 
 --- 2.13 S_Ptr / U_Ptr ALIASES REDUCE READABILITY FOR NEWCOMERS ---
 
-  `pig::S_Ptr<T>` and `pig::U_Ptr<T>` are aliases for `std::shared_ptr<T>` and
+  `pg::S_Ptr<T>` and `pg::U_Ptr<T>` are aliases for `std::shared_ptr<T>` and
   `std::unique_ptr<T>`. These save very few characters but harm readability for
   anyone not already familiar with the convention. The standard library names are
   universally understood. Consider removing the aliases.

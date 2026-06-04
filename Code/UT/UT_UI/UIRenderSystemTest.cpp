@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <catch2/catch.hpp>
 #include "Utils/TestApp.h"
 
@@ -17,23 +17,23 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("UI.UIRenderSystem::CreatesRendererConfigOnFirstFrame")
 	{
-		pig::World& world = pig::World::Create();
-		world.RegisterSystem(std::make_unique<pig::ui::UIRenderSystem>());
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ui::UIRenderSystem>());
 
 		// Verify no config exists before first update.
-		auto viewBefore = pig::World::GetRegistryDirect().view<pig::ui::RendererConfigSingletonComponent>();
+		auto viewBefore = pg::World::GetRegistryDirect().view<pg::ui::RendererConfigSingletonComponent>();
 		CHECK(viewBefore.size() == 0);
 
 		// First frame: system detects no config and queues deferred add.
-		world.Update(pig::Timestep(0));
+		world.Update(pg::Timestep(0));
 
 		// Config should now be visible (deferred add flushed after Update()).
-		auto viewAfter = pig::World::GetRegistryDirect().view<pig::ui::RendererConfigSingletonComponent>();
+		auto viewAfter = pg::World::GetRegistryDirect().view<pg::ui::RendererConfigSingletonComponent>();
 		REQUIRE(viewAfter.size() == 1);
 
 		// Default config values.
-		const pig::ui::RendererConfigSingletonComponent& cfg =
-			viewAfter.get<pig::ui::RendererConfigSingletonComponent>(viewAfter.front());
+		const pg::ui::RendererConfigSingletonComponent& cfg =
+			viewAfter.get<pg::ui::RendererConfigSingletonComponent>(viewAfter.front());
 		CHECK(cfg.m_Width  == 1920.f);
 		CHECK(cfg.m_Height == 1080.f);
 	}
@@ -44,18 +44,18 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("UI.UIRenderSystem::EarlyExitWithoutEngineConfigOrResources")
 	{
-		pig::World& world = pig::World::Create();
-		world.RegisterSystem(std::make_unique<pig::ui::UIRenderSystem>());
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ui::UIRenderSystem>());
 
 		// First frame: creates RendererConfigSingletonComponent.
-		world.Update(pig::Timestep(0));
+		world.Update(pg::Timestep(0));
 
 		// Second frame: config exists but EngineConfig/Resources are absent.
 		// System should bail early without asserting or crashing.
-		world.Update(pig::Timestep(0));
+		world.Update(pg::Timestep(0));
 
 		// Config must still be a single entity (not duplicated).
-		auto viewConfig = pig::World::GetRegistryDirect().view<pig::ui::RendererConfigSingletonComponent>();
+		auto viewConfig = pg::World::GetRegistryDirect().view<pg::ui::RendererConfigSingletonComponent>();
 		CHECK(viewConfig.size() == 1);
 	}
 
@@ -66,40 +66,40 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("UI.UIRenderSystem::DisabledImageDoesNotProduceDrawEvent")
 	{
-		pig::World& world = pig::World::Create();
-		world.RegisterSystem(std::make_unique<pig::ui::UIRenderSystem>());
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ui::UIRenderSystem>());
 
 		// Pre-seed the RendererConfigSingletonComponent so the system skips creation.
-		entt::entity cfgEnt = pig::World::GetRegistryDirect().create();
-		pig::ui::RendererConfigSingletonComponent& cfg =
-			pig::World::GetRegistryDirect().emplace<pig::ui::RendererConfigSingletonComponent>(cfgEnt);
+		entt::entity cfgEnt = pg::World::GetRegistryDirect().create();
+		pg::ui::RendererConfigSingletonComponent& cfg =
+			pg::World::GetRegistryDirect().emplace<pg::ui::RendererConfigSingletonComponent>(cfgEnt);
 		cfg.m_Width  = 1920.f;
 		cfg.m_Height = 1080.f;
 
 		// Pre-seed EngineConfig and ResourceMap so the system gets past the early exit.
-		entt::entity engEnt = pig::World::GetRegistryDirect().create();
-		pig::World::GetRegistryDirect().emplace<pig::EngineConfigSingletonComponent>(engEnt);
+		entt::entity engEnt = pg::World::GetRegistryDirect().create();
+		pg::World::GetRegistryDirect().emplace<pg::EngineConfigSingletonComponent>(engEnt);
 
-		entt::entity resEnt = pig::World::GetRegistryDirect().create();
-		pig::World::GetRegistryDirect().emplace<pig::ResourceMapSingletonComponent>(resEnt);
+		entt::entity resEnt = pg::World::GetRegistryDirect().create();
+		pg::World::GetRegistryDirect().emplace<pg::ResourceMapSingletonComponent>(resEnt);
 
 		// Disabled UI image entity.
-		entt::entity uiEnt = pig::World::GetRegistryDirect().create();
-		pig::ui::BaseComponent& base =
-			pig::World::GetRegistryDirect().emplace<pig::ui::BaseComponent>(uiEnt);
+		entt::entity uiEnt = pg::World::GetRegistryDirect().create();
+		pg::ui::BaseComponent& base =
+			pg::World::GetRegistryDirect().emplace<pg::ui::BaseComponent>(uiEnt);
 		base.m_Enabled = false;
 		base.m_Size    = { 100.f, 100.f };
 
-		pig::ui::ImageComponent& img =
-			pig::World::GetRegistryDirect().emplace<pig::ui::ImageComponent>(uiEnt);
-		img.m_TextureHandle = pig::UUID::Generate();
+		pg::ui::ImageComponent& img =
+			pg::World::GetRegistryDirect().emplace<pg::ui::ImageComponent>(uiEnt);
+		img.m_TextureHandle = pg::UUID::Generate();
 
 		// System update: disabled entity -> no draw event should be deferred.
-		world.Update(pig::Timestep(0));
+		world.Update(pg::Timestep(0));
 
 		// No DrawUIQuadInFrameEvent entities should have been created.
 		// (We check indirectly by confirming no new entities beyond the 4 we created.)
-		auto view = pig::World::GetRegistryDirect().view<pig::ui::BaseComponent>();
+		auto view = pg::World::GetRegistryDirect().view<pg::ui::BaseComponent>();
 		// Only the one UI entity with BaseComponent.
 		CHECK(view.size() == 1);
 	}
@@ -109,17 +109,17 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	TEST_CASE("UI.UIRenderSystem::DeclareAccessIsCorrect")
 	{
-		pig::ui::UIRenderSystem sys;
-		pig::SystemAccessDecl decl = sys.DeclareAccess();
+		pg::ui::UIRenderSystem sys;
+		pg::SystemAccessDecl decl = sys.DeclareAccess();
 
-		CHECK(decl.readSet.count(std::type_index(typeid(pig::EngineConfigSingletonComponent))) > 0);
-		CHECK(decl.readSet.count(std::type_index(typeid(pig::ResourceMapSingletonComponent))) > 0);
-		CHECK(decl.readSet.count(std::type_index(typeid(pig::ui::BaseComponent))) > 0);
-		CHECK(decl.readSet.count(std::type_index(typeid(pig::ui::ImageComponent))) > 0);
-		CHECK(decl.readSet.count(std::type_index(typeid(pig::ui::TextComponent))) > 0);
-		CHECK(decl.readSet.count(std::type_index(typeid(pig::ui::RendererConfigSingletonComponent))) > 0);
+		CHECK(decl.readSet.count(std::type_index(typeid(pg::EngineConfigSingletonComponent))) > 0);
+		CHECK(decl.readSet.count(std::type_index(typeid(pg::ResourceMapSingletonComponent))) > 0);
+		CHECK(decl.readSet.count(std::type_index(typeid(pg::ui::BaseComponent))) > 0);
+		CHECK(decl.readSet.count(std::type_index(typeid(pg::ui::ImageComponent))) > 0);
+		CHECK(decl.readSet.count(std::type_index(typeid(pg::ui::TextComponent))) > 0);
+		CHECK(decl.readSet.count(std::type_index(typeid(pg::ui::RendererConfigSingletonComponent))) > 0);
 
-		CHECK(decl.addSet.count(std::type_index(typeid(pig::ui::RendererConfigSingletonComponent))) > 0);
+		CHECK(decl.addSet.count(std::type_index(typeid(pg::ui::RendererConfigSingletonComponent))) > 0);
 	}
 
 } // namespace CatchTestsetFail

@@ -1,10 +1,10 @@
-#pragma once
+﻿#pragma once
 
 #include <string>
 
 #include "Pigeon/Core/Core.h"
 
-namespace pig 
+namespace pg 
 {
 	enum class EMappedTextureType
 	{
@@ -36,15 +36,15 @@ namespace pig
 	public:
 		virtual glm::vec4 GetTexCoordsRect(glm::vec2 pixelsOffset, glm::vec2 pixelsSize) const = 0;
 
-		static pig::S_Ptr<Texture2D> Create(const std::string& path);
-		static pig::S_Ptr<Texture2D> Create(unsigned int width, unsigned int height, unsigned int channels, const unsigned char* data);
+		static pg::S_Ptr<Texture2D> Create(const std::string& path);
+		static pg::S_Ptr<Texture2D> Create(unsigned int width, unsigned int height, unsigned int channels, const unsigned char* data);
 		static bool FlipY();
 	};
 
 	class Texture2DArray : public Texture
 	{
 	public:
-		static pig::S_Ptr<Texture2DArray> Create(unsigned int count);
+		static pg::S_Ptr<Texture2DArray> Create(unsigned int count);
 		virtual void Append(const std::string& path) = 0;
 		virtual unsigned int GetCount() const = 0;
 		virtual unsigned int GetMaxCount() const = 0;
@@ -52,11 +52,11 @@ namespace pig
 
 	struct TextureData
 	{
-		pig::EMappedTextureType m_TextureType = pig::EMappedTextureType::eQuad;
+		pg::EMappedTextureType m_TextureType = pg::EMappedTextureType::eQuad;
 		unsigned int m_Width = 0;
 		unsigned int m_Height = 0;
 		unsigned int m_Channels = 0;
-		pig::S_Ptr<pig::Texture2D> m_Texture = nullptr;
-		pig::UUID m_TextureID;
+		pg::S_Ptr<pg::Texture2D> m_Texture = nullptr;
+		pg::UUID m_TextureID;
 	};
 }

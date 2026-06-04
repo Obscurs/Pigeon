@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <entt/entt.hpp>
 #include <typeindex>
 #include <vector>
@@ -8,7 +8,7 @@
 #include "Pigeon/ECS/System.h"
 #include "Pigeon/ECS/CheckedRegistryAccessor.h"
 
-namespace pig
+namespace pg
 {
 	struct DeferredRequest
 	{
@@ -30,8 +30,8 @@ namespace pig
 			return s_Instance->Get();
 		}
 
-		void Update(const pig::Timestep& ts);
-		void RegisterSystem(std::unique_ptr<pig::System> system);
+		void Update(const pg::Timestep& ts);
+		void RegisterSystem(std::unique_ptr<pg::System> system);
 
 		inline static World& Get() { return *s_Instance; }
 
@@ -65,7 +65,7 @@ namespace pig
 					// Double-add assertion lives here where Component is in scope.
 					PG_CORE_ASSERT(!reg.all_of<Component>(ent),
 						"Deferred add: entity already has component");
-					reg.emplace<pig::EventComponent>(ent);
+					reg.emplace<pg::EventComponent>(ent);
 					reg.emplace<Component>(ent, std::move(*static_cast<Component*>(p)));
 				},
 				+[](void* p) { delete static_cast<Component*>(p); } });
@@ -79,7 +79,7 @@ namespace pig
 
 		struct SystemEntry
 		{
-			pig::U_Ptr<pig::System> system;
+			pg::U_Ptr<pg::System> system;
 			SystemAccessDecl        decl;
 		};
 
@@ -98,6 +98,6 @@ namespace pig
 		std::vector<DeferredRequest> m_DeferredRequests;
 		std::vector<DeferredRequest> m_DeferredOneFrameComponents;
 		std::vector<entt::entity> m_DeferredDestroys;
-		static pig::U_Ptr<World> s_Instance;
+		static pg::U_Ptr<World> s_Instance;
 	};
 }

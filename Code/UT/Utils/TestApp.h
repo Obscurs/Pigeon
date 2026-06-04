@@ -1,6 +1,6 @@
-#include <Pigeon.h>
+﻿#include <Pigeon.h>
 
-class TestApp : public pig::Application
+class TestApp : public pg::Application
 {
 public:
 	TestApp() = default;

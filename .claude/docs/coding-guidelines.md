@@ -1,4 +1,4 @@
-# Coding Guidelines
+﻿# Coding Guidelines
 
 ## Language
 
@@ -23,6 +23,15 @@
 | In-frame event | `<Name>InFrameEvent` | `DrawQuadInFrameEvent` |
 
 ---
+
+## Documentation
+
+Each module is documented in `Documentation/diagrams/`:
+
+- `<ModuleName><SystemName>.info` — text description of the module's purpose, each system's role, and inter-system relationships. Code must match them so if a change is done in the code it should be reflected there as well.
+
+General connection between modules and systems needs to be documented in the .claude/docs/architecture.md
+It should always match with the code so if code changes this needs to be updated acordingly
 
 ## Style Rules
 
@@ -94,6 +103,17 @@ A system reads components and events as input and writes components and events a
 6. **Minimal accessor.** `DeclareAccess()` must declare only the components strictly necessary for the system's logic — nothing extra.
 7. **Conflicting writers → intermediate system.** When two systems would both need to add the same component or event, neither can do so directly. Each emits a distinct request component/event, and an intermediate system aggregates those into the single canonical output.
 
+### Hard Rules — these are non-negotiable
+
+1. **Systems do one thing.** A system should be as small and focused as possible. If it needs to do more, split it into multiple systems.
+2. **Naming.** See `coding-guidelines.md` for the full naming table covering all system, component, and event types.
+3. **Systems have no member variables or logic members.** A system class may only contain a constructor, destructor, and the parent class virtual overrides (`Update` and `DeclareAccess`). All helper functions live in the unnamed namespace of the `.cpp` file.
+4. **Components are pure data.** No methods, no logic — plain structs only.
+5. **One writer per component.** A component can be read by any number of systems, but only one system may add or modify it.
+6. **Automatic execution order.** Systems are sorted automatically based on their `DeclareAccess` declarations. A system that reads a component is guaranteed to run after all systems that write or inframe-add that component. Declare access correctly and the order follows.
+7. **One adder per component or event.** Only one system may add a specific component or event type. When two systems need to trigger the same output, they emit separate request components and an intermediate system aggregates them.
+
+
 ### System Class Shape
 
 ```cpp
@@ -102,13 +122,13 @@ A system reads components and events as input and writes components and events a
 
 namespace sbx
 {
-    class MySystem : public pig::System
+    class MySystem : public pg::System
     {
     public:
         MySystem() = default;
         ~MySystem() = default;
-        void Update(const pig::Timestep& ts) override;
-        pig::SystemAccessDecl DeclareAccess() const override;
+        void Update(const pg::Timestep& ts) override;
+        pg::SystemAccessDecl DeclareAccess() const override;
     };
 }
 ```
@@ -123,21 +143,21 @@ namespace sbx
 
 namespace
 {
-    void MoveEntity(pig::CheckedRegistryAccessor& accessor, entt::entity e) { ... }
+    void MoveEntity(pg::CheckedRegistryAccessor& accessor, entt::entity e) { ... }
 }
 
-pig::SystemAccessDecl sbx::MySystem::DeclareAccess() const
+pg::SystemAccessDecl sbx::MySystem::DeclareAccess() const
 {
-    pig::SystemAccessDecl decl;
+    pg::SystemAccessDecl decl;
     decl.readSet       = { std::type_index(typeid(sbx::InputComponent)) };
     decl.writeSet      = { std::type_index(typeid(sbx::PositionComponent)) };
     decl.inframeAddSet = { std::type_index(typeid(sbx::DrawQuadInFrameEvent)) };
     return decl;
 }
 
-void sbx::MySystem::Update(const pig::Timestep& ts)
+void sbx::MySystem::Update(const pg::Timestep& ts)
 {
-    pig::CheckedRegistryAccessor accessor = pig::World::GetRegistry();
+    pg::CheckedRegistryAccessor accessor = pg::World::GetRegistry();
     for (entt::entity e : accessor.view<const sbx::InputComponent, sbx::PositionComponent>())
     {
         // ...
@@ -167,11 +187,11 @@ Systems are sorted automatically based on their `DeclareAccess` declarations. A 
 Before implementing a new system:
 
 1. Read `Documentation/<ModuleName>.info` — understand the system's role and its relationships.
-2. Inherit from `pig::System`; implement `Update(const pig::Timestep& ts)` and `DeclareAccess() const`.
+2. Inherit from `pg::System`; implement `Update(const pg::Timestep& ts)` and `DeclareAccess() const`.
 3. Implement required components as pure-data structs in dedicated header files.
 4. Declare the minimal `readSet`, `writeSet`, `addSet`, `inframeAddSet` in `DeclareAccess()`.
 5. Place all helper functions in the unnamed namespace of the `.cpp` — not as class methods.
-6. Use `pig::World::GetRegistry()` inside `Update()`.
+6. Use `pg::World::GetRegistry()` inside `Update()`.
 
 ---
 

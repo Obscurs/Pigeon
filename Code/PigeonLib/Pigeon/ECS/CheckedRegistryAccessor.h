@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <entt/entt.hpp>
 #include <typeindex>
 
@@ -6,7 +6,7 @@
 #include "Pigeon/Core/EventComponent.h"
 #include "Pigeon/ECS/System.h"
 
-namespace pig
+namespace pg
 {
 	// Forward declaration so emplace_deferred can call World::Get().PushDeferredAdd(...)
 	struct DeferredAdd;
@@ -166,7 +166,7 @@ namespace pig
 					// Double-add assertion lives here where Component is in scope.
 					PG_CORE_ASSERT(!reg.all_of<Component>(ent),
 						"Deferred add: entity already has component");
-					reg.emplace<pig::EventComponent>(ent);
+					reg.emplace<pg::EventComponent>(ent);
 					reg.emplace<Component>(ent, std::move(*static_cast<Component*>(p)));
 				},
 				+[](void* p) { delete static_cast<Component*>(p); });
@@ -183,7 +183,7 @@ namespace pig
 
 			entt::entity e = m_Registry.create();
 			m_Registry.emplace<Component>(e, std::move(*static_cast<Component*>(payload)));
-			m_Registry.emplace<pig::EventComponent>(e);
+			m_Registry.emplace<pg::EventComponent>(e);
 		}
 
 		// Entity lifecycle — no component access restriction.

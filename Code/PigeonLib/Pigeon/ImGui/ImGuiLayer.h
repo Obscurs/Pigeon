@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Pigeon/Core/Layer.h"
 
@@ -6,7 +6,7 @@
 #include "Pigeon/Events/KeyEvent.h"
 #include "Pigeon/Events/MouseEvent.h"
 
-namespace pig 
+namespace pg 
 {
 	class PIGEON_API ImGuiLayer : public Layer
 	{

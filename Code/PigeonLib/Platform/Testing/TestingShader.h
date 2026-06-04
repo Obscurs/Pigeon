@@ -1,10 +1,10 @@
-#pragma once
+﻿#pragma once
 
 #include "pigeon/Renderer/Shader.h"
 
 #include <string>
 
-namespace pig
+namespace pg
 {
 	class TestingShader : public Shader
 	{

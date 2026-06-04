@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <catch2/catch.hpp>
 #include <cstdlib>
 
@@ -127,10 +127,10 @@ namespace CatchTestsetFail
 {
 	TEST_CASE("Interface.DirectX11::RendererAPITest")
 	{
-		/*pig::Application& app = pig::CreateApplication();
+		/*pg::Application& app = pg::CreateApplication();
 
-		const pig::S_Ptr<pig::Dx11RendererAPI> rendererAPI = std::dynamic_pointer_cast<pig::Dx11RendererAPI>(pig::RenderCommand::GetRenderAPI());
-		CHECK(rendererAPI->GetAPI() == pig::RendererAPI::API::DirectX11);
+		const pg::S_Ptr<pg::Dx11RendererAPI> rendererAPI = std::dynamic_pointer_cast<pg::Dx11RendererAPI>(pg::RenderCommand::GetRenderAPI());
+		CHECK(rendererAPI->GetAPI() == pg::RendererAPI::API::DirectX11);
 		CHECK(!rendererAPI->GetData().m_Initialized); //Not initialized until first frame;
 		CHECK(rendererAPI->GetData().m_MainRenderTargetView == nullptr);
 		CHECK(rendererAPI->GetData().m_ClearColor[0] == 1.f);
@@ -138,26 +138,26 @@ namespace CatchTestsetFail
 		CHECK(rendererAPI->GetData().m_ClearColor[2] == 1.f);
 		CHECK(rendererAPI->GetData().m_ClearColor[3] == 1.f);
 
-		pig::RenderCommand::SetClearColor({ 0.1f, 0.2f, 0.3f, 0.4f });
+		pg::RenderCommand::SetClearColor({ 0.1f, 0.2f, 0.3f, 0.4f });
 
 		CHECK(rendererAPI->GetData().m_ClearColor[0] == 0.1f);
 		CHECK(rendererAPI->GetData().m_ClearColor[1] == 0.2f);
 		CHECK(rendererAPI->GetData().m_ClearColor[2] == 0.3f);
 		CHECK(rendererAPI->GetData().m_ClearColor[3] == 0.4f);
 
-		pig::Renderer::BeginScene();
+		pg::Renderer::BeginScene();
 
 		CHECK(rendererAPI->GetData().m_Initialized);
 		CHECK(rendererAPI->GetData().m_MainRenderTargetView != nullptr);
-		pig::Renderer::Submit(0);
-		pig::Renderer::EndScene();*/
+		pg::Renderer::Submit(0);
+		pg::Renderer::EndScene();*/
 	}
 
 	TEST_CASE("Interface.DirectX11::ContextTest")
 	{
-		/*pig::Application& app = pig::CreateApplication();
+		/*pg::Application& app = pg::CreateApplication();
 
-		pig::Dx11Context* dx11Context = static_cast<pig::Dx11Context*>(app.GetWindow().GetGraphicsContext());
+		pg::Dx11Context* dx11Context = static_cast<pg::Dx11Context*>(app.GetWindow().GetGraphicsContext());
 		CHECK(dx11Context->GetData().m_HWnd != nullptr);
 		CHECK(dx11Context->GetHeight() == 720);
 		CHECK(dx11Context->GetWidth() == 1280);
@@ -170,7 +170,7 @@ namespace CatchTestsetFail
 		CHECK(dx11Context->NeedsResize());
 		CHECK(dx11Context->GetHeight() == 720);
 		CHECK(dx11Context->GetWidth() == 1280);
-		pig::Renderer::BeginScene();
+		pg::Renderer::BeginScene();
 		CHECK(!dx11Context->NeedsResize());
 		CHECK(dx11Context->GetHeight() == 456);
 		CHECK(dx11Context->GetWidth() == 123);
@@ -184,14 +184,14 @@ namespace CatchTestsetFail
 
 	TEST_CASE("Interface.DirectX11::Buffers")
 	{
-		/*pig::Application& app = pig::CreateApplication();
+		/*pg::Application& app = pg::CreateApplication();
 
-		pig::Dx11Context* dx11Context = static_cast<pig::Dx11Context*>(app.GetWindow().GetGraphicsContext());
+		pg::Dx11Context* dx11Context = static_cast<pg::Dx11Context*>(app.GetWindow().GetGraphicsContext());
 
 		SECTION("Vertex buffer")
 		{
-			pig::S_Ptr<pig::VertexBuffer> vertexBuffer = std::move(pig::VertexBuffer::Create(s_OurVertices, sizeof(s_OurVertices), sizeof(float) * 7));
-			pig::Dx11VertexBuffer* dxVB = static_cast<pig::Dx11VertexBuffer*>(vertexBuffer.get());
+			pg::S_Ptr<pg::VertexBuffer> vertexBuffer = std::move(pg::VertexBuffer::Create(s_OurVertices, sizeof(s_OurVertices), sizeof(float) * 7));
+			pg::Dx11VertexBuffer* dxVB = static_cast<pg::Dx11VertexBuffer*>(vertexBuffer.get());
 			CHECK(dxVB->GetData().m_Buffer != nullptr);
 
 			SECTION("Append vertices")
@@ -208,8 +208,8 @@ namespace CatchTestsetFail
 		}
 		SECTION("Index buffer")
 		{
-			pig::S_Ptr<pig::IndexBuffer> indexBuffer = std::move(pig::IndexBuffer::Create(s_Indices, sizeof(s_Indices) / sizeof(uint32_t)));
-			pig::Dx11IndexBuffer* dxIB = static_cast<pig::Dx11IndexBuffer*>(indexBuffer.get());
+			pg::S_Ptr<pg::IndexBuffer> indexBuffer = std::move(pg::IndexBuffer::Create(s_Indices, sizeof(s_Indices) / sizeof(uint32_t)));
+			pg::Dx11IndexBuffer* dxIB = static_cast<pg::Dx11IndexBuffer*>(indexBuffer.get());
 			CHECK(dxIB->GetData().m_Buffer != nullptr);
 			CHECK(dxIB->GetCount() == 3);
 
@@ -228,21 +228,21 @@ namespace CatchTestsetFail
 		SECTION("Constant buffer")
 		{
 			CBDataInvalid dataInvalid;
-			pig::U_Ptr<pig::Dx11ConstantBuffer<CBDataInvalid>> constantBufferInvalid = std::make_unique<pig::Dx11ConstantBuffer<CBDataInvalid>>(&dataInvalid);
+			pg::U_Ptr<pg::Dx11ConstantBuffer<CBDataInvalid>> constantBufferInvalid = std::make_unique<pg::Dx11ConstantBuffer<CBDataInvalid>>(&dataInvalid);
 			CHECK(constantBufferInvalid->GetData().m_Buffer == nullptr); //Error creating, invalid alignment
 
 			CBData0 data;
-			pig::U_Ptr<pig::Dx11ConstantBuffer<CBData0>> constantBuffer = std::make_unique<pig::Dx11ConstantBuffer<CBData0>>(&data);
+			pg::U_Ptr<pg::Dx11ConstantBuffer<CBData0>> constantBuffer = std::make_unique<pg::Dx11ConstantBuffer<CBData0>>(&data);
 			CHECK(constantBuffer->GetData().m_Buffer != nullptr);
 			constantBuffer->Bind(0);
 
 			CBData1 data1;
-			pig::U_Ptr<pig::Dx11ConstantBuffer<CBData1>> constantBuffer1 =std::make_unique<pig::Dx11ConstantBuffer<CBData1>>(&data1);
+			pg::U_Ptr<pg::Dx11ConstantBuffer<CBData1>> constantBuffer1 =std::make_unique<pg::Dx11ConstantBuffer<CBData1>>(&data1);
 			CHECK(constantBuffer1->GetData().m_Buffer != nullptr);
 			constantBuffer1->Bind(0);
 
 			CBData2 data2;
-			pig::U_Ptr<pig::Dx11ConstantBuffer<CBData2>> constantBuffer2 = std::make_unique<pig::Dx11ConstantBuffer<CBData2>>(&data2);
+			pg::U_Ptr<pg::Dx11ConstantBuffer<CBData2>> constantBuffer2 = std::make_unique<pg::Dx11ConstantBuffer<CBData2>>(&data2);
 			CHECK(constantBuffer2->GetData().m_Buffer != nullptr);
 			constantBuffer2->Bind(0);
 		}*/
@@ -250,23 +250,23 @@ namespace CatchTestsetFail
 
 	TEST_CASE("Interface.DirectX11::Shader")
 	{
-		/*pig::Application& app = pig::CreateApplication();
+		/*pg::Application& app = pg::CreateApplication();
 
-		pig::Dx11Context* dx11Context = static_cast<pig::Dx11Context*>(app.GetWindow().GetGraphicsContext());
+		pg::Dx11Context* dx11Context = static_cast<pg::Dx11Context*>(app.GetWindow().GetGraphicsContext());
 		
-		pig::BufferLayout buffLayout;
-		pig::S_Ptr<pig::Shader> shader;
+		pg::BufferLayout buffLayout;
+		pg::S_Ptr<pg::Shader> shader;
 
-		pig::ShaderLibrary shaderLibrary;
+		pg::ShaderLibrary shaderLibrary;
 
 		SECTION("position and color")
 		{
-			shader = std::move(pig::Shader::Create("test", s_VsCode, s_PsCode, s_Layout));
+			shader = std::move(pg::Shader::Create("test", s_VsCode, s_PsCode, s_Layout));
 		}
 
 		SECTION("position and texture from file")
 		{
-			shader = std::move(pig::Shader::Create("Assets/Test/UTTestShader.shader"));
+			shader = std::move(pg::Shader::Create("Assets/Test/UTTestShader.shader"));
 		}
 
 		SECTION("position and texture from file using shaderlib")
@@ -276,7 +276,7 @@ namespace CatchTestsetFail
 			shader = shaderLibrary.Get("UTTestShader");
 		}
 
-		pig::Dx11Shader* dxShader = static_cast<pig::Dx11Shader*>(shader.get());
+		pg::Dx11Shader* dxShader = static_cast<pg::Dx11Shader*>(shader.get());
 
 		CHECK(dxShader->GetData().m_InputLayout != nullptr);
 		CHECK(dxShader->GetData().m_PixelShader != nullptr);

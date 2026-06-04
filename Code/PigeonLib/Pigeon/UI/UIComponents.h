@@ -1,11 +1,11 @@
-#pragma once
+﻿#pragma once
 
 #include "Pigeon/ECS/World.h"
 
 #include "Pigeon/Renderer/Font.h"
 #include "Pigeon/Renderer/OrthographicCamera.h"
 
-namespace pig::ui
+namespace pg::ui
 {
 	enum class EHAlignType
 	{
@@ -33,7 +33,7 @@ namespace pig::ui
 		EVAlignType m_VAlign{ EVAlignType::eTop };
 
 		entt::entity m_Parent{ entt::null };
-		pig::UUID m_UUID{};
+		pg::UUID m_UUID{};
 		bool m_Enabled{ true };
 	};
 
@@ -42,7 +42,7 @@ namespace pig::ui
 		TextComponent() = default;
 		TextComponent(const TextComponent&) = default;
 
-		pig::UUID m_FontID{};
+		pg::UUID m_FontID{};
 		std::string m_Text{ "" };
 		glm::vec4 m_Color{ 0.f, 0.f, 0.f, 1.f };
 		float m_Kerning{ 1.f };
@@ -54,14 +54,14 @@ namespace pig::ui
 		ImageComponent() = default;
 		ImageComponent(const ImageComponent&) = default;
 
-		pig::UUID m_TextureHandle;
+		pg::UUID m_TextureHandle;
 	};
 
 	struct LoadLayoutEvent
 	{
 		LoadLayoutEvent() = default;
 		
-		pig::UUID m_UUID;
+		pg::UUID m_UUID;
 	};
 
 	struct RendererConfigSingletonComponent
@@ -69,7 +69,7 @@ namespace pig::ui
 		RendererConfigSingletonComponent() = default;
 		RendererConfigSingletonComponent(const RendererConfigSingletonComponent&) = default;
 
-		pig::OrthographicCamera m_Camera{0.f, 1280.0f, -720.0f, 0 };
+		pg::OrthographicCamera m_Camera{0.f, 1280.0f, -720.0f, 0 };
 
 		float m_Width{ 1920.f };
 		float m_Height{ 1080.f };
@@ -101,7 +101,7 @@ namespace pig::ui
 		UIUpdateUUIDOneFrameComponent() = default;
 		UIUpdateUUIDOneFrameComponent(const UIUpdateUUIDOneFrameComponent&) = default;
 
-		pig::UUID m_UUID{};
+		pg::UUID m_UUID{};
 	};
 
 	struct UIUpdateEnableOneFrameComponent
@@ -125,7 +125,7 @@ namespace pig::ui
 		UIUpdateImageUUIDOneFrameComponent() = default;
 		UIUpdateImageUUIDOneFrameComponent(const UIUpdateImageUUIDOneFrameComponent&) = default;
 
-		pig::UUID m_UUID{};
+		pg::UUID m_UUID{};
 	};
 
 	struct UIUpdateTextOneFrameComponent
@@ -133,7 +133,7 @@ namespace pig::ui
 		UIUpdateTextOneFrameComponent() = default;
 		UIUpdateTextOneFrameComponent(const UIUpdateTextOneFrameComponent&) = default;
 
-		pig::UUID m_FontID{};
+		pg::UUID m_FontID{};
 		std::string m_Text{};
 		glm::vec4 m_Color{};
 		float m_Spacing{};
@@ -145,7 +145,7 @@ namespace pig::ui
 		UIOnClickOneFrameComponent() = default;
 		UIOnClickOneFrameComponent(const UIOnClickOneFrameComponent&) = default;
 
-		pig::UUID m_ElementID;
+		pg::UUID m_ElementID;
 	};
 
 	struct UIOnHoverOneFrameComponent
@@ -153,7 +153,7 @@ namespace pig::ui
 		UIOnHoverOneFrameComponent() = default;
 		UIOnHoverOneFrameComponent(const UIOnHoverOneFrameComponent&) = default;
 
-		pig::UUID m_ElementID;
+		pg::UUID m_ElementID;
 	};
 
 	struct UIOnReleaseOneFrameComponent
@@ -161,6 +161,6 @@ namespace pig::ui
 		UIOnReleaseOneFrameComponent() = default;
 		UIOnReleaseOneFrameComponent(const UIOnReleaseOneFrameComponent&) = default;
 
-		pig::UUID m_ElementID;
+		pg::UUID m_ElementID;
 	};
 }

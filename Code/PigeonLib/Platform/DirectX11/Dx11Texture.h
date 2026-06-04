@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Pigeon/Renderer/Texture.h"
 
@@ -7,7 +7,7 @@
 
 using Microsoft::WRL::ComPtr;
 
-namespace pig 
+namespace pg 
 {
 	class Dx11Texture2D : public Texture2D
 	{

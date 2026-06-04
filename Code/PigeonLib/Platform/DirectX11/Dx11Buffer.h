@@ -1,16 +1,16 @@
-#pragma once
+﻿#pragma once
 
 #include "Pigeon/Renderer/Buffer.h"
 
 #include <d3d11.h>
-namespace pig 
+namespace pg 
 {
 	class Dx11VertexBuffer : public VertexBuffer
 	{
 	public:
 		struct Data
 		{
-			pig::U_Ptr<ID3D11Buffer, pig::ReleaseDeleter> m_Buffer = nullptr;
+			pg::U_Ptr<ID3D11Buffer, pg::ReleaseDeleter> m_Buffer = nullptr;
 			UINT m_Stride = 0;
 		};
 
@@ -35,7 +35,7 @@ namespace pig
 	public:
 		struct Data
 		{
-			pig::U_Ptr<ID3D11Buffer, pig::ReleaseDeleter> m_Buffer = nullptr;
+			pg::U_Ptr<ID3D11Buffer, pg::ReleaseDeleter> m_Buffer = nullptr;
 			uint32_t m_Count;
 		};
 
@@ -63,7 +63,7 @@ namespace pig
 	public:
 		struct Data
 		{
-			pig::U_Ptr<ID3D11Buffer, pig::ReleaseDeleter> m_Buffer = nullptr;
+			pg::U_Ptr<ID3D11Buffer, pg::ReleaseDeleter> m_Buffer = nullptr;
 		};
 
 		Dx11ConstantBuffer(T* data)

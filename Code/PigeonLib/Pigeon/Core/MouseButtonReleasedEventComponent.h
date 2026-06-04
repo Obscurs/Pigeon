@@ -1,6 +1,6 @@
-#pragma once
+﻿#pragma once
 
-namespace pig
+namespace pg
 {
 	struct MouseButtonReleasedEventComponent
 	{

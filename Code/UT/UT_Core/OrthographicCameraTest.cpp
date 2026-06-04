@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <catch2/catch.hpp>
 #include <cstdlib>
 
@@ -20,7 +20,7 @@ namespace CatchTestsetFail
 {
 	TEST_CASE("Core.Camera::OrthographicCamera")
 	{
-		pig::Application& app = pig::CreateApplication();
+		pg::Application& app = pg::CreateApplication();
 		const glm::vec4 ortoValues(-0.5f, 0.5f, -0.5f, 0.5f);
 		const glm::vec3 pos0(0.f, 0.f, 0.f);
 		const glm::vec3 pos1(-1.f, 2.f, 3.f);
@@ -29,7 +29,7 @@ namespace CatchTestsetFail
 		const float rot1 = 1.5f;
 		const float rot2 = -4.5f;
 
-		pig::OrthographicCamera camera(ortoValues.x, ortoValues.y, ortoValues.z, ortoValues.w);
+		pg::OrthographicCamera camera(ortoValues.x, ortoValues.y, ortoValues.z, ortoValues.w);
 		CHECK(camera.GetPosition() == pos0);
 		CHECK(camera.GetRotation() == rot0);
 		glm::mat4 projMat = camera.GetProjectionMatrix();

@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "WindowsInput.h"
 
 #include "Pigeon/Core/Application.h"
@@ -7,21 +7,21 @@
 #include "Platform/Windows/WindowsInputKeyCodeMapping.h"
 
 #ifndef TESTS_ENABLED
-pig::S_Ptr<pig::PlatformInput> pig::PlatformInput::s_Instance = std::make_shared<pig::WindowsInput>();
+pg::S_Ptr<pg::PlatformInput> pg::PlatformInput::s_Instance = std::make_shared<pg::WindowsInput>();
 #endif
-bool pig::WindowsInput::IsKeyPressedImpl(int keycode)
+bool pg::WindowsInput::IsKeyPressedImpl(int keycode)
 {
 	return (GetAsyncKeyState(keycode) & 0x8000) != 0;
 }
 
-bool pig::WindowsInput::IsMouseButtonPressedImpl(int button)
+bool pg::WindowsInput::IsMouseButtonPressedImpl(int button)
 {
 	return (GetAsyncKeyState(button) & 0x8000) != 0;
 }
 
-std::pair<float, float> pig::WindowsInput::GetMousePositionImpl()
+std::pair<float, float> pg::WindowsInput::GetMousePositionImpl()
 {
-	auto window = static_cast<HWND>(pig::Application::Get().GetWindow().GetNativeWindow());
+	auto window = static_cast<HWND>(pg::Application::Get().GetWindow().GetNativeWindow());
 
 	POINT point;
 	if (ScreenToClient(window, &point)) //Use GetCursorPos(&point) if you want to get the global pos instead
@@ -33,19 +33,19 @@ std::pair<float, float> pig::WindowsInput::GetMousePositionImpl()
 	return { 0.0f, 0.0f };
 }
 
-float pig::WindowsInput::GetMouseXImpl()
+float pg::WindowsInput::GetMouseXImpl()
 {
 	auto[x, y] = GetMousePositionImpl();
 	return x;
 }
 
-float pig::WindowsInput::GetMouseYImpl()
+float pg::WindowsInput::GetMouseYImpl()
 {
 	auto[x, y] = GetMousePositionImpl();
 	return y;
 }
 
-unsigned char pig::WindowsInput::GetMouseButtonCodeImpl(unsigned char keyCode)
+unsigned char pg::WindowsInput::GetMouseButtonCodeImpl(unsigned char keyCode)
 {
 	switch (keyCode)
 	{
@@ -65,7 +65,7 @@ unsigned char pig::WindowsInput::GetMouseButtonCodeImpl(unsigned char keyCode)
 	}
 }
 
-unsigned char pig::WindowsInput::GetKeyCodeImpl(unsigned char keyCode)
+unsigned char pg::WindowsInput::GetKeyCodeImpl(unsigned char keyCode)
 {
 	switch (keyCode)
 	{

@@ -1,4 +1,4 @@
-#include "Pigeon/Core/OrthographicCameraController.h"
+﻿#include "Pigeon/Core/OrthographicCameraController.h"
 #include "Pigeon/Core/UUID.h"
 #include "Pigeon/ECS/World.h"
 #include "Pigeon/Renderer/Font.h"
@@ -12,7 +12,7 @@ namespace sbx
 		SampleUIComponent() = default;
 		SampleUIComponent(const SampleUIComponent&) = default;
 
-		pig::OrthographicCameraController m_CameraController;
+		pg::OrthographicCameraController m_CameraController;
 
 		glm::vec3 m_ColorQuad1;
 		glm::vec3 m_PosQuad1;
@@ -29,10 +29,10 @@ namespace sbx
 		glm::vec3 m_OriginQuad1;
 		glm::vec3 m_OriginQuad2;
 
-		pig::S_Ptr<pig::Texture2D> m_Texture;
+		pg::S_Ptr<pg::Texture2D> m_Texture;
 
-		pig::UUID m_TextureID1{};
-		pig::S_Ptr<pig::Font> m_Font;
+		pg::UUID m_TextureID1{};
+		pg::S_Ptr<pg::Font> m_Font;
 
 		entt::entity m_UIEntity1{ entt::null };
 		entt::entity m_UIEntity2{ entt::null };

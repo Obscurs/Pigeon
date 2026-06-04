@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Rules
 
 - Never modify `CLAUDE.md` or `.claude/settings.local.json` without explicit user approval.
-- When resuming interrupted agent work, always re-spawn the appropriate agent. Never perform agent-owned tasks directly.
+- Use the `implement-feature` skill for feature implementation tasks and the `code-review` skill for reviews. Never skip the review step.
 
 ## Projects
 
@@ -44,6 +44,7 @@ Before working on any task, read the relevant files below:
 | File | When to read |
 |---|---|
 | `.claude/docs/architecture.md` | Always — ECS contract, project split, module list, key files |
+| `CONTEXT.md` | Always — domain glossary (create lazily via grill-with-docs if absent) |
 | `.claude/docs/coding-guidelines.md` | When implementing systems, components, or events |
 | `.claude/docs/testing-guidelines.md` | When writing or modifying tests |
 | `Documentation/docs/diagrams/<ModuleName>.info` | Before touching any system in that module |
