@@ -1,0 +1,423 @@
+# Events Module
+
+**Location**: `Code/PigeonLib/Pigeon/Events/`
+
+---
+
+## Module Purpose and Responsibilities
+
+The Events module defines the **platform-to-engine event pipeline**. It covers two distinct stages:
+
+1. **Platform event objects** (`Event` and its subclasses, in `Pigeon/Events/`) — typed, polymorphic objects that the platform window creates from OS messages (Win32 `WM_*`) and hands to `Application::OnEvent`.
+2. **ECS event components** (in `Pigeon/Core/`) — plain structs that carry the same payload into the ECS `World` so that systems can read them during `Update()`. These are the *only* form that systems ever see.
+
+The module's contract: raw OS input arrives as a platform event object; `Application::OnEvent` immediately fans it out both into any direct bookkeeping (resize/close) and into the ECS registry via `World::EmplaceExternalEvent`; all event entities are destroyed at the end of the same `World::Update` call.
+
+> **Design note (from source comment)**: Events are currently **blocking and synchronous** — they are dispatched at the instant the OS delivers them. The comment in `Event.h` acknowledges that a buffered event-bus approach (process events at a defined stage each frame) may be preferable in the future.
+
+---
+
+## Base `Event` Class
+
+**File**: `Code/PigeonLib/Pigeon/Events/Event.h`
+
+```cpp
+namespace pg {
+  class PIGEON_API Event {
+  public:
+    virtual ~Event() = default;
+    virtual EventType       GetEventType()     const = 0;
+    virtual std::string     GetName()          const = 0;
+    virtual std::string     ToString()         const { return GetName(); }
+    virtual int             GetCategoryFlags() const { return EventCategory::None; }
+    inline  bool            IsInCategory(EventCategory category);
+  };
+}
+```
+
+### `Handled` Flag
+
+There is **no `Handled` flag** on the `Event` base class. The codebase does not implement a bubbling / short-circuit stop mechanism at the `Event` object level. Propagation control is entirely the caller's responsibility (see [Layer stack propagation](#layer-stack-and-event-propagation) below).
+
+---
+
+## EventType Enum
+
+All possible event identifiers in a single `enum class`:
+
+| Enumerator | Meaning |
+|---|---|
+| `None` | Sentinel / unset |
+| `WindowClose` | OS destroy / close message |
+| `WindowResize` | OS resize message |
+| `KeyPressed` | Key down (repeat count carried separately) |
+| `KeyReleased` | Key up |
+| `KeyTyped` | `WM_CHAR` — character-level key input |
+| `MouseButtonPressed` | Mouse button down |
+| `MouseButtonReleased` | Mouse button up |
+| `MouseMoved` | Cursor position change |
+| `MouseScrolled` | Mouse wheel |
+
+A static `std::unordered_map<EventType, std::string> EventTypeToString` provides human-readable names for all enumerators.
+
+---
+
+## EventCategory Flags
+
+`enum EventCategory` (plain `int`, not an `enum class` — intentionally bitmaskable):
+
+| Constant | Bit | Meaning |
+|---|---|---|
+| `None` | 0 | Unset |
+| `EventCategoryApplication` | bit 0 | Window-level events |
+| `EventCategoryInput` | bit 1 | Any user input |
+| `EventCategoryKeyboard` | bit 2 | Keyboard input |
+| `EventCategoryMouse` | bit 3 | Mouse movement / scroll |
+| `EventCategoryMouseButton` | bit 4 | Mouse button input |
+
+`pg::BIT(n)` is defined in `Core.h` as `constexpr int BIT(int x) { return 1 << x; }`.
+
+---
+
+## CRTP Mixin Templates
+
+Two virtual-inheritance mixin templates eliminate boilerplate:
+
+### `EventClassType<EventType Type>`
+Inherits virtually from `pg::Event`. Provides:
+- `static EventType GetStaticType()` — returns the template parameter.
+- `EventType GetEventType() const override` — delegates to `GetStaticType()`.
+- `std::string GetName() const override` — looks up `EventTypeToString`.
+
+### `EventClassCategory<int Category>`
+Inherits virtually from `pg::Event`. Provides:
+- `int GetCategoryFlags() const override` — returns the template parameter, which may be an OR'd combination of `EventCategory` bits.
+
+Both classes use virtual inheritance to support multiple-inheritance into a single concrete event class without the diamond-ambiguity problem.
+
+---
+
+## Derived Event Types
+
+### Window Events — `ApplicationEvent.h`
+
+#### `WindowResizeEvent`
+```cpp
+class PIGEON_API WindowResizeEvent
+    : public EventClassCategory<EventCategoryApplication>
+    , public EventClassType<EventType::WindowResize>
+{
+public:
+    WindowResizeEvent(unsigned int width, unsigned int height);
+    unsigned int GetWidth()  const;
+    unsigned int GetHeight() const;
+    std::string  ToString()  const override; // "WindowResizeEvent: W, H"
+};
+```
+
+#### `WindowCloseEvent`
+```cpp
+class PIGEON_API WindowCloseEvent
+    : public EventClassType<EventType::WindowClose>
+    , public EventClassCategory<EventCategoryApplication>
+{
+public:
+    WindowCloseEvent();
+};
+```
+No payload — the fact of closure is the entire message.
+
+---
+
+### Keyboard Events — `KeyEvent.h`
+
+#### `KeyEvent` (abstract intermediate base)
+```cpp
+class PIGEON_API KeyEvent
+    : public EventClassCategory<EventCategoryKeyboard | EventCategoryInput>
+{
+public:
+    int GetKeyCode() const;
+protected:
+    KeyEvent(int keycode);
+    int m_KeyCode;
+};
+```
+Does **not** inherit `EventClassType` — it is not dispatchable by itself.
+
+#### `KeyPressedEvent`
+```cpp
+class PIGEON_API KeyPressedEvent : public KeyEvent, public EventClassType<EventType::KeyPressed>
+{
+public:
+    KeyPressedEvent(int keycode, int repeatCount);
+    int GetRepeatCount() const;
+    std::string ToString() const override; // "KeyPressedEvent: <code> (<n> repeats)"
+};
+```
+`repeatCount` is 0 for the initial press, 1 for any OS-generated key-repeat (Win32 `lParam` bit 30).
+
+#### `KeyReleasedEvent`
+```cpp
+class PIGEON_API KeyReleasedEvent : public KeyEvent, public EventClassType<EventType::KeyReleased>
+{
+public:
+    KeyReleasedEvent(int keycode);
+    std::string ToString() const override;
+};
+```
+
+#### `KeyTypedEvent`
+```cpp
+class PIGEON_API KeyTypedEvent : public KeyEvent, public EventClassType<EventType::KeyTyped>
+{
+public:
+    KeyTypedEvent(int keycode);
+    std::string ToString() const override;
+};
+```
+Sourced from `WM_CHAR`. The keycode is the **character value** (Unicode code point), not a virtual-key code.
+
+---
+
+### Mouse Events — `MouseEvent.h`
+
+#### `MouseMovedEvent`
+```cpp
+class PIGEON_API MouseMovedEvent
+    : public EventClassCategory<EventCategoryMouse | EventCategoryInput>
+    , public EventClassType<EventType::MouseMoved>
+{
+public:
+    MouseMovedEvent(float x, float y);
+    float GetX() const;
+    float GetY() const;
+    std::string ToString() const override;
+};
+```
+Coordinates are client-area pixel positions (from `LOWORD`/`HIWORD` of `lParam`).
+
+#### `MouseScrolledEvent`
+```cpp
+class PIGEON_API MouseScrolledEvent
+    : public EventClassCategory<EventCategoryMouse | EventCategoryInput>
+    , public EventClassType<EventType::MouseScrolled>
+{
+public:
+    MouseScrolledEvent(float xOffset, float yOffset);
+    float GetXOffset() const;
+    float GetYOffset() const;
+    std::string ToString() const override;
+};
+```
+`yOffset` is normalised to wheel-delta units (divided by `WHEEL_DELTA = 120`). `xOffset` is always 0 because `WM_MOUSEWHEEL` carries no horizontal component.
+
+#### `MouseButtonEvent` (abstract intermediate base)
+```cpp
+class PIGEON_API MouseButtonEvent
+    : public EventClassCategory<EventCategoryMouse | EventCategoryInput | EventCategoryMouseButton>
+{
+public:
+    int GetMouseButton() const;
+protected:
+    MouseButtonEvent(int button);
+    int m_Button;
+};
+```
+
+#### `MouseButtonPressedEvent`
+```cpp
+class PIGEON_API MouseButtonPressedEvent
+    : public MouseButtonEvent
+    , public EventClassType<EventType::MouseButtonPressed>
+{
+public:
+    MouseButtonPressedEvent(int button);
+    std::string ToString() const override;
+};
+```
+
+#### `MouseButtonReleasedEvent`
+```cpp
+class PIGEON_API MouseButtonReleasedEvent
+    : public MouseButtonEvent
+    , public EventClassType<EventType::MouseButtonReleased>
+{
+public:
+    MouseButtonReleasedEvent(int button);
+    std::string ToString() const override;
+};
+```
+
+Mouse button codes (`WIN_PG_MOUSE_BUTTON_LEFT` etc.) are platform constants defined in `Platform/Windows/WindowsInputKeyCodeMapping.h` and are translated through `PlatformInput::GetMouseButtonCode` before being stored in the ECS.
+
+---
+
+## EventDispatcher
+
+```cpp
+class EventDispatcher {
+public:
+    template<typename T>
+    static bool Dispatch(const Event& event, std::function<bool(const T&)> func);
+};
+```
+
+`Dispatch` is a **static, type-safe predicate matcher**:
+1. Compares `event.GetEventType()` against `T::GetStaticType()` (no RTTI overhead beyond the virtual call).
+2. If types match, performs a `dynamic_cast<const T*>` for safety.
+3. Invokes `func` with the down-cast reference if the cast succeeds.
+4. Returns `true` when the handler was called, `false` otherwise.
+
+`Dispatch` returns the handler's return value (a `bool`) but **does not propagate or store it anywhere**; the caller decides what to do with the result.
+
+> **Usage pattern** (seen in `Application::OnEvent`): Rather than `EventDispatcher::Dispatch`, `Application` uses direct `GetEventType()` comparisons and `dynamic_cast` inline — the `EventDispatcher` utility exists but is not used in production paths. It remains available for layer or future consumer code.
+
+---
+
+## `BindEventFn` Helper
+
+Defined in `Core.h`:
+
+```cpp
+template <auto EventFn, typename EventHandler>
+auto BindEventFn(EventHandler* handler);
+```
+
+Returns a lambda that captures `handler` and invokes `EventFn` on it with forwarded arguments. Used as:
+
+```cpp
+m_Data.m_Window->SetEventCallback(pg::BindEventFn<&Application::OnEvent, Application>(this));
+```
+
+This is the mechanism by which the platform window's `EventCallbackFn` (`std::function<void(Event&)>`) is bound to `Application::OnEvent`.
+
+---
+
+## Event Flow: Platform to ECS
+
+The complete pipeline from OS message to ECS-readable data is:
+
+```
+Win32 WM_* message
+    └── WindowsWindow::WindowProc
+            └── WindowsWindow::ProcessEvent  (switch on msg)
+                    └── Constructs pg::Event subclass on the stack
+                            └── calls m_Data.EventCallback(event)   [= Application::OnEvent]
+                                    ├── Direct handling:
+                                    │       OnWindowClose  -> sets m_Running = false
+                                    │       OnWindowResize -> calls Renderer::OnWindowResize,
+                                    │                         sets m_Minimized flag
+                                    └── ECS bridge (if not minimized):
+                                            World::EmplaceExternalEvent<XxxEventComponent>(...)
+                                                    └── Creates entt entity, attaches
+                                                        EventComponent + XxxEventComponent
+                                                        (deferred, flushed after Update())
+```
+
+`EmplaceExternalEvent` (on `World`) is the only way external (non-system) code injects event entities. It creates a new entity immediately but queues the component attachment as a deferred request so systems never see a partially-initialised entity.
+
+Every event entity also receives `pg::EventComponent` (a trivial tag struct with a single `bool m_Dummy` field). `World::ClearEvents` uses this tag at the end of each `Update()` to destroy all event entities in a single registry view sweep.
+
+---
+
+## Layer Stack and Event Propagation
+
+`Application` owns a `LayerStack` (a `std::vector<S_Ptr<Layer>>`). The `Layer` base class declares:
+
+```cpp
+virtual bool OnEvent(const Event& event) { return false; }
+```
+
+**Important**: `Application::OnEvent` does **not** iterate the layer stack. It processes events itself (window bookkeeping + ECS bridging) and returns. The `Layer::OnEvent` virtual exists in the interface but is never called by `Application` in the current implementation. Layers receive `OnUpdate` and `OnRender` each frame — not individual event callbacks. Event data reaches layers indirectly through the ECS (`InputStateSingletonComponent`, `UIOnClickOneFrameComponent`, etc.).
+
+`ImGuiLayer` (the only non-test overlay) similarly does not override `OnEvent`; ImGui input is captured at the Win32 level via the forwarded `ImGui_ImplWin32_WndProcHandler` call inside `WindowProc`, before the engine's own event processing.
+
+---
+
+## ECS Event Components
+
+These structs live in `Pigeon/Core/` and are the ECS-side equivalents of the platform event objects. They carry no inheritance hierarchy — each is a plain aggregate.
+
+| Component | Fields | Source event |
+|---|---|---|
+| `KeyPressedEventComponent` | `int m_KeyCode` | `KeyPressedEvent` |
+| `KeyReleasedEventComponent` | `int m_KeyCode` | `KeyReleasedEvent` |
+| `KeyTypedEventComponent` | `int m_KeyCode` | `KeyTypedEvent` |
+| `MouseMovedEventComponent` | `float m_MouseX`, `float m_MouseY` | `MouseMovedEvent` |
+| `MouseScrolledEventComponent` | `float m_XOffset`, `float m_YOffset` | `MouseScrolledEvent` |
+| `MouseButtonPressedEventComponent` | `int m_Button` | `MouseButtonPressedEvent` |
+| `MouseButtonReleasedEventComponent` | `int m_Button` | `MouseButtonReleasedEvent` |
+| `WindowResizeEventComponent` | `unsigned int m_Width`, `unsigned int m_Height` | `WindowResizeEvent` |
+| `WindowCloseEventComponent` | `bool m_Dummy` | `WindowCloseEvent` |
+| `EventComponent` | `bool m_Dummy` | Tag — present on every event entity |
+
+`KeyCode` values are passed through `PlatformInput::GetKeyCode` / `GetMouseButtonCode` before being stored, so systems always see platform-independent key codes (defined in `KeyCodes.h`).
+
+`repeatCount` from `KeyPressedEvent` is **not** bridged into `KeyPressedEventComponent`. Systems do not receive the repeat count.
+
+---
+
+## Event Lifetime
+
+```
+Application::OnEvent                         (synchronous, on OS thread)
+    -> World::EmplaceExternalEvent           (creates entity, queues deferred attach)
+World::Update()
+    -> FlushDeferredRequests()               (attaches EventComponent + XxxEventComponent)
+    -> Systems run (read event views)
+    -> ClearEvents()                         (destroys all entities with EventComponent)
+```
+
+Event entities are **single-frame**: created during or before `Update()`, readable by all systems that run in that same `Update()`, and destroyed before the next frame begins.
+
+---
+
+## Key Systems That Consume Event Components
+
+| System | Event components read |
+|---|---|
+| `InputSystem` | All 7 input event component types; writes `InputStateSingletonComponent` |
+| `CameraSystem` | `KeyPressedEventComponent`, `MouseScrolledEventComponent`, `WindowResizeEventComponent`; writes `OrthographicCameraComponent` |
+| `UIEventSystem` | Does not read event components directly — reads `InputStateSingletonComponent` (post-`InputSystem`) |
+
+---
+
+## Testing Infrastructure
+
+The `Testing` platform provides `TestingWindow::TESTING_TriggerEvent(pg::Event*)`, which calls the registered `EventCallback` directly. Unit tests use this to inject events without a Win32 message loop.
+
+Tests in `UT_Core/InputSystemTest.cpp` and `UT_Core/CameraSystemTest.cpp` bypass the platform layer entirely: they write `XxxEventComponent` structs directly into the ECS registry with `GetRegistryDirect()` (a test-only accessor), then call `World::Update()`. This exercises system logic without involving `Application::OnEvent`.
+
+---
+
+## Dependencies on Other Modules
+
+| Module | Dependency |
+|---|---|
+| `Pigeon/Core/Core.h` | `PIGEON_API`, `BIT()`, smart-pointer aliases, `BindEventFn` |
+| `Pigeon/ECS/World.h` | `EmplaceExternalEvent` — injects event entities from outside a system |
+| `Pigeon/ECS/CheckedRegistryAccessor.h` | `EmplaceEvent` / `EmplaceInframeEvent` — system-side event injection |
+| `Platform/Windows/WindowsWindow.cpp` | Produces all concrete `Event` subclass instances from Win32 messages |
+| `Platform/Testing/TestingWindow.cpp` | Test-time event injection via `TESTING_TriggerEvent` |
+| `entt` (third-party) | Registry, entity lifecycle for event component storage |
+
+---
+
+## Non-Obvious Design Decisions
+
+1. **Two-layer event model.** Platform events (`pg::Event` subclasses) and ECS event components (`XxxEventComponent`) are entirely separate types. The platform objects are ephemeral stack values destroyed after `Application::OnEvent` returns. The ECS components are the durable, system-readable form. Systems never see `pg::Event` objects.
+
+2. **Virtual inheritance in mixins.** `EventClassType<T>` and `EventClassCategory<C>` both inherit *virtually* from `pg::Event`. This is required because concrete event classes like `MouseButtonPressedEvent` inherit from both `MouseButtonEvent` (which uses `EventClassCategory`) and `EventClassType`, forming a diamond. Without virtual inheritance, `pg::Event` would be duplicated and virtual-call dispatch would be ambiguous.
+
+3. **`EventDispatcher` is not used in production.** `Application::OnEvent` performs all dispatch via direct `GetEventType()` comparisons and `dynamic_cast`, not through `EventDispatcher::Dispatch`. The dispatcher is a utility class available for consumer code but carries no special engine integration.
+
+4. **No handled/bubble mechanism.** There is no flag to stop event propagation. `Layer::OnEvent` exists in the API but `Application` never calls it — events do not bubble through the layer stack. All event consumption happens in ECS systems through the component model.
+
+5. **`KeyTypedEvent` carries a character code, not a virtual-key code.** Sourced from `WM_CHAR`, its keycode is a Unicode code point. `KeyPressedEvent` and `KeyReleasedEvent` use Win32 virtual-key codes. Both pass through `PlatformInput::GetKeyCode` before entering the ECS, but callers querying "what character was typed" should use `KeyTypedEventComponent`, not `KeyPressedEventComponent`.
+
+6. **`repeatCount` is stripped at the ECS boundary.** `KeyPressedEvent` carries a `repeatCount` (0 or 1) but `KeyPressedEventComponent` has only `m_KeyCode`. The ECS-side key-hold duration is tracked instead by `InputSystem`, which increments a per-key frame counter in `InputStateSingletonComponent::m_KeysPressed` on every frame that a key remains pressed.
+
+7. **Event entities get `EventComponent` as a universal tag.** Attaching this trivial tag to every event entity (both from `EmplaceExternalEvent` and from the system-side `EmplaceEvent`) lets `World::ClearEvents` destroy all event entities in a single `registry.view<EventComponent>` sweep, without needing to know which concrete component types were used.
+
+8. **Window is minimized guard.** When `OnWindowResize` receives a 0×0 size (i.e., the window is minimized), `Application` sets `m_Minimized = true` and suppresses all ECS event injection until the window is restored. This prevents systems from acting on events in a state where rendering is meaningless.

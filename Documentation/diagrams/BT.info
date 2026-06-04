@@ -1,0 +1,358 @@
+# BT Module — Behavior Tree Sample Nodes
+
+## Module Purpose and Responsibilities
+
+The BT module (`Code/PigeonLib/BT/`) provides a set of **reference sample nodes** built on top of the third-party [BehaviorTree.CPP v3](https://github.com/BehaviorTreeCPP/BehaviorTree.CPP) library. These nodes serve as concrete usage examples for the three primary node execution styles supported by BehaviorTree.CPP:
+
+- **Synchronous action nodes** (`BT::SyncActionNode`) — complete in one tick.
+- **Asynchronous action nodes** (`BT::AsyncActionNode`) — run on a background thread; `tick()` blocks until done.
+- **Stateful action nodes** (`BT::StatefulActionNode`) — explicitly manage start, running, and halted states across ticks.
+
+The module is **not compiled into PigeonLib**. Its `CMakeLists.txt` is intentionally disabled (filename prefixed with `_`), and no glob pattern in `Code/PigeonLib/CMakeLists.txt` includes the `BT/` subtree. The sample nodes exist as integration guidance and are designed to be compiled as standalone static or shared (plugin) libraries when BehaviorTree.CPP is linked.
+
+There are no test files in `Code/UT/` that exercise these sample nodes. The BehaviorTree.CPP library itself is also not listed as a CMake FetchContent dependency in the top-level `CMakeLists.txt`.
+
+---
+
+## Dependencies
+
+| Dependency | Role |
+|---|---|
+| `behaviortree_cpp_v3/behavior_tree.h` | Core node hierarchy, status enum, port system, string conversion utilities |
+| `behaviortree_cpp_v3/bt_factory.h` | `BT::BehaviorTreeFactory` — runtime node registration and tree construction |
+
+The BT module has **no dependency on any other PigeonLib module** (no ECS, no renderer, no UI, no events). It is entirely self-contained relative to the engine.
+
+---
+
+## Node Status Values
+
+All nodes return `BT::NodeStatus`, an enum defined by BehaviorTree.CPP with three values:
+
+| Value | Meaning |
+|---|---|
+| `NodeStatus::SUCCESS` | The node completed its task successfully. |
+| `NodeStatus::FAILURE` | The node was unable to complete its task. |
+| `NodeStatus::RUNNING` | The node has started its task but has not yet finished (used by async and stateful nodes). |
+
+---
+
+## Node Hierarchy
+
+### Base Types (from BehaviorTree.CPP v3)
+
+| Base Class | Execution Model |
+|---|---|
+| `BT::SyncActionNode` | Subclass for single-tick actions; override `tick()`. The constructor must accept `(const std::string& name, const BT::NodeConfiguration& config)`. |
+| `BT::AsyncActionNode` | Subclass for threaded actions; `tick()` blocks in a background thread. Override both `tick()` and `halt()`. A `_halt_requested` atomic flag is used to cooperatively interrupt execution. |
+| `BT::StatefulActionNode` | Subclass for multi-tick actions that manage their own phase; override `onStart()`, `onRunning()`, and `onHalted()`. |
+
+### Derived Node Types (Defined in This Module)
+
+All concrete node classes are in `Code/PigeonLib/BT/sample_nodes/`.
+
+---
+
+## Public Types and Classes
+
+### `dummy_nodes.h` / `dummy_nodes.cpp` — namespace `DummyNodes`
+
+#### Free Functions
+
+```cpp
+BT::NodeStatus CheckBattery();
+BT::NodeStatus CheckTemperature();
+BT::NodeStatus SayHello();
+BT::NodeStatus SaySomethingSimple(BT::TreeNode& self);
+```
+
+- `CheckBattery()` — Prints `"[ Battery: OK ]"` to stdout; always returns `SUCCESS`. Used as a simple condition node registered via `registerSimpleCondition`.
+- `CheckTemperature()` — Prints `"[ Temperature: OK ]"` to stdout; always returns `SUCCESS`.
+- `SayHello()` — Prints `"Robot says: Hello World"` to stdout; always returns `SUCCESS`.
+- `SaySomethingSimple(BT::TreeNode& self)` — Reads the `"message"` input port from `self`; prints it to stdout; throws `BT::RuntimeError` if the port is missing. Returns `SUCCESS`. Used with `registerSimpleAction` (signature compatible with `SimpleActionNode` registration).
+
+#### `GripperInterface`
+
+```cpp
+class GripperInterface
+{
+public:
+    GripperInterface();
+    BT::NodeStatus open();
+    BT::NodeStatus close();
+private:
+    bool _opened;
+};
+```
+
+- A plain C++ object (not a `TreeNode` subclass) whose member functions are registered as simple action callbacks via `std::bind`.
+- `open()` — Sets `_opened = true`; prints to stdout; returns `SUCCESS`.
+- `close()` — Sets `_opened = false`; prints to stdout; returns `SUCCESS`.
+- A static singleton instance (`grip_singleton`) is created inside `RegisterNodes()` and bound to the factory.
+
+#### `ApproachObject` — `BT::SyncActionNode`
+
+```cpp
+class ApproachObject : public BT::SyncActionNode
+{
+public:
+    ApproachObject(const std::string& name);
+    NodeStatus tick() override;
+};
+```
+
+- Constructor takes only `name`; passes `{}` (empty `NodeConfiguration`) to the base class — this node declares **no ports**.
+- `tick()` — Prints the node's name to stdout; always returns `SUCCESS`.
+
+#### `SaySomething` — `BT::SyncActionNode`
+
+```cpp
+class SaySomething : public BT::SyncActionNode
+{
+public:
+    SaySomething(const std::string& name, const BT::NodeConfiguration& config);
+    NodeStatus tick() override;
+    static BT::PortsList providedPorts();
+};
+```
+
+- Declares one input port: `BT::InputPort<std::string>("message")`.
+- `tick()` — Reads `"message"` via `getInput<std::string>("message")`; prints it; throws `BT::RuntimeError` if absent. Returns `SUCCESS`.
+- `providedPorts()` must be `static` — BehaviorTree.CPP calls it at registration time to build the port manifest.
+
+#### `SleepNode` — `BT::StatefulActionNode`
+
+```cpp
+class SleepNode : public BT::StatefulActionNode
+{
+public:
+    SleepNode(const std::string& name, const BT::NodeConfiguration& config);
+    static BT::PortsList providedPorts();
+    NodeStatus onStart() override;
+    NodeStatus onRunning() override;
+    void onHalted() override;
+private:
+    std::chrono::system_clock::time_point deadline_;
+};
+```
+
+- Declares one input port: `BT::InputPort<int>("msec")`.
+- `onStart()` — Reads `"msec"`. If `msec <= 0`, returns `SUCCESS` immediately (no RUNNING state needed). Otherwise, computes `deadline_ = now + msec milliseconds` and returns `RUNNING`.
+- `onRunning()` — Called on every subsequent tick while in RUNNING state. Returns `SUCCESS` once `now >= deadline_`; otherwise returns `RUNNING`.
+- `onHalted()` — Called when the tree interrupts this node. Prints `"SleepNode interrupted"` to stdout. No internal state to reset.
+
+#### `RegisterNodes` (inline)
+
+```cpp
+inline void DummyNodes::RegisterNodes(BT::BehaviorTreeFactory& factory);
+```
+
+Registers all `DummyNodes` with the factory under the following names:
+
+| Registered Name | Kind | Implementation |
+|---|---|---|
+| `"CheckBattery"` | SimpleCondition | `CheckBattery` function |
+| `"CheckTemperature"` | SimpleCondition | `CheckTemperature` function |
+| `"SayHello"` | SimpleAction | `SayHello` function |
+| `"OpenGripper"` | SimpleAction | `GripperInterface::open` (bound to static singleton) |
+| `"CloseGripper"` | SimpleAction | `GripperInterface::close` (bound to static singleton) |
+| `"ApproachObject"` | NodeType (`ApproachObject`) | via `registerNodeType<ApproachObject>` |
+| `"SaySomething"` | NodeType (`SaySomething`) | via `registerNodeType<SaySomething>` |
+
+`BT_REGISTER_NODES(factory)` at the top of `dummy_nodes.cpp` calls `DummyNodes::RegisterNodes(factory)` — this is the plugin entry point used when this file is compiled as a shared library.
+
+---
+
+### `crossdoor_nodes.h` / `crossdoor_nodes.cpp` — namespace `CrossDoor`
+
+All functions are free functions; there are no class-based nodes in this file.
+
+#### Free Functions
+
+```cpp
+BT::NodeStatus IsDoorOpen();
+BT::NodeStatus IsDoorLocked();
+BT::NodeStatus UnlockDoor();
+BT::NodeStatus PassThroughDoor();
+BT::NodeStatus PassThroughWindow();
+BT::NodeStatus OpenDoor();
+BT::NodeStatus CloseDoor();
+void RegisterNodes(BT::BehaviorTreeFactory& factory);
+```
+
+**Door state** is held in two static file-scope booleans:
+```cpp
+static bool _door_open   = false;  // initial state: door closed
+static bool _door_locked = true;   // initial state: door locked
+```
+
+These booleans are shared across all invocations of the CrossDoor functions within a single process. This is a deliberate simplification — the comment in the source explicitly notes that ports/blackboard are not used.
+
+| Function | Behavior | Returns |
+|---|---|---|
+| `IsDoorOpen()` | Sleeps 500 ms; checks `_door_open`. | `SUCCESS` if open, `FAILURE` if closed. |
+| `IsDoorLocked()` | Sleeps 500 ms; checks `_door_locked`. | `SUCCESS` if locked, `FAILURE` if unlocked. |
+| `UnlockDoor()` | If locked, sleeps 2000 ms then sets `_door_locked = false`. | Always `SUCCESS`. |
+| `PassThroughDoor()` | Sleeps 1000 ms. | `SUCCESS` if `_door_open`, else `FAILURE`. |
+| `PassThroughWindow()` | Sleeps 1000 ms. | Always `SUCCESS`. |
+| `OpenDoor()` | Returns `FAILURE` immediately if locked. Otherwise sleeps 2000 ms and sets `_door_open = true`. | `SUCCESS` or `FAILURE`. |
+| `CloseDoor()` | If door is open, sleeps 1500 ms and sets `_door_open = false`. | Always `SUCCESS`. |
+
+#### `RegisterNodes`
+
+```cpp
+void CrossDoor::RegisterNodes(BT::BehaviorTreeFactory& factory);
+```
+
+Registers all CrossDoor functions as simple conditions/actions:
+
+| Registered Name | Kind |
+|---|---|
+| `"IsDoorOpen"` | SimpleCondition |
+| `"PassThroughDoor"` | SimpleAction |
+| `"PassThroughWindow"` | SimpleAction |
+| `"OpenDoor"` | SimpleAction |
+| `"CloseDoor"` | SimpleAction |
+| `"IsDoorLocked"` | SimpleCondition |
+| `"UnlockDoor"` | SimpleAction |
+
+`BT_REGISTER_NODES(factory)` in `crossdoor_nodes.cpp` calls `CrossDoor::RegisterNodes(factory)`.
+
+---
+
+### `movebase_node.h` / `movebase_node.cpp`
+
+#### `Pose2D` (custom struct)
+
+```cpp
+struct Pose2D
+{
+    double x, y, theta;
+};
+```
+
+A plain 2D pose with position and heading. Defined outside any namespace.
+
+#### `BT::convertFromString<Pose2D>` (template specialization)
+
+```cpp
+namespace BT {
+    template <> inline
+    Pose2D convertFromString(StringView key);
+}
+```
+
+Enables automatic string-to-`Pose2D` conversion when a tree node calls `getInput<Pose2D>(...)`. The expected format is three semicolon-separated real numbers (e.g., `"1.0;2.5;0.785"`). Throws `BT::RuntimeError` if the string does not contain exactly three parts.
+
+#### `MoveBaseAction` — `BT::AsyncActionNode`
+
+```cpp
+class MoveBaseAction : public BT::AsyncActionNode
+{
+public:
+    MoveBaseAction(const std::string& name, const BT::NodeConfiguration& config);
+    static BT::PortsList providedPorts();
+    BT::NodeStatus tick() override;
+    virtual void halt() override;
+private:
+    std::atomic_bool _halt_requested;
+};
+```
+
+- Declares one input port: `BT::InputPort<Pose2D>("goal")`.
+- `tick()` — Reads `"goal"` via `getInput<Pose2D>`; throws `BT::RuntimeError` if absent. Stores `_halt_requested = false`, then loops 25 iterations of 10 ms sleeps (~250 ms total), checking `_halt_requested` each iteration. Returns `FAILURE` if halted early; `SUCCESS` otherwise.
+- `halt()` — Sets `_halt_requested = true` atomically. Called from the BT infrastructure to interrupt an in-flight `tick()`.
+
+`BT_REGISTER_NODES(factory)` in `movebase_node.cpp` registers `MoveBaseAction` under the name `"MoveBase"`.
+
+---
+
+## Execution Model
+
+BehaviorTree.CPP drives execution by calling `tick()` on the root node of the tree. The tick propagates down the tree according to the composite node type (Sequence, Fallback, Parallel, etc., which are defined by the library, not this module).
+
+### Synchronous nodes (`SyncActionNode`)
+- `tick()` is called directly on the thread that ticks the tree.
+- Must complete and return `SUCCESS` or `FAILURE` before returning.
+- `ApproachObject` and `SaySomething` follow this model.
+
+### Asynchronous nodes (`AsyncActionNode`)
+- `tick()` executes in a **separate thread** spawned by BehaviorTree.CPP.
+- The node's `tick()` blocks until its work is done or `halt()` is called.
+- The BT infrastructure returns `RUNNING` to its parent while the thread is active.
+- `MoveBaseAction` follows this model; it uses `_halt_requested` to cooperate with `halt()`.
+
+### Stateful nodes (`StatefulActionNode`)
+- No separate thread. The BT infrastructure calls:
+  - `onStart()` the first time the node is ticked (when previously IDLE).
+  - `onRunning()` on every subsequent tick while the node returns `RUNNING`.
+  - `onHalted()` when the tree interrupts the node.
+- `SleepNode` follows this model; it records a `deadline_` in `onStart()` and checks it in `onRunning()`.
+
+---
+
+## Data Flow and Blackboard / Ports
+
+BehaviorTree.CPP uses a **Blackboard** to pass data between nodes. Ports are the typed, named connection points declared by each node class.
+
+### Port declaration
+
+Nodes that use ports must implement:
+```cpp
+static BT::PortsList providedPorts();
+```
+
+This static method returns the list of ports the node exposes. The factory inspects it at registration time.
+
+### Port access
+
+Inside `tick()` (or `onStart()` / `onRunning()`), nodes read input port values via:
+```cpp
+auto result = getInput<T>("port_name");
+```
+`getInput` returns an `Expected<T>`; check with `if (!result)` before use. On failure, `result.error()` contains the error string.
+
+### Ports in this module
+
+| Class | Port Name | Direction | Type | Notes |
+|---|---|---|---|---|
+| `SaySomething` | `"message"` | Input | `std::string` | Mandatory; throws on missing |
+| `SleepNode` | `"msec"` | Input | `int` | Defaults to 0 if missing (returns `SUCCESS` immediately) |
+| `MoveBaseAction` | `"goal"` | Input | `Pose2D` | Mandatory; throws on missing |
+
+### CrossDoor nodes — no ports
+
+The CrossDoor functions are registered as `SimpleCondition`/`SimpleAction` callbacks. They use **static file-scope state** rather than ports. This is noted in the source as a deliberate simplification for example clarity.
+
+---
+
+## Plugin Registration Macro
+
+Each `.cpp` file that is intended to be compiled as a dynamic plugin exports a factory registration function via:
+
+```cpp
+BT_REGISTER_NODES(factory)
+{
+    // calls RegisterNodes or registerNodeType directly
+}
+```
+
+This macro expands to a C-linkage entry point that BehaviorTree.CPP's plugin loader calls at runtime when loading the shared library. When compiled as a static library this entry point is simply a callable function.
+
+---
+
+## Non-obvious Design Decisions and Constraints
+
+1. **Module is intentionally excluded from the PigeonLib build.** The `CMakeLists.txt` inside `BT/sample_nodes/` is named `_CMakeLists.txt` (underscore prefix), so CMake never processes it. There is no `add_subdirectory(BT)` in `Code/PigeonLib/CMakeLists.txt`. These files are reference material only.
+
+2. **BehaviorTree.CPP v3 is not a declared FetchContent dependency.** The top-level `CMakeLists.txt` does not declare or fetch `behaviortree_cpp_v3`. Any attempt to build these sample nodes requires manually providing the library.
+
+3. **CrossDoor uses static mutable state instead of blackboard ports.** The source comment explicitly acknowledges this: `"For simplicity, in this example the status of the door is not shared using ports and blackboards"`. This means CrossDoor node state is global within the process and not thread-safe across multiple tree instances.
+
+4. **`GripperInterface` singleton lives inside `RegisterNodes`.** The static local `grip_singleton` object inside `DummyNodes::RegisterNodes()` means the gripper state persists across all tree ticks for the lifetime of the process once registration has been called. Multiple calls to `RegisterNodes` re-use the same singleton.
+
+5. **`MoveBaseAction` halt is cooperative, not preemptive.** The `halt()` method sets `_halt_requested` but the thread will not terminate until the current 10 ms sleep interval completes. Maximum latency between a halt request and thread exit is ~10 ms.
+
+6. **`ApproachObject` passes an empty `NodeConfiguration`** (`{}`) to the base constructor. This means the node cannot use ports even if the user attempts to wire them in an XML tree definition — doing so would cause a port mismatch error at tree construction time.
+
+7. **No integration with the PigeonLib ECS.** The BT module makes no use of `pg::World`, `pg::System`, `pg::CheckedRegistryAccessor`, or any component/event types. It is architecturally decoupled from the engine's data model.

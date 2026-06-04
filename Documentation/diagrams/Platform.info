@@ -1,0 +1,556 @@
+# Platform Module
+
+## Module Purpose and Responsibilities
+
+The Platform module is the portability seam of PigeonLib. It provides concrete implementations of every OS- and GPU-dependent operation so that all other engine modules can be written against stable abstract interfaces in `Pigeon/Core/` and `Pigeon/Renderer/`.
+
+The module has two sub-trees that are mutually exclusive at compile time:
+
+- **`Platform/Windows/`** — Win32 window management and raw-input polling, compiled into every non-testing build on Windows.
+- **`Platform/Testing/`** — in-process stubs compiled only under the `Testing` configuration (`TESTS_ENABLED` defined). They replace every OS/GPU call with a no-op or a deterministic in-memory implementation so that unit tests run without a display device.
+
+The module also owns the `TESTS_ENABLED`-gated factory functions (`Window::Create`, `PlatformInput::s_Instance`) that select between the two sub-trees at link time.
+
+---
+
+## Source Files
+
+| File | Sub-tree | Role |
+|---|---|---|
+| `Platform/Windows/WindowsWindow.h/.cpp` | Windows | Win32 window, message loop, event dispatch |
+| `Platform/Windows/WindowsInput.h/.cpp` | Windows | Raw-input polling via `GetAsyncKeyState`, code mapping |
+| `Platform/Windows/WindowsInputKeyCodeMapping.h` | Windows | `WIN_PG_*` constants mapping Win32 VK codes to engine key codes |
+| `Platform/Testing/TestingWindow.h/.cpp` | Testing | Stub window — no OS calls; exposes `TESTING_TriggerEvent` |
+| `Platform/Testing/TestingInput.h/.cpp` | Testing | Stub input — driven by public `TESTING_*` data members |
+| `Platform/Testing/TestingContext.h/.cpp` | Testing | Stub graphics context — all methods are no-ops, width/height always 0 |
+| `Platform/Testing/TestingRendererAPI.h/.cpp` | Testing | Stub renderer API — clears `TestingHelper` tracking vectors on `Begin()` |
+| `Platform/Testing/TestingBuffer.h/.cpp` | Testing | Stub vertex/index buffers — record calls in `TestingHelper` |
+| `Platform/Testing/TestingShader.h/.cpp` | Testing | Stub shader — all uniform uploads are no-ops |
+| `Platform/Testing/TestingTexture.h/.cpp` | Testing | Stub textures — dimensions driven by static `s_ExpectedWidth/Height` |
+| `Platform/Testing/TestingHelper.h/.cpp` | Testing | Singleton observation log used by unit-test assertions |
+
+---
+
+## Abstract Interfaces in Core and Renderer
+
+The following interfaces are declared in `Pigeon/Core/` and `Pigeon/Renderer/` and implemented by platform code.
+
+### `pg::Window` — `Pigeon/Core/Window.h`
+
+```cpp
+namespace pg {
+
+    struct WindowProps {
+        std::string Title;
+        unsigned int Width;   // default 1280
+        unsigned int Height;  // default 720
+    };
+
+    class PIGEON_API Window {
+    public:
+        using EventCallbackFn = std::function<void(Event&)>;
+
+        struct Data {
+            const char* m_Title = "Windows Window";
+            EventCallbackFn EventCallback;
+        };
+
+        virtual void OnUpdate() = 0;
+        virtual void Shutdown() = 0;
+        virtual unsigned int GetWidth() const = 0;
+        virtual unsigned int GetHeight() const = 0;
+        inline void SetEventCallback(const EventCallbackFn& callback);
+        virtual void SetVSync(bool enabled) = 0;
+        virtual bool IsVSync() const = 0;
+        virtual void* GetNativeWindow() const = 0;
+        virtual void* GetGraphicsContext() const = 0;
+
+        // Factory — implementation chosen by TESTS_ENABLED at link time
+        static pg::S_Ptr<Window> Create(const WindowProps& props = WindowProps());
+    protected:
+        static Data m_Data;   // shared across all instances
+    };
+}
+```
+
+The `static Data m_Data` member is defined once per translation unit:
+- In `WindowsWindow.cpp` when `TESTS_ENABLED` is **not** defined.
+- In `TestingWindow.cpp` when `TESTS_ENABLED` **is** defined.
+
+### `pg::PlatformInput` — `Pigeon/Core/Input.h`
+
+```cpp
+namespace pg {
+    class PIGEON_API PlatformInput {
+    public:
+        // Public — called by InputSystem to translate platform codes to engine codes
+        inline static unsigned char GetKeyCode(unsigned char keyCode);
+        inline static unsigned char GetMouseButtonCode(unsigned char keyCode);
+
+    protected:
+        // Protected — only reachable by the engine, not game code
+        inline static bool IsKeyPressed(int keycode);
+        inline static bool IsMouseButtonPressed(int button);
+        inline static std::pair<float, float> GetMousePosition();
+        inline static float GetMouseX();
+        inline static float GetMouseY();
+        inline static PlatformInput& GetInput();
+
+        virtual bool IsKeyPressedImpl(int keycode) = 0;
+        virtual bool IsMouseButtonPressedImpl(int button) = 0;
+        virtual std::pair<float, float> GetMousePositionImpl() = 0;
+        virtual float GetMouseXImpl() = 0;
+        virtual float GetMouseYImpl() = 0;
+        virtual unsigned char GetKeyCodeImpl(unsigned char keyCode) = 0;
+        virtual unsigned char GetMouseButtonCodeImpl(unsigned char keyCode) = 0;
+    private:
+        // Singleton — implementation set by TESTS_ENABLED at link time
+        static pg::S_Ptr<PlatformInput> s_Instance;
+    };
+}
+```
+
+The singleton `s_Instance` is initialised once:
+- `std::make_shared<pg::WindowsInput>()` in `WindowsInput.cpp` when `TESTS_ENABLED` is not defined.
+- `std::make_shared<pg::TestingInput>()` in `TestingInput.cpp` when `TESTS_ENABLED` is defined.
+
+### `pg::GraphicsContext` — `Pigeon/Renderer/GraphicsContext.h`
+
+```cpp
+class GraphicsContext {
+public:
+    static pg::S_Ptr<GraphicsContext> Create(const WindowsWindow* window);
+    virtual void Init() = 0;
+    virtual void Shutdown() = 0;
+    virtual void SwapBuffers() = 0;
+    virtual unsigned int GetWidth() = 0;
+    virtual unsigned int GetHeight() = 0;
+    virtual void SetSize(unsigned int width, unsigned int height) = 0;
+};
+```
+
+Implemented by `Platform/DirectX11/Dx11Context` (production) and `Platform/Testing/TestingContext` (testing).
+
+### `pg::RendererAPI` — `Pigeon/Renderer/RendererAPI.h`
+
+```cpp
+class RendererAPI {
+public:
+    enum class API { None = 0, DirectX11 = 1, Testing = 2 };
+    virtual void Init() = 0;
+    virtual void SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height) = 0;
+    virtual void SetClearColor(const glm::vec4& color) = 0;
+    virtual void Begin() = 0;
+    virtual void End() = 0;
+    virtual void Clear() = 0;
+    virtual void DrawIndexed(unsigned int count) = 0;
+    inline static API GetAPI();
+private:
+    static API s_API;
+};
+```
+
+Implemented by `Platform/DirectX11/Dx11RendererAPI` and `Platform/Testing/TestingRendererAPI`.
+
+### `pg::VertexBuffer` / `pg::IndexBuffer` — `Pigeon/Renderer/Buffer.h`
+
+```cpp
+class VertexBuffer {
+    virtual void Bind() const = 0;
+    virtual void Unbind() const = 0;
+    virtual void SetVertices(const float* vertices, unsigned int count, unsigned int countOffset) = 0;
+    virtual void AppendVertices(const float* vertices, unsigned int count, unsigned int countOffset) = 0;
+    static pg::S_Ptr<VertexBuffer> Create(const float* vertices, uint32_t size, uint32_t stride);
+};
+
+class IndexBuffer {
+    virtual void Bind() const = 0;
+    virtual void Unbind() const = 0;
+    virtual uint32_t GetCount() const = 0;
+    virtual void SetIndices(const uint32_t* indices, unsigned int count, unsigned int countOffset) = 0;
+    virtual void AppendIndices(const uint32_t* indices, unsigned int count, unsigned int countOffset) = 0;
+    static pg::S_Ptr<IndexBuffer> Create(const uint32_t* indices, uint32_t size);
+};
+```
+
+Implemented by `Platform/DirectX11/Dx11Buffer` and `Platform/Testing/TestingBuffer`.
+
+### `pg::Shader` — `Pigeon/Renderer/Shader.h`
+
+Implemented by `Platform/DirectX11/Dx11Shader` and `Platform/Testing/TestingShader`.
+
+### `pg::Texture2D` / `pg::Texture2DArray` — `Pigeon/Renderer/Texture.h`
+
+Implemented by `Platform/DirectX11/Dx11Texture` and `Platform/Testing/TestingTexture`.
+
+---
+
+## Windows Platform Implementation
+
+### `pg::WindowsWindow`
+
+`WindowsWindow` extends `Window` and owns the Win32 `HWND` and the `GraphicsContext`.
+
+#### Win32 Window Creation — `Init(const WindowProps& props)`
+
+1. Retrieves the module `HINSTANCE` via `GetModuleHandle(nullptr)`, stored in the static `WindowsData::m_HInstance`.
+2. Registers a `WNDCLASS` with `lpfnWndProc = WindowProc`.
+3. Calls `AdjustWindowRect` to account for the non-client area. The window style is `WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU` — there is no `WS_RESIZEBOX`, so the window is fixed-size.
+4. Creates the `HWND` via `CreateWindow` with `CW_USEDEFAULT` position and the adjusted client dimensions.
+5. Creates the `GraphicsContext` via the factory `GraphicsContext::Create(this)`, then calls `Init()` and `SetSize()`.
+6. Shows the window with `SW_SHOWDEFAULT` and calls `UpdateWindow`.
+
+#### Message Loop — `OnUpdate()` / `ProcessMessages()`
+
+`OnUpdate()` is called once per frame from `Application::Update()`. It returns `void`. Internally it delegates to the private static `ProcessMessages()` then calls `SwapBuffers`:
+
+1. Calls `ProcessMessages()` which drains the Win32 message queue with `PeekMessage(..., PM_REMOVE)` in a loop, translates and dispatches each message via `TranslateMessage` / `DispatchMessage`, and returns `std::optional<int>` — holds `0` when `WM_QUIT` is encountered, empty otherwise. (`OnUpdate` does not forward this return value.)
+2. After the queue is drained, calls `m_Context->SwapBuffers()` to present the frame.
+
+#### Window Procedure — `WindowProc`
+
+`WindowProc` is a `static LRESULT __stdcall` function. Its two responsibilities are:
+
+1. Forwards every message to ImGui first via `ImGui_ImplWin32_WndProcHandler`. If ImGui consumes the message the function returns `true` immediately.
+2. Calls `ProcessEvent` for all remaining messages. If `ProcessEvent` returns `true` (all cases except `WM_DESTROY`), falls through to `DefWindowProc`.
+
+#### Event Translation — `ProcessEvent` and helpers
+
+`ProcessEvent` dispatches on `UINT msg` and calls a dedicated helper per event category. Each helper constructs an engine `Event` object and calls `m_Data.EventCallback(event)`, which routes to `Application::OnEvent`.
+
+| Win32 message | Helper | Engine event emitted |
+|---|---|---|
+| `WM_DESTROY` | `ProcessWindowDestroyEvent` | `WindowCloseEvent`; also calls `PostQuitMessage(0)` |
+| `WM_SIZE` | `ProcessWindowResizeEvent` | `WindowResizeEvent(LOWORD(lParam), HIWORD(lParam))` |
+| `WM_MOUSEMOVE` | `ProcessMouseMoveEvent` | `MouseMovedEvent(float x, float y)` from `LOWORD`/`HIWORD` of `lParam` |
+| `WM_MOUSEWHEEL` | `ProcessMouseWheelEvent` | `MouseScrolledEvent(0.0f, yOffset)` where `yOffset = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA` |
+| `WM_LBUTTONDOWN/UP`, `WM_RBUTTONDOWN/UP`, `WM_MBUTTONDOWN/UP` | `ProcessMouseButtonEvent` | `MouseButtonPressedEvent` / `MouseButtonReleasedEvent` with `WIN_PG_MOUSE_BUTTON_*` code |
+| `WM_KEYDOWN`, `WM_SYSKEYDOWN` | `ProcessKeyDownEvent` | `KeyPressedEvent(vkCode, repeatCount)` where `repeatCount` is 0 for initial press, 1 for auto-repeat (bit 30 of `lParam`) |
+| `WM_KEYUP`, `WM_SYSKEYUP` | `ProcessKeyUpEvent` | `KeyReleasedEvent(vkCode)` |
+| `WM_CHAR` | `ProcessCharPressedEvent` | `KeyTypedEvent(wParam)` |
+
+`WM_DESTROY` returns `false` from `ProcessEvent` — preventing `DefWindowProc` from receiving it — and calls `PostQuitMessage(0)` to push `WM_QUIT` into the queue, which terminates the `ProcessMessages` loop on the next frame.
+
+#### Shutdown — `Shutdown()`
+
+1. Calls `m_Context->Shutdown()` and nulls the context pointer.
+2. Calls `UnregisterClass` then `DestroyWindow`.
+3. Resets both static data structs (`Window::m_Data`, `WindowsData`) to default-constructed state so that a new window can be created in the same process (relevant for tests that recreate the application).
+
+#### Key public methods
+
+```cpp
+class WindowsWindow : public Window {
+public:
+    WindowsWindow(const WindowProps& props);
+    virtual ~WindowsWindow();          // calls Shutdown()
+
+    void OnUpdate() override;          // drain messages + SwapBuffers
+    void Shutdown() override;
+    unsigned int GetWidth() const override;   // delegates to m_Context
+    unsigned int GetHeight() const override;  // delegates to m_Context
+    void SetVSync(bool enabled) override {};  // not implemented (no-op)
+    bool IsVSync() const override { return false; }
+    void* GetNativeWindow() const override;   // returns m_Window (HWND)
+    void* GetGraphicsContext() const override; // returns m_Context.get()
+private:
+    static std::optional<int> ProcessMessages();
+    static LRESULT __stdcall WindowProc(HWND, UINT, WPARAM, LPARAM);
+    static bool ProcessEvent(UINT msg, WPARAM wParam, LPARAM lParam);
+    // ... per-message helpers (all static) ...
+    pg::S_Ptr<GraphicsContext> m_Context;
+    HWND m_Window = nullptr;
+    static WindowsData m_WindowsData;  // holds HINSTANCE
+};
+```
+
+### `pg::WindowsInput`
+
+`WindowsInput` extends `PlatformInput`. All state queries delegate directly to Win32 APIs rather than reading the engine's `InputStateSingletonComponent`.
+
+```cpp
+class WindowsInput : public PlatformInput {
+protected:
+    bool IsKeyPressedImpl(int keycode) override;     // GetAsyncKeyState(keycode) & 0x8000
+    bool IsMouseButtonPressedImpl(int button) override; // GetAsyncKeyState(button) & 0x8000
+    std::pair<float, float> GetMousePositionImpl() override; // ScreenToClient relative to window
+    float GetMouseXImpl() override;
+    float GetMouseYImpl() override;
+    unsigned char GetKeyCodeImpl(unsigned char keyCode) override;      // WIN_PG_* -> PG_*
+    unsigned char GetMouseButtonCodeImpl(unsigned char keyCode) override; // WIN_PG_* -> PG_*
+};
+```
+
+`GetMousePositionImpl` obtains the `HWND` from `Application::Get().GetWindow().GetNativeWindow()` and calls `ScreenToClient` with an **uninitialized `POINT point;`** (not zero-initialized). Note: `GetCursorPos` is not called first — the source comment acknowledges this as a known gap (`"Use GetCursorPos(&point) if you want to get the global pos instead"`). In practice the function returns `{0, 0}` or an uninitialized position; the real cursor position is supplied via the `WM_MOUSEMOVE` event path instead.
+
+`GetKeyCodeImpl` and `GetMouseButtonCodeImpl` perform exhaustive switch-table translations from Win32 virtual-key constants to engine-internal `PG_KEY_*` / `PG_MOUSE_BUTTON_*` codes.
+
+### `WindowsInputKeyCodeMapping.h`
+
+Defines `constexpr unsigned char WIN_PG_*` constants that map directly to Win32 `VK_*` virtual-key values. These constants are used both in `WindowsInput::GetKeyCodeImpl` (for code translation) and in `WindowsWindow::ProcessMouseButtonEvent` (for constructing mouse events).
+
+Mouse button constants come from WinUser.h VK codes:
+- `WIN_PG_MOUSE_BUTTON_LEFT = 0x01` (VK_LBUTTON)
+- `WIN_PG_MOUSE_BUTTON_RIGHT = 0x02` (VK_RBUTTON)
+- `WIN_PG_MOUSE_BUTTON_MIDDLE = 0x04` (VK_MBUTTON)
+- Extended: `WIN_PG_MOUSE_BUTTON_4 = 0x05` through `WIN_PG_MOUSE_BUTTON_8 = 0x09`
+
+Keyboard constants cover: digits `0x30–0x39`, letters `0x41–0x5A`, function keys F1–F24 (via `VK_F1–VK_F24`), navigation keys, modifiers, and numpad keys `VK_NUMPAD0–VK_NUMPAD1` (the constant list ends at KP_1; the rest of the numpad is not mapped).
+
+---
+
+## Testing Mock Platform
+
+The Testing sub-tree provides a complete set of stub implementations allowing the full application lifecycle and all ECS systems to run inside unit tests without a Win32 window or a DirectX device.
+
+All Testing types are compiled only when the preprocessor symbol `TESTS_ENABLED` is defined (the `Testing` CMake configuration passes `-DTESTS_ENABLED` to every target).
+
+### `pg::TestingWindow`
+
+```cpp
+class TestingWindow : public Window {
+public:
+    TestingWindow(const WindowProps& props);  // no-op constructor
+    ~TestingWindow();
+    void OnUpdate() override;         // no-op
+    void Shutdown() override;         // no-op
+    unsigned int GetWidth() const override  { return 0; }
+    unsigned int GetHeight() const override { return 0; }
+    void SetVSync(bool enabled) override {}
+    bool IsVSync() const override { return false; }
+    void* GetNativeWindow() const override   { return nullptr; }
+    void* GetGraphicsContext() const override { return nullptr; }
+
+    // Test-only: fires an event directly through the Application's callback
+    void TESTING_TriggerEvent(pg::Event* event);
+};
+```
+
+`TESTING_TriggerEvent` calls `m_Data.EventCallback(*event)` directly, bypassing the Win32 message loop entirely. Tests use this to inject `WindowCloseEvent`, `KeyPressedEvent`, mouse events, etc. into the running application without any OS involvement.
+
+`TestingWindow.cpp` also provides the `#ifdef TESTS_ENABLED` guarded definitions of `Window::m_Data` and `Window::Create()`:
+
+```cpp
+#ifdef TESTS_ENABLED
+pg::Window::Data pg::Window::m_Data;
+pg::S_Ptr<pg::Window> pg::Window::Create(const pg::WindowProps& props)
+{
+    return std::make_unique<pg::TestingWindow>(props);
+}
+#endif
+```
+
+### `pg::TestingInput`
+
+```cpp
+class TestingInput : public PlatformInput {
+protected:
+    bool IsKeyPressedImpl(int keycode) override;      // searches TESTING_KeysPressed
+    bool IsMouseButtonPressedImpl(int button) override; // searches TESTING_MouseButtonKeysPressed
+    std::pair<float, float> GetMousePositionImpl() override; // returns TESTING_MousePos
+    float GetMouseXImpl() override;
+    float GetMouseYImpl() override;
+    unsigned char GetKeyCodeImpl(unsigned char keyCode) override;      // identity (returns keyCode)
+    unsigned char GetMouseButtonCodeImpl(unsigned char keyCode) override; // identity
+
+public:
+    std::vector<int> TESTING_KeysPressed;
+    std::vector<int> TESTING_MouseButtonKeysPressed;
+    std::pair<float, float> TESTING_MousePos;
+};
+```
+
+The identity implementation of `GetKeyCodeImpl` and `GetMouseButtonCodeImpl` is the key difference from `WindowsInput`: because tests inject events using engine `PG_KEY_*` codes directly (not Win32 VK codes), no translation is needed.
+
+Tests cast the `PlatformInput` singleton to `TestingInput*` to set the public `TESTING_*` members before exercising systems that query input state.
+
+### `pg::TestingContext`
+
+A no-op `GraphicsContext`. Constructor accepts an `HWND` (to match the `Dx11Context` signature) but ignores it. All methods — `Init`, `Shutdown`, `SwapBuffers`, `SetSize` — are no-ops. `GetWidth()` and `GetHeight()` always return `0`.
+
+### `pg::TestingRendererAPI`
+
+A near-no-op `RendererAPI`. The only meaningful implementation is `Begin()`, which clears all tracking collections inside `TestingHelper::GetInstance()`:
+- `m_VertexBuffer`, `m_VertexBufferBind`, `m_VertexBufferUnbind`
+- `m_VertexBufferSetVertices`, `m_VertexBufferAppendVertices`
+- `m_IndexBuffer`, `m_IndexBufferBind`, `m_IndexBufferUnbind`
+- `m_IndexBufferSetIndices`, `m_IndexBufferAppendIndices`
+
+All other methods (`Init`, `SetViewport`, `SetClearColor`, `End`, `Clear`, `DrawIndexed`) are empty.
+
+### `pg::TestingBuffer`
+
+`TestingVertexBuffer` and `TestingIndexBuffer` record every operation in `TestingHelper`:
+- Constructor: pushes `this` onto `m_VertexBuffer` / `m_IndexBuffer`.
+- `Bind()`: pushes onto `m_VertexBufferBind` / `m_IndexBufferBind`.
+- `Unbind()`: pushes onto `m_VertexBufferUnbind` / `m_IndexBufferUnbind`.
+- `SetVertices` / `AppendVertices`: copies vertex data into `TestingHelper::m_Vertices[20000]` using `memcpy` at a stride of `10 * sizeof(float)` per vertex, and records metadata in `m_VertexBufferSetVertices` / `m_VertexBufferAppendVertices`.
+- `SetIndices` / `AppendIndices`: analogous, writes into `TestingHelper::m_Indices[20000]`.
+
+`TestingConstantBuffer<T>` is a template stub with an empty constructor and a no-op `Bind(UINT slot)`.
+
+### `pg::TestingShader`
+
+All uniform-upload methods are no-ops. The shader stores the name passed to the constructor in `TEST_Name` (public member) so test assertions can verify which shader was bound. `Bind()` and `Unbind()` are no-ops.
+
+### `pg::TestingTexture2D` / `pg::TestingTexture2DArray`
+
+`TestingTexture2D` reads two static members, `s_ExpectedWidth` and `s_ExpectedHeight` (both `uint32_t`, default `0`), and stores them in the base `Texture::Data m_Data`. This allows tests that exercise texture coordinate calculations (`GetTexCoordsRect`) to set expected dimensions before constructing the texture.
+
+`GetTexCoordsRect` performs a real calculation: normalises pixel offset and size by `s_ExpectedWidth` / `s_ExpectedHeight` and returns a `glm::vec4(u0, v0, u1, v1)`.
+
+`TestingTexture2DArray` is entirely empty — constructor, `Append`, `Bind`, `GetCount`, `GetMaxCount` are all no-ops or return `0`.
+
+### `pg::TestingHelper`
+
+A singleton observation log. Tests call `TestingHelper::GetInstance()` to inspect recorded renderer operations.
+
+```cpp
+class TestingHelper {
+public:
+    static TestingHelper& GetInstance();
+    static void Reset();   // replaces s_Instance with a fresh default-constructed one
+
+    // VertexBuffer tracking
+    std::vector<const TestingVertexBuffer*> m_VertexBuffer;
+    std::vector<const TestingVertexBuffer*> m_VertexBufferBind;
+    std::vector<const TestingVertexBuffer*> m_VertexBufferUnbind;
+    std::vector<VertexBufferSetVerticesData> m_VertexBufferSetVertices;
+    std::vector<VertexBufferSetVerticesData> m_VertexBufferAppendVertices;
+
+    // IndexBuffer tracking
+    std::vector<const TestingIndexBuffer*> m_IndexBuffer;
+    std::vector<const TestingIndexBuffer*> m_IndexBufferBind;
+    std::vector<const TestingIndexBuffer*> m_IndexBufferUnbind;
+    std::vector<IndexBufferSetVerticesData> m_IndexBufferSetIndices;
+    std::vector<IndexBufferSetVerticesData> m_IndexBufferAppendIndices;
+
+    float    m_Vertices[20000];
+    uint32_t m_Indices[20000];
+private:
+    static pg::S_Ptr<TestingHelper> s_Instance;
+};
+```
+
+`Reset()` is called from `pg::CreateApplication()` in `Code/UT/Utils/TestApp.cpp` at the start of each test to ensure a clean tracking state.
+
+---
+
+## Preprocessor Guards
+
+| Symbol | Defined by | Effect |
+|---|---|---|
+| `PG_PLATFORM_WINDOWS` | CMake (`target_compile_definitions`) when `WIN32` is true | Enables the `PIGEON_API` dllexport/import macros; gates `EntryPoint.h`; is the only supported platform (Core.h emits `#error` on anything else) |
+| `PG_PLATFORM_UNIX` | CMake when `UNIX` is true | Defined in CMakeLists but unreachable — `Core.h` `#error`s before it could be used |
+| `TESTS_ENABLED` | CMake under the `Testing` configuration (`-DTESTS_ENABLED`) | Switches factory functions (`Window::Create`, `PlatformInput::s_Instance`) from Windows to Testing implementations; disables `PG_DEBUGBREAK` (so assertion failures in tests do not call `__debugbreak`); disables `ImGuiLayer` creation; exposes `Application::GetData()` and `Application::TestUpdate()` |
+| `PG_DYNAMIC_LINK` | Not set by the current CMakeLists | When set together with `PG_BUILD_DLL`, enables dllexport; otherwise `PIGEON_API` expands to nothing (static library, current default) |
+| `PG_BUILD_DLL` | CMake (`target_compile_definitions`) when `WIN32` | Combined with `PG_DYNAMIC_LINK` to select dllexport; currently harmless because `PG_DYNAMIC_LINK` is not set |
+
+The `#ifndef TESTS_ENABLED` / `#ifdef TESTS_ENABLED` guards in `.cpp` files are the sole mechanism for selecting between implementations at link time. There are no runtime branches.
+
+---
+
+## How Platform Code Wires into the Application Lifecycle
+
+### Startup
+
+`Application::Init()` (called from `Application::Create()` which is itself called from `CreateApplication()` in client code and `TestApp.cpp`):
+
+1. Calls `Window::Create()` — the factory that returns either `WindowsWindow` or `TestingWindow` depending on `TESTS_ENABLED`.
+2. Registers the event callback: `m_Data.m_Window->SetEventCallback(pg::BindEventFn<&Application::OnEvent, Application>(this))`. All platform events will now reach `Application::OnEvent`.
+3. Creates the ECS `World` and registers all core ECS systems, including `InputSystem`.
+4. Calls `pg::Renderer::Init()`, which internally calls `RendererAPI::Create()` and `GraphicsContext::Create()` — again selecting the concrete type via `TESTS_ENABLED`.
+5. In non-testing builds, creates and pushes `ImGuiLayer` as an overlay.
+
+### Per-Frame Loop
+
+`Application::Run()` (non-testing) loops while `m_Data.m_Running`:
+
+```
+UpdateApp()
+  → Update(frameDeltaTime)
+      → Layer::Begin() for all layers
+      → Layer::OnUpdate(ts) for all layers
+      → World::Update(ts)      // runs ECS systems, including InputSystem
+      → Layer::End() for all layers
+      → m_Data.m_Window->OnUpdate()   // drain Win32 messages + SwapBuffers
+```
+
+Platform input arrives via two distinct paths within this loop:
+
+- **Event-driven path**: `WindowsWindow::OnUpdate()` → `ProcessMessages()` → `DispatchMessage` → `WindowProc` → `ProcessEvent` → per-event helper → `m_Data.EventCallback` → `Application::OnEvent` → `World::EmplaceExternalEvent<XxxEventComponent>`. These ECS event components are then consumed by `InputSystem::Update()` (called inside `World::Update`) and aggregated into `InputStateSingletonComponent`.
+
+- **Polled path**: `PlatformInput::IsKeyPressed`, `GetMousePosition`, etc. — available but not used by `InputSystem`. Direct callers (if any) invoke Win32 `GetAsyncKeyState` / `ScreenToClient` directly.
+
+### Event Flow Diagram
+
+```
+Win32 WndProc
+    │  (via DispatchMessage, inside WindowsWindow::OnUpdate)
+    ↓
+WindowsWindow::ProcessEvent
+    │  constructs pg::XxxEvent objects
+    ↓
+Application::OnEvent
+    │  type-checks the event, handles WindowClose/WindowResize directly
+    │  translates to ECS event components via World::EmplaceExternalEvent
+    ↓
+ECS event component entities (KeyPressedEventComponent, etc.)
+    │  queued until World::Update
+    ↓
+InputSystem::Update
+    │  reads all event components, translates codes via PlatformInput::GetKeyCode
+    ↓
+InputStateSingletonComponent  (authoritative input state for game systems)
+```
+
+### Testing Update Path
+
+Under `TESTS_ENABLED`, `Application::Run()` is removed. Tests call `Application::TestUpdate(const Timestep& ts)` directly, which maps to `Application::Update(ts)`. Events are injected by calling `TestingWindow::TESTING_TriggerEvent(pg::Event*)`.
+
+---
+
+## Dependencies on Other Modules
+
+| Dependency | Used by | Symbol |
+|---|---|---|
+| `Pigeon/Core/Window.h` | Both platform sub-trees | `pg::Window` base class |
+| `Pigeon/Core/Input.h` | Both platform sub-trees | `pg::PlatformInput` base class |
+| `Pigeon/Core/Core.h` | All files | `PIGEON_API`, smart pointer aliases, `PG_CORE_ASSERT` |
+| `Pigeon/Core/KeyCodes.h` | `WindowsInput.cpp` | `PG_KEY_*` / `PG_MOUSE_BUTTON_*` target codes |
+| `Pigeon/Core/Application.h` | `WindowsInput.cpp` | Access to `Application::Get().GetWindow()` for `ScreenToClient` |
+| `Pigeon/Events/ApplicationEvent.h` | `WindowsWindow.cpp`, `TestingWindow.cpp` | `WindowCloseEvent`, `WindowResizeEvent` |
+| `Pigeon/Events/MouseEvent.h` | `WindowsWindow.cpp`, `TestingWindow.cpp` | `MouseMovedEvent`, `MouseScrolledEvent`, `MouseButtonPressedEvent`, `MouseButtonReleasedEvent` |
+| `Pigeon/Events/KeyEvent.h` | `WindowsWindow.cpp`, `TestingWindow.cpp` | `KeyPressedEvent`, `KeyReleasedEvent`, `KeyTypedEvent` |
+| `Pigeon/Renderer/GraphicsContext.h` | `WindowsWindow.h` | `pg::GraphicsContext` member |
+| `Pigeon/Renderer/RendererAPI.h` | `TestingRendererAPI.h` | `pg::RendererAPI` base class |
+| `Pigeon/Renderer/Buffer.h` | `TestingBuffer.h` | `pg::VertexBuffer`, `pg::IndexBuffer` base classes |
+| `Pigeon/Renderer/Shader.h` | `TestingShader.h` | `pg::Shader` base class |
+| `Pigeon/Renderer/Texture.h` | `TestingTexture.h` | `pg::Texture2D`, `pg::Texture2DArray` base classes |
+| `Platform/Testing/TestingHelper.h` | `TestingBuffer.cpp`, `TestingRendererAPI.cpp` | Observation log |
+| `<imgui.h>`, `imgui_impl_win32` | `WindowsWindow.cpp` | `ImGui_ImplWin32_WndProcHandler` called in `WindowProc` |
+| Win32 (`windows.h` via `pch.h`) | `WindowsWindow.cpp`, `WindowsInput.cpp` | `HWND`, `CreateWindow`, `GetAsyncKeyState`, etc. |
+
+---
+
+## Non-Obvious Design Decisions
+
+**`Window::m_Data` is static and shared.** The `Window::Data` struct (holding the title and the event callback) is declared `protected static` on the base class and defined in exactly one platform translation unit. This means only one `Window` instance can exist at a time per process, which is fine since the engine creates a single window, but makes the design fragile if multiple windows were ever needed.
+
+**`Window::Create` and `PlatformInput::s_Instance` are selected at link time, not runtime.** There is no runtime flag, registry entry, or configuration file consulted. The `#ifdef TESTS_ENABLED` guards are evaluated at compile time in the respective `.cpp` files. Switching platform implementations requires a different build configuration.
+
+**`WindowProc` is static.** The class has no `this` pointer in `WindowProc`. The per-instance `HWND` and `GraphicsContext` are therefore not accessible from inside the message handler (beyond what is stored in the static `m_WindowsData`). Event callbacks are reached through the static `m_Data.EventCallback`, which is why `m_Data` must be static.
+
+**ImGui input precedes engine input.** `WindowProc` calls `ImGui_ImplWin32_WndProcHandler` first, before `ProcessEvent`. If ImGui returns `true` (meaning it consumed the event), `ProcessEvent` is skipped entirely. Keyboard and mouse events captured by ImGui do not reach the engine event bus and therefore do not appear in `InputStateSingletonComponent`.
+
+**`WM_DESTROY` returns `false` from `ProcessEvent`.** All other messages return `true` (falling through to `DefWindowProc`). `WM_DESTROY` returns `false`, bypassing `DefWindowProc`, because `PostQuitMessage(0)` has already been called and no default processing is needed.
+
+**Key-repeat detection uses bit 30 of `lParam`.** `ProcessKeyDownEvent` reads `lParam & 0x40000000` to distinguish an initial key press from an auto-repeat. The `KeyPressedEvent` repeat count is `0` for a new press and `1` for any repeat, not the actual repeat count that Win32 encodes in the low 16 bits of `lParam`.
+
+**`TestingInput` uses identity code mapping.** Unlike `WindowsInput`, which translates Win32 VK codes to engine `PG_KEY_*` codes, `TestingInput::GetKeyCodeImpl` and `GetMouseButtonCodeImpl` return the input unchanged. Tests therefore inject event components using `PG_KEY_*` values directly, and `InputSystem` — which calls `PlatformInput::GetKeyCode()` — gets back the same value with no translation loss.
+
+**`TestingTexture2D` dimensions are driven by static state.** `TestingTexture2D::s_ExpectedWidth` and `s_ExpectedHeight` are static members set by the test before constructing a texture. Both constructor overloads (from path and from raw data) ignore their arguments and use these statics. This allows tests to exercise `GetTexCoordsRect` with known dimensions without having a real image loader.
+
+**`TestingRendererAPI::Begin()` is the test-frame boundary, not just a no-op.** It clears all `TestingHelper` tracking collections. Test code that inspects recorded draw calls must do so before calling any method that triggers another `Begin()`, or the observations will be lost.
+
+**VSync is not implemented.** `WindowsWindow::SetVSync` is a no-op and `IsVSync()` always returns `false`. No swap-interval API is called. The presentation rate is limited only by `SwapBuffers` in `Dx11Context`.

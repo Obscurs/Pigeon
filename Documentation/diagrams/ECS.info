@@ -1,0 +1,614 @@
+# ECS Module
+
+**Files**: `Code/PigeonLib/Pigeon/ECS/World.h`, `World.cpp`, `System.h`, `CheckedRegistryAccessor.h`
+**Namespace**: `pg`
+
+---
+
+## Module Purpose and Responsibilities
+
+The ECS module provides a data-driven game-object model built on top of [EnTT](https://github.com/skypjack/entt). Its responsibilities are:
+
+- Own the single `entt::registry` and `entt::dispatcher` instances for the application.
+- Register `System` objects and enforce a **one-writer-per-component** invariant at registration time.
+- Sort systems into a valid execution order using a **dependency-derived topological sort** before the first frame.
+- Drive per-frame updates: dispatcher flush → system updates → event cleanup → deferred-request flush.
+- Provide `CheckedRegistryAccessor` as the only sanctioned way for systems to read and write components, enforcing access declarations at runtime.
+- Buffer structural registry changes (adds, removes, destroys) so they are applied safely outside of system iteration.
+- Implement two distinct event-entity patterns: **deferred events** (visible next frame) and **in-frame events** (visible within the same frame to later-ordered systems).
+
+---
+
+## `World` Class
+
+### Ownership and Singleton
+
+`World` is a **singleton** managed via `pg::U_Ptr<World> World::s_Instance`. There is exactly one live `World` at a time. `World::Create()` allocates and initialises a fresh instance, replacing any previous one.
+
+```cpp
+static World& Create();   // allocates singleton, calls Init(), returns reference
+static World& Get();      // returns *s_Instance (undefined if not created)
+```
+
+`World::Init()` resets most internal state: clears registry, dispatcher, system list, `m_DeferredRequests`, `m_DeferredOneFrameComponents`, and sets `m_Sorted = false`. It safely destroys any outstanding deferred payloads to prevent memory leaks. **Note**: `m_DeferredDestroys` is NOT cleared by `Init()` — any pending entity-destroy handles survive into the next `World::Update` cycle.
+
+### Internal State
+
+| Field | Type | Role |
+|---|---|---|
+| `m_Registry` | `entt::registry` | The entity/component store. |
+| `m_Dispatcher` | `entt::dispatcher` | EnTT signal dispatcher (flushed at frame start). |
+| `m_Systems` | `vector<SystemEntry>` | Registered systems paired with their `SystemAccessDecl`. |
+| `m_SystemTypes` | `unordered_set<type_index>` | Duplicate-registration guard. |
+| `m_ActiveSystem` | `const System*` | Non-null only while a system's `Update()` is executing. Guards `GetRegistry()` and `RegisterSystem()`. |
+| `m_Sorted` | `bool` | False after any `RegisterSystem()`. Forces a re-sort before the next `Update()`. |
+| `m_DeferredRequests` | `vector<DeferredRequest>` | Structural changes applied **after** all system updates (persistent). |
+| `m_DeferredOneFrameComponents` | `vector<DeferredRequest>` | Structural changes applied first at flush, then immediately scheduled for removal next flush (one-frame components). |
+| `m_DeferredDestroys` | `vector<entt::entity>` | Entities to destroy, applied last at flush. |
+
+### System Registration
+
+```cpp
+void RegisterSystem(std::unique_ptr<pg::System> system);
+```
+
+- Asserts no system is currently executing (`m_ActiveSystem == nullptr`).
+- Asserts the concrete type has not already been registered (via `typeid`).
+- Calls `system->DeclareAccess()` to obtain the `SystemAccessDecl`.
+- Enforces the **one-writer rule**: for each type in the new system's `writeSet`, no previously registered system may also write it; for each type in `addSet` / `inframeAddSet`, no previously registered system may add it via either add mechanism.
+- Pushes a `SystemEntry { system, decl }` and sets `m_Sorted = false`.
+
+### Per-Frame Update Dispatch
+
+```cpp
+void Update(const pg::Timestep& ts);
+```
+
+Execution order within a single frame:
+
+1. **Lazy sort** — if `!m_Sorted`, call `SortSystems()` and set `m_Sorted = true`.
+2. **Dispatcher flush** — `m_Dispatcher.update()` (EnTT signal delivery).
+3. **System updates** — iterate `m_Systems` in sorted order; for each entry:
+   - Set `m_ActiveSystem = entry.system.get()`
+   - Call `entry.system->Update(ts)`
+   - Clear `m_ActiveSystem = nullptr`
+4. **Event cleanup** — `ClearEvents()`: destroys all entities carrying `pg::EventComponent`. This removes both deferred-event entities flushed at the end of the *previous* frame and in-frame event entities created this frame.
+5. **Deferred flush** — `FlushDeferredRequests()`:
+   a. Apply and clear `m_DeferredOneFrameComponents` (emplace + schedule removal).
+   b. Apply and clear `m_DeferredRequests` (persistent emplaces, removes).
+   c. Destroy and clear `m_DeferredDestroys`.
+
+### Registry Access
+
+```cpp
+static CheckedRegistryAccessor GetRegistry();
+```
+
+- Asserts `m_ActiveSystem != nullptr` — only callable from within a system `Update()`.
+- Performs a linear search through `m_Systems` to find the entry matching `m_ActiveSystem`, then constructs a `CheckedRegistryAccessor` with a **copy** of that entry's `SystemAccessDecl` (avoids dangling reference into `m_Systems`).
+
+### External Event Injection
+
+```cpp
+template<typename Component, typename... Args>
+void EmplaceExternalEvent(Args&&... args);
+```
+
+Callable from outside a system (e.g., from the platform/window layer). Creates a new entity, pushes a deferred request that will attach both `pg::EventComponent` and the typed `Component` to that entity at flush time. The entity thus becomes visible to systems in the **next** frame.
+
+### Test-Only Access
+
+```cpp
+#ifdef TESTS_ENABLED
+static entt::registry& GetRegistryDirect();
+#endif
+```
+
+Bypasses all access checks. Used exclusively by unit tests to seed or inspect registry state.
+
+### Deferred Request Infrastructure
+
+```cpp
+void PushDeferredRequest(DeferredRequest op);
+void PushDeferredOneFrameRequest(DeferredRequest op);
+void PushDeferredDestroy(const entt::entity& entity);
+```
+
+These are called by `CheckedRegistryAccessor` (implemented out-of-line in `World.cpp` to break the circular include). Systems never call them directly.
+
+---
+
+## `DeferredRequest` Struct
+
+```cpp
+struct DeferredRequest
+{
+    entt::entity             entity;
+    void*                    payload;   // heap-allocated component value
+    CheckedRegistryAccessor* accessor;  // non-owning; may be null for external events
+    void(*apply)(CheckedRegistryAccessor*, entt::registry&, entt::entity, void*);
+    void(*destroy)(void*);
+};
+```
+
+- `apply` is a **non-capturing lambda converted to a raw function pointer** (C++17 guarantee, zero heap allocation per call-site instantiation).
+- `destroy` is always called even if the entity is invalid at flush time — it is the cleanup path for the heap-allocated `payload`.
+- `accessor` is passed back into `apply` so that two-phase operations (e.g., `emplace_oneframe`) can push a second deferred request from within the first apply trampoline.
+
+---
+
+## `System` Base Class
+
+```cpp
+class System
+{
+public:
+    System() = default;
+    ~System() = default;
+    virtual void Update(const pg::Timestep& ts) = 0;
+    virtual SystemAccessDecl DeclareAccess() const;  // returns empty decl by default
+};
+```
+
+Every concrete system **must** override `DeclareAccess()`. The default implementation returns an empty `SystemAccessDecl`, which causes every component access inside `CheckedRegistryAccessor` to assert — this is intentional, forcing all systems to be explicit about their data dependencies.
+
+Systems are owned exclusively by `World` via `unique_ptr` inside `SystemEntry`. They must not be registered while another system is updating.
+
+---
+
+## `SystemAccessDecl` Struct
+
+```cpp
+struct SystemAccessDecl
+{
+    std::unordered_set<std::type_index> readSet;
+    std::unordered_set<std::type_index> writeSet;
+    std::unordered_set<std::type_index> addSet;
+    std::unordered_set<std::type_index> inframeAddSet;
+};
+```
+
+| Set | Meaning | Access methods gated on it |
+|---|---|---|
+| `readSet` | Components this system reads (const access). | `view<const C>()`, `get<const C>()` |
+| `writeSet` | Components this system mutates in-place. | `view<C>()`, `get<C>()` |
+| `addSet` | Components this system **deferred-adds** (next frame). | `emplace_deferred<C>()`, `emplace_oneframe<C>()`, `EmplaceEvent<C>()` |
+| `inframeAddSet` | Components this system **in-frame-adds** (same frame, later systems see immediately). | `emplace_inframe<C>()`, `EmplaceInframeEvent<C>()` |
+
+A single component type may appear in both `writeSet` and `addSet` simultaneously (e.g., a system that mutates existing instances and also creates new ones).
+
+`inframeAddSet` participates in topological sort edge generation (see below); `addSet` does not.
+
+---
+
+## `CheckedRegistryAccessor` API
+
+Constructed by `World::GetRegistry()` with a reference to the live `entt::registry` and a **copy** of the active system's `SystemAccessDecl`. The copy is intentional — it prevents dangling if `m_Systems` is reallocated.
+
+### View
+
+```cpp
+template<typename... Components>
+auto view();
+
+template<typename... Components, typename... Exclude>
+auto view(entt::exclude_t<Exclude...> excl);
+```
+
+Asserts that each (non-const-stripped) component type is in `readSet` or `writeSet`, then forwards to `m_Registry.view<Components...>()`. Supports exclusion filters.
+
+### Get
+
+```cpp
+template<typename Component>
+decltype(auto) get(entt::entity e);
+```
+
+Asserts the (non-const-stripped) component type is in `readSet` or `writeSet`, then calls `m_Registry.get<Component>(e)`.
+
+### emplace_deferred
+
+```cpp
+template<typename Component, typename... Args>
+void emplace_deferred(entt::entity e, Args&&... args);
+```
+
+- Asserts `Component` is in `addSet`.
+- Heap-allocates a `Component` with the forwarded args.
+- Pushes a `DeferredRequest` to `m_DeferredRequests` (applied after all systems update this frame).
+- The apply trampoline asserts the entity does not already have `Component` before calling `reg.emplace<Component>`.
+- Component becomes visible to systems in the **next** frame.
+
+### emplace_oneframe
+
+```cpp
+template<typename Component, typename... Args>
+void emplace_oneframe(entt::entity e, Args&&... args);
+```
+
+- Asserts `Component` is in `addSet`.
+- Pushes a `DeferredRequest` to `m_DeferredRequests`.
+- The apply trampoline: emplaces `Component` on the entity, then immediately pushes a **second** deferred request to `m_DeferredOneFrameComponents` that will `remove<Component>` from the entity at the **next** flush.
+- Net effect: `Component` is visible for exactly **one** frame (the frame after the call), then automatically removed.
+- Used for transient per-entity state flags, e.g., `UIOnHoverOneFrameComponent`.
+
+### emplace_inframe
+
+```cpp
+template<typename Component, typename... Args>
+void emplace_inframe(entt::entity e, Args&&... args);
+```
+
+- Asserts `Component` is in `inframeAddSet`.
+- Asserts the entity does not already have `Component`.
+- **Immediately** calls `m_Registry.emplace<Component>(e, ...)` — no deferral buffer involved.
+- The component is visible to all systems that execute **after** the calling system in the same frame.
+- Note: the current implementation has a bug — it references `ent` (undefined) instead of the parameter `e` in the pre-condition assert. This does not affect the emplace itself.
+
+### EmplaceEvent
+
+```cpp
+template<typename Component, typename... Args>
+void EmplaceEvent(Args&&... args);
+```
+
+- Asserts `Component` is in `addSet`.
+- Creates a new entity via `m_Registry.create()`.
+- Pushes a `DeferredRequest` that will attach both `pg::EventComponent` and `Component` to that entity.
+- The event entity becomes visible in the **next** frame and is automatically destroyed by `ClearEvents()` at the end of that frame.
+- Use this when a system needs to broadcast a typed event to other systems.
+
+### EmplaceInframeEvent
+
+```cpp
+template<typename Component, typename... Args>
+void EmplaceInframeEvent(Args&&... args);
+```
+
+- Asserts `Component` is in `inframeAddSet`.
+- Creates a new entity via `m_Registry.create()`.
+- **Immediately** emplaces both `Component` and `pg::EventComponent` on the new entity.
+- The event entity is visible to all systems running **after** the calling system in the same frame, then destroyed by `ClearEvents()` at frame end.
+- Used for render commands: e.g., `DrawUIQuadInFrameEvent`, `DrawQuadInFrameEvent`.
+
+### destroy_deferred
+
+```cpp
+void destroy_deferred(const entt::entity& e);
+```
+
+Pushes the entity to `m_DeferredDestroys`. The entity is destroyed at the end of the frame after all deferred emplaces are applied.
+
+### remove_deferred
+
+```cpp
+template<typename Component, typename... Args>
+void remove_deferred(entt::entity e, Args&&... args);
+```
+
+Heap-allocates a `Component` instance constructed from the forwarded `args` (the constructed value is never used — the apply trampoline only calls `reg.remove<Component>(ent)` and discards it). The allocation exists purely for type-erasure: the `DeferredRequest` stores typed destroy/apply function pointers. No declaration check is performed on removal — any system may remove any component type. Be aware that `Component`'s constructor **will** execute with the forwarded args even though the resulting object is thrown away.
+
+### Entity Lifecycle
+
+```cpp
+entt::entity create();
+void destroy(entt::entity e);  // immediate — use only when safe (not during iteration)
+```
+
+`create()` and `destroy()` are immediate pass-throughs. `destroy()` without the `_deferred` suffix should only be used when no active iteration over that entity's components is in progress.
+
+### Non-Access Queries
+
+```cpp
+bool valid(entt::entity e) const;
+
+template<typename... Components>
+bool any_of(entt::entity e) const;
+
+template<typename... Components>
+bool all_of(entt::entity e) const;
+```
+
+These three methods carry no declaration assertions and pass through directly to `entt::registry`.
+
+---
+
+## Event System Within ECS
+
+Events are modelled as **short-lived entities** tagged with `pg::EventComponent`. This component is a trivial marker struct with a dummy `bool` field.
+
+### `pg::EventComponent`
+
+```cpp
+struct EventComponent
+{
+    bool m_Dummy = false;
+};
+```
+
+Any entity carrying `EventComponent` is treated as an event entity and destroyed by `World::ClearEvents()` at the end of every frame.
+
+### Two Event Patterns
+
+#### Deferred Events (`EmplaceEvent` / `EmplaceExternalEvent`)
+
+- Entity and component data are buffered during the frame.
+- Applied at flush time (after all systems have updated).
+- Event entity survives to the **next** frame, is consumed there, then destroyed by `ClearEvents()`.
+- Suitable for: broadcasting events from systems to all systems in the following frame; injecting platform events (window resize, key press) from outside the ECS loop.
+
+#### In-Frame Events (`EmplaceInframeEvent`)
+
+- Entity and both components are emplaced **immediately** on the registry.
+- Visible to systems that execute **after** the emitting system within the same frame.
+- Destroyed by `ClearEvents()` at the end of the same frame.
+- Suitable for: render command dispatch where the producer system runs before the consumer (renderer) system within the same frame.
+
+### System-to-System Event Flow
+
+```
+Producer System (Update)
+  └─► accessor.EmplaceEvent<MyEvent>(...)
+        └─► new entity pushed to m_DeferredRequests
+
+[all systems finish for frame N]
+
+FlushDeferredRequests()
+  └─► entity gets EventComponent + MyEvent
+
+Frame N+1:
+  Consumer System (Update)
+    └─► accessor.view<MyEvent>()  → sees the event entity
+  ClearEvents()
+    └─► event entity destroyed
+```
+
+### External Event Injection
+
+`World::EmplaceExternalEvent<Component>(args...)` follows the same deferred path but has no system context (`accessor` pointer is `nullptr` in the DeferredRequest), and no declaration check — it is callable from outside the ECS update loop (e.g., the window layer pushing `KeyPressedEventComponent`).
+
+---
+
+## Deferred vs In-Frame Entity Operations
+
+| Operation | When applied | Set required | Visibility |
+|---|---|---|---|
+| `emplace_deferred` | End of current frame | `addSet` | Next frame |
+| `emplace_oneframe` | End of current frame, removed end of next flush | `addSet` | Exactly one frame |
+| `EmplaceEvent` | End of current frame, destroyed next frame after consumption | `addSet` | Next frame, one frame only |
+| `emplace_inframe` | Immediately (synchronous) | `inframeAddSet` | Same frame (later systems only) |
+| `EmplaceInframeEvent` | Immediately (synchronous) | `inframeAddSet` | Same frame (later systems only), destroyed at frame end |
+| `EmplaceExternalEvent` | End of current frame | none (external) | Next frame |
+| `remove_deferred` | End of current frame | none | Removed next frame |
+| `destroy_deferred` | End of current frame (after emplaces) | none | Destroyed next frame |
+
+**Why deferred?**
+
+EnTT invalidates active views and iterators when the registry is structurally modified (entity created/destroyed, component added/removed). Systems iterate views during `Update()`. If a system could immediately add a component during its own iteration, it would corrupt the view iterator. The deferred buffer guarantees that all structural changes are batched and applied in a single safe window after all systems have finished iterating.
+
+**Why in-frame (`inframeAddSet`)?**
+
+Some workflows require the data to be available to downstream systems within the same frame, not deferred to the next. The canonical case is render command dispatch: a UI/scene system creates `DrawQuadInFrameEvent` entities that the renderer system (which runs later in the same frame, enforced by topological sort) reads and consumes. Because the producer finishes its view iteration before calling `EmplaceInframeEvent`, no iterator corruption occurs.
+
+---
+
+## System Topological Sort / Dependency Graph
+
+`SortSystems()` is called lazily on the first `Update()` after any `RegisterSystem()` call.
+
+### Edge Rules
+
+An ordering edge **A → B** (A runs before B) is generated when:
+
+1. System A declares `T` in its `writeSet` **and** system B declares `T` in its `readSet`.
+2. System A declares `T` in its `inframeAddSet` **and** system B declares `T` in its `readSet` or `writeSet`.
+
+`addSet` does **not** generate ordering edges because deferred-added components are never visible within the same frame — there is no ordering constraint to enforce.
+
+### Algorithm
+
+Kahn's algorithm (BFS-based topological sort):
+
+1. Build an adjacency list and per-node in-degree array (N = number of systems).
+2. An `edgeSet[a]` tracks already-added destination indices per source to avoid duplicate edges when multiple shared component types would generate the same A→B edge.
+3. Seed the BFS queue with all nodes of in-degree 0.
+4. Process the queue in FIFO order (preserving registration order as a tiebreaker for systems with no dependency relationship).
+5. Assert `sorted.size() == N` — if fewer systems were sorted, a dependency cycle exists and the engine asserts.
+
+The sorted result replaces `m_Systems` in-place.
+
+### One-Writer Rule
+
+Enforced at `RegisterSystem()` time, before the sort:
+
+- No two systems may share a type in their `writeSet`.
+- No two systems may share a type across their `addSet` / `inframeAddSet` in any combination (`addSet`/`addSet`, `inframeAddSet`/`inframeAddSet`, `addSet`/`inframeAddSet`).
+- A system **may** declare the same type in both its own `writeSet` and `addSet`.
+
+Violations assert immediately at registration, not at runtime.
+
+---
+
+## All Public Types and Signatures
+
+### `pg::EventComponent` (`Core/EventComponent.h`)
+
+```cpp
+struct EventComponent { bool m_Dummy = false; };
+```
+
+Marker tag. Entities carrying this component are destroyed by `World::ClearEvents()` at frame end.
+
+### `pg::SystemAccessDecl` (`ECS/System.h`)
+
+```cpp
+struct SystemAccessDecl {
+    std::unordered_set<std::type_index> readSet;
+    std::unordered_set<std::type_index> writeSet;
+    std::unordered_set<std::type_index> addSet;
+    std::unordered_set<std::type_index> inframeAddSet;
+};
+```
+
+### `pg::System` (`ECS/System.h`)
+
+```cpp
+class System {
+public:
+    System() = default;
+    ~System() = default;
+    virtual void Update(const pg::Timestep& ts) = 0;
+    virtual SystemAccessDecl DeclareAccess() const;  // returns empty decl
+};
+```
+
+### `pg::DeferredRequest` (`ECS/World.h`)
+
+```cpp
+struct DeferredRequest {
+    entt::entity             entity;
+    void*                    payload;
+    CheckedRegistryAccessor* accessor;
+    void(*apply)(CheckedRegistryAccessor*, entt::registry&, entt::entity, void*);
+    void(*destroy)(void*);
+};
+```
+
+### `pg::World` (`ECS/World.h`) — public surface
+
+```cpp
+class World {
+public:
+    static World& Create();
+    static World& Get();
+    static CheckedRegistryAccessor GetRegistry();
+    static entt::dispatcher& GetDispatcher();
+#ifdef TESTS_ENABLED
+    static entt::registry& GetRegistryDirect();
+#endif
+
+    void Update(const pg::Timestep& ts);
+    void RegisterSystem(std::unique_ptr<pg::System> system);
+
+    void PushDeferredRequest(DeferredRequest op);
+    void PushDeferredOneFrameRequest(DeferredRequest op);
+    void PushDeferredDestroy(const entt::entity& entity);
+
+    template<typename Component, typename... Args>
+    void EmplaceExternalEvent(Args&&... args);
+};
+```
+
+### `pg::CheckedRegistryAccessor` (`ECS/CheckedRegistryAccessor.h`) — public surface
+
+```cpp
+class CheckedRegistryAccessor {
+public:
+    CheckedRegistryAccessor(entt::registry& reg, const SystemAccessDecl& decl);
+
+    // --- Read/write access (asserts readSet or writeSet) ---
+    template<typename... Components>
+    auto view();
+    template<typename... Components, typename... Exclude>
+    auto view(entt::exclude_t<Exclude...> excl);
+    template<typename Component>
+    decltype(auto) get(entt::entity e);
+
+    // --- Deferred structural changes ---
+    template<typename Component, typename... Args>
+    void emplace_deferred(entt::entity e, Args&&... args);     // addSet, next frame
+    template<typename Component, typename... Args>
+    void emplace_oneframe(entt::entity e, Args&&... args);     // addSet, one frame
+    template<typename Component, typename... Args>
+    void emplace_inframe(entt::entity e, Args&&... args);      // inframeAddSet, same frame
+    template<typename Component, typename... Args>
+    void EmplaceEvent(Args&&... args);                         // addSet, event entity, next frame
+    template<typename Component, typename... Args>
+    void EmplaceInframeEvent(Args&&... args);                  // inframeAddSet, event entity, same frame
+    template<typename Component, typename... Args>
+    void remove_deferred(entt::entity e, Args&&... args);      // no set check, next frame
+    void destroy_deferred(const entt::entity& e);              // m_DeferredDestroys
+
+    // --- Immediate lifecycle (use with care) ---
+    entt::entity create();
+    void destroy(entt::entity e);
+
+    // --- Unrestricted queries ---
+    bool valid(entt::entity e) const;
+    template<typename... Components> bool any_of(entt::entity e) const;
+    template<typename... Components> bool all_of(entt::entity e) const;
+};
+```
+
+---
+
+## Per-Frame Data Flow
+
+```
+World::Update(ts)
+│
+├─ [first frame or after RegisterSystem] SortSystems()
+│    └─ Kahn topological sort on writeSet/inframeAddSet → readSet edges
+│
+├─ m_Dispatcher.update()            // EnTT signal delivery
+│
+├─ for each SystemEntry in m_Systems (sorted order):
+│    ├─ m_ActiveSystem = system
+│    ├─ system->Update(ts)
+│    │    └─ calls World::GetRegistry()
+│    │         └─ returns CheckedRegistryAccessor(registry, decl copy)
+│    │              ├─ view / get       → immediate registry reads
+│    │              ├─ emplace_inframe  → immediate registry write (inframeAddSet)
+│    │              ├─ EmplaceInframeEvent → immediate entity creation + components
+│    │              ├─ emplace_deferred → push to m_DeferredRequests
+│    │              ├─ emplace_oneframe → push to m_DeferredRequests
+│    │              ├─ EmplaceEvent     → push to m_DeferredRequests
+│    │              ├─ remove_deferred  → push to m_DeferredRequests
+│    │              └─ destroy_deferred → push to m_DeferredDestroys
+│    └─ m_ActiveSystem = nullptr
+│
+├─ ClearEvents()
+│    └─ destroy all entities with EventComponent
+│         (in-frame events from this frame, deferred events from last frame)
+│
+└─ FlushDeferredRequests()
+     ├─ apply m_DeferredOneFrameComponents  (emplace + schedule removal)
+     ├─ apply m_DeferredRequests            (persistent emplaces, removes)
+     └─ apply m_DeferredDestroys            (entity destruction)
+```
+
+---
+
+## Non-Obvious Design Decisions and Invariants
+
+### Accessor Holds a Copy of the Decl
+
+`GetRegistry()` copies the `SystemAccessDecl` into the returned `CheckedRegistryAccessor` rather than storing a reference into `m_Systems`. This prevents a dangling-reference bug if `m_Systems` were ever reallocated (e.g., a future `RegisterSystem` call mid-update would be caught by the `m_ActiveSystem` assert, but the defensive copy costs nothing at frame rate).
+
+### `addSet` Does Not Generate Sort Edges
+
+Deferred adds are invisible within the same frame regardless of system execution order. Generating edges for them would create spurious ordering constraints and could introduce artificial cycles. Only `writeSet` and `inframeAddSet` generate edges.
+
+### Deferred-Destroy Is Applied After Deferred-Emplace
+
+Within `FlushDeferredRequests()`, one-frame component emplaces run first, then persistent emplaces, then destroys. This ordering means a system can emplace a component and destroy the entity in the same frame — the emplace runs first (which may be a no-op since the entity is about to be destroyed) and the destroy runs last. The validity check (`m_Registry.valid(op.entity)`) inside the flush guards against operating on already-destroyed entities.
+
+### One-Frame Components Use a Two-Stage Deferred Chain
+
+`emplace_oneframe` does not schedule a simple timed remove. Instead, its apply trampoline — executed at flush time — immediately pushes a second `DeferredRequest` into `m_DeferredOneFrameComponents`. This second request removes the component at the **next** flush. The effect is: the component lives exactly one flush cycle after the frame it was requested in.
+
+### `GetRegistryDirect` Is Gated on `TESTS_ENABLED`
+
+Direct registry access bypasses all declaration enforcement. It is excluded from production builds to ensure that only tested, declaration-compliant paths exist in shipping code.
+
+### Registration Guards Iterator Validity
+
+`RegisterSystem` asserts `m_ActiveSystem == nullptr` and `m_Sorted` is set to `false`. This means the sort is not triggered immediately; it is deferred to the next `Update()` call. Calling `RegisterSystem` and then immediately querying `World::GetRegistry()` outside of an update would assert.
+
+### `emplace_inframe` Bug Note
+
+The current implementation of `emplace_inframe` in `CheckedRegistryAccessor.h` (line 124) references the identifier `ent` in its double-add assertion, which is not defined in the method's parameter list (the parameter is named `e`). This causes a compile error when the assertion is enabled. The emplace itself on line 128 correctly uses `e`. This is a latent defect.
+
+### EnTT `dispatcher` Is Flushed Before Systems
+
+`m_Dispatcher.update()` runs at the very start of `Update()`, before any system executes. This ensures that EnTT signal-based subscribers (if any) receive their callbacks before the system update loop for the same frame.

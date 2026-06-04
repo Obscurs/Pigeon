@@ -1,0 +1,377 @@
+# SandboxApp — Module Documentation
+
+## Purpose
+
+SandboxApp is the demo/integration-test application that exercises PigeonLib. It is a thin executable target that:
+
+- Provides the `pg::CreateApplication()` entry point required by `EntryPoint.h`.
+- Registers two ECS systems against the `pg::World` singleton.
+- Supplies its own ECS components (two singleton components, one stale file) and data assets consumed by those systems.
+
+SandboxApp is never built in the `Debug` or `Release` configuration alongside PigeonLib tests; it is the default runnable target when those configurations are active.
+
+---
+
+## Entry Point — `Sandbox2D.cpp`
+
+File: `Code/SandboxApp/Sandbox2D.cpp`
+
+```cpp
+class Sandbox : public pg::Application { /* empty — inherits all Application behaviour */ };
+
+pg::Application& pg::CreateApplication()
+{
+    pg::Application& sandbox = Sandbox::Create();
+    pg::World::Get().RegisterSystem(std::make_unique<sbx::ConfigLoaderSystem>());
+    pg::World::Get().RegisterSystem(std::make_unique<sbx::SampleUISystem>());
+    return sandbox;
+}
+```
+
+### What it does
+
+1. Calls `Sandbox::Create()` (which delegates to `pg::Application::Create()`), constructing and initialising the application singleton — window, input layer, ImGui layer, clock.
+2. Registers two systems onto the `pg::World` ECS. `World::SortSystems()` will topologically order them based on their `DeclareAccess` declarations before the first `Update`.
+3. Returns a reference to the application so `EntryPoint.h` can call `app.Run()`.
+
+The `Sandbox` class itself adds nothing over `pg::Application`; it exists only to satisfy the factory pattern that `Application::Create()` requires a concrete type.
+
+---
+
+## ECS Systems
+
+### `sbx::ConfigLoaderSystem`
+
+Files: `Code/SandboxApp/Sandbox/ConfigLoaderSystem.h`, `ConfigLoaderSystem.cpp`
+
+```cpp
+class ConfigLoaderSystem : public pg::System
+{
+public:
+    void Update(const pg::Timestep& ts) override;
+    pg::SystemAccessDecl DeclareAccess() const override;
+};
+```
+
+#### DeclareAccess
+
+| Set | Component |
+|-----|-----------|
+| `readSet` | `sbx::SampleUIConfigSingletonComponent` |
+| `addSet` | `sbx::SampleUIConfigSingletonComponent` |
+
+#### Update behaviour
+
+Runs a one-shot initialisation pattern — idempotent after the first frame:
+
+1. Checks whether a `SampleUIConfigSingletonComponent` already exists in the registry. If one is present, does nothing and returns.
+2. On the first call: reads `Assets/App/Config.json` (relative to the working directory, which is the `Data/` folder at runtime) into a string, parses it with `nlohmann::json`.
+3. Validates the presence of four required string keys using `PG_CORE_EXCEPT`: `uuidui1`, `uuidui2`, `defaultFont`, `mainLayoutId`.
+4. Constructs a `SampleUIConfigSingletonComponent`, populates its four `pg::UUID` fields from the parsed strings, then enqueues the component via `accessor.emplace_deferred<>`. The component becomes visible on the next frame.
+
+Config file path: `Data/Assets/App/Config.json` (resolved relative to `Data/` at runtime).
+
+---
+
+### `sbx::SampleUISystem`
+
+Files: `Code/SandboxApp/Sandbox/SampleUISystem.h`, `SampleUISystem.cpp`
+
+```cpp
+class SampleUISystem : public pg::System
+{
+public:
+    void Update(const pg::Timestep& ts) override;
+    pg::SystemAccessDecl DeclareAccess() const override;
+};
+```
+
+#### DeclareAccess
+
+| Set | Component |
+|-----|-----------|
+| `writeSet` | `sbx::SampleUISingletonComponent` |
+| `addSet` | `pg::OrthographicCameraComponent` |
+| `addSet` | `pg::ui::LoadLayoutEvent` |
+| `addSet` | `sbx::SampleUISingletonComponent` |
+| `inframeAddSet` | `pg::DrawQuadInFrameEvent` |
+| `inframeAddSet` | `pg::DrawSpriteInFrameEvent` |
+| `inframeAddSet` | `pg::DrawStringInFrameEvent` |
+| `readSet` | `sbx::SampleUIConfigSingletonComponent` |
+| `readSet` | `pg::ResourceMapSingletonComponent` |
+| `readSet` | `pg::ui::BaseComponent` |
+| `readSet` | `pg::ui::ImageComponent` |
+| `readSet` | `pg::ui::TextComponent` |
+
+#### Update behaviour — first frame (initialisation)
+
+Guards: returns immediately if either `pg::ResourceMapSingletonComponent` or `sbx::SampleUIConfigSingletonComponent` is absent (they are produced by engine systems and `ConfigLoaderSystem` respectively, which may not have flushed yet).
+
+When both guards pass and `SampleUISingletonComponent` does not yet exist:
+
+1. Creates a `SampleUISingletonComponent` entity with hard-coded initial values:
+   - Quad1: green (`0,1,0`), position `(0,0,0)`, scale `(0.1,0.1,1)`, origin `(0.5,0.5,0)`.
+   - Quad2: cyan (`0,1,1`), position `(1,1,0)`, scale `(0.5,1,1)`, origin `(0.5,0.5,0)`.
+   - Text: position `(0,0,0)`, scale `(0.3,0.3,1)`, colour red `(1,0,0)`.
+   - `m_FontID`, `m_UUIDUI1`, `m_UUIDUI2` copied from the config component.
+2. Creates an `OrthographicCameraComponent` entity, configured for a 1280×720 viewport, `m_ReactsToInput = true`.
+3. Emits a `pg::ui::LoadLayoutEvent` event carrying `configComponent.m_MainLayoutID` to trigger the UI layout system to load `SandboxUI.json`.
+4. All three are enqueued via `emplace_deferred<>`; they become visible on the next frame.
+
+#### Update behaviour — every subsequent frame
+
+Reads `SampleUISingletonComponent` (mutable) and emits inframe draw events for this frame:
+
+1. **Quad draw**: builds a translation+scale transform from `m_PosQuad1` / `m_ScaleQuad1`, emits a `pg::DrawQuadInFrameEvent` with `m_ColorQuad1` and zero origin.
+2. **Sprite draw**: iterates all `(BaseComponent, ImageComponent)` entities; when the entity's UUID matches `configComponent.m_UUIDUI1`, constructs a `pg::Sprite` from Quad2's transform, a hard-coded `texCoordsRect(32,32,64,64)`, the image component's texture handle, and Quad2's origin, then emits `pg::DrawSpriteInFrameEvent`.
+3. **Static text draw**: emits `pg::DrawStringInFrameEvent` with the literal string `"This is a fucking text\nEven with multiple lines"`, resolving the font from `ResourceMapSingletonComponent::m_FontMap` by `m_FontID`, using `m_ColorText` (alpha forced to 1), kerning 0.1, line spacing 0.1.
+4. **Clock text draw**: builds a `mm:ss:ms` elapsed-time string from a function-static `pg::Clock` (constructed once on first entry to the steady branch). The colour cycles per-channel using `fmodf` on elapsed seconds. Emits another `DrawStringInFrameEvent` at position `(-0.7, 0.7, 0)`, scale `(0.3, 0.3, 1)`.
+5. **ImGui panel**: opens a "Settings" window exposing live editing of Quad1 colour/position/scale/origin and text position/scale via `ImGui::ColorEdit3` / `ImGui::InputFloat3`.
+
+---
+
+## ECS Components
+
+### `sbx::SampleUIConfigSingletonComponent`
+
+File: `Code/SandboxApp/Sandbox/SampleUIConfigSingletonComponent.h`
+
+Singleton (at most one instance). Holds the UUIDs parsed from `Assets/App/Config.json`. Read by `SampleUISystem`; written only by `ConfigLoaderSystem`.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `m_UUIDUI1` | `pg::UUID` | UUID of the first UI element (image widget in `SandboxUI.json`) |
+| `m_UUIDUI2` | `pg::UUID` | UUID of the second UI element (text widget in `SandboxUI.json`) |
+| `m_DefaultFontID` | `pg::UUID` | UUID of the default font loaded by the engine resource system |
+| `m_MainLayoutID` | `pg::UUID` | UUID of the root UI layout to load (`SandboxUI.json`) |
+
+### `sbx::SampleUISingletonComponent`
+
+File: `Code/SandboxApp/Sandbox/SampleUISingletonComponent.h`
+
+Singleton (at most one instance). Mutable frame-state for `SampleUISystem`'s renders and ImGui controls. Created and initially populated by `SampleUISystem` on the first productive frame.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `m_ColorQuad1` | `glm::vec3` | `(0,0,0)` | Colour of the flat quad, editable via ImGui |
+| `m_PosQuad1` | `glm::vec3` | `(0,0,0)` | World-space position of Quad1, editable via ImGui |
+| `m_ScaleQuad1` | `glm::vec3` | `(0,0,0)` | Scale of Quad1, editable via ImGui |
+| `m_ColorQuad2` | `glm::vec3` | `(0,0,0)` | Colour tint for sprite Quad2 (unused in current draw path — sprite uses texture) |
+| `m_PosQuad2` | `glm::vec3` | `(0,0,0)` | World-space position of Quad2/Sprite |
+| `m_ScaleQuad2` | `glm::vec3` | `(0,0,0)` | Scale of Quad2/Sprite |
+| `m_PosText` | `glm::vec3` | `(0,0,0)` | Position of the static text string, editable via ImGui |
+| `m_ScaleText` | `glm::vec3` | `(0,0,0)` | Scale of the static text, editable via ImGui |
+| `m_ColorText` | `glm::vec3` | `(0,0,0)` | RGB colour of the static text |
+| `m_OriginQuad1` | `glm::vec3` | `(0,0,0)` | Normalised pivot of Quad1, editable via ImGui |
+| `m_OriginQuad2` | `glm::vec3` | `(0,0,0)` | Normalised pivot of Quad2/Sprite |
+| `m_FontID` | `pg::UUID` | null | Key into `ResourceMapSingletonComponent::m_FontMap` |
+| `m_UUIDUI1` | `pg::UUID` | null | Identifies the image widget (for sprite draw look-up) |
+| `m_UUIDUI2` | `pg::UUID` | null | Identifies the text widget (currently unused in draw path) |
+
+---
+
+## Data Flow
+
+### Startup (frame 0)
+
+```
+EntryPoint.h main()
+  └── pg::CreateApplication()
+        ├── Sandbox::Create()            — constructs pg::Application, opens window
+        ├── World::RegisterSystem(ConfigLoaderSystem)
+        └── World::RegisterSystem(SampleUISystem)
+app.Run() starts the loop → World::Update(ts) called each tick
+```
+
+### Frame 1 (first World::Update)
+
+```
+World::SortSystems()                     — topological sort by DeclareAccess (runs once)
+
+ConfigLoaderSystem::Update()
+  ├── Reads Data/Assets/App/Config.json
+  ├── Parses JSON, validates 4 UUID keys
+  └── emplace_deferred<SampleUIConfigSingletonComponent>
+
+SampleUISystem::Update()
+  └── Guards: ResourceMapSingletonComponent absent OR SampleUIConfigSingletonComponent absent
+        → returns immediately (config not yet flushed)
+
+World::FlushDeferredRequests()
+  └── SampleUIConfigSingletonComponent committed to registry
+```
+
+### Frame 2 (initialisation frame)
+
+```
+ConfigLoaderSystem::Update()
+  └── SampleUIConfigSingletonComponent already present → no-op
+
+SampleUISystem::Update()
+  ├── Guards pass (both singletons present, SampleUISingletonComponent absent)
+  ├── emplace_deferred<SampleUISingletonComponent>  (with initial values from config)
+  ├── emplace_deferred<OrthographicCameraComponent> (1280×720, ReactsToInput=true)
+  └── EmplaceEvent<pg::ui::LoadLayoutEvent>         (m_MainLayoutID → loads SandboxUI.json)
+
+World::FlushDeferredRequests()
+  └── SampleUISingletonComponent + OrthographicCameraComponent committed
+  └── LoadLayoutEvent triggers UI layout parsing (engine-side UIEventSystem)
+```
+
+### Frame 3+ (steady state)
+
+```
+ConfigLoaderSystem::Update()  → no-op
+
+SampleUISystem::Update()
+  ├── Reads SampleUISingletonComponent (mutable)
+  ├── EmplaceInframeEvent<DrawQuadInFrameEvent>    (Quad1 flat colour)
+  ├── Iterates (BaseComponent, ImageComponent) UI entities
+  │     └── Match m_UUIDUI1 → EmplaceInframeEvent<DrawSpriteInFrameEvent> (Quad2 sprite)
+  ├── EmplaceInframeEvent<DrawStringInFrameEvent>  (static multi-line text)
+  ├── EmplaceInframeEvent<DrawStringInFrameEvent>  (animated clock string)
+  └── ImGui::Begin("Settings") — live-edits m_ColorQuad1, m_PosQuad1, m_ScaleQuad1,
+                                              m_OriginQuad1, m_PosText, m_ScaleText
+
+Renderer2DSystem (engine)
+  └── Consumes DrawQuadInFrameEvent, DrawSpriteInFrameEvent, DrawStringInFrameEvent
+        → batched DirectX 11 draw calls
+
+UIRenderSystem (engine)
+  └── Renders loaded UI layout entities (BaseComponent + ImageComponent/TextComponent)
+```
+
+### Shutdown
+
+The application's `Run()` loop terminates when a `WindowCloseEvent` is received (`Application::OnWindowClose`). No SandboxApp-specific teardown is needed; all ECS state is owned by `World` and `Application`, which are destroyed via their `pg::U_Ptr` singletons.
+
+---
+
+## Public Type Signatures
+
+```cpp
+// Entry point (Sandbox2D.cpp)
+namespace pg {
+    Application& CreateApplication();
+}
+
+// Systems (Sandbox/ subfolder)
+namespace sbx {
+    class ConfigLoaderSystem : public pg::System {
+    public:
+        void Update(const pg::Timestep& ts) override;
+        pg::SystemAccessDecl DeclareAccess() const override;
+    };
+
+    class SampleUISystem : public pg::System {
+    public:
+        void Update(const pg::Timestep& ts) override;
+        pg::SystemAccessDecl DeclareAccess() const override;
+    };
+}
+
+// Singleton components (Sandbox/ subfolder)
+namespace sbx {
+    struct SampleUIConfigSingletonComponent {
+        pg::UUID m_UUIDUI1;
+        pg::UUID m_UUIDUI2;
+        pg::UUID m_DefaultFontID;
+        pg::UUID m_MainLayoutID;
+    };
+
+    struct SampleUISingletonComponent {
+        glm::vec3 m_ColorQuad1, m_PosQuad1, m_ScaleQuad1;
+        glm::vec3 m_ColorQuad2, m_PosQuad2, m_ScaleQuad2;
+        glm::vec3 m_PosText, m_ScaleText, m_ColorText;
+        glm::vec3 m_OriginQuad1, m_OriginQuad2;
+        pg::UUID  m_FontID;
+        pg::UUID  m_UUIDUI1;
+        pg::UUID  m_UUIDUI2;
+    };
+}
+```
+
+---
+
+## Dependencies on PigeonLib Modules
+
+| PigeonLib Module | Usage in SandboxApp |
+|-----------------|---------------------|
+| `pg::Application` | Base class for `Sandbox`; `Create()` factory invoked from `CreateApplication()` |
+| `pg::World` / `pg::System` / `pg::SystemAccessDecl` | ECS foundation — all systems derive from `pg::System` |
+| `pg::UUID` | Identity for config fields, UI element look-up, font/texture map keys |
+| `pg::Timestep` / `pg::Clock` | Passed into every `Update()`; `Clock` used internally for animated clock string |
+| `pg::OrthographicCameraComponent` | Created by `SampleUISystem` to register the scene camera |
+| `pg::ResourceMapSingletonComponent` | Read to resolve `m_FontID` to a `pg::Font` shared pointer |
+| `pg::DrawQuadInFrameEvent` | Inframe event to draw a flat coloured quad |
+| `pg::DrawSpriteInFrameEvent` / `pg::Sprite` | Inframe event to draw a sub-texture sprite |
+| `pg::DrawStringInFrameEvent` | Inframe event to draw MSDF text |
+| `pg::ui::BaseComponent`, `pg::ui::ImageComponent`, `pg::ui::TextComponent` | Read-only iteration over loaded UI layout entities |
+| `pg::ui::LoadLayoutEvent` | Fired once on init to trigger loading of `SandboxUI.json` |
+| `ImGui` | Immediate-mode debug panel ("Settings") rendered inside `SampleUISystem::Update()` |
+| `nlohmann::json` (`json.hpp` via PigeonLib pch) | Config file parsing in `ConfigLoaderSystem` |
+| `glm` | All vector/matrix math |
+
+---
+
+## Data Assets
+
+All assets are resolved relative to `Data/` (the VS debugger working directory).
+
+| Asset | UUID (from Config.json) | Role |
+|-------|------------------------|------|
+| `Assets/App/Config.json` | — | Provides the four UUID strings on first frame |
+| `Assets/App/UI/SandboxUI.json` | `e48eb073-fcb1-44eb-a3b0-eb2f186a5831` | Root UI layout with two children: a text widget (`uuidui1`) and an image widget (`uuidui2`) |
+| `opensans/OpenSans-Regular.ttf` | `79e69fe7-4e41-42b0-a47f-a4bb8040f02f` | Default font for all text draws |
+| `Checkerboard.png` | `e3afff59-1ee8-4396-b9ed-b093dd521f91` | Texture assigned to the image widget in `SandboxUI.json` |
+
+`SandboxUI.json` defines:
+- Root: 1280×720, left/top alignment.
+- Child `uuidui1` (the text widget, UUID `92345678-9abc-def0-1234-56789abcdef2`): 100×100, center-aligned, contains a `text` element with the string `"sSample\nUI"`.
+- Child `uuidui2` (the image widget, UUID `92345678-9abc-def0-1234-56789abcdef1`): 400×400, left/top, references texture `Checkerboard.png`.
+
+Note: the UUID naming in the JSON is inverted relative to the variable names in `SandboxUISingletonComponent` — `uuidui1` in config maps to the text child and `uuidui2` maps to the image child.
+
+---
+
+## Non-Obvious Design Decisions
+
+**Deferred add pattern — all component creation is one frame late.** Both systems follow the ECS rule that components cannot be added to the registry mid-frame (which could invalidate iterators). They call `emplace_deferred<>` instead, so newly created singletons are only visible on the next call to `World::Update`. This means there is always a minimum two-frame boot sequence: frame 1 produces the config singleton, frame 2 produces the scene state.
+
+**Guard ordering relies on registration order, not the dependency graph.** `addSet` entries do NOT generate ordering edges in `World::SortSystems()` (only `writeSet` and `inframeAddSet` do — see ECS.info). Because neither system writes a component the other reads in the same frame, there is no topological edge between them. Their relative order is determined by the Kahn's-algorithm tiebreaker: registration order. `ConfigLoaderSystem` is registered first in `CreateApplication()`, so it always runs before `SampleUISystem`.
+
+**Function-static `pg::Clock` for elapsed display.** Inside the steady-state branch of `SampleUISystem::Update`, the clock is declared `static`. This means it is zero-initialised on program start and accumulates from first entry into the steady branch (i.e., from frame 3 onwards). It is not reset between frames or app restarts within a session.
+
+**Sprite draw is conditioned on a UI entity UUID match, not on the ECS component type alone.** Rather than attaching the Quad2 parameters directly to the sprite ECS entity, `SampleUISystem` iterates `(BaseComponent, ImageComponent)` entities (which are owned by the engine's UI module) and pattern-matches on `baseComponent.m_UUID == configComponent.m_UUIDUI1`. This couples the draw to the UI element hierarchy rather than to a standalone game entity.
+
+**Stale files at `Code/SandboxApp/` root.** `SampleUISystem.cpp` and `SampleUIComponent.h` at the root of `SandboxApp/` are not listed in `CMakeLists.txt` and are not compiled. They reference types (`pg::ui::RendererConfig`, `m_Helper`) that no longer exist in the current codebase and represent a previous architecture. They should be treated as dead code.
+
+**Empty `Sandbox` class.** The `Sandbox` subclass of `pg::Application` has no added members or overrides. Its sole purpose is to provide a concrete type for `Sandbox::Create()` — which delegates to `pg::Application::Create()` — satisfying the factory pattern without requiring `pg::Application` itself to be instantiated directly.
+
+---
+
+## Unit Tests
+
+Test files: `Code/UT/UT_Sandbox/ConfigLoaderSystemTest.cpp`, `SampleUISystemTest.cpp`
+
+All tests use the Catch2 framework and the `pg::World::Create()` / `pg::World::GetRegistryDirect()` test-only API.
+
+### ConfigLoaderSystem tests
+
+| Test case | What it verifies |
+|-----------|-----------------|
+| `CreatesConfigOnFirstFrame` | No component before `Update`; exactly one `SampleUIConfigSingletonComponent` after one `Update`. |
+| `DoesNotDuplicateWhenConfigExists` | Pre-seeding one component; system leaves count at 1 after `Update`. |
+| `LoadedConfigHasNonNullUUIDs` | All four UUID fields (`m_UUIDUI1`, `m_UUIDUI2`, `m_DefaultFontID`, `m_MainLayoutID`) are non-null after `Update`. |
+| `DeclareAccessIsCorrect` | `readSet` and `addSet` both contain `SampleUIConfigSingletonComponent`. |
+
+### SampleUISystem tests
+
+| Test case | What it verifies |
+|-----------|-----------------|
+| `NoOpWithoutResourceMap` | Config present but no `ResourceMapSingletonComponent` → no `SampleUISingletonComponent` created. |
+| `NoOpWithoutConfig` | Resource map present but no config → no `SampleUISingletonComponent` created. |
+| `CreatesComponentsOnFirstFrame` | Both guards satisfied → `SampleUISingletonComponent` visible after one `Update`. |
+| `CreatedComponentHasFontIDFromConfig` | `m_FontID` on the created component equals `m_DefaultFontID` from the config component. |
+| `CreatesOrthographicCameraOnFirstFrame` | `OrthographicCameraComponent` is created alongside `SampleUISingletonComponent`. |
+| `DeclareAccessIsCorrect` | All four access sets (readSet, writeSet, addSet, inframeAddSet) contain exactly the declared component types. |
