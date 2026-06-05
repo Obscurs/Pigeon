@@ -5,7 +5,7 @@ Performs hit-testing each frame. For every enabled UI entity, computes its world
 box via recursive parent-chain traversal, then checks the current mouse position against it.
 Emits one-frame hover, click, and release events on matching entities. Each event carries the
 UUID of the hit entity so downstream systems can identify which element was interacted with
-without holding an entt::entity handle.
+without holding a pg::ecs::Entity handle.
 
 Guards on InputStateSingletonComponent and RendererConfigSingletonComponent presence; returns
 immediately if either is absent.

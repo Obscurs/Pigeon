@@ -8,22 +8,22 @@
 pg::U_Ptr<pg::World> pg::World::s_Instance = nullptr;
 
 void pg::CheckedRegistryAccessor::pushDeferredRequest(
-	entt::entity e, void* payload, CheckedRegistryAccessor* self,
-	void(*apply)(CheckedRegistryAccessor*, entt::registry&, entt::entity, void*),
+	pg::ecs::Entity e, void* payload, CheckedRegistryAccessor* self,
+	void(*apply)(CheckedRegistryAccessor*, pg::ecs::Registry&, pg::ecs::Entity, void*),
 	void(*destroy)(void*))
 {
 	pg::World::Get().PushDeferredRequest({ e, payload, self, apply, destroy });
 }
 
 void pg::CheckedRegistryAccessor::pushDeferredOneFrameRequest(
-	entt::entity e, void* payload, CheckedRegistryAccessor* self,
-	void(*apply)(CheckedRegistryAccessor*, entt::registry&, entt::entity, void*),
+	pg::ecs::Entity e, void* payload, CheckedRegistryAccessor* self,
+	void(*apply)(CheckedRegistryAccessor*, pg::ecs::Registry&, pg::ecs::Entity, void*),
 	void(*destroy)(void*))
 {
 	pg::World::Get().PushDeferredOneFrameRequest({ e, payload, self, apply, destroy });
 }
 
-void pg::CheckedRegistryAccessor::pushDeferredDestroy(const entt::entity& e)
+void pg::CheckedRegistryAccessor::pushDeferredDestroy(const pg::ecs::Entity& e)
 {
 	pg::World::Get().PushDeferredDestroy(e);
 }
@@ -48,7 +48,7 @@ pg::CheckedRegistryAccessor pg::World::GetRegistry()
 }
 
 #ifdef TESTS_ENABLED
-entt::registry& pg::World::GetRegistryDirect()
+pg::ecs::Registry& pg::World::GetRegistryDirect()
 {
 	return s_Instance->m_Registry;
 }
@@ -63,7 +63,7 @@ void pg::World::PushDeferredOneFrameRequest(pg::DeferredRequest op)
 	m_DeferredOneFrameComponents.push_back(std::move(op));
 }
 
-void pg::World::PushDeferredDestroy(const entt::entity& entity)
+void pg::World::PushDeferredDestroy(const pg::ecs::Entity& entity)
 {
 	m_DeferredDestroys.push_back(entity);
 }
@@ -289,7 +289,7 @@ void pg::World::FlushDeferredRequests()
 	}
 	m_DeferredRequests.clear();
 
-	for (const entt::entity& entity : m_DeferredDestroys)
+	for (const pg::ecs::Entity& entity : m_DeferredDestroys)
 	{
 		if (m_Registry.valid(entity))
 			m_Registry.destroy(entity);

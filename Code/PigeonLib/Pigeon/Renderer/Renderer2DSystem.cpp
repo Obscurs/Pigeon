@@ -403,7 +403,7 @@ void pg::Renderer2DSystem::Update(const pg::Timestep& ts)
 	if (rendererDataView.empty())
 	{
 		pg::RendererDataSingletonComponent rendererDataComponent;
-		entt::entity singletonEntity = accessor.create();
+		pg::ecs::Entity singletonEntity = accessor.create();
 		Init(rendererDataComponent, resourcesComponent, configComponent);
 		Render(accessor, ortoCamera, rendererDataComponent, resourcesComponent);
 		accessor.emplace_deferred<pg::RendererDataSingletonComponent>(singletonEntity, std::move(rendererDataComponent));

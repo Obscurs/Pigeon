@@ -42,7 +42,7 @@ void sbx::ConfigLoaderSystem::Update(const pg::Timestep& ts)
 	if (accessor.view<const sbx::SampleUIConfigSingletonComponent>().empty())
 	{
 		sbx::SampleUIConfigSingletonComponent component;
-		entt::entity ent = accessor.create();
+		pg::ecs::Entity ent = accessor.create();
 		std::string configStr = ReadJSONFileToString("Assets/App/Config.json");
 		json jsonObject = json::parse(configStr);
 

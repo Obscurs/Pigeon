@@ -42,7 +42,7 @@ void pg::ConfigLoaderSystem::Update(const pg::Timestep& ts)
 	if (accessor.view<const pg::EngineConfigSingletonComponent>().empty())
 	{
 		pg::EngineConfigSingletonComponent component;
-		entt::entity ent = accessor.create();
+		pg::ecs::Entity ent = accessor.create();
 		std::string configStr = ReadJSONFileToString("Assets/Engine/Config.json");
 		json jsonObject = json::parse(configStr);
 

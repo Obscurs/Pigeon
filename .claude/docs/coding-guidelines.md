@@ -199,7 +199,7 @@ namespace sbx
 
 namespace
 {
-    void MoveEntity(pg::CheckedRegistryAccessor& accessor, entt::entity e) { ... }
+    void MoveEntity(pg::CheckedRegistryAccessor& accessor, pg::ecs::Entity e) { ... }
 }
 
 pg::SystemAccessDecl sbx::MySystem::DeclareAccess() const
@@ -214,7 +214,7 @@ pg::SystemAccessDecl sbx::MySystem::DeclareAccess() const
 void sbx::MySystem::Update(const pg::Timestep& ts)
 {
     pg::CheckedRegistryAccessor accessor = pg::World::GetRegistry();
-    for (entt::entity e : accessor.view<const sbx::InputComponent, sbx::PositionComponent>())
+    for (pg::ecs::Entity e : accessor.view<const sbx::InputComponent, sbx::PositionComponent>())
     {
         // ...
     }

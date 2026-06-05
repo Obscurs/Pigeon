@@ -1,4 +1,4 @@
-#include <catch2/catch.hpp>
+﻿#include <catch2/catch.hpp>
 #include "Utils/TestApp.h"
 
 #include <Pigeon/ECS/World.h>
@@ -22,7 +22,7 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::CameraSystem>());
 
-		entt::entity camEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity camEnt = pg::World::GetRegistryDirect().create();
 		pg::OrthographicCameraComponent& cam =
 			pg::World::GetRegistryDirect().emplace<pg::OrthographicCameraComponent>(camEnt);
 		cam.m_CameraPosition = { 0.f, 0.f, 0.f };
@@ -44,14 +44,14 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::CameraSystem>());
 
-		entt::entity camEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity camEnt = pg::World::GetRegistryDirect().create();
 		pg::OrthographicCameraComponent& cam =
 			pg::World::GetRegistryDirect().emplace<pg::OrthographicCameraComponent>(camEnt);
 		cam.m_CameraPosition        = { 0.f, 0.f, 0.f };
 		cam.m_CameraTranslationSpeed = 5.f;
 		cam.m_ReactsToInput          = true;
 
-		entt::entity evtEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity evtEnt = pg::World::GetRegistryDirect().create();
 		pg::KeyPressedEventComponent& evt =
 			pg::World::GetRegistryDirect().emplace<pg::KeyPressedEventComponent>(evtEnt);
 		evt.m_KeyCode = pg::PG_KEY_A;
@@ -73,14 +73,14 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::CameraSystem>());
 
-		entt::entity camEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity camEnt = pg::World::GetRegistryDirect().create();
 		pg::OrthographicCameraComponent& cam =
 			pg::World::GetRegistryDirect().emplace<pg::OrthographicCameraComponent>(camEnt);
 		cam.m_CameraPosition        = { 0.f, 0.f, 0.f };
 		cam.m_CameraTranslationSpeed = 5.f;
 		cam.m_ReactsToInput          = true;
 
-		entt::entity evtEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity evtEnt = pg::World::GetRegistryDirect().create();
 		pg::KeyPressedEventComponent& evt =
 			pg::World::GetRegistryDirect().emplace<pg::KeyPressedEventComponent>(evtEnt);
 		evt.m_KeyCode = pg::PG_KEY_D;
@@ -102,14 +102,14 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::CameraSystem>());
 
-		entt::entity camEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity camEnt = pg::World::GetRegistryDirect().create();
 		pg::OrthographicCameraComponent& cam =
 			pg::World::GetRegistryDirect().emplace<pg::OrthographicCameraComponent>(camEnt);
 		cam.m_CameraPosition        = { 0.f, 0.f, 0.f };
 		cam.m_CameraTranslationSpeed = 5.f;
 		cam.m_ReactsToInput          = true;
 
-		entt::entity evtEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity evtEnt = pg::World::GetRegistryDirect().create();
 		pg::KeyPressedEventComponent& evt =
 			pg::World::GetRegistryDirect().emplace<pg::KeyPressedEventComponent>(evtEnt);
 		evt.m_KeyCode = pg::PG_KEY_W;
@@ -131,14 +131,14 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::CameraSystem>());
 
-		entt::entity camEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity camEnt = pg::World::GetRegistryDirect().create();
 		pg::OrthographicCameraComponent& cam =
 			pg::World::GetRegistryDirect().emplace<pg::OrthographicCameraComponent>(camEnt);
 		cam.m_CameraPosition        = { 0.f, 0.f, 0.f };
 		cam.m_CameraTranslationSpeed = 5.f;
 		cam.m_ReactsToInput          = true;
 
-		entt::entity evtEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity evtEnt = pg::World::GetRegistryDirect().create();
 		pg::KeyPressedEventComponent& evt =
 			pg::World::GetRegistryDirect().emplace<pg::KeyPressedEventComponent>(evtEnt);
 		evt.m_KeyCode = pg::PG_KEY_S;
@@ -160,13 +160,13 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::CameraSystem>());
 
-		entt::entity camEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity camEnt = pg::World::GetRegistryDirect().create();
 		pg::OrthographicCameraComponent& cam =
 			pg::World::GetRegistryDirect().emplace<pg::OrthographicCameraComponent>(camEnt);
 		cam.m_ZoomLevel     = 2.f;
 		cam.m_ReactsToInput = true;
 
-		entt::entity evtEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity evtEnt = pg::World::GetRegistryDirect().create();
 		pg::MouseScrolledEventComponent& scroll =
 			pg::World::GetRegistryDirect().emplace<pg::MouseScrolledEventComponent>(evtEnt);
 		scroll.m_YOffset = 4.f; // zoom in
@@ -187,13 +187,13 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::CameraSystem>());
 
-		entt::entity camEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity camEnt = pg::World::GetRegistryDirect().create();
 		pg::OrthographicCameraComponent& cam =
 			pg::World::GetRegistryDirect().emplace<pg::OrthographicCameraComponent>(camEnt);
 		cam.m_ZoomLevel     = 0.5f;
 		cam.m_ReactsToInput = true;
 
-		entt::entity evtEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity evtEnt = pg::World::GetRegistryDirect().create();
 		pg::MouseScrolledEventComponent& scroll =
 			pg::World::GetRegistryDirect().emplace<pg::MouseScrolledEventComponent>(evtEnt);
 		scroll.m_YOffset = 100.f; // large zoom in
@@ -213,13 +213,13 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::CameraSystem>());
 
-		entt::entity camEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity camEnt = pg::World::GetRegistryDirect().create();
 		pg::OrthographicCameraComponent& cam =
 			pg::World::GetRegistryDirect().emplace<pg::OrthographicCameraComponent>(camEnt);
 		cam.m_AspectRatio   = 1.f;
 		cam.m_ReactsToInput = true;
 
-		entt::entity evtEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity evtEnt = pg::World::GetRegistryDirect().create();
 		pg::WindowResizeEventComponent& resize =
 			pg::World::GetRegistryDirect().emplace<pg::WindowResizeEventComponent>(evtEnt);
 		resize.m_Width  = 1280;
@@ -241,14 +241,14 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::CameraSystem>());
 
-		entt::entity camEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity camEnt = pg::World::GetRegistryDirect().create();
 		pg::OrthographicCameraComponent& cam =
 			pg::World::GetRegistryDirect().emplace<pg::OrthographicCameraComponent>(camEnt);
 		cam.m_CameraPosition        = { 0.f, 0.f, 0.f };
 		cam.m_CameraTranslationSpeed = 5.f;
 		cam.m_ReactsToInput          = false; // <-- does not react
 
-		entt::entity evtEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity evtEnt = pg::World::GetRegistryDirect().create();
 		pg::KeyPressedEventComponent& evt =
 			pg::World::GetRegistryDirect().emplace<pg::KeyPressedEventComponent>(evtEnt);
 		evt.m_KeyCode = pg::PG_KEY_D;

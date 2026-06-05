@@ -1,7 +1,7 @@
 # World
 
 ## Purpose
-The ECS backbone. `World` is a singleton that owns the `entt::registry` and `entt::dispatcher`,
+The ECS backbone. `World` is a singleton that owns the `pg::ecs::Registry` and `pg::ecs::Dispatcher`,
 manages all registered systems, and drives the per-frame update cycle. `CheckedRegistryAccessor`
 is the only interface through which systems may read or write components; it enforces the
 access declarations made in `DeclareAccess()` at runtime.

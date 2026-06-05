@@ -70,10 +70,11 @@ file(GLOB UI
 )
 
 file(GLOB ECS_WORLD
-    "Pigeon/ECS/System.h"
     "Pigeon/ECS/CheckedRegistryAccessor.h"
-    "Pigeon/ECS/World.h"
+    "Pigeon/ECS/Entity.h"
+    "Pigeon/ECS/System.h"
     "Pigeon/ECS/World.cpp"
+    "Pigeon/ECS/World.h"
 )
 
 file(GLOB ECS_SYSTEMS)

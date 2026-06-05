@@ -20,13 +20,13 @@ namespace CatchTestsetFail
 		world.RegisterSystem(std::make_unique<pg::ui::UIEventSystem>());
 
 		// RendererConfig exists but no InputState.
-		entt::entity cfgEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity cfgEnt = pg::World::GetRegistryDirect().create();
 		pg::ui::RendererConfigSingletonComponent& cfg =
 			pg::World::GetRegistryDirect().emplace<pg::ui::RendererConfigSingletonComponent>(cfgEnt);
 		cfg.m_Width  = 1920.f;
 		cfg.m_Height = 1080.f;
 
-		entt::entity uiEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity uiEnt = pg::World::GetRegistryDirect().create();
 		pg::ui::BaseComponent& base =
 			pg::World::GetRegistryDirect().emplace<pg::ui::BaseComponent>(uiEnt);
 		base.m_Size    = { 200.f, 100.f };
@@ -47,12 +47,12 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::ui::UIEventSystem>());
 
-		entt::entity inputEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity inputEnt = pg::World::GetRegistryDirect().create();
 		pg::InputStateSingletonComponent& input =
 			pg::World::GetRegistryDirect().emplace<pg::InputStateSingletonComponent>(inputEnt);
 		input.m_MousePos = { 10.f, 10.f };
 
-		entt::entity uiEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity uiEnt = pg::World::GetRegistryDirect().create();
 		pg::ui::BaseComponent& base =
 			pg::World::GetRegistryDirect().emplace<pg::ui::BaseComponent>(uiEnt);
 		base.m_Size    = { 200.f, 100.f };
@@ -73,23 +73,23 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::ui::UIEventSystem>());
 
-		entt::entity inputEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity inputEnt = pg::World::GetRegistryDirect().create();
 		pg::InputStateSingletonComponent& input =
 			pg::World::GetRegistryDirect().emplace<pg::InputStateSingletonComponent>(inputEnt);
 
-		entt::entity cfgEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity cfgEnt = pg::World::GetRegistryDirect().create();
 		pg::ui::RendererConfigSingletonComponent& cfg =
 			pg::World::GetRegistryDirect().emplace<pg::ui::RendererConfigSingletonComponent>(cfgEnt);
 		cfg.m_Width  = 1920.f;
 		cfg.m_Height = 1080.f;
 
-		entt::entity uiEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity uiEnt = pg::World::GetRegistryDirect().create();
 		pg::ui::BaseComponent& base =
 			pg::World::GetRegistryDirect().emplace<pg::ui::BaseComponent>(uiEnt);
 		base.m_Size    = { 200.f, 100.f };
 		base.m_Spacing = { 10.f,  20.f  };
 		base.m_UUID    = pg::UUID::Generate();
-		base.m_Parent  = entt::null;
+		base.m_Parent  = pg::ecs::null;
 
 		// Mouse outside bounds — just outside top-left corner.
 		input.m_MousePos = { 9.f, 19.f };
@@ -119,24 +119,24 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::ui::UIEventSystem>());
 
-		entt::entity inputEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity inputEnt = pg::World::GetRegistryDirect().create();
 		pg::InputStateSingletonComponent& input =
 			pg::World::GetRegistryDirect().emplace<pg::InputStateSingletonComponent>(inputEnt);
 
-		entt::entity cfgEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity cfgEnt = pg::World::GetRegistryDirect().create();
 		pg::ui::RendererConfigSingletonComponent& cfg =
 			pg::World::GetRegistryDirect().emplace<pg::ui::RendererConfigSingletonComponent>(cfgEnt);
 		cfg.m_Width  = 1920.f;
 		cfg.m_Height = 1080.f;
 
-		entt::entity uiEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity uiEnt = pg::World::GetRegistryDirect().create();
 		pg::ui::BaseComponent& base =
 			pg::World::GetRegistryDirect().emplace<pg::ui::BaseComponent>(uiEnt);
 		// Element at (10, 20) with size (200, 100) -> bounds x:[10,210], y:[20,120]
 		base.m_Size    = { 200.f, 100.f };
 		base.m_Spacing = { 10.f,  20.f  };
 		base.m_UUID    = pg::UUID::Generate();
-		base.m_Parent  = entt::null;
+		base.m_Parent  = pg::ecs::null;
 
 		// Bottom-right corner is inclusive.
 		input.m_MousePos = { 210.f, 120.f };
@@ -163,23 +163,23 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::ui::UIEventSystem>());
 
-		entt::entity inputEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity inputEnt = pg::World::GetRegistryDirect().create();
 		pg::InputStateSingletonComponent& input =
 			pg::World::GetRegistryDirect().emplace<pg::InputStateSingletonComponent>(inputEnt);
 
-		entt::entity cfgEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity cfgEnt = pg::World::GetRegistryDirect().create();
 		pg::ui::RendererConfigSingletonComponent& cfg =
 			pg::World::GetRegistryDirect().emplace<pg::ui::RendererConfigSingletonComponent>(cfgEnt);
 		cfg.m_Width  = 1920.f;
 		cfg.m_Height = 1080.f;
 
-		entt::entity uiEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity uiEnt = pg::World::GetRegistryDirect().create();
 		pg::ui::BaseComponent& base =
 			pg::World::GetRegistryDirect().emplace<pg::ui::BaseComponent>(uiEnt);
 		base.m_Size    = { 200.f, 100.f };
 		base.m_Spacing = { 10.f,  20.f  };
 		base.m_UUID    = pg::UUID::Generate();
-		base.m_Parent  = entt::null;
+		base.m_Parent  = pg::ecs::null;
 
 		// Mouse inside, button pressed.
 		input.m_MousePos = { 50.f, 50.f };
@@ -205,23 +205,23 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::ui::UIEventSystem>());
 
-		entt::entity inputEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity inputEnt = pg::World::GetRegistryDirect().create();
 		pg::InputStateSingletonComponent& input =
 			pg::World::GetRegistryDirect().emplace<pg::InputStateSingletonComponent>(inputEnt);
 
-		entt::entity cfgEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity cfgEnt = pg::World::GetRegistryDirect().create();
 		pg::ui::RendererConfigSingletonComponent& cfg =
 			pg::World::GetRegistryDirect().emplace<pg::ui::RendererConfigSingletonComponent>(cfgEnt);
 		cfg.m_Width  = 1920.f;
 		cfg.m_Height = 1080.f;
 
-		entt::entity uiEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity uiEnt = pg::World::GetRegistryDirect().create();
 		pg::ui::BaseComponent& base =
 			pg::World::GetRegistryDirect().emplace<pg::ui::BaseComponent>(uiEnt);
 		base.m_Size    = { 200.f, 100.f };
 		base.m_Spacing = { 10.f,  20.f  };
 		base.m_UUID    = pg::UUID::Generate();
-		base.m_Parent  = entt::null;
+		base.m_Parent  = pg::ecs::null;
 
 		// Simulate release: key in released map, not in pressed.
 		input.m_MousePos = { 50.f, 50.f };
@@ -247,23 +247,23 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::ui::UIEventSystem>());
 
-		entt::entity inputEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity inputEnt = pg::World::GetRegistryDirect().create();
 		pg::InputStateSingletonComponent& input =
 			pg::World::GetRegistryDirect().emplace<pg::InputStateSingletonComponent>(inputEnt);
 
-		entt::entity cfgEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity cfgEnt = pg::World::GetRegistryDirect().create();
 		pg::ui::RendererConfigSingletonComponent& cfg =
 			pg::World::GetRegistryDirect().emplace<pg::ui::RendererConfigSingletonComponent>(cfgEnt);
 		cfg.m_Width  = 1920.f;
 		cfg.m_Height = 1080.f;
 
-		entt::entity uiEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity uiEnt = pg::World::GetRegistryDirect().create();
 		pg::ui::BaseComponent& base =
 			pg::World::GetRegistryDirect().emplace<pg::ui::BaseComponent>(uiEnt);
 		base.m_Size    = { 200.f, 100.f };
 		base.m_Spacing = { 10.f,  20.f  };
 		base.m_UUID    = pg::UUID::Generate();
-		base.m_Parent  = entt::null;
+		base.m_Parent  = pg::ecs::null;
 
 		// Mouse is outside the element bounds.
 		input.m_MousePos = { 5.f, 5.f };
@@ -286,23 +286,23 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::ui::UIEventSystem>());
 
-		entt::entity inputEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity inputEnt = pg::World::GetRegistryDirect().create();
 		pg::InputStateSingletonComponent& input =
 			pg::World::GetRegistryDirect().emplace<pg::InputStateSingletonComponent>(inputEnt);
 
-		entt::entity cfgEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity cfgEnt = pg::World::GetRegistryDirect().create();
 		pg::ui::RendererConfigSingletonComponent& cfg =
 			pg::World::GetRegistryDirect().emplace<pg::ui::RendererConfigSingletonComponent>(cfgEnt);
 		cfg.m_Width  = 1920.f;
 		cfg.m_Height = 1080.f;
 
-		entt::entity uiEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity uiEnt = pg::World::GetRegistryDirect().create();
 		pg::ui::BaseComponent& base =
 			pg::World::GetRegistryDirect().emplace<pg::ui::BaseComponent>(uiEnt);
 		base.m_Size    = { 200.f, 100.f };
 		base.m_Spacing = { 10.f,  20.f  };
 		base.m_UUID    = pg::UUID::Generate();
-		base.m_Parent  = entt::null;
+		base.m_Parent  = pg::ecs::null;
 		base.m_Enabled = false;
 
 		input.m_MousePos = { 50.f, 50.f };
@@ -325,24 +325,24 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::ui::UIEventSystem>());
 
-		entt::entity inputEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity inputEnt = pg::World::GetRegistryDirect().create();
 		pg::InputStateSingletonComponent& input =
 			pg::World::GetRegistryDirect().emplace<pg::InputStateSingletonComponent>(inputEnt);
 
-		entt::entity cfgEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity cfgEnt = pg::World::GetRegistryDirect().create();
 		pg::ui::RendererConfigSingletonComponent& cfg =
 			pg::World::GetRegistryDirect().emplace<pg::ui::RendererConfigSingletonComponent>(cfgEnt);
 		cfg.m_Width  = 1920.f;
 		cfg.m_Height = 1080.f;
 
-		entt::entity parentEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity parentEnt = pg::World::GetRegistryDirect().create();
 		pg::ui::BaseComponent& parentBase =
 			pg::World::GetRegistryDirect().emplace<pg::ui::BaseComponent>(parentEnt);
 		parentBase.m_Enabled = false;
 		parentBase.m_Size    = { 500.f, 500.f };
 		parentBase.m_Spacing = { 0.f,   0.f   };
 
-		entt::entity childEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity childEnt = pg::World::GetRegistryDirect().create();
 		pg::ui::BaseComponent& childBase =
 			pg::World::GetRegistryDirect().emplace<pg::ui::BaseComponent>(childEnt);
 		childBase.m_Enabled = true;

@@ -103,7 +103,7 @@ void pg::InputSystem::Update(const pg::Timestep& ts)
 	if (view.empty())
 	{
 		pg::InputStateSingletonComponent component;
-		entt::entity entity = accessor.create();
+		pg::ecs::Entity entity = accessor.create();
 		accessor.emplace_deferred<pg::InputStateSingletonComponent>(entity, std::move(component));
 	}
 	else

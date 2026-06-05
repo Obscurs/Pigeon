@@ -1,0 +1,28 @@
+# Entity
+
+## Purpose
+The ECS abstraction layer. `Entity.h` is the single seam at which the underlying ECS library
+(EnTT) is named. It gives the engine its own vocabulary (`pg::ecs::*`) for the library's public
+types so that PigeonLib, SandboxApp, and the unit tests never reference `entt::` directly. If the
+ECS backend is ever swapped or wrapped, this header (plus the registry/dispatcher ownership in
+`World`) is the only place that changes.
+
+## Key Types
+
+| `pg::ecs` name | Backing type | Role |
+|---|---|---|
+| `pg::ecs::Entity` | `entt::entity` | Handle to an entity |
+| `pg::ecs::null` | `entt::null` | Sentinel value meaning "no entity" |
+| `pg::ecs::Registry` | `entt::registry` | Owns entities and their components |
+| `pg::ecs::Dispatcher` | `entt::dispatcher` | Delivers signals/events between systems |
+| `pg::ecs::exclude_t` / `pg::ecs::exclude` | `entt::exclude_t` / `entt::exclude` | View filter that removes entities owning the listed components |
+
+## Notes
+- These are **type aliases**, not opaque wrappers — zero runtime cost, and entity comparison,
+  hashing, and the `null` sentinel keep working unchanged. See
+  `docs/adr/0002-pg-ecs-entity-abstraction-over-entt.md` for the trade-off.
+- `World` and `CheckedRegistryAccessor` expose these names in their public APIs
+  (`GetRegistryDirect`, `GetDispatcher`, `create`, `view`, etc.).
+
+## File Location
+`Code/PigeonLib/Pigeon/ECS/`

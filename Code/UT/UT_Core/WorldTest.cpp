@@ -94,7 +94,7 @@ namespace
 			if (!m_Added)
 			{
 				auto accessor = pg::World::GetRegistry();
-				entt::entity e = accessor.create();
+				pg::ecs::Entity e = accessor.create();
 				accessor.emplace_deferred<CompB>(e);
 				m_Added = true;
 			}
@@ -148,7 +148,7 @@ namespace
 			// Deferred-add a new entity with CompA — only once across all frames.
 			if (!m_Added)
 			{
-				entt::entity e = accessor.create();
+				pg::ecs::Entity e = accessor.create();
 				accessor.emplace_deferred<CompA>(e);
 				m_Added = true;
 			}
@@ -180,7 +180,7 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 
 		// Seed an entity with CompA so both systems have something to operate on.
-		entt::entity e = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity e = pg::World::GetRegistryDirect().create();
 		pg::World::GetRegistryDirect().emplace<CompA>(e);
 
 		// Register ReaderSystem FIRST — ordering must be determined by dependency, not insertion order.
@@ -225,7 +225,7 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 
 		// Seed one entity with CompA so the write path has something to mutate.
-		entt::entity e = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity e = pg::World::GetRegistryDirect().create();
 		pg::World::GetRegistryDirect().emplace<CompA>(e);
 
 		// RegisterSystem must not assert.

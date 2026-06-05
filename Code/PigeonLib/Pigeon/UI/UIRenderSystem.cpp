@@ -90,7 +90,7 @@ void pg::ui::UIRenderSystem::Update(const pg::Timestep& ts)
 	if (viewRenderConfig.size() == 0)
 	{
 		pg::ui::RendererConfigSingletonComponent config;
-		entt::entity configEntity = accessor.create();
+		pg::ecs::Entity configEntity = accessor.create();
 		accessor.emplace_deferred<pg::ui::RendererConfigSingletonComponent>(configEntity, std::move(config));
 		return;
 	}

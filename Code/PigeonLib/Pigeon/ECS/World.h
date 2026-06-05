@@ -1,21 +1,21 @@
 ﻿#pragma once
-#include <entt/entt.hpp>
 #include <typeindex>
 #include <vector>
 #include <unordered_set>
 
 #include "Pigeon/Core/EventComponent.h"
-#include "Pigeon/ECS/System.h"
 #include "Pigeon/ECS/CheckedRegistryAccessor.h"
+#include "Pigeon/ECS/Entity.h"
+#include "Pigeon/ECS/System.h"
 
 namespace pg
 {
 	struct DeferredRequest
 	{
-		entt::entity entity;
+		pg::ecs::Entity entity;
 		void*        payload;                                // heap-allocated component value
 		CheckedRegistryAccessor* accessor;
-		void(*apply)(CheckedRegistryAccessor* accessor, entt::registry&, entt::entity, void*); // typed trampoline, no virtual dispatch
+		void(*apply)(CheckedRegistryAccessor* accessor, pg::ecs::Registry&, pg::ecs::Entity, void*); // typed trampoline, no virtual dispatch
 		void(*destroy)(void*);                               // cleanup if entity is invalid at flush time
 	};
 
@@ -48,13 +48,13 @@ namespace pg
 
 		
 #ifdef TESTS_ENABLED
-		static entt::registry& GetRegistryDirect(); // ONLY FOR UT
+		static pg::ecs::Registry& GetRegistryDirect(); // ONLY FOR UT
 #endif
-		inline static entt::dispatcher& GetDispatcher() { return s_Instance->m_Dispatcher; }
+		inline static pg::ecs::Dispatcher& GetDispatcher() { return s_Instance->m_Dispatcher; }
 
 		void PushDeferredRequest(DeferredRequest op);
 		void PushDeferredOneFrameRequest(DeferredRequest op);
-		void PushDeferredDestroy(const entt::entity& entity);
+		void PushDeferredDestroy(const pg::ecs::Entity& entity);
 
 		// Deferred add — asserts Component is in addSet, buffers the operation until end-of-frame.
 		template<typename Component, typename... Args>
@@ -63,11 +63,11 @@ namespace pg
 			// Allocate the component value on the heap (unavoidable for type-erasure).
 			auto* payload = new Component(std::forward<Args>(args)...);
 
-			entt::entity e = m_Registry.create();
+			pg::ecs::Entity e = m_Registry.create();
 			// Static template instantiations — no per-call heap allocation for the trampolines.
 			// Non-capturing lambdas are implicitly convertible to function pointers in C++17.
 			PushDeferredRequest({ e, payload, nullptr,
-				+[](CheckedRegistryAccessor*, entt::registry& reg, entt::entity ent, void* p)
+				+[](CheckedRegistryAccessor*, pg::ecs::Registry& reg, pg::ecs::Entity ent, void* p)
 				{
 					// Double-add assertion lives here where Component is in scope.
 					PG_CORE_ASSERT(!reg.all_of<Component>(ent),
@@ -91,8 +91,8 @@ namespace pg
 			SystemAccessDecl        decl;
 		};
 
-		entt::registry m_Registry;
-		entt::dispatcher m_Dispatcher;
+		pg::ecs::Registry m_Registry;
+		pg::ecs::Dispatcher m_Dispatcher;
 		std::vector<SystemEntry> m_Systems;
 		std::unordered_set<std::type_index> m_SystemTypes;
 
@@ -105,7 +105,7 @@ namespace pg
 		// Buffer for deferred component adds (flushed after all systems Update()).
 		std::vector<DeferredRequest> m_DeferredRequests;
 		std::vector<DeferredRequest> m_DeferredOneFrameComponents;
-		std::vector<entt::entity> m_DeferredDestroys;
+		std::vector<pg::ecs::Entity> m_DeferredDestroys;
 		static pg::U_Ptr<World> s_Instance;
 	};
 }

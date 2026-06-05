@@ -22,17 +22,17 @@ namespace
 		return ss.str();
 	}
 
-	void DestroyUI(pg::CheckedRegistryAccessor& accessor, entt::entity ent)
+	void DestroyUI(pg::CheckedRegistryAccessor& accessor, pg::ecs::Entity ent)
 	{
-		std::vector<entt::entity> children = pg::ui::GetUIChildrenForElement(accessor, ent);
-		for (entt::entity& child : children)
+		std::vector<pg::ecs::Entity> children = pg::ui::GetUIChildrenForElement(accessor, ent);
+		for (pg::ecs::Entity& child : children)
 		{
 			DestroyUI(accessor, child);
 		}
 		accessor.destroy_deferred(ent);
 	}
 
-	void ParseImageComponentFromJson(pg::CheckedRegistryAccessor& accessor, const json& jsonObject, entt::entity ent)
+	void ParseImageComponentFromJson(pg::CheckedRegistryAccessor& accessor, const json& jsonObject, pg::ecs::Entity ent)
 	{
 		pg::ui::ImageComponent component;
 		if (jsonObject.contains("id"))
@@ -44,7 +44,7 @@ namespace
 		accessor.emplace_deferred<pg::ui::ImageComponent>(ent, std::move(component));
 	}
 
-	void ParseTextComponentFromJson(pg::CheckedRegistryAccessor& accessor, const json& jsonObject, entt::entity ent)
+	void ParseTextComponentFromJson(pg::CheckedRegistryAccessor& accessor, const json& jsonObject, pg::ecs::Entity ent)
 	{
 		pg::ui::TextComponent component;
 		if (jsonObject.contains("colR"))
@@ -90,12 +90,12 @@ namespace
 		accessor.emplace_deferred<pg::ui::TextComponent>(ent, std::move(component));
 	}
 
-	void ParseJsonUIElement(pg::CheckedRegistryAccessor& accessor, const json& jsonObject, entt::entity parent)
+	void ParseJsonUIElement(pg::CheckedRegistryAccessor& accessor, const json& jsonObject, pg::ecs::Entity parent)
 	{
 		if (jsonObject.contains("ui") && jsonObject["ui"].is_object())
 		{
 			const json& uiJsonObject = jsonObject["ui"];
-			entt::entity ent = accessor.create();
+			pg::ecs::Entity ent = accessor.create();
 			pg::ui::BaseComponent baseComp;
 			baseComp.m_Parent = parent;
 
@@ -198,7 +198,7 @@ namespace
 		const std::string jsonString = ReadFileToString(resourcesComponent.m_UILayoutMap.at(layoutID));
 		json jsonObject = json::parse(jsonString);
 		auto accessor = pg::World::GetRegistry();
-		ParseJsonUIElement(accessor, jsonObject, entt::null);
+		ParseJsonUIElement(accessor, jsonObject, pg::ecs::null);
 	}
 
 	void LoadLayoutFromFile(const std::string& path)
@@ -206,7 +206,7 @@ namespace
 		const std::string jsonString = ReadFileToString(path);
 		json jsonObject = json::parse(jsonString);
 		auto accessor = pg::World::GetRegistry();
-		ParseJsonUIElement(accessor, jsonObject, entt::null);
+		ParseJsonUIElement(accessor, jsonObject, pg::ecs::null);
 	}
 
 	

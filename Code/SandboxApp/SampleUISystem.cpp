@@ -20,14 +20,14 @@ pg::SystemAccessDecl sbx::SampleUISystem::DeclareAccess() const
 void sbx::SampleUISystem::Update(const pg::Timestep& ts)
 {
 	auto accessor = pg::World::GetRegistry();
-	entt::registry& reg = accessor.GetInternalRegistry();
+	pg::ecs::Registry& reg = accessor.GetInternalRegistry();
 
 	auto viewRenderConfig = accessor.view<const pg::ui::RendererConfig>();
 	if (viewRenderConfig.size() == 0)
 	{
 		pg::ui::RendererConfig config;
 		config.m_Font = m_Helper->CreateUIFont();
-		entt::entity configEntity = accessor.create();
+		pg::ecs::Entity configEntity = accessor.create();
 		accessor.emplace_deferred<pg::ui::RendererConfig>(configEntity, std::move(config));
 		return;
 	}

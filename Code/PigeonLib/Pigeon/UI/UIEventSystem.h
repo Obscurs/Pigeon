@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include <entt/entt.hpp>
 #include "Pigeon/ECS/System.h"
 
 namespace pg::ui

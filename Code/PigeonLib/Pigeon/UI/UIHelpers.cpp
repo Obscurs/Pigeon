@@ -6,7 +6,7 @@ glm::vec4 pg::ui::GetGlobalBoundsForElementParent(pg::CheckedRegistryAccessor& a
 {
 	glm::vec4 globalBounds(0.f, 0.f, renderComponent.m_Width, renderComponent.m_Height);
 
-	if (baseComponent.m_Parent != entt::null && accessor.any_of<pg::ui::BaseComponent>(baseComponent.m_Parent))
+	if (baseComponent.m_Parent != pg::ecs::null && accessor.any_of<pg::ui::BaseComponent>(baseComponent.m_Parent))
 	{
 		const pg::ui::BaseComponent& parentComponent = accessor.get<const pg::ui::BaseComponent>(baseComponent.m_Parent);
 		level += 1;
@@ -81,8 +81,8 @@ glm::vec4 pg::ui::GetGlobalBoundsForElement(pg::CheckedRegistryAccessor& accesso
 bool pg::ui::IsUIElementEnabled(pg::CheckedRegistryAccessor& accessor, const pg::ui::BaseComponent& baseComponent)
 {
 	bool enabled = baseComponent.m_Enabled;
-	entt::entity parentEntity = baseComponent.m_Parent;
-	while (enabled && parentEntity != entt::null)
+	pg::ecs::Entity parentEntity = baseComponent.m_Parent;
+	while (enabled && parentEntity != pg::ecs::null)
 	{
 		PG_CORE_EXCEPT(accessor.any_of<pg::ui::BaseComponent>(parentEntity), "parent entity does not have base component");
 		const pg::ui::BaseComponent& parentComponent = accessor.get<const pg::ui::BaseComponent>(parentEntity);
@@ -92,9 +92,9 @@ bool pg::ui::IsUIElementEnabled(pg::CheckedRegistryAccessor& accessor, const pg:
 	return enabled;
 }
 
-std::vector<entt::entity> pg::ui::GetUIChildrenForElement(pg::CheckedRegistryAccessor& accessor, entt::entity ent)
+std::vector<pg::ecs::Entity> pg::ui::GetUIChildrenForElement(pg::CheckedRegistryAccessor& accessor, pg::ecs::Entity ent)
 {
-	std::vector<entt::entity> children{};
+	std::vector<pg::ecs::Entity> children{};
 	auto view = accessor.view<const pg::ui::BaseComponent>();
 	for (auto child : view)
 	{

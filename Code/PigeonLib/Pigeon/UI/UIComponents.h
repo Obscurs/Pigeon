@@ -32,7 +32,7 @@ namespace pg::ui
 		EHAlignType m_HAlign{ EHAlignType::eLeft };
 		EVAlignType m_VAlign{ EVAlignType::eTop };
 
-		entt::entity m_Parent{ entt::null };
+		pg::ecs::Entity m_Parent{ pg::ecs::null };
 		pg::UUID m_UUID{};
 		bool m_Enabled{ true };
 	};
@@ -93,7 +93,7 @@ namespace pg::ui
 		UIUpdateParentOneFrameComponent() = default;
 		UIUpdateParentOneFrameComponent(const UIUpdateParentOneFrameComponent&) = default;
 
-		entt::entity m_Parent{ entt::null };
+		pg::ecs::Entity m_Parent{ pg::ecs::null };
 	};
 
 	struct UIUpdateUUIDOneFrameComponent

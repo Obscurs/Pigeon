@@ -34,7 +34,7 @@ namespace sbx
 		pg::UUID m_TextureID1{};
 		pg::S_Ptr<pg::Font> m_Font;
 
-		entt::entity m_UIEntity1{ entt::null };
-		entt::entity m_UIEntity2{ entt::null };
+		pg::ecs::Entity m_UIEntity1{ pg::ecs::null };
+		pg::ecs::Entity m_UIEntity2{ pg::ecs::null };
 	};
 }

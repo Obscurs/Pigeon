@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <entt/entt.hpp>
+#include "Pigeon/ECS/Entity.h"
 
 namespace pg
 {
@@ -16,5 +16,5 @@ namespace pg::ui
 	glm::vec4 GetGlobalBoundsForElement(pg::CheckedRegistryAccessor& accessor, const pg::ui::BaseComponent& baseComponent, const pg::ui::RendererConfigSingletonComponent& renderComponent, const glm::vec2& uiBoundsSize, int& level);
 
 	bool IsUIElementEnabled(pg::CheckedRegistryAccessor& accessor, const pg::ui::BaseComponent& baseComponent);
-	std::vector<entt::entity> GetUIChildrenForElement(pg::CheckedRegistryAccessor& accessor, entt::entity ent);
+	std::vector<pg::ecs::Entity> GetUIChildrenForElement(pg::CheckedRegistryAccessor& accessor, pg::ecs::Entity ent);
 }

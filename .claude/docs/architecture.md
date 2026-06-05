@@ -7,7 +7,7 @@
 
 ## ECS Contract
 
-- `World` owns the single `entt::registry`. All entity and component access goes through `CheckedRegistryAccessor`.
+- `World` owns the single `pg::ecs::Registry`. All entity and component access goes through `CheckedRegistryAccessor`.
 - **One writer per component.** Only one system may write or add a given component type. Violations assert at `RegisterSystem` time.
 - Systems declare their complete component access via `DeclareAccess()`. Accessing an undeclared component asserts at runtime.
 - **Execution order is automatic.** `World` derives system order from `DeclareAccess` declarations using a topological sort. Never set or assume order manually — declare the correct access and the order follows.

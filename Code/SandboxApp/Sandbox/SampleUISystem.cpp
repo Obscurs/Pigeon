@@ -57,9 +57,9 @@ void sbx::SampleUISystem::Update(const pg::Timestep& ts)
 	if (view.empty())
 	{
 		sbx::SampleUISingletonComponent component;
-		entt::entity entity = accessor.create();
+		pg::ecs::Entity entity = accessor.create();
 
-		entt::entity cameraEntity = accessor.create();
+		pg::ecs::Entity cameraEntity = accessor.create();
 
 		pg::OrthographicCameraComponent cameraComponent;
 

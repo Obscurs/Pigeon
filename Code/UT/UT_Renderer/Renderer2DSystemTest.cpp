@@ -27,22 +27,22 @@ namespace
 	// config whose shader IDs match the resource map's shader keys.
 	void SeedValidRenderState()
 	{
-		entt::registry& registry = pg::World::GetRegistryDirect();
+		pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
 
 		const pg::UUID quadShaderID = pg::UUID::Generate();
 		const pg::UUID textShaderID = pg::UUID::Generate();
 
-		entt::entity camEnt = registry.create();
+		pg::ecs::Entity camEnt = registry.create();
 		registry.emplace<pg::OrthographicCameraComponent>(camEnt);
 
-		entt::entity resEnt = registry.create();
+		pg::ecs::Entity resEnt = registry.create();
 		pg::ResourceMapSingletonComponent& resources = registry.emplace<pg::ResourceMapSingletonComponent>(resEnt);
 		std::vector<unsigned char> pixels(2 * 2 * 4, 255);
 		resources.m_TextureMap[resources.m_DefaultTexture] = pg::MappedTexture{ pg::Texture2D::Create(2, 2, 4, pixels.data()), pg::EMappedTextureType::eQuad };
 		resources.m_ShaderMap[quadShaderID] = pg::Shader::Create("UTTestQuadShader");
 		resources.m_ShaderMap[textShaderID] = pg::Shader::Create("UTTestTextShader");
 
-		entt::entity cfgEnt = registry.create();
+		pg::ecs::Entity cfgEnt = registry.create();
 		pg::EngineConfigSingletonComponent& config = registry.emplace<pg::EngineConfigSingletonComponent>(cfgEnt);
 		config.m_DefaultQuadShaderID = quadShaderID;
 		config.m_DefaultTextShaderID = textShaderID;
@@ -60,10 +60,10 @@ namespace CatchTestsetFail
 		world.RegisterSystem(std::make_unique<pg::Renderer2DSystem>());
 
 		// Provide resources and config but NOT a camera.
-		entt::entity resEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity resEnt = pg::World::GetRegistryDirect().create();
 		pg::World::GetRegistryDirect().emplace<pg::ResourceMapSingletonComponent>(resEnt);
 
-		entt::entity cfgEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity cfgEnt = pg::World::GetRegistryDirect().create();
 		pg::World::GetRegistryDirect().emplace<pg::EngineConfigSingletonComponent>(cfgEnt);
 
 		world.Update(pg::Timestep(0));
@@ -82,10 +82,10 @@ namespace CatchTestsetFail
 		world.RegisterSystem(std::make_unique<pg::Renderer2DSystem>());
 
 		// Provide camera and config but NOT resources.
-		entt::entity camEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity camEnt = pg::World::GetRegistryDirect().create();
 		pg::World::GetRegistryDirect().emplace<pg::OrthographicCameraComponent>(camEnt);
 
-		entt::entity cfgEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity cfgEnt = pg::World::GetRegistryDirect().create();
 		pg::World::GetRegistryDirect().emplace<pg::EngineConfigSingletonComponent>(cfgEnt);
 
 		world.Update(pg::Timestep(0));
@@ -103,10 +103,10 @@ namespace CatchTestsetFail
 		world.RegisterSystem(std::make_unique<pg::Renderer2DSystem>());
 
 		// Provide camera and resources but NOT engine config.
-		entt::entity camEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity camEnt = pg::World::GetRegistryDirect().create();
 		pg::World::GetRegistryDirect().emplace<pg::OrthographicCameraComponent>(camEnt);
 
-		entt::entity resEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity resEnt = pg::World::GetRegistryDirect().create();
 		pg::World::GetRegistryDirect().emplace<pg::ResourceMapSingletonComponent>(resEnt);
 
 		world.Update(pg::Timestep(0));
@@ -128,7 +128,7 @@ namespace CatchTestsetFail
 
 		// A queued draw request exercises the render path; batches are flushed
 		// before the frame ends, so it leaves no observable batch state behind.
-		entt::entity drawEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity drawEnt = pg::World::GetRegistryDirect().create();
 		pg::DrawQuadInFrameEvent drawEvent;
 		drawEvent.m_Transform = glm::mat4(1.f);
 		pg::World::GetRegistryDirect().emplace<pg::DrawQuadInFrameEvent>(drawEnt, drawEvent);

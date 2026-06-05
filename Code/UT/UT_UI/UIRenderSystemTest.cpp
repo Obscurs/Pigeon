@@ -79,14 +79,14 @@ namespace CatchTestsetFail
 
 		// EngineConfig and ResourceMap are added by other systems, so the test supplies
 		// them to get this system past its early exit.
-		entt::entity engEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity engEnt = pg::World::GetRegistryDirect().create();
 		pg::World::GetRegistryDirect().emplace<pg::EngineConfigSingletonComponent>(engEnt);
 
-		entt::entity resEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity resEnt = pg::World::GetRegistryDirect().create();
 		pg::World::GetRegistryDirect().emplace<pg::ResourceMapSingletonComponent>(resEnt);
 
 		// Disabled UI image entity.
-		entt::entity uiEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity uiEnt = pg::World::GetRegistryDirect().create();
 		pg::ui::BaseComponent& base =
 			pg::World::GetRegistryDirect().emplace<pg::ui::BaseComponent>(uiEnt);
 		base.m_Enabled = false;
@@ -117,7 +117,7 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::ui::UIRenderSystem>());
 
-		entt::registry& registry = pg::World::GetRegistryDirect();
+		pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
 
 		// First frame: the system creates the RendererConfigSingletonComponent itself
 		// (the test must not pre-create a component the system adds).
@@ -125,19 +125,19 @@ namespace CatchTestsetFail
 
 		// EngineConfig and ResourceMap are added by other systems, so the test supplies
 		// them to get this system to the image path.
-		entt::entity engEnt = registry.create();
+		pg::ecs::Entity engEnt = registry.create();
 		registry.emplace<pg::EngineConfigSingletonComponent>(engEnt);
 
-		entt::entity resEnt = registry.create();
+		pg::ecs::Entity resEnt = registry.create();
 		registry.emplace<pg::ResourceMapSingletonComponent>(resEnt);
 
 		// Enabled top-level image element.
 		const pg::UUID textureHandle = pg::UUID::Generate();
-		entt::entity uiEnt = registry.create();
+		pg::ecs::Entity uiEnt = registry.create();
 		pg::ui::BaseComponent& base = registry.emplace<pg::ui::BaseComponent>(uiEnt);
 		base.m_Enabled = true;
 		base.m_Size    = { 100.f, 50.f };
-		base.m_Parent  = entt::null;
+		base.m_Parent  = pg::ecs::null;
 		base.m_UUID    = pg::UUID::Generate();
 
 		pg::ui::ImageComponent& img = registry.emplace<pg::ui::ImageComponent>(uiEnt);

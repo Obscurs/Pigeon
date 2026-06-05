@@ -25,7 +25,7 @@ namespace CatchTestsetFail
 		world.RegisterSystem(std::make_unique<sbx::SampleUISystem>());
 
 		// Provide config but NOT resource map.
-		entt::entity cfgEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity cfgEnt = pg::World::GetRegistryDirect().create();
 		pg::World::GetRegistryDirect().emplace<sbx::SampleUIConfigSingletonComponent>(cfgEnt);
 
 		world.Update(pg::Timestep(0));
@@ -43,7 +43,7 @@ namespace CatchTestsetFail
 		world.RegisterSystem(std::make_unique<sbx::SampleUISystem>());
 
 		// Provide resources but NOT config.
-		entt::entity resEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity resEnt = pg::World::GetRegistryDirect().create();
 		pg::World::GetRegistryDirect().emplace<pg::ResourceMapSingletonComponent>(resEnt);
 
 		world.Update(pg::Timestep(0));
@@ -62,10 +62,10 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<sbx::SampleUISystem>());
 
-		entt::entity resEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity resEnt = pg::World::GetRegistryDirect().create();
 		pg::World::GetRegistryDirect().emplace<pg::ResourceMapSingletonComponent>(resEnt);
 
-		entt::entity cfgEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity cfgEnt = pg::World::GetRegistryDirect().create();
 		pg::World::GetRegistryDirect().emplace<sbx::SampleUIConfigSingletonComponent>(cfgEnt);
 
 		auto viewBefore = pg::World::GetRegistryDirect().view<sbx::SampleUISingletonComponent>();
@@ -85,10 +85,10 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<sbx::SampleUISystem>());
 
-		entt::entity resEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity resEnt = pg::World::GetRegistryDirect().create();
 		pg::World::GetRegistryDirect().emplace<pg::ResourceMapSingletonComponent>(resEnt);
 
-		entt::entity cfgEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity cfgEnt = pg::World::GetRegistryDirect().create();
 		sbx::SampleUIConfigSingletonComponent& cfg =
 			pg::World::GetRegistryDirect().emplace<sbx::SampleUIConfigSingletonComponent>(cfgEnt);
 		cfg.m_DefaultFontID = pg::UUID::Generate();
@@ -111,10 +111,10 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<sbx::SampleUISystem>());
 
-		entt::entity resEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity resEnt = pg::World::GetRegistryDirect().create();
 		pg::World::GetRegistryDirect().emplace<pg::ResourceMapSingletonComponent>(resEnt);
 
-		entt::entity cfgEnt = pg::World::GetRegistryDirect().create();
+		pg::ecs::Entity cfgEnt = pg::World::GetRegistryDirect().create();
 		pg::World::GetRegistryDirect().emplace<sbx::SampleUIConfigSingletonComponent>(cfgEnt);
 
 		auto viewBefore = pg::World::GetRegistryDirect().view<pg::OrthographicCameraComponent>();

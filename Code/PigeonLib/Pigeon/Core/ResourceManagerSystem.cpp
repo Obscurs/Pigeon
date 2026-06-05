@@ -117,7 +117,7 @@ void pg::ResourceManagerSystem::Update(const pg::Timestep& ts)
 	if (accessor.view<const pg::ResourceMapSingletonComponent>().empty())
 	{
 		pg::ResourceMapSingletonComponent component;
-		entt::entity ent = accessor.create();
+		pg::ecs::Entity ent = accessor.create();
 
 		std::vector<unsigned char> data(2 * 2 * 4, 255);
 		pg::MappedTexture mappedTexture = { std::move(pg::Texture2D::Create(2, 2, 4, data.data())), pg::EMappedTextureType::eQuad };

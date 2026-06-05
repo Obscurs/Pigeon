@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <catch2/catch.hpp>
 #include "Utils/TestApp.h"
 
@@ -23,10 +23,10 @@ namespace
 	// first Update with no events makes the system create the singleton via deferred
 	// add; it is visible once the frame's deferred requests are flushed. Returns the
 	// entity holding the freshly created state.
-	entt::entity PrimeInputState(pg::World& world)
+	pg::ecs::Entity PrimeInputState(pg::World& world)
 	{
 		world.Update(pg::Timestep(0));
-		entt::registry& registry = pg::World::GetRegistryDirect();
+		pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
 		auto view = registry.view<pg::InputStateSingletonComponent>();
 		REQUIRE(view.size() == 1);
 		return view.front();
@@ -37,32 +37,32 @@ namespace
 	// reprocessed on later frames. Each helper mirrors that production shape.
 	void EmplaceKeyPressed(int keyCode)
 	{
-		entt::registry& registry = pg::World::GetRegistryDirect();
-		entt::entity evtEnt = registry.create();
+		pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+		pg::ecs::Entity evtEnt = registry.create();
 		registry.emplace<pg::EventComponent>(evtEnt);
 		registry.emplace<pg::KeyPressedEventComponent>(evtEnt).m_KeyCode = keyCode;
 	}
 
 	void EmplaceKeyReleased(int keyCode)
 	{
-		entt::registry& registry = pg::World::GetRegistryDirect();
-		entt::entity evtEnt = registry.create();
+		pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+		pg::ecs::Entity evtEnt = registry.create();
 		registry.emplace<pg::EventComponent>(evtEnt);
 		registry.emplace<pg::KeyReleasedEventComponent>(evtEnt).m_KeyCode = keyCode;
 	}
 
 	void EmplaceKeyTyped(int keyCode)
 	{
-		entt::registry& registry = pg::World::GetRegistryDirect();
-		entt::entity evtEnt = registry.create();
+		pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+		pg::ecs::Entity evtEnt = registry.create();
 		registry.emplace<pg::EventComponent>(evtEnt);
 		registry.emplace<pg::KeyTypedEventComponent>(evtEnt).m_KeyCode = keyCode;
 	}
 
 	void EmplaceMouseMoved(float x, float y)
 	{
-		entt::registry& registry = pg::World::GetRegistryDirect();
-		entt::entity evtEnt = registry.create();
+		pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+		pg::ecs::Entity evtEnt = registry.create();
 		registry.emplace<pg::EventComponent>(evtEnt);
 		pg::MouseMovedEventComponent& moved = registry.emplace<pg::MouseMovedEventComponent>(evtEnt);
 		moved.m_MouseX = x;
@@ -71,16 +71,16 @@ namespace
 
 	void EmplaceMouseButtonPressed(int button)
 	{
-		entt::registry& registry = pg::World::GetRegistryDirect();
-		entt::entity evtEnt = registry.create();
+		pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+		pg::ecs::Entity evtEnt = registry.create();
 		registry.emplace<pg::EventComponent>(evtEnt);
 		registry.emplace<pg::MouseButtonPressedEventComponent>(evtEnt).m_Button = button;
 	}
 
 	void EmplaceMouseButtonReleased(int button)
 	{
-		entt::registry& registry = pg::World::GetRegistryDirect();
-		entt::entity evtEnt = registry.create();
+		pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+		pg::ecs::Entity evtEnt = registry.create();
 		registry.emplace<pg::EventComponent>(evtEnt);
 		registry.emplace<pg::MouseButtonReleasedEventComponent>(evtEnt).m_Button = button;
 	}
@@ -114,7 +114,7 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::InputSystem>());
 
-		entt::entity stateEnt = PrimeInputState(world);
+		pg::ecs::Entity stateEnt = PrimeInputState(world);
 
 		EmplaceKeyPressed(pg::PG_KEY_A);
 		world.Update(pg::Timestep(0));
@@ -133,7 +133,7 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::InputSystem>());
 
-		entt::entity stateEnt = PrimeInputState(world);
+		pg::ecs::Entity stateEnt = PrimeInputState(world);
 
 		// Drive the key into the pressed state through the system, then release it.
 		EmplaceKeyPressed(pg::PG_KEY_A);
@@ -156,7 +156,7 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::InputSystem>());
 
-		entt::entity stateEnt = PrimeInputState(world);
+		pg::ecs::Entity stateEnt = PrimeInputState(world);
 
 		EmplaceKeyTyped(pg::PG_KEY_B);
 		world.Update(pg::Timestep(0));
@@ -175,7 +175,7 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::InputSystem>());
 
-		entt::entity stateEnt = PrimeInputState(world);
+		pg::ecs::Entity stateEnt = PrimeInputState(world);
 
 		EmplaceMouseMoved(123.f, 456.f);
 		world.Update(pg::Timestep(0));
@@ -194,7 +194,7 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::InputSystem>());
 
-		entt::entity stateEnt = PrimeInputState(world);
+		pg::ecs::Entity stateEnt = PrimeInputState(world);
 
 		EmplaceMouseButtonPressed(pg::PG_MOUSE_BUTTON_LEFT);
 		world.Update(pg::Timestep(0));
@@ -212,7 +212,7 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::InputSystem>());
 
-		entt::entity stateEnt = PrimeInputState(world);
+		pg::ecs::Entity stateEnt = PrimeInputState(world);
 
 		// Press the button through the system first, then release it.
 		EmplaceMouseButtonPressed(pg::PG_MOUSE_BUTTON_LEFT);
@@ -235,7 +235,7 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::InputSystem>());
 
-		entt::entity stateEnt = PrimeInputState(world);
+		pg::ecs::Entity stateEnt = PrimeInputState(world);
 
 		// Produce a release so m_KeysReleased holds an entry going into the next frame.
 		EmplaceKeyPressed(pg::PG_KEY_A);
@@ -259,7 +259,7 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::InputSystem>());
 
-		entt::entity stateEnt = PrimeInputState(world);
+		pg::ecs::Entity stateEnt = PrimeInputState(world);
 
 		// Press the key once (counter = 1), then hold it across frames with no events.
 		EmplaceKeyPressed(pg::PG_KEY_A);
@@ -286,7 +286,7 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::InputSystem>());
 
-		entt::entity stateEnt = PrimeInputState(world);
+		pg::ecs::Entity stateEnt = PrimeInputState(world);
 
 		EmplaceKeyPressed(pg::PG_KEY_A);
 		EmplaceKeyPressed(pg::PG_KEY_B);
