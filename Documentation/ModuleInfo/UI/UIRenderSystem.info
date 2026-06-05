@@ -1,0 +1,28 @@
+# UIRenderSystem
+
+## Purpose
+Translates all enabled UI entities into in-frame draw events each frame. Image entities become
+DrawUIQuadInFrameEvent; text entities become DrawUIStringInFrameEvent. World-space bounds are
+resolved via recursive parent-chain traversal; the nesting depth is encoded as the Z component
+of the transform, providing draw-layer ordering (children render over parents).
+
+On the first frame, defers creation of RendererConfigSingletonComponent (fixed 1920x1080
+orthographic camera for UI coordinate space) and returns early; rendering begins from the second
+frame. Guards on EngineConfigSingletonComponent and ResourceMapSingletonComponent presence.
+
+## Input Components
+| Component | Access |
+|---|---|
+| EngineConfigSingletonComponent | read |
+| ResourceMapSingletonComponent | read |
+| RendererConfigSingletonComponent | read |
+| BaseComponent | read |
+| ImageComponent | read |
+| TextComponent | read |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| RendererConfigSingletonComponent | add (deferred) | Created on first frame with 1920x1080 orthographic camera |
+| DrawUIQuadInFrameEvent | add (inframe) | One per enabled image entity; Z encodes hierarchy depth |
+| DrawUIStringInFrameEvent | add (inframe) | One per enabled text entity; Z encodes hierarchy depth |

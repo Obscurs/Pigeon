@@ -1,0 +1,62 @@
+# SandboxApp Architecture
+
+## System Registration
+
+```
+pg::CreateApplication()  [Sandbox2D.cpp]
+  ├── Sandbox::Create()                       (delegates to pg::Application::Create())
+  ├── World::RegisterSystem(sbx::ConfigLoaderSystem)
+  └── World::RegisterSystem(sbx::SampleUISystem)
+```
+
+Neither system shares a write or inframe-add dependency with the other, so the ECS topological sort
+preserves registration order: ConfigLoaderSystem always executes before SampleUISystem.
+
+## Boot Sequence (Frames 1–3)
+
+```
+Frame 1
+  ConfigLoaderSystem  reads Assets/App/Config.json
+                      defers SampleUIConfigSingletonComponent
+  SampleUISystem      returns early — ResourceMapSingletonComponent not yet flushed
+
+Frame 2
+  ConfigLoaderSystem  no-op (SampleUIConfigSingletonComponent already exists)
+  SampleUISystem      both guards pass; defers SampleUISingletonComponent + OrthographicCameraComponent
+                      emits LoadLayoutEvent → UIControlSystem loads SandboxUI.json next frame
+
+Frame 3+  (steady state)
+  ConfigLoaderSystem  no-op
+  SampleUISystem      emits DrawQuadInFrameEvent, DrawSpriteInFrameEvent, DrawStringInFrameEvent × 2
+                      renders ImGui "Settings" panel (live-edit of quad/text transforms)
+```
+
+## Steady-State Data Flow
+
+```
+Assets/App/Config.json
+  └── sbx::ConfigLoaderSystem
+        └── SampleUIConfigSingletonComponent
+              └── sbx::SampleUISystem
+                    ├── SampleUISingletonComponent    (mutable scene state, ImGui-editable)
+                    ├── OrthographicCameraComponent   (scene camera; 1280x720, ReactsToInput=true)
+                    ├── DrawQuadInFrameEvent          (flat coloured quad each frame)
+                    ├── DrawSpriteInFrameEvent        (sub-texture sprite, matched by UI entity UUID)
+                    └── DrawStringInFrameEvent × 2    (static text + animated elapsed-time clock)
+
+Data/Assets/App/UI/SandboxUI.json  (loaded once via LoadLayoutEvent)
+  └── pg::UIControlSystem
+        └── BaseComponent + ImageComponent + TextComponent entities
+              └── pg::UIRenderSystem
+                    └── DrawUIQuadInFrameEvent, DrawUIStringInFrameEvent
+```
+
+## Key Files
+
+| File | Purpose |
+|---|---|
+| `Code/SandboxApp/Sandbox2D.cpp` | Entry point — CreateApplication() and system registration |
+| `Code/SandboxApp/Sandbox/ConfigLoaderSystem.cpp` | Reads Config.json, creates SampleUIConfigSingletonComponent |
+| `Code/SandboxApp/Sandbox/SampleUISystem.cpp` | Scene init and per-frame draw event emission |
+| `Data/Assets/App/Config.json` | UUID references for UI elements, font, and layout |
+| `Data/Assets/App/UI/SandboxUI.json` | Root UI layout definition (two children: image + text widget) |

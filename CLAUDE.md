@@ -43,11 +43,14 @@ Before working on any task, read the relevant files below:
 
 | File | When to read |
 |---|---|
-| `.claude/docs/architecture.md` | Always — ECS contract, project split, module list, key files |
+| `.claude/docs/architecture.md` | Always — architectural rules: ECS contract, engine/game split, platform abstractions |
+| `Documentation/PigeonArchitecture.info` | Always — PigeonLib module flow, boot sequence, and key files |
+| `Documentation/AppArchitecture.info` | When working on SandboxApp — application boot sequence and system data flow |
 | `CONTEXT.md` | Always — domain glossary (create lazily via grill-with-docs if absent) |
 | `.claude/docs/coding-guidelines.md` | When implementing systems, components, or events |
 | `.claude/docs/testing-guidelines.md` | When writing or modifying tests |
-| `Documentation/docs/diagrams/<ModuleName>.info` | Before touching any system in that module |
+| `Documentation/ModuleInfo/<Module>/<SystemName>System.info` | Before touching any ECS system in that module |
+| `Documentation/ModuleInfo/<Module>/<Name>.info` | Before touching infrastructure in ECS, Events, Platform, or ImGui |
 
-The diagram `.info` files are the **source of truth** for implementation and testing within each module. Always read both before starting work on a module.
+The `.info` files are the **source of truth** for each system's behavior and component interface. Read the relevant system file and the architecture flow file before starting work. When code changes, update the matching `.info` file.
 

@@ -1,0 +1,24 @@
+# InputSystem
+
+## Purpose
+Aggregates all raw input event components into a single InputStateSingletonComponent each frame.
+Maintains per-key held-frame counters (incremented every frame a key stays pressed), clears
+one-frame data (released keys, typed characters), and translates platform key codes to engine
+constants via PlatformInput before writing to the singleton.
+
+## Input Components
+| Component | Access |
+|---|---|
+| KeyPressedEventComponent | read |
+| KeyReleasedEventComponent | read |
+| KeyTypedEventComponent | read |
+| MouseMovedEventComponent | read |
+| MouseButtonPressedEventComponent | read |
+| MouseButtonReleasedEventComponent | read |
+| MouseScrolledEventComponent | read |
+| InputStateSingletonComponent | write |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| InputStateSingletonComponent | write / add (deferred) | Created on first frame; updated every frame with aggregated key, mouse, and scroll state |

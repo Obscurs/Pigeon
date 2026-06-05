@@ -1,0 +1,30 @@
+# UIControlSystem
+
+## Purpose
+Applies all pending one-frame mutation commands to persistent UI data components each frame.
+Processes layout-load requests (parses JSON files and creates entity trees) and subtree-destroy
+requests (recursively defers entity destruction). Guards on ResourceMapSingletonComponent presence;
+if absent, returns immediately without processing anything.
+
+## Input Components
+| Component | Access |
+|---|---|
+| ResourceMapSingletonComponent | read |
+| BaseComponent | read / write |
+| ImageComponent | read / write |
+| TextComponent | read / write |
+| UIUpdateTransformOneFrameComponent | read / write |
+| UIUpdateParentOneFrameComponent | read / write |
+| UIUpdateEnableOneFrameComponent | read / write |
+| UIUpdateUUIDOneFrameComponent | read / write |
+| UIUpdateImageUUIDOneFrameComponent | read / write |
+| UIUpdateTextOneFrameComponent | read / write |
+| LoadLayoutEvent | read |
+| UIDestroyOneFrameComponent | read |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| BaseComponent | write / add (deferred) | Modified in-place by mutation commands; created in bulk when loading JSON layouts |
+| ImageComponent | write / add (deferred) | Modified in-place; created when a JSON node has a ui.image entry |
+| TextComponent | write / add (deferred) | Modified in-place; created when a JSON node has a ui.text entry |

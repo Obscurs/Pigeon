@@ -1,0 +1,102 @@
+# PigeonLib Architecture
+
+## Boot Sequence
+
+```
+main()  [EntryPoint.h]
+  └── pg::CreateApplication()           (client-defined; registers app-specific systems)
+        └── Application::Create()
+              └── Init()
+                    ├── Window::Create()               (platform window + graphics context)
+                    ├── World::Create()                (ECS registry, clears all state)
+                    ├── RegisterSystem(CameraSystem)
+                    ├── RegisterSystem(ConfigLoaderSystem)
+                    ├── RegisterSystem(InputSystem)
+                    ├── RegisterSystem(ResourceManagerSystem)
+                    ├── RegisterSystem(UIControlSystem)
+                    ├── RegisterSystem(UIEventSystem)
+                    ├── RegisterSystem(UIRenderSystem)
+                    ├── Renderer::Init()               (RendererAPI, RenderCommand setup)
+                    ├── PushOverlay(ImGuiLayer)         [non-test builds only]
+                    └── m_Initialized = true
+  └── app.Run()
+```
+
+## Per-Frame Update Sequence
+
+```
+UpdateApp()
+  1. Clock::Restart()           → Timestep (inter-frame delta)
+  2. LayerStack::Begin()        — ImGuiLayer opens a new Dear ImGui frame
+  3. LayerStack::OnUpdate(ts)   — game layers receive delta-time
+  4. World::Update(ts)          — see internal sequence below
+  5. LayerStack::End()          — ImGuiLayer renders accumulated ImGui draw data
+  6. Window::OnUpdate()         — drains OS message queue, then SwapBuffers
+```
+
+## World::Update Internal Sequence
+
+```
+World::Update(ts)
+  ├── [first frame after RegisterSystem] SortSystems()
+  │     └── Kahn topological sort; edges from writeSet/inframeAddSet → readSet
+  ├── m_Dispatcher.update()       — EnTT signal delivery
+  ├── for each system in sorted order:
+  │     └── system->Update(ts)    — via CheckedRegistryAccessor
+  ├── ClearEvents()               — destroys all entities tagged EventComponent
+  └── FlushDeferredRequests()
+        ├── apply m_DeferredOneFrameComponents  (emplace + schedule removal)
+        ├── apply m_DeferredRequests            (persistent emplaces, removes)
+        └── apply m_DeferredDestroys            (entity destruction)
+```
+
+## Platform Event Flow
+
+```
+Win32 WM_* message
+  └── WindowsWindow::WindowProc
+        └── Application::OnEvent(Event&)
+              ├── Direct: WindowClose → m_Running=false
+              ├── Direct: WindowResize → Renderer::OnWindowResize, m_Minimized flag
+              └── World::EmplaceExternalEvent<XxxEventComponent>()
+                    └── deferred entity: visible to ECS systems in the NEXT World::Update
+```
+
+## Module Interaction Map
+
+```
+Platform
+  └── implements: Window, PlatformInput, GraphicsContext, RendererAPI, Buffer, Shader, Texture
+                                │ (abstract interfaces only visible above this line)
+                                ▼
+Core
+  ├── Application          boot sequence, layer stack, OS event bridge
+  ├── CameraSystem         KeyPressedEvent + ScrollEvent + ResizeEvent  →  OrthographicCameraComponent
+  ├── ConfigLoaderSystem   Assets/Engine/Config.json  →  EngineConfigSingletonComponent  (frame 1 only)
+  ├── InputSystem          input event components  →  InputStateSingletonComponent
+  └── ResourceManagerSystem  manifests  →  ResourceMapSingletonComponent  (frame 1 only)
+                                │
+                                ▼
+Renderer
+  └── Renderer2DSystem
+        reads:  OrthographicCameraComponent, EngineConfigSingletonComponent,
+                ResourceMapSingletonComponent, Draw*InFrameEvent
+        writes: RendererDataSingletonComponent → batched GPU draw calls
+                                ▲
+                                │ (emits DrawUI*InFrameEvent)
+UI
+  ├── UIControlSystem      mutation commands  →  BaseComponent, ImageComponent, TextComponent
+  ├── UIEventSystem        InputStateSingletonComponent  →  UIOn*OneFrameComponent (hit-test results)
+  └── UIRenderSystem       BaseComponent + ImageComponent/TextComponent
+                             →  DrawUIQuadInFrameEvent, DrawUIStringInFrameEvent
+```
+
+## Key Files
+
+| File | Purpose |
+|---|---|
+| `Code/PigeonLib/Pigeon/Core/Application.h` | Application singleton — window, layer stack, boot sequence |
+| `Code/PigeonLib/Pigeon/ECS/World.h` | ECS World API — registry, system registration, deferred operations |
+| `Code/PigeonLib/Pigeon/ECS/CheckedRegistryAccessor.h` | Accessor API — view, get, emplace_deferred, emplace_inframe, EmplaceEvent |
+| `Code/PigeonLib/Pigeon/ECS/System.h` | Base System class and SystemAccessDecl struct |
+| `Code/SandboxApp/Sandbox2D.cpp` | Entry point — CreateApplication() + client system registration |

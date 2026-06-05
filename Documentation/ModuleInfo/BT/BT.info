@@ -1,0 +1,14 @@
+# BT — Behavior Tree Sample Nodes
+
+> This module is intentionally excluded from the PigeonLib build. Its CMakeLists.txt is
+> prefixed with `_` so CMake never processes it. It is not linked into any target and has
+> no dependency on any other engine module.
+
+## Purpose
+Reference sample nodes built on BehaviorTree.CPP v3 demonstrating the three node execution
+styles: synchronous (`SyncActionNode`), asynchronous (`AsyncActionNode`), and stateful
+(`StatefulActionNode`). Intended as a starting point if BehaviorTree.CPP is integrated into
+the engine in the future.
+
+## File Location
+`Code/PigeonLib/BT/sample_nodes/`

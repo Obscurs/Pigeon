@@ -1,0 +1,33 @@
+# SampleUISystem
+
+## Purpose
+Drives the SandboxApp scene. Guards on ResourceMapSingletonComponent and
+SampleUIConfigSingletonComponent presence; returns early until both are available.
+
+First productive frame: creates the scene camera (1280x720, ReactsToInput=true), initializes
+SampleUISingletonComponent with hard-coded starting values from the config, and emits a
+LoadLayoutEvent to load SandboxUI.json.
+
+Every subsequent frame: emits in-frame draw events for a flat quad, a sprite (matched to a UI
+entity by UUID), a static multi-line text string, and an animated elapsed-time clock string.
+Also renders an ImGui "Settings" panel exposing live editing of quad and text transforms.
+
+## Input Components
+| Component | Access |
+|---|---|
+| SampleUIConfigSingletonComponent | read |
+| ResourceMapSingletonComponent | read |
+| BaseComponent | read |
+| ImageComponent | read |
+| TextComponent | read |
+| SampleUISingletonComponent | write |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| SampleUISingletonComponent | write / add (deferred) | Created on first productive frame; mutable scene state editable via ImGui |
+| OrthographicCameraComponent | add (deferred) | Created on first productive frame; 1280x720, ReactsToInput=true |
+| LoadLayoutEvent | add (deferred) | Emitted once on first productive frame to trigger loading SandboxUI.json |
+| DrawQuadInFrameEvent | add (inframe) | One flat coloured quad per frame |
+| DrawSpriteInFrameEvent | add (inframe) | One sprite per frame; entity matched by UUID against SampleUIConfigSingletonComponent.m_UUIDUI1 |
+| DrawStringInFrameEvent | add (inframe) | Two text strings per frame: static multi-line text and animated elapsed-time clock |

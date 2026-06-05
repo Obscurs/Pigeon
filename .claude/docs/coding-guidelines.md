@@ -26,12 +26,68 @@
 
 ## Documentation
 
-Each module is documented in `Documentation/diagrams/`:
+### File Locations
 
-- `<ModuleName><SystemName>.info` — text description of the module's purpose, each system's role, and inter-system relationships. Code must match them so if a change is done in the code it should be reflected there as well.
+Each ECS system is documented in its own file:
 
-General connection between modules and systems needs to be documented in the .claude/docs/architecture.md
-It should always match with the code so if code changes this needs to be updated acordingly
+```
+Documentation/ModuleInfo/<Module>/<SystemName>System.info
+```
+
+Infrastructure modules with no `pg::System` subclasses (ECS, Events, Platform, ImGui) use:
+
+```
+Documentation/ModuleInfo/<Module>/<Name>.info
+```
+
+Cross-module flow is documented in:
+
+- `Documentation/PigeonArchitecture.info` — PigeonLib module interaction, boot sequence, and key files
+- `Documentation/AppArchitecture.info` — SandboxApp boot sequence and steady-state data flow
+
+Architecture rules (ECS contract, engine/game split, platform abstractions) live in `.claude/docs/architecture.md`.
+
+---
+
+### System .info File Format
+
+Every system `.info` file uses exactly this structure:
+
+```
+# SystemName
+
+## Purpose
+One or two sentences: what the system does each frame and any notable guard conditions
+(e.g. "returns early if ResourceMapSingletonComponent is absent").
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| FooComponent | read | brief note if non-obvious |
+| BarComponent | write | brief note if non-obvious |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| BazComponent | write / add (deferred) | brief note |
+| QuxInFrameEvent | add (inframe) | brief note |
+```
+
+**Access values:** `read`, `write`, `add (deferred)`, `add (oneframe)`, `add (inframe)`, `write / add (deferred)`
+
+**What to include:**
+- The Purpose block: current `Update()` behavior and guard conditions in plain language.
+- Input Components: every type in `readSet` and `writeSet` of `DeclareAccess()`.
+- Output Components: every type in `writeSet`, `addSet`, and `inframeAddSet` of `DeclareAccess()`. Types that appear in both `writeSet` and `addSet` are listed once as `write / add (deferred)`.
+
+**What to exclude:**
+- Names of other systems — reference only shared component names.
+- Implementation internals (algorithm steps, GPU calls, file formats, third-party API details).
+- Anything not visible in `DeclareAccess()` or the high-level `Update()` description.
+
+The component tables must exactly mirror `DeclareAccess()` at all times. If they diverge, the `.info` file is wrong.
+
+---
 
 ## Style Rules
 
@@ -182,16 +238,25 @@ Systems are sorted automatically based on their `DeclareAccess` declarations. A 
 
 ---
 
-## New System Checklist
+## Creating a New System
 
-Before implementing a new system:
+1. Write `Documentation/ModuleInfo/<Module>/<SystemName>System.info` **before writing any code** — define Purpose, Input Components, and Output Components up front.
+2. If the system introduces a cross-module data dependency, update `Documentation/PigeonArchitecture.info` or `Documentation/AppArchitecture.info` at the same time.
+3. Inherit from `pg::System`; implement `Update(const pg::Timestep& ts)` and `DeclareAccess() const`.
+4. Implement required components as pure-data structs in dedicated header files.
+5. Declare the minimal `readSet`, `writeSet`, `addSet`, `inframeAddSet` in `DeclareAccess()` — must match the `.info` component tables exactly.
+6. Place all helper functions in the unnamed namespace of the `.cpp` — not as class methods.
+7. Use `pg::World::GetRegistry()` inside `Update()`.
 
-1. Read `Documentation/<ModuleName>.info` — understand the system's role and its relationships.
-2. Inherit from `pg::System`; implement `Update(const pg::Timestep& ts)` and `DeclareAccess() const`.
-3. Implement required components as pure-data structs in dedicated header files.
-4. Declare the minimal `readSet`, `writeSet`, `addSet`, `inframeAddSet` in `DeclareAccess()`.
-5. Place all helper functions in the unnamed namespace of the `.cpp` — not as class methods.
-6. Use `pg::World::GetRegistry()` inside `Update()`.
+---
+
+## Modifying an Existing System
+
+1. Read `Documentation/ModuleInfo/<Module>/<SystemName>System.info` — understand the current behavior and component interface before touching code.
+2. If the change involves cross-module data flow, read `Documentation/PigeonArchitecture.info` or `Documentation/AppArchitecture.info` as well.
+3. Make the code change.
+4. Update the `.info` file to match: component tables must mirror `DeclareAccess()`; Purpose must reflect current `Update()` behavior.
+5. If the change adds or removes a cross-module dependency, update the relevant architecture flow file.
 
 ---
 

@@ -1,0 +1,17 @@
+# ConfigLoaderSystem  (sbx)
+
+## Purpose
+One-shot initialization system for SandboxApp. On the first frame, reads
+`Assets/App/Config.json` and creates SampleUIConfigSingletonComponent containing the UUIDs for
+the two UI elements, the default font, and the main UI layout. No-op on all subsequent frames
+(presence check guards early exit).
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| SampleUIConfigSingletonComponent | read | Presence-check only; if present, system exits immediately |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| SampleUIConfigSingletonComponent | add (deferred) | Created once from Assets/App/Config.json; holds four UUIDs |

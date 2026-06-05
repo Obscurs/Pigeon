@@ -1,0 +1,44 @@
+# World
+
+## Purpose
+The ECS backbone. `World` is a singleton that owns the `entt::registry` and `entt::dispatcher`,
+manages all registered systems, and drives the per-frame update cycle. `CheckedRegistryAccessor`
+is the only interface through which systems may read or write components; it enforces the
+access declarations made in `DeclareAccess()` at runtime.
+
+## Responsibilities
+- Owns the single entity/component registry and event dispatcher.
+- Accepts system registration via `RegisterSystem`; enforces the one-writer-per-component rule
+  at registration time (asserts immediately on violation).
+- Derives system execution order from `DeclareAccess` declarations using Kahn's topological sort
+  before the first `Update` call.
+- Per-frame: flushes the EnTT dispatcher, runs each system in sorted order, destroys all
+  event entities (`ClearEvents`), then applies all deferred structural changes
+  (`FlushDeferredRequests`).
+- Buffers structural changes (add, remove, entity destroy) so they are applied after all systems
+  finish iterating — prevents iterator invalidation.
+
+## Key Types
+
+| Type | Role |
+|---|---|
+| `World` | Singleton; owns registry, dispatcher, system list; drives the frame loop |
+| `CheckedRegistryAccessor` | Per-system view of the registry; enforces declared access at runtime |
+| `System` | Abstract base; override `Update(Timestep)` and `DeclareAccess()` |
+| `SystemAccessDecl` | Declares a system's readSet, writeSet, addSet, inframeAddSet |
+| `DeferredRequest` | Internal type-erased buffer entry for deferred structural changes |
+
+## Deferred vs. In-Frame Operations
+
+| Operation | Accessor method | When applied | Visibility |
+|---|---|---|---|
+| Add component | `emplace_deferred` | End of current frame | Next frame |
+| Add one-frame component | `emplace_oneframe` | End of frame; removed end of next frame | One frame |
+| Emit event entity | `EmplaceEvent` | End of current frame | Next frame; auto-destroyed |
+| Add in-frame component | `emplace_inframe` | Immediately | Same frame (later systems only) |
+| Emit in-frame event | `EmplaceInframeEvent` | Immediately | Same frame; auto-destroyed at frame end |
+| Remove component | `remove_deferred` | End of current frame | Removed next frame |
+| Destroy entity | `destroy_deferred` | End of current frame (after emplaces) | Destroyed next frame |
+
+## File Location
+`Code/PigeonLib/Pigeon/ECS/`

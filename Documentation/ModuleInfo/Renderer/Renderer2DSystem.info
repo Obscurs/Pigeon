@@ -1,0 +1,32 @@
+# Renderer2DSystem
+
+## Purpose
+Each frame: clears the screen, reads all in-frame draw events (quads, sprites, text, UI quads,
+UI text), batches them by texture and draw layer, and submits each non-empty batch to the GPU as
+a single indexed draw call via the DirectX 11 backend.
+
+On the first frame, allocates dynamic GPU vertex and index buffers and resolves default shaders
+from ResourceMapSingletonComponent. Lazy-initializes by deferring RendererDataSingletonComponent
+on the first frame and returning; rendering begins from the second frame.
+
+Draw layer is encoded in the Z component of each draw event's transform matrix. Quads/sprites/text
+are sorted into layers 0–99 and flushed in ascending order, ensuring correct depth ordering without
+explicit Z testing.
+
+## Input Components
+| Component | Access |
+|---|---|
+| EngineConfigSingletonComponent | read |
+| OrthographicCameraComponent | read |
+| ResourceMapSingletonComponent | read |
+| DrawQuadInFrameEvent | read |
+| DrawSpriteInFrameEvent | read |
+| DrawStringInFrameEvent | read |
+| DrawUIQuadInFrameEvent | read |
+| DrawUIStringInFrameEvent | read |
+| RendererDataSingletonComponent | write |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| RendererDataSingletonComponent | write / add (deferred) | Holds GPU buffer handles and per-frame batch maps; created on first frame |

@@ -1,0 +1,33 @@
+# Events
+
+## Purpose
+Defines the platform-to-ECS event pipeline. Platform events (`pg::Event` subclasses) are
+created by the window layer from OS messages and handed synchronously to `Application::OnEvent`.
+The application immediately translates them into ECS event component entities via
+`World::EmplaceExternalEvent`. ECS systems read only the component form — they never access
+`pg::Event` objects directly.
+
+## Platform Event → ECS Component Mapping
+
+| Platform Event | ECS Component |
+|---|---|
+| `KeyPressedEvent` | `KeyPressedEventComponent` (`int m_KeyCode`) |
+| `KeyReleasedEvent` | `KeyReleasedEventComponent` (`int m_KeyCode`) |
+| `KeyTypedEvent` | `KeyTypedEventComponent` (`int m_KeyCode`) |
+| `MouseMovedEvent` | `MouseMovedEventComponent` (`float m_MouseX, m_MouseY`) |
+| `MouseScrolledEvent` | `MouseScrolledEventComponent` (`float m_XOffset, m_YOffset`) |
+| `MouseButtonPressedEvent` | `MouseButtonPressedEventComponent` (`int m_Button`) |
+| `MouseButtonReleasedEvent` | `MouseButtonReleasedEventComponent` (`int m_Button`) |
+| `WindowResizeEvent` | `WindowResizeEventComponent` (`unsigned int m_Width, m_Height`) |
+| `WindowCloseEvent` | `WindowCloseEventComponent` (marker, `bool m_Dummy`) |
+
+Every event entity also receives `EventComponent` (trivial tag). `World::ClearEvents` destroys
+all entities carrying `EventComponent` at the end of every frame — event entities are
+single-frame only.
+
+Key codes are translated through `PlatformInput::GetKeyCode` / `GetMouseButtonCode` before being
+stored, so systems always see platform-independent `PG_KEY_*` / `PG_MOUSE_BUTTON_*` constants.
+
+## File Location
+`Code/PigeonLib/Pigeon/Events/` — platform event classes (`pg::Event` hierarchy)
+`Code/PigeonLib/Pigeon/Core/` — ECS event component structs

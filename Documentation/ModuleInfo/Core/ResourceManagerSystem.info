@@ -1,0 +1,17 @@
+# ResourceManagerSystem
+
+## Purpose
+One-shot initialization system. On the first frame, loads all textures, fonts, shaders, and UI
+layouts from `Assets/Engine/ResourcesManifest.json` and `Assets/App/ResourcesManifest.json`, then
+creates ResourceMapSingletonComponent containing the fully populated asset maps.
+No-op on all subsequent frames (presence check guards early exit).
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| ResourceMapSingletonComponent | read | Presence-check only; if present, system exits immediately |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| ResourceMapSingletonComponent | add (deferred) | Created once; holds texture, shader, font, and UI layout maps keyed by UUID |

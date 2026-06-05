@@ -1,0 +1,28 @@
+# Platform
+
+## Purpose
+The portability seam. Provides concrete implementations of every OS- and GPU-dependent operation
+behind abstract interfaces declared in `Pigeon/Core/` and `Pigeon/Renderer/`. Two sub-trees are
+mutually exclusive at compile time: `Windows/` + `DirectX11/` for production builds and
+`Testing/` for unit test builds. Selection is controlled by the `TESTS_ENABLED` preprocessor
+flag — there are no runtime branches.
+
+## Implementations
+
+| Interface (in Core / Renderer) | Production | Testing |
+|---|---|---|
+| `pg::Window` | `WindowsWindow` (Win32 HWND, WndProc) | `TestingWindow` (no-op; exposes `TESTING_TriggerEvent`) |
+| `pg::PlatformInput` | `WindowsInput` (`GetAsyncKeyState`, `ScreenToClient`) | `TestingInput` (driven by `TESTING_*` public members) |
+| `pg::GraphicsContext` | `Dx11Context` (D3D11 device + DXGI swap chain) | `TestingContext` (all methods no-op, dimensions = 0) |
+| `pg::RendererAPI` | `Dx11RendererAPI` (render target, blend/depth state) | `TestingRendererAPI` (clears `TestingHelper` on `Begin`) |
+| `pg::VertexBuffer` / `IndexBuffer` | `Dx11Buffer` (DYNAMIC, MAP_WRITE_DISCARD) | `TestingBuffer` (records calls to `TestingHelper`) |
+| `pg::Shader` | `Dx11Shader` (custom `.shader` file parser, vs/ps 5.0) | `TestingShader` (uniform uploads are no-ops) |
+| `pg::Texture2D` | `Dx11Texture2D` (RGBA8, stb_image loader) | `TestingTexture2D` (dimensions from static `s_ExpectedWidth/Height`) |
+
+`TestingHelper` is a singleton observation log that `TestingBuffer` and `TestingRendererAPI`
+write to, allowing unit tests to assert on recorded draw calls without a GPU.
+
+## File Location
+`Code/PigeonLib/Platform/Windows/` — Win32 window and input
+`Code/PigeonLib/Platform/DirectX11/` — DirectX 11 graphics implementations
+`Code/PigeonLib/Platform/Testing/` — headless stubs for unit tests

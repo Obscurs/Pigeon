@@ -1,36 +1,27 @@
-# Architecture Guidelines
+# Architecture Rules
 
 ## Engine vs. Game Split
 
-- **PigeonLib** — engine-generic code only: windowing, rendering, ECS primitives, UI, events, input.
-- **SandboxApp** — Sandbox app for the engine with sample usages for it
-
-
-## Application / Layer Stack
-
-`Application` (in `PigeonLib/Pigeon/Core/`) owns a layer stack. Each `Layer` receives `OnUpdate`, `OnRender`, and `OnEvent` callbacks. `Sandbox2D` is the main game layer pushed at startup. `SandboxApp/SandboxApp.cpp` is the entry point (`CreateApplication()`).
-
-## Renderer
-
-`Renderer2D` (`PigeonLib/Pigeon/Renderer/`) uses batched quad rendering (max 1000 quads/batch) with a DirectX 11 backend. Fonts use MSDF (multi-channel signed distance fields). The UI system (`PigeonLib/Pigeon/UI/`) is a separate hierarchy-based system (parent/child entt entities) with its own layout, control, and render systems — distinct from Renderer2D.
-
-## Platform Abstractions
-
-Platform-specific code lives in `PigeonLib/Platform/`. `PG_PLATFORM_WINDOWS` / `PG_PLATFORM_UNIX` preprocessor defines control which implementations are compiled. A `Testing/` platform mock exists for unit test isolation.
+- **PigeonLib** — engine-generic code only: windowing, rendering, ECS primitives, UI, events, input. No application-specific logic.
+- **SandboxApp** — application code that uses PigeonLib. All domain-specific systems, components, and assets live here.
 
 ## ECS Contract
 
-The ECS is powered by [EnTT](https://github.com/skypjack/entt). `World` (`Code/PigeonLib/Pigeon/ECS/World.h`) owns the `entt::registry`, sorts registered systems by their `DeclareAccess` dependency graph, and calls `Update(Timestep)` on each system in the derived order each frame.
+- `World` owns the single `entt::registry`. All entity and component access goes through `CheckedRegistryAccessor`.
+- **One writer per component.** Only one system may write or add a given component type. Violations assert at `RegisterSystem` time.
+- Systems declare their complete component access via `DeclareAccess()`. Accessing an undeclared component asserts at runtime.
+- **Execution order is automatic.** `World` derives system order from `DeclareAccess` declarations using a topological sort. Never set or assume order manually — declare the correct access and the order follows.
+- Structural changes (add, remove, entity destroy) are deferred to frame end. Never modify the registry during system iteration.
+- In-frame operations (`inframeAddSet`) are visible to later systems within the same frame. Deferred operations (`addSet`) are visible in the next frame.
 
-## SandboxApp Domain Modules
+## Platform Abstractions
 
-Systems are grouped into modules. Each module has a dedicated folder under `PigeonLib/` and its own documentation in `Documentation/diagrams/`.
+- All OS and GPU code lives in `Platform/`. Engine code uses only the abstract interfaces in `Pigeon/Core/` and `Pigeon/Renderer/`.
+- `TESTS_ENABLED` switches `Window`, `PlatformInput`, and `RendererAPI` implementations at link time — there are no runtime branches.
+- Never reference concrete platform types (`WindowsWindow`, `Dx11Context`, etc.) from engine code outside of `ImGuiLayer`, which is a deliberate exception.
 
-## Key Files
+## Communication Rules
 
-| File | Purpose |
-|---|---|
-| `Code/PigeonLib/Pigeon/ECS/World.h` | ECS World API — registry, system registration, deferred operations |
-| `Code/PigeonLib/Pigeon/ECS/CheckedRegistryAccessor.h` | Accessor API — view, get, emplace_deferred, emplace_inframe, EmplaceEvent, etc. |
-| `Code/PigeonLib/Pigeon/ECS/System.h` | Base `System` class and `SystemAccessDecl` struct |
-| `Code/SandboxApp/Sandbox2D.cpp` | Main game layer — initialization and per-frame orchestration |
+- Systems communicate exclusively through ECS components and events — never by calling each other directly.
+- Events are short-lived entities tagged with `EventComponent`. `World::ClearEvents` destroys all of them at the end of every frame.
+- Platform OS events are bridged into ECS event components by `Application::OnEvent` via `World::EmplaceExternalEvent`. ECS systems never touch `pg::Event` objects.

@@ -1,0 +1,26 @@
+# ImGui
+
+## Purpose
+Provides an `ImGuiLayer` overlay that initialises Dear ImGui, wires it to the Win32 window and
+DirectX 11 device, and brackets each frame with `NewFrame`/`Render` calls. ECS systems issue
+widget calls from within their `Update()` methods — `ImGuiLayer` handles all frame lifecycle
+automatically.
+
+Excluded from Testing builds via `#ifndef TESTS_ENABLED` in `Application::Init()`.
+
+## Integration Points
+
+- `ImGuiLayer` is pushed as an overlay (after all regular layers) during `Application::Init()`.
+- `Application::Update()` calls `Begin()` before `OnUpdate` and `End()` after — all
+  system `Update()` calls fall inside the open Dear ImGui frame.
+- Input is captured at the Win32 `WndProc` level by `imgui_impl_win32`; ImGui input does not
+  pass through the engine event bus and does not appear in `InputStateSingletonComponent`.
+
+## Usage from ECS Systems
+
+Include `<imgui.h>` and issue widget calls inside `System::Update()` between
+`ImGui::Begin(...)`/`ImGui::End()` pairs. Do not call `ImGui::NewFrame()` or
+`ImGui::Render()` — the layer owns those boundaries.
+
+## File Location
+`Code/PigeonLib/Pigeon/ImGui/`
