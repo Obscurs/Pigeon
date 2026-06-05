@@ -73,14 +73,12 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::ui::UIRenderSystem>());
 
-		// Pre-seed the RendererConfigSingletonComponent so the system skips creation.
-		entt::entity cfgEnt = pg::World::GetRegistryDirect().create();
-		pg::ui::RendererConfigSingletonComponent& cfg =
-			pg::World::GetRegistryDirect().emplace<pg::ui::RendererConfigSingletonComponent>(cfgEnt);
-		cfg.m_Width  = 1920.f;
-		cfg.m_Height = 1080.f;
+		// First frame: the system creates the RendererConfigSingletonComponent itself
+		// (the test must not pre-create a component the system adds).
+		world.Update(pg::Timestep(0));
 
-		// Pre-seed EngineConfig and ResourceMap so the system gets past the early exit.
+		// EngineConfig and ResourceMap are added by other systems, so the test supplies
+		// them to get this system past its early exit.
 		entt::entity engEnt = pg::World::GetRegistryDirect().create();
 		pg::World::GetRegistryDirect().emplace<pg::EngineConfigSingletonComponent>(engEnt);
 
@@ -121,13 +119,12 @@ namespace CatchTestsetFail
 
 		entt::registry& registry = pg::World::GetRegistryDirect();
 
-		// Pre-seed config + resources so the system reaches the image path.
-		entt::entity cfgEnt = registry.create();
-		pg::ui::RendererConfigSingletonComponent& cfg =
-			registry.emplace<pg::ui::RendererConfigSingletonComponent>(cfgEnt);
-		cfg.m_Width  = 1920.f;
-		cfg.m_Height = 1080.f;
+		// First frame: the system creates the RendererConfigSingletonComponent itself
+		// (the test must not pre-create a component the system adds).
+		world.Update(pg::Timestep(0));
 
+		// EngineConfig and ResourceMap are added by other systems, so the test supplies
+		// them to get this system to the image path.
 		entt::entity engEnt = registry.create();
 		registry.emplace<pg::EngineConfigSingletonComponent>(engEnt);
 

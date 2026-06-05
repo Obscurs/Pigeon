@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <catch2/catch.hpp>
 #include "Utils/TestApp.h"
 
@@ -8,33 +8,80 @@
 #include <Pigeon/UI/UIComponents.h>
 #include <Pigeon/UI/UIControlSystem.h>
 
+#include <string>
+
 #define FLOAT_EQ(x, y) (std::fabs((x) - (y)) < 1e-6)
+
+namespace
+{
+	// UUIDs embedded in the UT layout JSON files.
+	const char* kImageUUID     = "11111111-1111-1111-1111-111111111101"; // UTControlImage.json
+	const char* kTextUUID      = "11111111-1111-1111-1111-111111111102"; // UTControlText.json
+	const char* kHierRootUUID  = "11111111-1111-1111-1111-1111111111a0"; // UTControlHierarchy.json
+	const char* kHierMidUUID   = "11111111-1111-1111-1111-1111111111a1";
+	const char* kHierLeafUUID  = "11111111-1111-1111-1111-1111111111a2";
+
+	// UIControlSystem owns BaseComponent/ImageComponent/TextComponent: they are in its
+	// addSet, created only when the system parses a layout. A test must therefore not
+	// create them directly. Instead it seeds a ResourceMapSingletonComponent (added in
+	// production by the ResourceManagerSystem, not by this system) that maps a layout id
+	// to a UT JSON file, then fires a LoadLayoutEvent so the system itself parses the
+	// JSON and deferred-adds the UI components. They are visible once this Update's
+	// deferred requests are flushed.
+	void LoadLayout(pg::World& world, const std::string& layoutFile)
+	{
+		entt::registry& registry = pg::World::GetRegistryDirect();
+
+		const pg::UUID layoutID = pg::UUID::Generate();
+		entt::entity resEnt = registry.create();
+		pg::ResourceMapSingletonComponent& resources =
+			registry.emplace<pg::ResourceMapSingletonComponent>(resEnt);
+		resources.m_UILayoutMap[layoutID] = "Assets/UT/UI/" + layoutFile;
+
+		entt::entity evtEnt = registry.create();
+		registry.emplace<pg::ui::LoadLayoutEvent>(evtEnt).m_UUID = layoutID;
+
+		world.Update(pg::Timestep(0));
+
+		// One-shot load request: drop it so later frames do not reload the layout.
+		registry.destroy(evtEnt);
+	}
+
+	entt::entity FindBaseByUUID(const char* uuid)
+	{
+		entt::registry& registry = pg::World::GetRegistryDirect();
+		const pg::UUID target(uuid);
+		auto view = registry.view<pg::ui::BaseComponent>();
+		for (entt::entity ent : view)
+		{
+			if (view.get<pg::ui::BaseComponent>(ent).m_UUID == target)
+				return ent;
+		}
+		return entt::null;
+	}
+} // namespace
 
 namespace CatchTestsetFail
 {
 	// ---------------------------------------------------------------------------
-	// Guard condition: no ResourceMapSingletonComponent -> system does nothing
+	// Guard condition: no ResourceMapSingletonComponent -> system bails out early,
+	// so a load request produces no UI components.
 	// ---------------------------------------------------------------------------
 	TEST_CASE("UI.UIControlSystem::DoesNothingWithoutResourceMap")
 	{
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::ui::UIControlSystem>());
 
-		// Create a UI entity with an update transform component but NO resource map.
-		entt::entity ent = pg::World::GetRegistryDirect().create();
-		pg::ui::BaseComponent& base = pg::World::GetRegistryDirect().emplace<pg::ui::BaseComponent>(ent);
-		base.m_Size = { 100.f, 200.f };
-
-		pg::ui::UIUpdateTransformOneFrameComponent& upd =
-			pg::World::GetRegistryDirect().emplace<pg::ui::UIUpdateTransformOneFrameComponent>(ent);
-		upd.m_Size = { 999.f, 888.f };
+		// Load request, but no ResourceMapSingletonComponent present.
+		entt::registry& registry = pg::World::GetRegistryDirect();
+		entt::entity evtEnt = registry.create();
+		registry.emplace<pg::ui::LoadLayoutEvent>(evtEnt).m_UUID = pg::UUID::Generate();
 
 		world.Update(pg::Timestep(0));
 
-		// Size must be unchanged because system bails early without resource map.
-		const pg::ui::BaseComponent& baseAfter =
-			pg::World::GetRegistryDirect().get<pg::ui::BaseComponent>(ent);
-		CHECK(baseAfter.m_Size == glm::vec2(100.f, 200.f));
+		// System bailed before parsing -> no BaseComponent created.
+		auto view = registry.view<pg::ui::BaseComponent>();
+		CHECK(view.size() == 0);
 	}
 
 	// ---------------------------------------------------------------------------
@@ -45,16 +92,9 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::ui::UIControlSystem>());
 
-		// Resource map singleton required by the system guard.
-		entt::entity resEnt = pg::World::GetRegistryDirect().create();
-		pg::World::GetRegistryDirect().emplace<pg::ResourceMapSingletonComponent>(resEnt);
-
-		entt::entity ent = pg::World::GetRegistryDirect().create();
-		pg::ui::BaseComponent& base = pg::World::GetRegistryDirect().emplace<pg::ui::BaseComponent>(ent);
-		base.m_Size    = { 100.f, 200.f };
-		base.m_Spacing = { 5.f,   10.f  };
-		base.m_HAlign  = pg::ui::EHAlignType::eCenter;
-		base.m_VAlign  = pg::ui::EVAlignType::eCenter;
+		LoadLayout(world, "UTControlImage.json");
+		entt::entity ent = FindBaseByUUID(kImageUUID);
+		REQUIRE(pg::World::GetRegistryDirect().valid(ent));
 
 		pg::ui::UIUpdateTransformOneFrameComponent& upd =
 			pg::World::GetRegistryDirect().emplace<pg::ui::UIUpdateTransformOneFrameComponent>(ent);
@@ -81,14 +121,12 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::ui::UIControlSystem>());
 
-		entt::entity resEnt = pg::World::GetRegistryDirect().create();
-		pg::World::GetRegistryDirect().emplace<pg::ResourceMapSingletonComponent>(resEnt);
+		LoadLayout(world, "UTControlImage.json");
+		entt::entity childEnt = FindBaseByUUID(kImageUUID);
+		REQUIRE(pg::World::GetRegistryDirect().valid(childEnt));
 
+		// A bare entity (no component) is a valid parent handle for this update.
 		entt::entity parentEnt = pg::World::GetRegistryDirect().create();
-		entt::entity childEnt  = pg::World::GetRegistryDirect().create();
-
-		pg::ui::BaseComponent& base = pg::World::GetRegistryDirect().emplace<pg::ui::BaseComponent>(childEnt);
-		base.m_Parent = entt::null;
 
 		pg::ui::UIUpdateParentOneFrameComponent& upd =
 			pg::World::GetRegistryDirect().emplace<pg::ui::UIUpdateParentOneFrameComponent>(childEnt);
@@ -109,12 +147,9 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::ui::UIControlSystem>());
 
-		entt::entity resEnt = pg::World::GetRegistryDirect().create();
-		pg::World::GetRegistryDirect().emplace<pg::ResourceMapSingletonComponent>(resEnt);
-
-		entt::entity ent = pg::World::GetRegistryDirect().create();
-		pg::ui::BaseComponent& base = pg::World::GetRegistryDirect().emplace<pg::ui::BaseComponent>(ent);
-		base.m_Enabled = true;
+		LoadLayout(world, "UTControlImage.json");
+		entt::entity ent = FindBaseByUUID(kImageUUID);
+		REQUIRE(pg::World::GetRegistryDirect().valid(ent));
 
 		pg::ui::UIUpdateEnableOneFrameComponent& upd =
 			pg::World::GetRegistryDirect().emplace<pg::ui::UIUpdateEnableOneFrameComponent>(ent);
@@ -135,11 +170,9 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::ui::UIControlSystem>());
 
-		entt::entity resEnt = pg::World::GetRegistryDirect().create();
-		pg::World::GetRegistryDirect().emplace<pg::ResourceMapSingletonComponent>(resEnt);
-
-		entt::entity ent = pg::World::GetRegistryDirect().create();
-		pg::World::GetRegistryDirect().emplace<pg::ui::BaseComponent>(ent);
+		LoadLayout(world, "UTControlImage.json");
+		entt::entity ent = FindBaseByUUID(kImageUUID);
+		REQUIRE(pg::World::GetRegistryDirect().valid(ent));
 
 		pg::UUID newID = pg::UUID::Generate();
 		pg::ui::UIUpdateUUIDOneFrameComponent& upd =
@@ -161,17 +194,12 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::ui::UIControlSystem>());
 
-		entt::entity resEnt = pg::World::GetRegistryDirect().create();
-		pg::World::GetRegistryDirect().emplace<pg::ResourceMapSingletonComponent>(resEnt);
+		LoadLayout(world, "UTControlImage.json");
+		entt::entity ent = FindBaseByUUID(kImageUUID);
+		REQUIRE(pg::World::GetRegistryDirect().valid(ent));
+		REQUIRE(pg::World::GetRegistryDirect().any_of<pg::ui::ImageComponent>(ent));
 
-		entt::entity ent = pg::World::GetRegistryDirect().create();
-		pg::UUID oldID = pg::UUID::Generate();
 		pg::UUID newID = pg::UUID::Generate();
-
-		pg::ui::ImageComponent& img =
-			pg::World::GetRegistryDirect().emplace<pg::ui::ImageComponent>(ent);
-		img.m_TextureHandle = oldID;
-
 		pg::ui::UIUpdateImageUUIDOneFrameComponent& upd =
 			pg::World::GetRegistryDirect().emplace<pg::ui::UIUpdateImageUUIDOneFrameComponent>(ent);
 		upd.m_UUID = newID;
@@ -191,16 +219,10 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::ui::UIControlSystem>());
 
-		entt::entity resEnt = pg::World::GetRegistryDirect().create();
-		pg::World::GetRegistryDirect().emplace<pg::ResourceMapSingletonComponent>(resEnt);
-
-		entt::entity ent = pg::World::GetRegistryDirect().create();
-		pg::ui::TextComponent& txt =
-			pg::World::GetRegistryDirect().emplace<pg::ui::TextComponent>(ent);
-		txt.m_Text    = "old";
-		txt.m_Color   = { 0.f, 0.f, 0.f, 1.f };
-		txt.m_Kerning = 1.f;
-		txt.m_Spacing = 1.f;
+		LoadLayout(world, "UTControlText.json");
+		entt::entity ent = FindBaseByUUID(kTextUUID);
+		REQUIRE(pg::World::GetRegistryDirect().valid(ent));
+		REQUIRE(pg::World::GetRegistryDirect().any_of<pg::ui::TextComponent>(ent));
 
 		pg::ui::UIUpdateTextOneFrameComponent& upd =
 			pg::World::GetRegistryDirect().emplace<pg::ui::UIUpdateTextOneFrameComponent>(ent);
@@ -227,30 +249,23 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::ui::UIControlSystem>());
 
-		entt::entity resEnt = pg::World::GetRegistryDirect().create();
-		pg::World::GetRegistryDirect().emplace<pg::ResourceMapSingletonComponent>(resEnt);
+		// Layout is a root -> mid -> leaf hierarchy created by the system.
+		LoadLayout(world, "UTControlHierarchy.json");
+		entt::entity rootEnt = FindBaseByUUID(kHierRootUUID);
+		entt::entity midEnt  = FindBaseByUUID(kHierMidUUID);
+		entt::entity leafEnt = FindBaseByUUID(kHierLeafUUID);
+		REQUIRE(pg::World::GetRegistryDirect().valid(rootEnt));
+		REQUIRE(pg::World::GetRegistryDirect().valid(midEnt));
+		REQUIRE(pg::World::GetRegistryDirect().valid(leafEnt));
 
-		// root -> parent -> child hierarchy
-		entt::entity rootEnt   = pg::World::GetRegistryDirect().create();
-		entt::entity parentEnt = pg::World::GetRegistryDirect().create();
-		entt::entity childEnt  = pg::World::GetRegistryDirect().create();
-
-		pg::ui::BaseComponent& rootBase   = pg::World::GetRegistryDirect().emplace<pg::ui::BaseComponent>(rootEnt);
-		pg::ui::BaseComponent& parentBase = pg::World::GetRegistryDirect().emplace<pg::ui::BaseComponent>(parentEnt);
-		pg::ui::BaseComponent& childBase  = pg::World::GetRegistryDirect().emplace<pg::ui::BaseComponent>(childEnt);
-
-		rootBase.m_Parent   = entt::null;
-		parentBase.m_Parent = rootEnt;
-		childBase.m_Parent  = parentEnt;
-
-		// Request destroy of parentEnt (and its subtree: childEnt).
-		pg::World::GetRegistryDirect().emplace<pg::ui::UIDestroyOneFrameComponent>(parentEnt);
+		// Request destroy of the mid element (and its subtree: the leaf).
+		pg::World::GetRegistryDirect().emplace<pg::ui::UIDestroyOneFrameComponent>(midEnt);
 
 		world.Update(pg::Timestep(0));
 
-		// parentEnt and childEnt must be gone; rootEnt must survive.
-		CHECK(!pg::World::GetRegistryDirect().valid(parentEnt));
-		CHECK(!pg::World::GetRegistryDirect().valid(childEnt));
+		// mid and leaf must be gone; root must survive.
+		CHECK(!pg::World::GetRegistryDirect().valid(midEnt));
+		CHECK(!pg::World::GetRegistryDirect().valid(leafEnt));
 		CHECK(pg::World::GetRegistryDirect().valid(rootEnt));
 	}
 
@@ -262,15 +277,9 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::ui::UIControlSystem>());
 
-		entt::entity resEnt = pg::World::GetRegistryDirect().create();
-		pg::World::GetRegistryDirect().emplace<pg::ResourceMapSingletonComponent>(resEnt);
-
-		entt::entity ent = pg::World::GetRegistryDirect().create();
-		pg::ui::BaseComponent& base = pg::World::GetRegistryDirect().emplace<pg::ui::BaseComponent>(ent);
-		base.m_Enabled = true;
-		base.m_Size    = { 1.f, 1.f };
-
-		entt::entity newParent = pg::World::GetRegistryDirect().create();
+		LoadLayout(world, "UTControlImage.json");
+		entt::entity ent = FindBaseByUUID(kImageUUID);
+		REQUIRE(pg::World::GetRegistryDirect().valid(ent));
 
 		// Apply both a transform update and an enable update in the same frame.
 		pg::ui::UIUpdateTransformOneFrameComponent& tUpd =

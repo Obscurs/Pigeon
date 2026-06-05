@@ -1,0 +1,16 @@
+{
+  "width": 1.2,
+  "height": 2.3,
+  "uuid": "11111111-1111-1111-1111-111111111102",
+  "ui": {
+    "text": {
+      "string": "sample text",
+      "colR": 1.4,
+      "colG": 2.7,
+      "colB": 3.4,
+      "colA": 4.7,
+      "kerning": 5.7,
+      "spacing": 6.7
+    }
+  }
+}

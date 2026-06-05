@@ -60,10 +60,22 @@ Derive the specific cases from the system's entry in `.claude/docs/diagrams/<Mod
 
 ### Input and Output Scope
 
-- Tests set up state by adding or modifying only components declared in the system's **`readSet`**.
+- A test arranges state by creating only the components the system treats as **inputs it does not create**: components in the system's **`readSet`**, plus components in its **`writeSet`** that are *added by a different system* (see the hard rule below).
 - Tests verify the system's output by inspecting components in the **`writeSet`**, **`addSet`**, and **`inframeAddSet`**.
 - Checks must cover **all members** of the output components — do not leave fields unverified.
 - In-frame events/components (`inframeAddSet`) are destroyed at the end of the frame, so they are not visible after a normal `World::Update()`. To assert on them from a single-system test, drive the world with the Testing-only `World::UpdateRetainingEvents(ts)`, which runs the frame but skips event clearing, then inspect them via `GetRegistryDirect()`.
+
+### Never create a component the system adds (hard rule)
+
+A test must **never** create (emplace) a component type that the system-under-test lists in its **`addSet`** or **`inframeAddSet`**. That system is the sole creator of those components; pre-creating one fabricates state the system would otherwise own, hides the creation path, and diverges from production. To exercise behaviour on such a component, **drive the system so it creates the component itself**, then continue. Concretely:
+
+- **read + add** — a singleton the system lazily creates (e.g. `ResourceManagerSystem` → `ResourceMapSingletonComponent`, `ConfigLoaderSystem` → its config, `UIRenderSystem` → `RendererConfigSingletonComponent`): run the system once so it adds the component, then assert or drive further frames. Do not seed the singleton to "skip creation".
+- **write + add** — the system both creates-when-absent and modifies-when-present (e.g. `InputSystem` → `InputStateSingletonComponent`): first run the system so it creates the component, then feed the **input** components/events that make it modify the existing instance. Never emplace the component directly.
+- **add via a sub-flow** — the system adds the component only through a specific input path (e.g. `UIControlSystem` adds `BaseComponent`/`ImageComponent`/`TextComponent` only while parsing a layout): trigger that path. For `UIControlSystem`, seed a `ResourceMapSingletonComponent` layout entry + fire a `LoadLayoutEvent`, run the system, then locate the system-created entity (e.g. by matching `m_UUID`) to target with update components.
+
+The **only** components a test may create that the system also touches are those the system merely **writes** (modifies in place) while a **different** system adds them. Create the instance (the add only) as the precondition, then let the system modify it. Example: `CameraSystem` writes `OrthographicCameraComponent`, but `SampleUISystem` is its adder, so `CameraSystemTest` creates the camera itself.
+
+**Cross-frame note:** bare event/one-frame entities you emplace directly via `GetRegistryDirect()` are **not** removed by `World::ClearEvents()` — only entities tagged with `EventComponent` are. When driving a system across multiple frames, tag input-event entities with `pg::EventComponent` (matching how real input arrives) so they are cleared at end of frame and not reprocessed; or destroy single-shot request entities (e.g. a `LoadLayoutEvent`) yourself after the frame that consumes them.
 
 ### DeclareAccess Test (required)
 

@@ -36,10 +36,11 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::ConfigLoaderSystem>());
 
-		// Pre-seed an EngineConfigSingletonComponent so the system guard fires.
-		entt::entity ent = pg::World::GetRegistryDirect().create();
-		pg::World::GetRegistryDirect().emplace<pg::EngineConfigSingletonComponent>(ent);
+		// First frame: the system itself creates the EngineConfigSingletonComponent
+		// (the test must not pre-create a component the system adds).
+		world.Update(pg::Timestep(0));
 
+		// Second frame: the config already exists, so the guard fires and no duplicate is added.
 		world.Update(pg::Timestep(0));
 
 		auto viewAfter = pg::World::GetRegistryDirect().view<pg::EngineConfigSingletonComponent>();

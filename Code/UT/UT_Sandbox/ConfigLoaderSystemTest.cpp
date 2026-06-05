@@ -36,10 +36,11 @@ namespace CatchTestsetFail
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<sbx::ConfigLoaderSystem>());
 
-		// Pre-seed a SampleUIConfigSingletonComponent so the system guard fires.
-		entt::entity ent = pg::World::GetRegistryDirect().create();
-		pg::World::GetRegistryDirect().emplace<sbx::SampleUIConfigSingletonComponent>(ent);
+		// First frame: the system itself creates the SampleUIConfigSingletonComponent
+		// (the test must not pre-create a component the system adds).
+		world.Update(pg::Timestep(0));
 
+		// Second frame: the config already exists, so the guard fires and no duplicate is added.
 		world.Update(pg::Timestep(0));
 
 		auto viewAfter = pg::World::GetRegistryDirect().view<sbx::SampleUIConfigSingletonComponent>();
