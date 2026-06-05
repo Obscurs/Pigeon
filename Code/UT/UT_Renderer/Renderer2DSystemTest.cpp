@@ -14,6 +14,40 @@
 #include <Pigeon/Renderer/DrawStringInFrameEvent.h>
 #include <Pigeon/Renderer/DrawUIQuadInFrameEvent.h>
 #include <Pigeon/Renderer/DrawUIStringInFrameEvent.h>
+#include <Pigeon/Renderer/Shader.h>
+#include <Pigeon/Renderer/Texture.h>
+
+#include <glm/glm.hpp>
+#include <vector>
+
+namespace
+{
+	// Seed the minimal valid state for the system to initialise renderer data:
+	// a camera, a resource map (default texture + quad/text shaders) and an engine
+	// config whose shader IDs match the resource map's shader keys.
+	void SeedValidRenderState()
+	{
+		entt::registry& registry = pg::World::GetRegistryDirect();
+
+		const pg::UUID quadShaderID = pg::UUID::Generate();
+		const pg::UUID textShaderID = pg::UUID::Generate();
+
+		entt::entity camEnt = registry.create();
+		registry.emplace<pg::OrthographicCameraComponent>(camEnt);
+
+		entt::entity resEnt = registry.create();
+		pg::ResourceMapSingletonComponent& resources = registry.emplace<pg::ResourceMapSingletonComponent>(resEnt);
+		std::vector<unsigned char> pixels(2 * 2 * 4, 255);
+		resources.m_TextureMap[resources.m_DefaultTexture] = pg::MappedTexture{ pg::Texture2D::Create(2, 2, 4, pixels.data()), pg::EMappedTextureType::eQuad };
+		resources.m_ShaderMap[quadShaderID] = pg::Shader::Create("UTTestQuadShader");
+		resources.m_ShaderMap[textShaderID] = pg::Shader::Create("UTTestTextShader");
+
+		entt::entity cfgEnt = registry.create();
+		pg::EngineConfigSingletonComponent& config = registry.emplace<pg::EngineConfigSingletonComponent>(cfgEnt);
+		config.m_DefaultQuadShaderID = quadShaderID;
+		config.m_DefaultTextShaderID = textShaderID;
+	}
+} // namespace
 
 namespace CatchTestsetFail
 {
@@ -79,6 +113,58 @@ namespace CatchTestsetFail
 
 		auto view = pg::World::GetRegistryDirect().view<pg::RendererDataSingletonComponent>();
 		CHECK(view.size() == 0);
+	}
+
+	// ---------------------------------------------------------------------------
+	// Happy path: camera + resources + engine config present and no renderer data
+	// yet -> system creates and fully initialises a RendererDataSingletonComponent.
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Renderer.Renderer2DSystem::InitialisesRendererDataWhenStateValid")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::Renderer2DSystem>());
+
+		SeedValidRenderState();
+
+		// A queued draw request exercises the render path; batches are flushed
+		// before the frame ends, so it leaves no observable batch state behind.
+		entt::entity drawEnt = pg::World::GetRegistryDirect().create();
+		pg::DrawQuadInFrameEvent drawEvent;
+		drawEvent.m_Transform = glm::mat4(1.f);
+		pg::World::GetRegistryDirect().emplace<pg::DrawQuadInFrameEvent>(drawEnt, drawEvent);
+
+		world.Update(pg::Timestep(0));
+
+		auto view = pg::World::GetRegistryDirect().view<pg::RendererDataSingletonComponent>();
+		REQUIRE(view.size() == 1);
+
+		const pg::RendererDataSingletonComponent& data =
+			view.get<pg::RendererDataSingletonComponent>(view.front());
+		CHECK(data.m_VertexBuffer != nullptr);
+		CHECK(data.m_IndexBuffer != nullptr);
+		CHECK(data.m_QuadShader != nullptr);
+		CHECK(data.m_TextShader != nullptr);
+		// Batches are flushed and cleared by the end of the frame.
+		CHECK(data.m_BatchMap.empty());
+		CHECK(data.m_LayerBatchMap.empty());
+	}
+
+	// ---------------------------------------------------------------------------
+	// Edge: renderer data already exists -> system reuses it (write path), it does
+	// not create a duplicate singleton.
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Renderer.Renderer2DSystem::ReusesRendererDataOnSubsequentFrame")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::Renderer2DSystem>());
+
+		SeedValidRenderState();
+
+		world.Update(pg::Timestep(0));
+		world.Update(pg::Timestep(0));
+
+		auto view = pg::World::GetRegistryDirect().view<pg::RendererDataSingletonComponent>();
+		CHECK(view.size() == 1);
 	}
 
 	// ---------------------------------------------------------------------------

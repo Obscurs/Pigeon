@@ -68,8 +68,8 @@ void pg::World::PushDeferredDestroy(const entt::entity& entity)
 	m_DeferredDestroys.push_back(entity);
 }
 
-// ---- World::Update ----
-void pg::World::Update(const pg::Timestep& ts)
+// ---- World::RunSystems ----
+void pg::World::RunSystems(const pg::Timestep& ts)
 {
 	if (!m_Sorted)
 	{
@@ -85,9 +85,24 @@ void pg::World::Update(const pg::Timestep& ts)
 		entry.system->Update(ts);
 		m_ActiveSystem = nullptr;
 	}
+}
+
+// ---- World::Update ----
+void pg::World::Update(const pg::Timestep& ts)
+{
+	RunSystems(ts);
 	ClearEvents();
 	FlushDeferredRequests();
 }
+
+#ifdef TESTS_ENABLED
+// ---- World::UpdateRetainingEvents ----
+void pg::World::UpdateRetainingEvents(const pg::Timestep& ts)
+{
+	RunSystems(ts);
+	FlushDeferredRequests();
+}
+#endif
 
 // ---- World::RegisterSystem ----
 void pg::World::RegisterSystem(std::unique_ptr<pg::System> system)

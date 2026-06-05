@@ -40,5 +40,10 @@ access declarations made in `DeclareAccess()` at runtime.
 | Remove component | `remove_deferred` | End of current frame | Removed next frame |
 | Destroy entity | `destroy_deferred` | End of current frame (after emplaces) | Destroyed next frame |
 
+## Testing Support
+- `UpdateRetainingEvents` (compiled only under `TESTS_ENABLED`): runs one frame exactly like
+  `Update` but skips `ClearEvents`, leaving in-frame events in the registry so tests can inspect
+  `inframeAddSet` outputs that are otherwise visible only to downstream systems during the frame.
+
 ## File Location
 `Code/PigeonLib/Pigeon/ECS/`

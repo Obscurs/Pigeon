@@ -6,8 +6,12 @@
 #include <Pigeon/ECS/System.h>
 #include <Pigeon/Core/EngineConfigSingletonComponent.h>
 #include <Pigeon/Core/ResourceMapSingletonComponent.h>
+#include <Pigeon/Renderer/DrawUIQuadInFrameEvent.h>
+#include <Pigeon/Renderer/DrawUIStringInFrameEvent.h>
 #include <Pigeon/UI/UIComponents.h>
 #include <Pigeon/UI/UIRenderSystem.h>
+
+#include <glm/glm.hpp>
 
 namespace CatchTestsetFail
 {
@@ -105,6 +109,59 @@ namespace CatchTestsetFail
 	}
 
 	// ---------------------------------------------------------------------------
+	// Happy path: an enabled image element emits a DrawUIQuadInFrameEvent carrying
+	// the element's texture handle and a transform scaled to its size. In-frame
+	// events are normally destroyed at end of frame, so the test drives the world
+	// with UpdateRetainingEvents to inspect the emitted event.
+	// ---------------------------------------------------------------------------
+	TEST_CASE("UI.UIRenderSystem::EnabledImageEmitsDrawEvent")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ui::UIRenderSystem>());
+
+		entt::registry& registry = pg::World::GetRegistryDirect();
+
+		// Pre-seed config + resources so the system reaches the image path.
+		entt::entity cfgEnt = registry.create();
+		pg::ui::RendererConfigSingletonComponent& cfg =
+			registry.emplace<pg::ui::RendererConfigSingletonComponent>(cfgEnt);
+		cfg.m_Width  = 1920.f;
+		cfg.m_Height = 1080.f;
+
+		entt::entity engEnt = registry.create();
+		registry.emplace<pg::EngineConfigSingletonComponent>(engEnt);
+
+		entt::entity resEnt = registry.create();
+		registry.emplace<pg::ResourceMapSingletonComponent>(resEnt);
+
+		// Enabled top-level image element.
+		const pg::UUID textureHandle = pg::UUID::Generate();
+		entt::entity uiEnt = registry.create();
+		pg::ui::BaseComponent& base = registry.emplace<pg::ui::BaseComponent>(uiEnt);
+		base.m_Enabled = true;
+		base.m_Size    = { 100.f, 50.f };
+		base.m_Parent  = entt::null;
+		base.m_UUID    = pg::UUID::Generate();
+
+		pg::ui::ImageComponent& img = registry.emplace<pg::ui::ImageComponent>(uiEnt);
+		img.m_TextureHandle = textureHandle;
+
+		world.UpdateRetainingEvents(pg::Timestep(0));
+
+		auto view = registry.view<pg::DrawUIQuadInFrameEvent>();
+		REQUIRE(view.size() == 1);
+
+		const pg::DrawUIQuadInFrameEvent& event =
+			view.get<pg::DrawUIQuadInFrameEvent>(view.front());
+		CHECK(event.m_TextureID == textureHandle);
+		CHECK(event.m_Origin == glm::vec3(0.f, 0.f, 0.f));
+		CHECK(event.m_Color == glm::vec3(0.f, 0.f, 0.f));
+		// The transform is scaled to the element's size.
+		CHECK(event.m_Transform[0][0] == 100.f);
+		CHECK(event.m_Transform[1][1] == 50.f);
+	}
+
+	// ---------------------------------------------------------------------------
 	// DeclareAccess: verify declared sets contain the expected component types
 	// ---------------------------------------------------------------------------
 	TEST_CASE("UI.UIRenderSystem::DeclareAccessIsCorrect")
@@ -120,6 +177,9 @@ namespace CatchTestsetFail
 		CHECK(decl.readSet.count(std::type_index(typeid(pg::ui::RendererConfigSingletonComponent))) > 0);
 
 		CHECK(decl.addSet.count(std::type_index(typeid(pg::ui::RendererConfigSingletonComponent))) > 0);
+
+		CHECK(decl.inframeAddSet.count(std::type_index(typeid(pg::DrawUIQuadInFrameEvent))) > 0);
+		CHECK(decl.inframeAddSet.count(std::type_index(typeid(pg::DrawUIStringInFrameEvent))) > 0);
 	}
 
 } // namespace CatchTestsetFail

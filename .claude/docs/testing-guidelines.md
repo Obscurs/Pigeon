@@ -63,6 +63,7 @@ Derive the specific cases from the system's entry in `.claude/docs/diagrams/<Mod
 - Tests set up state by adding or modifying only components declared in the system's **`readSet`**.
 - Tests verify the system's output by inspecting components in the **`writeSet`**, **`addSet`**, and **`inframeAddSet`**.
 - Checks must cover **all members** of the output components — do not leave fields unverified.
+- In-frame events/components (`inframeAddSet`) are destroyed at the end of the frame, so they are not visible after a normal `World::Update()`. To assert on them from a single-system test, drive the world with the Testing-only `World::UpdateRetainingEvents(ts)`, which runs the frame but skips event clearing, then inspect them via `GetRegistryDirect()`.
 
 ### DeclareAccess Test (required)
 

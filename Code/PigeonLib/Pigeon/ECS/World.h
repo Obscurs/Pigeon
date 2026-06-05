@@ -33,6 +33,13 @@ namespace pg
 		void Update(const pg::Timestep& ts);
 		void RegisterSystem(std::unique_ptr<pg::System> system);
 
+#ifdef TESTS_ENABLED
+		// Testing-only: runs one frame but retains in-frame events instead of
+		// destroying them at end of frame, so tests can inspect inframeAddSet
+		// outputs (otherwise visible only to downstream systems during the frame).
+		void UpdateRetainingEvents(const pg::Timestep& ts);
+#endif
+
 		inline static World& Get() { return *s_Instance; }
 
 		// Returns a checked accessor — asserts m_ActiveSystem != nullptr.
@@ -73,6 +80,7 @@ namespace pg
 
 	private:
 		void Init();
+		void RunSystems(const pg::Timestep& ts);
 		void SortSystems();
 		void FlushDeferredRequests();
 		void ClearEvents();
