@@ -1,13 +1,12 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "CameraSystem.h"
 
-#include "Pigeon/Core/Clock.h"
 #include "Pigeon/Core/KeyCodes.h"
 #include "Pigeon/Core/KeyPressedEventComponent.h"
-#include "Pigeon/Core/OrthographicCameraComponent.h"
 #include "Pigeon/Core/MouseScrolledEventComponent.h"
 #include "Pigeon/Core/WindowResizeEventComponent.h"
 #include "Pigeon/ECS/World.h"
+#include "Pigeon/Renderer/OrthographicCameraComponent.h"
 
 pg::SystemAccessDecl pg::CameraSystem::DeclareAccess() const
 {
@@ -30,7 +29,7 @@ void pg::CameraSystem::Update(const pg::Timestep& ts)
 	auto viewKeyPressedEvents = accessor.view<const pg::KeyPressedEventComponent>();
 	auto viewScrollEvents = accessor.view<const pg::MouseScrolledEventComponent>();
 	auto viewResizeEvents = accessor.view<const pg::WindowResizeEventComponent>();
-	
+
 	if (!viewKeyPressedEvents.empty() ||
 		!viewScrollEvents.empty() ||
 		!viewResizeEvents.empty()
@@ -42,8 +41,29 @@ void pg::CameraSystem::Update(const pg::Timestep& ts)
 		{
 			pg::OrthographicCameraComponent& component = view.get<pg::OrthographicCameraComponent>(ent);
 
+			// Resize is a viewport event, not input: aspect ratio must stay in sync for all cameras.
+			bool aspectDirty = false;
+			for (auto e : viewResizeEvents)
+			{
+				const pg::WindowResizeEventComponent& eventComponent = viewResizeEvents.get<const pg::WindowResizeEventComponent>(e);
+				if (eventComponent.m_Height > 0)
+				{
+					component.m_AspectRatio = (float)eventComponent.m_Width / (float)eventComponent.m_Height;
+					aspectDirty = true;
+				}
+			}
+
 			if (component.m_ReactsToInput)
 			{
+				// Scroll first so speed sync below uses the updated zoom level.
+				for (auto e : viewScrollEvents)
+				{
+					const pg::MouseScrolledEventComponent& eventComponent = viewScrollEvents.get<const pg::MouseScrolledEventComponent>(e);
+					component.m_ZoomLevel -= eventComponent.m_YOffset * 0.25f;
+					component.m_ZoomLevel = std::max(component.m_ZoomLevel, 0.25f);
+				}
+				component.m_CameraTranslationSpeed = component.m_ZoomLevel;
+
 				for (auto e : viewKeyPressedEvents)
 				{
 					const pg::KeyPressedEventComponent& eventComponent = viewKeyPressedEvents.get<const pg::KeyPressedEventComponent>(e);
@@ -64,23 +84,18 @@ void pg::CameraSystem::Update(const pg::Timestep& ts)
 						component.m_CameraPosition.y -= component.m_CameraTranslationSpeed * ts.AsSeconds();
 					}
 				}
-				for (auto e : viewScrollEvents)
-				{
-					const pg::MouseScrolledEventComponent& eventComponent = viewScrollEvents.get<const pg::MouseScrolledEventComponent>(e);
-					component.m_ZoomLevel -= eventComponent.m_YOffset * 0.25f;
-					component.m_ZoomLevel = std::max(component.m_ZoomLevel, 0.25f);
-				}
-				for (auto e : viewResizeEvents)
-				{
-					const pg::WindowResizeEventComponent& eventComponent = viewResizeEvents.get<const pg::WindowResizeEventComponent>(e);
-					component.m_AspectRatio = (float)eventComponent.m_Width / (float)eventComponent.m_Height;
-				}
+				component.m_Camera.SetPosition(component.m_CameraPosition);
+			}
+			else if (aspectDirty)
+			{
+				// Sync internal position before rebuilding the projection for non-reactive cameras.
+				component.m_Camera.SetPosition(component.m_CameraPosition);
 			}
 
-			component.m_Camera.SetPosition(component.m_CameraPosition);
-
-			component.m_CameraTranslationSpeed = component.m_ZoomLevel;
-			component.m_Camera.SetProjection(-component.m_AspectRatio * component.m_ZoomLevel, component.m_AspectRatio * component.m_ZoomLevel, -component.m_ZoomLevel, component.m_ZoomLevel);
+			if (component.m_ReactsToInput || aspectDirty)
+			{
+				component.m_Camera.SetProjection(-component.m_AspectRatio * component.m_ZoomLevel, component.m_AspectRatio * component.m_ZoomLevel, -component.m_ZoomLevel, component.m_ZoomLevel);
+			}
 		}
 	}
 }

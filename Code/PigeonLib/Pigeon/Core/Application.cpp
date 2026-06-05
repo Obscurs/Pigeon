@@ -2,7 +2,6 @@
 
 #include "Application.h"
 
-#include "Pigeon/Core/CameraSystem.h"
 #include "Pigeon/Core/ConfigLoaderSystem.h"
 #include "Pigeon/Core/InputSystem.h"
 #include "Pigeon/Core/KeyPressedEventComponent.h"
@@ -13,13 +12,13 @@
 #include "Pigeon/Core/MouseButtonReleasedEventComponent.h"
 #include "Pigeon/Core/MouseMovedEventComponent.h"
 #include "Pigeon/Core/MouseScrolledEventComponent.h"
-#include "Pigeon/Core/OrthographicCameraComponent.h"
 #include "Pigeon/Core/ResourceManagerSystem.h"
 #include "Pigeon/Core/WindowCloseEventComponent.h"
 #include "Pigeon/Core/WindowResizeEventComponent.h"
 #include "Pigeon/ECS/World.h"
 #include "Pigeon/Events/ApplicationEvent.h"
 #include "Pigeon/ImGui/ImGuiLayer.h"
+#include "Pigeon/Renderer/CameraSystem.h"
 #include "Pigeon/Renderer/Renderer.h"
 #include "Pigeon/Renderer/Renderer2DSystem.h"
 #include "Pigeon/UI/UIControlSystem.h"

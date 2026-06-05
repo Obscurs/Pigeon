@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Pigeon/ECS/System.h"
 

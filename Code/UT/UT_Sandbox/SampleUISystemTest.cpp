@@ -4,7 +4,7 @@
 
 #include <Pigeon/ECS/World.h>
 #include <Pigeon/ECS/System.h>
-#include <Pigeon/Core/OrthographicCameraComponent.h>
+#include <Pigeon/Renderer/OrthographicCameraComponent.h>
 #include <Pigeon/Core/ResourceMapSingletonComponent.h>
 #include <Pigeon/Renderer/DrawQuadInFrameEvent.h>
 #include <Pigeon/Renderer/DrawSpriteInFrameEvent.h>

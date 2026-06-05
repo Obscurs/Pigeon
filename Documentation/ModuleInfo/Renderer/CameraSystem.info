@@ -2,9 +2,10 @@
 
 ## Purpose
 Updates the orthographic camera each frame in response to keyboard, scroll, and window-resize input
-events. Translation (WASD), zoom (scroll wheel), and aspect ratio (window resize) are applied only to
-OrthographicCameraComponent entities where m_ReactsToInput = true. Camera matrix is rebuilt every
-frame an event is present; skipped entirely when no relevant events arrived.
+events. Window-resize events update m_AspectRatio and rebuild the projection matrix for ALL cameras
+regardless of m_ReactsToInput. Translation (WASD) and zoom (scroll wheel) are applied only to cameras
+where m_ReactsToInput = true. Camera matrix is rebuilt every frame an event is present; skipped
+entirely when no relevant events arrived.
 
 ## Input Components
 | Component | Access |

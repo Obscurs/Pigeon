@@ -1,9 +1,8 @@
 ﻿#include "pch.h"
 #include "Renderer2DSystem.h"
 
-#include "Pigeon/Core/Clock.h"
 #include "Pigeon/Core/EngineConfigSingletonComponent.h"
-#include "Pigeon/Core/OrthographicCameraComponent.h"
+#include "Pigeon/Renderer/OrthographicCameraComponent.h"
 #include "Pigeon/Core/ResourceMapSingletonComponent.h"
 #include "Pigeon/ECS/World.h"
 #include "Pigeon/Renderer/DrawQuadInFrameEvent.h"

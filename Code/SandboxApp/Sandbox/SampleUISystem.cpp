@@ -3,7 +3,7 @@
 #include <imgui.h>
 
 #include "Pigeon/Core/Clock.h"
-#include "Pigeon/Core/OrthographicCameraComponent.h"
+#include "Pigeon/Renderer/OrthographicCameraComponent.h"
 #include "Pigeon/Core/ResourceMapSingletonComponent.h"
 #include "Pigeon/ECS/World.h"
 #include "Pigeon/Renderer/DrawQuadInFrameEvent.h"
@@ -65,9 +65,7 @@ void sbx::SampleUISystem::Update(const pg::Timestep& ts)
 
 		cameraComponent.m_AspectRatio = 1280.0f / 720.0f;
 		cameraComponent.m_Camera = pg::OrthographicCamera(-cameraComponent.m_AspectRatio * cameraComponent.m_ZoomLevel, cameraComponent.m_AspectRatio * cameraComponent.m_ZoomLevel, -cameraComponent.m_ZoomLevel, cameraComponent.m_ZoomLevel);
-		cameraComponent.m_Rotation = false;
 		cameraComponent.m_ReactsToInput = true;
-		cameraComponent.m_CameraPosition.z = 0.f;
 
 		component.m_ColorQuad1 = glm::vec3(0.f, 1.f, 0.0f);
 		component.m_PosQuad1 = glm::vec3(0.0f, 0.0f, 0.0f);

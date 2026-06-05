@@ -1,11 +1,10 @@
-﻿#pragma once
 #include <catch2/catch.hpp>
 #include "Utils/TestApp.h"
 
 #include <Pigeon/ECS/World.h>
 #include <Pigeon/ECS/System.h>
-#include <Pigeon/Core/CameraSystem.h>
-#include <Pigeon/Core/OrthographicCameraComponent.h>
+#include <Pigeon/Renderer/CameraSystem.h>
+#include <Pigeon/Renderer/OrthographicCameraComponent.h>
 #include <Pigeon/Core/KeyCodes.h>
 #include <Pigeon/Core/KeyPressedEventComponent.h>
 #include <Pigeon/Core/MouseScrolledEventComponent.h>
@@ -18,7 +17,7 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	// Guard: no input events -> camera position unchanged
 	// ---------------------------------------------------------------------------
-	TEST_CASE("Core.CameraSystem::NoEventsNoCameraMovement")
+	TEST_CASE("Renderer.CameraSystem::NoEventsNoCameraMovement")
 	{
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::CameraSystem>());
@@ -40,7 +39,7 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	// Happy path: PG_KEY_A pressed -> camera moves left (negative X)
 	// ---------------------------------------------------------------------------
-	TEST_CASE("Core.CameraSystem::KeyAMovesCameraLeft")
+	TEST_CASE("Renderer.CameraSystem::KeyAMovesCameraLeft")
 	{
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::CameraSystem>());
@@ -69,7 +68,7 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	// Happy path: PG_KEY_D pressed -> camera moves right (positive X)
 	// ---------------------------------------------------------------------------
-	TEST_CASE("Core.CameraSystem::KeyDMovesCameraRight")
+	TEST_CASE("Renderer.CameraSystem::KeyDMovesCameraRight")
 	{
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::CameraSystem>());
@@ -98,7 +97,7 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	// Happy path: PG_KEY_W pressed -> camera moves up (positive Y)
 	// ---------------------------------------------------------------------------
-	TEST_CASE("Core.CameraSystem::KeyWMovesCameraUp")
+	TEST_CASE("Renderer.CameraSystem::KeyWMovesCameraUp")
 	{
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::CameraSystem>());
@@ -127,7 +126,7 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	// Happy path: PG_KEY_S pressed -> camera moves down (negative Y)
 	// ---------------------------------------------------------------------------
-	TEST_CASE("Core.CameraSystem::KeySMovesCameraDown")
+	TEST_CASE("Renderer.CameraSystem::KeySMovesCameraDown")
 	{
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::CameraSystem>());
@@ -156,7 +155,7 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	// Happy path: scroll event -> zoom level decreases
 	// ---------------------------------------------------------------------------
-	TEST_CASE("Core.CameraSystem::ScrollEventChangesZoomLevel")
+	TEST_CASE("Renderer.CameraSystem::ScrollEventChangesZoomLevel")
 	{
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::CameraSystem>());
@@ -183,7 +182,7 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	// Edge case: scroll event would push zoom below 0.25 -> clamped to 0.25
 	// ---------------------------------------------------------------------------
-	TEST_CASE("Core.CameraSystem::ScrollZoomClampedToMinimum")
+	TEST_CASE("Renderer.CameraSystem::ScrollZoomClampedToMinimum")
 	{
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::CameraSystem>());
@@ -209,7 +208,7 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	// Happy path: window resize event -> aspect ratio updated
 	// ---------------------------------------------------------------------------
-	TEST_CASE("Core.CameraSystem::ResizeEventUpdatesAspectRatio")
+	TEST_CASE("Renderer.CameraSystem::ResizeEventUpdatesAspectRatio")
 	{
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::CameraSystem>());
@@ -237,7 +236,7 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	// Guard: camera with m_ReactsToInput=false -> not moved by key events
 	// ---------------------------------------------------------------------------
-	TEST_CASE("Core.CameraSystem::NonReactingCameraIgnoresInput")
+	TEST_CASE("Renderer.CameraSystem::NonReactingCameraIgnoresInput")
 	{
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<pg::CameraSystem>());
@@ -266,7 +265,7 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	// DeclareAccess: verify declared sets
 	// ---------------------------------------------------------------------------
-	TEST_CASE("Core.CameraSystem::DeclareAccessIsCorrect")
+	TEST_CASE("Renderer.CameraSystem::DeclareAccessIsCorrect")
 	{
 		pg::CameraSystem sys;
 		pg::SystemAccessDecl decl = sys.DeclareAccess();

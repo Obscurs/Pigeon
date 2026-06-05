@@ -6,6 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - Never modify `CLAUDE.md` or `.claude/settings.local.json` without explicit user approval.
 - Use the `implement-feature` skill for feature implementation tasks and the `code-review` skill for reviews. Never skip the review step.
+- All project skills live in `.agents/skills/`. Never look for them in `.claude/skills/`.
 
 ## Projects
 

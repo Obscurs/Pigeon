@@ -11,6 +11,14 @@ Read `.claude/docs/PLAN.md` to identify the active task before starting.
 
 ---
 
+## Phase 0 — Grill with docs
+
+Follow the full workflow from [../grill-with-docs/SKILL.md](../grill-with-docs/SKILL.md).
+
+Challenge the feature plan against the domain model, existing terminology, and architectural rules before any implementation begins. Resolve all ambiguities, update `CONTEXT.md` inline as terms are settled, and record hard architectural decisions as ADRs. Do not proceed to Phase 1 until the grilling session is complete.
+
+---
+
 ## Phase 1 — TDD (red → green)
 
 Follow the full TDD workflow from [../tdd/SKILL.md](../tdd/SKILL.md).

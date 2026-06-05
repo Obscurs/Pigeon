@@ -71,13 +71,13 @@ Platform
                                 ▼
 Core
   ├── Application          boot sequence, layer stack, OS event bridge
-  ├── CameraSystem         KeyPressedEvent + ScrollEvent + ResizeEvent  →  OrthographicCameraComponent
   ├── ConfigLoaderSystem   Assets/Engine/Config.json  →  EngineConfigSingletonComponent  (frame 1 only)
   ├── InputSystem          input event components  →  InputStateSingletonComponent
   └── ResourceManagerSystem  manifests  →  ResourceMapSingletonComponent  (frame 1 only)
                                 │
                                 ▼
 Renderer
+  ├── CameraSystem         KeyPressedEvent + ScrollEvent + ResizeEvent  →  OrthographicCameraComponent
   └── Renderer2DSystem
         reads:  OrthographicCameraComponent, EngineConfigSingletonComponent,
                 ResourceMapSingletonComponent, Draw*InFrameEvent

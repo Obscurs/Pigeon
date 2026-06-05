@@ -5,7 +5,7 @@
 #include <Pigeon/ECS/World.h>
 #include <Pigeon/ECS/System.h>
 #include <Pigeon/Core/EngineConfigSingletonComponent.h>
-#include <Pigeon/Core/OrthographicCameraComponent.h>
+#include <Pigeon/Renderer/OrthographicCameraComponent.h>
 #include <Pigeon/Core/ResourceMapSingletonComponent.h>
 #include <Pigeon/Renderer/Renderer2DSystem.h>
 #include <Pigeon/Renderer/RendererDataSingletonComponent.h>
