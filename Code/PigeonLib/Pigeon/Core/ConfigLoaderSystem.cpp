@@ -39,10 +39,10 @@ void pg::ConfigLoaderSystem::Update(const pg::Timestep& ts)
 {
 	auto accessor = pg::World::GetRegistry();
 
-	if (accessor.view<const pg::EngineConfigSingletonComponent>().empty())
+	if (accessor.View<const pg::EngineConfigSingletonComponent>().empty())
 	{
 		pg::EngineConfigSingletonComponent component;
-		pg::ecs::Entity ent = accessor.create();
+		pg::ecs::Entity ent = accessor.Create();
 		std::string configStr = ReadJSONFileToString("Assets/Engine/Config.json");
 		json jsonObject = json::parse(configStr);
 
@@ -53,6 +53,6 @@ void pg::ConfigLoaderSystem::Update(const pg::Timestep& ts)
 		component.m_DefaultFontID = pg::UUID(jsonObject["defaultFont"].get<std::string>());
 		component.m_DefaultQuadShaderID = pg::UUID(jsonObject["defaultQuadShader"].get<std::string>());
 		component.m_DefaultTextShaderID = pg::UUID(jsonObject["defaultTextShader"].get<std::string>());
-		accessor.emplace_deferred<pg::EngineConfigSingletonComponent>(ent, std::move(component));
+		accessor.EmplaceDeferred<pg::EngineConfigSingletonComponent>(ent, std::move(component));
 	}
 }

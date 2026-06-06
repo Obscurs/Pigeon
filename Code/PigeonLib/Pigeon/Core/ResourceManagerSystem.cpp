@@ -114,10 +114,10 @@ void pg::ResourceManagerSystem::Update(const pg::Timestep& ts)
 {
 	auto accessor = pg::World::GetRegistry();
 
-	if (accessor.view<const pg::ResourceMapSingletonComponent>().empty())
+	if (accessor.View<const pg::ResourceMapSingletonComponent>().empty())
 	{
 		pg::ResourceMapSingletonComponent component;
-		pg::ecs::Entity ent = accessor.create();
+		pg::ecs::Entity ent = accessor.Create();
 
 		std::vector<unsigned char> data(2 * 2 * 4, 255);
 		pg::MappedTexture mappedTexture = { std::move(pg::Texture2D::Create(2, 2, 4, data.data())), pg::EMappedTextureType::eQuad };
@@ -129,6 +129,6 @@ void pg::ResourceManagerSystem::Update(const pg::Timestep& ts)
 #else
 		LoadResourcesFromPath(component, "Assets/App/ResourcesManifest.json", "App");
 #endif
-		accessor.emplace_deferred<pg::ResourceMapSingletonComponent>(ent, std::move(component));
+		accessor.EmplaceDeferred<pg::ResourceMapSingletonComponent>(ent, std::move(component));
 	}
 }

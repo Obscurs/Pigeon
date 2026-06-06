@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <typeindex>
 
 #include "Pigeon/Core/Core.h"
@@ -8,67 +8,63 @@
 
 namespace pg
 {
-	// Forward declaration so emplace_deferred can call World::Get().PushDeferredAdd(...)
+	// Forward declaration so the deferred-push helpers can reach World in the .cpp.
 	struct DeferredAdd;
 	class World;
 
 	class CheckedRegistryAccessor
 	{
 	public:
-		// Checked constructor — used by GetRegistry(); decl is copied to avoid dangling into m_Systems.
-		// Systems that do not override DeclareAccess() will receive an empty decl and assertions will
-		// fire on any component access — this forces all systems to declare their access explicitly.
+		// decl is copied to avoid dangling into World's system list. A system that does not
+		// override DeclareAccess() receives an empty decl, so every component access asserts.
+		// This forces all systems to declare their access explicitly.
 		CheckedRegistryAccessor(pg::ecs::Registry& reg, const SystemAccessDecl& decl)
 			: m_Registry(reg), m_Decl(decl)
 		{}
 
-		// View path — asserts all template args are in readSet union writeSet.
 		template<typename... Components>
-		auto view()
+		auto View()
 		{
-			// Use initializer-list expansion trick for C++17 fold over pack
+			// initializer-list expansion folds AssertReadOrWrite over the pack (C++17, no fold expr).
 			(void)std::initializer_list<int>
 			{
-				(assertReadOrWrite<std::remove_const_t<Components>>(), 0)...
+				(AssertReadOrWrite<std::remove_const_t<Components>>(), 0)...
 			};
 			return m_Registry.view<Components...>();
 		}
 
-		// View path with exclusion filter.
 		template<typename... Components, typename... Exclude>
-		auto view(pg::ecs::exclude_t<Exclude...> excl)
+		auto View(pg::ecs::exclude_t<Exclude...> excl)
 		{
 			(void)std::initializer_list<int>
 			{
-				(assertReadOrWrite<std::remove_const_t<Components>>(), 0)...
+				(AssertReadOrWrite<std::remove_const_t<Components>>(), 0)...
 			};
 			return m_Registry.view<Components...>(excl);
 		}
 
-		// Single-component get — asserts Component is in readSet or writeSet.
 		template<typename Component>
-		decltype(auto) get(pg::ecs::Entity e)
+		decltype(auto) Get(pg::ecs::Entity e)
 		{
-			assertReadOrWrite<std::remove_const_t<Component>>();
+			AssertReadOrWrite<std::remove_const_t<Component>>();
 			return m_Registry.get<Component>(e);
 		}
 
-		// Deferred add — asserts Component is in addSet, buffers the operation until end-of-frame.
+		// Buffers the add until end-of-frame; the component becomes visible next frame.
 		template<typename Component, typename... Args>
-		void emplace_deferred(pg::ecs::Entity e, Args&&... args)
+		void EmplaceDeferred(pg::ecs::Entity e, Args&&... args)
 		{
 			PG_CORE_ASSERT(
 				m_Decl.addSet.count(std::type_index(typeid(Component))),
 				"System attempted deferred add of a component not in addSet");
-			// Allocate the component value on the heap (unavoidable for type-erasure).
-			auto* payload = new Component(std::forward<Args>(args)...);
+			// Heap-allocated so the value survives until the deferred flush; freed by the destroy trampoline.
+			Component* payload = new Component(std::forward<Args>(args)...);
 
-			// Static template instantiations — no per-call heap allocation for the trampolines.
-			// Non-capturing lambdas are implicitly convertible to function pointers in C++17.
-			pushDeferredRequest(e, payload, this,
-				+[](CheckedRegistryAccessor* self, pg::ecs::Registry& reg, pg::ecs::Entity ent, void* p)
+			// Non-capturing lambdas decay to function pointers, so the trampolines need no per-call heap.
+			PushDeferredRequest(e, payload, this,
+				+[](CheckedRegistryAccessor*, pg::ecs::Registry& reg, pg::ecs::Entity ent, void* p)
 				{
-					// Double-add assertion lives here where Component is in scope.
+					// Double-add check lives here, where Component is still in scope.
 					PG_CORE_ASSERT(!reg.all_of<Component>(ent),
 						"Deferred add: entity already has component");
 					reg.emplace<Component>(ent, std::move(*static_cast<Component*>(p)));
@@ -76,94 +72,79 @@ namespace pg
 				+[](void* p) { delete static_cast<Component*>(p); });
 		}
 
-		// Deferred add — asserts Component is in addSet, buffers the operation until end-of-frame.
+		// Buffers the add until end-of-frame; visible next frame, then auto-removed at the end of that frame.
 		template<typename Component, typename... Args>
-		void emplace_oneframe(pg::ecs::Entity e, Args&&... args)
+		void EmplaceOneframe(pg::ecs::Entity e, Args&&... args)
 		{
 			PG_CORE_ASSERT(
 				m_Decl.addSet.count(std::type_index(typeid(Component))),
 				"System attempted deferred add of a component not in addSet");
-			// Allocate the component value on the heap (unavoidable for type-erasure).
-			auto* payload = new Component(std::forward<Args>(args)...);
+			Component* payload = new Component(std::forward<Args>(args)...);
 
-			// Static template instantiations — no per-call heap allocation for the trampolines.
-			// Non-capturing lambdas are implicitly convertible to function pointers in C++17.
-			pushDeferredRequest(e, payload, this,
+			PushDeferredRequest(e, payload, this,
 				+[](CheckedRegistryAccessor* self, pg::ecs::Registry& reg, pg::ecs::Entity ent, void* p)
 				{
-					auto* comp = static_cast<Component*>(p);
+					Component* comp = static_cast<Component*>(p);
 
 					PG_CORE_ASSERT(!reg.all_of<Component>(ent),
 						"Deferred add: entity already has component");
 
 					reg.emplace<Component>(ent, std::move(*comp));
 
-					auto* payload2 = new Component(*comp);
-
-					// Static template instantiations — no per-call heap allocation for the trampolines.
-					// Non-capturing lambdas are implicitly convertible to function pointers in C++17.
-					self->pushDeferredOneFrameRequest(ent, payload2, self,
-						+[](CheckedRegistryAccessor* self, pg::ecs::Registry& reg2, pg::ecs::Entity ent2, void*)
+					// Queue the matching remove so the component lives exactly one frame.
+					Component* removePayload = new Component(*comp);
+					self->PushDeferredOneFrameRequest(ent, removePayload, self,
+						+[](CheckedRegistryAccessor*, pg::ecs::Registry& reg2, pg::ecs::Entity ent2, void*)
 						{
 							reg2.remove<Component>(ent2);
 						},
 						+[](void* p2) { delete static_cast<Component*>(p2); });
-
 				},
 				+[](void* p) { delete static_cast<Component*>(p); });
 		}
 
-		// Deferred add — asserts Component is in inframeAddSet, buffers the operation until end-of-frame.
+		// Applied immediately; visible to systems that run later in the same frame.
 		template<typename Component, typename... Args>
-		void emplace_inframe(pg::ecs::Entity e, Args&&... args)
+		void EmplaceInframe(pg::ecs::Entity e, Args&&... args)
 		{
 			PG_CORE_ASSERT(
 				m_Decl.inframeAddSet.count(std::type_index(typeid(Component))),
-				"System attempted deferred add of a component not in addSet");
-			
-			PG_CORE_ASSERT(!m_Registry.all_of<Component>(ent),
-				"Deferred add: entity already has component");
-
-			auto* payload = new Component(std::forward<Args>(args)...);
-			m_Registry.emplace<Component>(e, std::move(*static_cast<Component*>(payload)));
+				"System attempted in-frame add of a component not in inframeAddSet");
+			PG_CORE_ASSERT(!m_Registry.all_of<Component>(e),
+				"In-frame add: entity already has component");
+			m_Registry.emplace<Component>(e, std::forward<Args>(args)...);
 		}
 
-		void destroy_deferred(const pg::ecs::Entity& e)
+		void DestroyDeferred(const pg::ecs::Entity& e)
 		{
-			pushDeferredDestroy(e);
+			PushDeferredDestroy(e);
 		}
 
-		// Deferred remove — buffers the operation until end-of-frame.
-		template<typename Component, typename... Args>
-		void remove_deferred(pg::ecs::Entity e, Args&&... args)
+		// Buffers the remove until end-of-frame; the component is gone next frame.
+		template<typename Component>
+		void RemoveDeferred(pg::ecs::Entity e)
 		{
-			auto* payload = new Component(std::forward<Args>(args)...);
-
-			pushDeferredRequest(e, payload, this,
-				+[](CheckedRegistryAccessor* self, pg::ecs::Registry& reg, pg::ecs::Entity ent, void* p)
+			PushDeferredRequest(e, nullptr, this,
+				+[](CheckedRegistryAccessor*, pg::ecs::Registry& reg, pg::ecs::Entity ent, void*)
 				{
 					reg.remove<Component>(ent);
 				},
-				+[](void* p) { delete static_cast<Component*>(p); });
+				+[](void*) {});
 		}
 
-		// Deferred add — asserts Component is in addSet, buffers the operation until end-of-frame.
+		// Buffers an event entity until end-of-frame; visible next frame, then destroyed by ClearEvents.
 		template<typename Component, typename... Args>
 		void EmplaceEvent(Args&&... args)
 		{
 			PG_CORE_ASSERT(
 				m_Decl.addSet.count(std::type_index(typeid(Component))),
-				"System attempted deferred add of a component not in addSet");
-			// Allocate the component value on the heap (unavoidable for type-erasure).
-			auto* payload = new Component(std::forward<Args>(args)...);
+				"System attempted deferred add of an event not in addSet");
+			Component* payload = new Component(std::forward<Args>(args)...);
 
 			pg::ecs::Entity e = m_Registry.create();
-			// Static template instantiations — no per-call heap allocation for the trampolines.
-			// Non-capturing lambdas are implicitly convertible to function pointers in C++17.
-			pushDeferredRequest(e, payload, this,
-				+[](CheckedRegistryAccessor* self, pg::ecs::Registry& reg, pg::ecs::Entity ent, void* p)
+			PushDeferredRequest(e, payload, this,
+				+[](CheckedRegistryAccessor*, pg::ecs::Registry& reg, pg::ecs::Entity ent, void* p)
 				{
-					// Double-add assertion lives here where Component is in scope.
 					PG_CORE_ASSERT(!reg.all_of<Component>(ent),
 						"Deferred add: entity already has component");
 					reg.emplace<pg::EventComponent>(ent);
@@ -172,52 +153,50 @@ namespace pg
 				+[](void* p) { delete static_cast<Component*>(p); });
 		}
 
-		// Deferred add — asserts Component is in inframeAddSet, buffers the operation until end-of-frame.
+		// Applied immediately; visible to systems that run later this frame, then destroyed by ClearEvents.
 		template<typename Component, typename... Args>
 		void EmplaceInframeEvent(Args&&... args)
 		{
 			PG_CORE_ASSERT(
 				m_Decl.inframeAddSet.count(std::type_index(typeid(Component))),
-				"System attempted deferred add of a component not in addSet");
-			auto* payload = new Component(std::forward<Args>(args)...);
-
+				"System attempted in-frame add of an event not in inframeAddSet");
 			pg::ecs::Entity e = m_Registry.create();
-			m_Registry.emplace<Component>(e, std::move(*static_cast<Component*>(payload)));
+			m_Registry.emplace<Component>(e, std::forward<Args>(args)...);
 			m_Registry.emplace<pg::EventComponent>(e);
 		}
 
-		// Entity lifecycle — no component access restriction.
-		pg::ecs::Entity create()
+		// Entity lifecycle - no component-access restriction.
+		pg::ecs::Entity Create()
 		{
 			return m_Registry.create();
 		}
 
-		void destroy(pg::ecs::Entity e)
+		void Destroy(pg::ecs::Entity e)
 		{
 			m_Registry.destroy(e);
 		}
 
-		// Non-access queries — pass through with no assertion.
-		bool valid(pg::ecs::Entity e) const
+		// Membership queries - no component-access restriction.
+		bool Valid(pg::ecs::Entity e) const
 		{
 			return m_Registry.valid(e);
 		}
 
 		template<typename... Components>
-		bool any_of(pg::ecs::Entity e) const
+		bool AnyOf(pg::ecs::Entity e) const
 		{
 			return m_Registry.any_of<Components...>(e);
 		}
 
 		template<typename... Components>
-		bool all_of(pg::ecs::Entity e) const
+		bool AllOf(pg::ecs::Entity e) const
 		{
 			return m_Registry.all_of<Components...>(e);
 		}
 
 	private:
 		template<typename Component>
-		void assertReadOrWrite()
+		void AssertReadOrWrite()
 		{
 			const std::type_index idx(typeid(Component));
 			PG_CORE_ASSERT(
@@ -225,18 +204,18 @@ namespace pg
 				"System accessed a component not declared in readSet or writeSet");
 		}
 
-		// Defined out-of-line in World.cpp to avoid circular include with World.h.
-		void pushDeferredRequest(pg::ecs::Entity e, void* payload, CheckedRegistryAccessor* self,
+		// Defined out-of-line in World.cpp to avoid a circular include with World.h.
+		void PushDeferredRequest(pg::ecs::Entity e, void* payload, CheckedRegistryAccessor* self,
 			void(*apply)(CheckedRegistryAccessor*, pg::ecs::Registry&, pg::ecs::Entity, void*),
 			void(*destroy)(void*));
 
-		void pushDeferredOneFrameRequest(pg::ecs::Entity e, void* payload, CheckedRegistryAccessor* self,
+		void PushDeferredOneFrameRequest(pg::ecs::Entity e, void* payload, CheckedRegistryAccessor* self,
 			void(*apply)(CheckedRegistryAccessor*, pg::ecs::Registry&, pg::ecs::Entity, void*),
 			void(*destroy)(void*));
 
-		void pushDeferredDestroy(const pg::ecs::Entity& e);
+		void PushDeferredDestroy(const pg::ecs::Entity& e);
 
-		pg::ecs::Registry&  m_Registry;
+		pg::ecs::Registry& m_Registry;
 		SystemAccessDecl m_Decl;
 	};
 }

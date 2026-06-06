@@ -86,18 +86,18 @@ void pg::ui::UIRenderSystem::Update(const pg::Timestep& ts)
 {
 	auto accessor = pg::World::GetRegistry();
 
-	auto viewRenderConfig = accessor.view<const pg::ui::RendererConfigSingletonComponent>();
+	auto viewRenderConfig = accessor.View<const pg::ui::RendererConfigSingletonComponent>();
 	if (viewRenderConfig.size() == 0)
 	{
 		pg::ui::RendererConfigSingletonComponent config;
-		pg::ecs::Entity configEntity = accessor.create();
-		accessor.emplace_deferred<pg::ui::RendererConfigSingletonComponent>(configEntity, std::move(config));
+		pg::ecs::Entity configEntity = accessor.Create();
+		accessor.EmplaceDeferred<pg::ui::RendererConfigSingletonComponent>(configEntity, std::move(config));
 		return;
 	}
 	PG_CORE_ASSERT(viewRenderConfig.size() == 1, "There should only be one ui render config component");
 
-	auto viewEngineConfig = accessor.view<const pg::EngineConfigSingletonComponent>();
-	auto viewResources = accessor.view<const pg::ResourceMapSingletonComponent>();
+	auto viewEngineConfig = accessor.View<const pg::EngineConfigSingletonComponent>();
+	auto viewResources = accessor.View<const pg::ResourceMapSingletonComponent>();
 	if (viewEngineConfig.empty() || viewResources.empty())
 	{
 		return;
@@ -106,7 +106,7 @@ void pg::ui::UIRenderSystem::Update(const pg::Timestep& ts)
 	const pg::EngineConfigSingletonComponent& engineConfigComponent = viewEngineConfig.get<const pg::EngineConfigSingletonComponent>(viewEngineConfig.front());
 	const pg::ui::RendererConfigSingletonComponent& renderComponent = viewRenderConfig.get<const pg::ui::RendererConfigSingletonComponent>(viewRenderConfig.front());
 
-	auto viewImages = accessor.view<const pg::ui::BaseComponent, const pg::ui::ImageComponent>();
+	auto viewImages = accessor.View<const pg::ui::BaseComponent, const pg::ui::ImageComponent>();
 	for (auto ent : viewImages)
 	{
 		const pg::ui::BaseComponent& baseComponent = viewImages.get<const pg::ui::BaseComponent>(ent);
@@ -124,7 +124,7 @@ void pg::ui::UIRenderSystem::Update(const pg::Timestep& ts)
 		}
 	}
 
-	auto viewText = accessor.view<const pg::ui::BaseComponent, const pg::ui::TextComponent>();
+	auto viewText = accessor.View<const pg::ui::BaseComponent, const pg::ui::TextComponent>();
 	for (auto ent : viewText)
 	{
 		const pg::ui::BaseComponent& baseComponent = viewText.get<pg::ui::BaseComponent>(ent);

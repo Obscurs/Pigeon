@@ -305,7 +305,7 @@ namespace
 
 	void ProcessRenderRequests(pg::CheckedRegistryAccessor& accessor, pg::RendererDataSingletonComponent& rendererDataComponent, const pg::ResourceMapSingletonComponent& resourcesComponent)
 	{
-		auto viewDrawQuad = accessor.view<const pg::DrawQuadInFrameEvent>();
+		auto viewDrawQuad = accessor.View<const pg::DrawQuadInFrameEvent>();
 		for (auto ent : viewDrawQuad)
 		{
 			const pg::DrawQuadInFrameEvent& event = viewDrawQuad.get<const pg::DrawQuadInFrameEvent>(ent);
@@ -318,7 +318,7 @@ namespace
 				DrawQuad(rendererDataComponent, resourcesComponent, event.m_Transform, event.m_TextureID, event.m_Origin);
 			}
 		}
-		auto viewDrawUIQuad = accessor.view<const pg::DrawUIQuadInFrameEvent>();
+		auto viewDrawUIQuad = accessor.View<const pg::DrawUIQuadInFrameEvent>();
 		for (auto ent : viewDrawUIQuad)
 		{
 			const pg::DrawUIQuadInFrameEvent& event = viewDrawUIQuad.get<const pg::DrawUIQuadInFrameEvent>(ent);
@@ -331,14 +331,14 @@ namespace
 				DrawQuad(rendererDataComponent, resourcesComponent, event.m_Transform, event.m_TextureID, event.m_Origin);
 			}
 		}
-		auto viewDrawSprite = accessor.view<const pg::DrawSpriteInFrameEvent>();
+		auto viewDrawSprite = accessor.View<const pg::DrawSpriteInFrameEvent>();
 		for (auto ent : viewDrawSprite)
 		{
 			const pg::DrawSpriteInFrameEvent& event = viewDrawSprite.get<const pg::DrawSpriteInFrameEvent>(ent);
 			
 			DrawSprite(rendererDataComponent, resourcesComponent, event.m_Sprite);
 		}
-		auto viewDrawString = accessor.view<const pg::DrawStringInFrameEvent>();
+		auto viewDrawString = accessor.View<const pg::DrawStringInFrameEvent>();
 		for (auto ent : viewDrawString)
 		{
 			const pg::DrawStringInFrameEvent& event = viewDrawString.get<const pg::DrawStringInFrameEvent>(ent);
@@ -346,7 +346,7 @@ namespace
 			DrawString(rendererDataComponent, resourcesComponent, event.m_Transform, event.m_String, event.m_Font, event.m_Color, event.m_Kerning, event.m_Linespacing);
 		}
 
-		auto viewDrawUIString = accessor.view<const pg::DrawUIStringInFrameEvent>();
+		auto viewDrawUIString = accessor.View<const pg::DrawUIStringInFrameEvent>();
 		for (auto ent : viewDrawUIString)
 		{
 			const pg::DrawUIStringInFrameEvent& event = viewDrawUIString.get<const pg::DrawUIStringInFrameEvent>(ent);
@@ -389,10 +389,10 @@ void pg::Renderer2DSystem::Update(const pg::Timestep& ts)
 {
 	auto accessor = pg::World::GetRegistry();
 
-	auto rendererDataView = accessor.view<pg::RendererDataSingletonComponent>();
-	auto viewCamera = accessor.view<const pg::OrthographicCameraComponent>();
-	auto resourcesView = accessor.view<const pg::ResourceMapSingletonComponent>();
-	auto configView = accessor.view<const pg::EngineConfigSingletonComponent>();
+	auto rendererDataView = accessor.View<pg::RendererDataSingletonComponent>();
+	auto viewCamera = accessor.View<const pg::OrthographicCameraComponent>();
+	auto resourcesView = accessor.View<const pg::ResourceMapSingletonComponent>();
+	auto configView = accessor.View<const pg::EngineConfigSingletonComponent>();
 	if (viewCamera.empty() || resourcesView.empty() || configView.empty())
 	{
 		return;
@@ -403,10 +403,10 @@ void pg::Renderer2DSystem::Update(const pg::Timestep& ts)
 	if (rendererDataView.empty())
 	{
 		pg::RendererDataSingletonComponent rendererDataComponent;
-		pg::ecs::Entity singletonEntity = accessor.create();
+		pg::ecs::Entity singletonEntity = accessor.Create();
 		Init(rendererDataComponent, resourcesComponent, configComponent);
 		Render(accessor, ortoCamera, rendererDataComponent, resourcesComponent);
-		accessor.emplace_deferred<pg::RendererDataSingletonComponent>(singletonEntity, std::move(rendererDataComponent));
+		accessor.EmplaceDeferred<pg::RendererDataSingletonComponent>(singletonEntity, std::move(rendererDataComponent));
 	}
 	else
 	{

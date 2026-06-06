@@ -43,6 +43,7 @@ target_link_libraries (
     SandboxApp PRIVATE PigeonLib
     spdlog
     glm
+    d3dcompiler
 )
 
 # Properties->General->Output Directory

@@ -214,7 +214,7 @@ pg::SystemAccessDecl sbx::MySystem::DeclareAccess() const
 void sbx::MySystem::Update(const pg::Timestep& ts)
 {
     pg::CheckedRegistryAccessor accessor = pg::World::GetRegistry();
-    for (pg::ecs::Entity e : accessor.view<const sbx::InputComponent, sbx::PositionComponent>())
+    for (pg::ecs::Entity e : accessor.View<const sbx::InputComponent, sbx::PositionComponent>())
     {
         // ...
     }
@@ -225,10 +225,10 @@ void sbx::MySystem::Update(const pg::Timestep& ts)
 
 | Field | Purpose | Accessor methods |
 |---|---|---|
-| `readSet` | Read components via `view<>` / `get<>` | — |
+| `readSet` | Read components via `View<>` / `Get<>` | — |
 | `writeSet` | Modify existing component values in-place | — |
-| `addSet` | Add components/events deferred to the next frame | `emplace_deferred`, `emplace_oneframe`, `EmplaceEvent` |
-| `inframeAddSet` | Add in-frame components/events visible within this frame | `emplace_inframe`, `EmplaceInframeEvent` |
+| `addSet` | Add components/events deferred to the next frame | `EmplaceDeferred`, `EmplaceOneframe`, `EmplaceEvent` |
+| `inframeAddSet` | Add in-frame components/events visible within this frame | `EmplaceInframe`, `EmplaceInframeEvent` |
 
 A type may appear in both `writeSet` and `addSet` when one system both creates new instances (deferred, via `addSet`) and modifies existing instances in-place (via `writeSet`).
 

@@ -49,9 +49,9 @@ namespace
 		void Update(const pg::Timestep&) override
 		{
 			auto accessor = pg::World::GetRegistry();
-			for (auto ent : accessor.view<CompA>())
+			for (auto ent : accessor.View<CompA>())
 			{
-				accessor.get<CompA>(ent).value = k_WrittenValue;
+				accessor.Get<CompA>(ent).value = k_WrittenValue;
 			}
 		}
 	};
@@ -68,9 +68,9 @@ namespace
 		void Update(const pg::Timestep&) override
 		{
 			auto accessor = pg::World::GetRegistry();
-			for (auto ent : accessor.view<CompA>())
+			for (auto ent : accessor.View<CompA>())
 			{
-				s_ReaderSawValue = accessor.get<CompA>(ent).value;
+				s_ReaderSawValue = accessor.Get<CompA>(ent).value;
 			}
 		}
 	};
@@ -94,8 +94,8 @@ namespace
 			if (!m_Added)
 			{
 				auto accessor = pg::World::GetRegistry();
-				pg::ecs::Entity e = accessor.create();
-				accessor.emplace_deferred<CompB>(e);
+				pg::ecs::Entity e = accessor.Create();
+				accessor.EmplaceDeferred<CompB>(e);
 				m_Added = true;
 			}
 		}
@@ -115,7 +115,7 @@ namespace
 		{
 			auto accessor = pg::World::GetRegistry();
 			s_CheckerSawCount = 0;
-			for (auto ent : accessor.view<CompB>())
+			for (auto ent : accessor.View<CompB>())
 			{
 				(void)ent;
 				++s_CheckerSawCount;
@@ -141,20 +141,89 @@ namespace
 		{
 			auto accessor = pg::World::GetRegistry();
 			// Mutate existing CompA entities via the write path.
-			for (auto ent : accessor.view<CompA>())
+			for (auto ent : accessor.View<CompA>())
 			{
-				accessor.get<CompA>(ent).value = 99;
+				accessor.Get<CompA>(ent).value = 99;
 			}
 			// Deferred-add a new entity with CompA — only once across all frames.
 			if (!m_Added)
 			{
-				pg::ecs::Entity e = accessor.create();
-				accessor.emplace_deferred<CompA>(e);
+				pg::ecs::Entity e = accessor.Create();
+				accessor.EmplaceDeferred<CompA>(e);
 				m_Added = true;
 			}
 			s_OverlapSystemRan = true;
 		}
 		bool m_Added = false;
+	};
+
+	// ---- emplace_inframe helpers: in-frame component is applied immediately ----
+
+	struct CompInframe { int value = 0; };
+
+	class InframeAdderSystem : public pg::System
+	{
+	public:
+		pg::SystemAccessDecl DeclareAccess() const override
+		{
+			pg::SystemAccessDecl decl;
+			decl.inframeAddSet.insert(std::type_index(typeid(CompInframe)));
+			return decl;
+		}
+		void Update(const pg::Timestep&) override
+		{
+			if (m_Added)
+				return;
+			auto accessor = pg::World::GetRegistry();
+			pg::ecs::Entity e = accessor.Create();
+			accessor.EmplaceInframe<CompInframe>(e, CompInframe{ 7 });
+			m_Added = true;
+		}
+		bool m_Added = false;
+	};
+
+	// ---- emplace_oneframe helpers: component lives exactly one frame ----
+
+	struct CompOneFrame { int value = 0; };
+
+	class OneFrameAdderSystem : public pg::System
+	{
+	public:
+		pg::SystemAccessDecl DeclareAccess() const override
+		{
+			pg::SystemAccessDecl decl;
+			decl.addSet.insert(std::type_index(typeid(CompOneFrame)));
+			return decl;
+		}
+		void Update(const pg::Timestep&) override
+		{
+			if (m_Added)
+				return;
+			auto accessor = pg::World::GetRegistry();
+			pg::ecs::Entity e = accessor.Create();
+			accessor.EmplaceOneframe<CompOneFrame>(e, CompOneFrame{ 5 });
+			m_Added = true;
+		}
+		bool m_Added = false;
+	};
+
+	// ---- remove_deferred helpers: removal takes effect next frame ----
+
+	static pg::ecs::Entity s_RemoveTarget = pg::ecs::null;
+
+	class RemoverSystem : public pg::System
+	{
+	public:
+		pg::SystemAccessDecl DeclareAccess() const override { return pg::SystemAccessDecl{}; }
+		void Update(const pg::Timestep&) override
+		{
+			if (m_Removed)
+				return;
+			auto accessor = pg::World::GetRegistry();
+			accessor.RemoveDeferred<CompA>(s_RemoveTarget);
+			m_Removed = true;
+		}
+		bool m_Removed = false;
 	};
 }
 namespace CatchTestsetFail
@@ -245,6 +314,73 @@ namespace CatchTestsetFail
 			++count;
 		}
 		CHECK(count == 2);
+	}
+
+	// emplace_inframe applies the component immediately, so it is present in the registry
+	// right after the frame that added it (in-frame components are permanent until removed).
+	TEST_CASE("Core.ECS.InframeAdd::VisibleSameFrame")
+	{
+		pg::World& world = pg::World::Create();
+
+		world.RegisterSystem(std::make_unique<InframeAdderSystem>());
+
+		world.Update(pg::Timestep(0));
+
+		int count = 0;
+		int seenValue = -1;
+		for (auto ent : pg::World::GetRegistryDirect().view<CompInframe>())
+		{
+			++count;
+			seenValue = pg::World::GetRegistryDirect().get<CompInframe>(ent).value;
+		}
+		CHECK(count == 1);
+		CHECK(seenValue == 7);
+	}
+
+	// A component added via emplace_oneframe is present the frame after it is added and
+	// is automatically removed at the end of that frame.
+	TEST_CASE("Core.ECS.OneFrameAdd::LivesExactlyOneFrame")
+	{
+		pg::World& world = pg::World::Create();
+
+		world.RegisterSystem(std::make_unique<OneFrameAdderSystem>());
+
+		// Frame 1: the deferred add is flushed at end of frame — the component now exists.
+		world.Update(pg::Timestep(0));
+		int afterFrame1 = 0;
+		int seenValue = -1;
+		for (auto ent : pg::World::GetRegistryDirect().view<CompOneFrame>())
+		{
+			++afterFrame1;
+			seenValue = pg::World::GetRegistryDirect().get<CompOneFrame>(ent).value;
+		}
+		CHECK(afterFrame1 == 1);
+		CHECK(seenValue == 5);
+
+		// Frame 2: the one-frame remove is flushed at end of frame — the component is gone.
+		world.Update(pg::Timestep(0));
+		int afterFrame2 = 0;
+		for (auto ent : pg::World::GetRegistryDirect().view<CompOneFrame>())
+		{
+			(void)ent;
+			++afterFrame2;
+		}
+		CHECK(afterFrame2 == 0);
+	}
+
+	// remove_deferred buffers the removal; the component is gone after the frame's flush.
+	TEST_CASE("Core.ECS.DeferredRemove::RemovedNextFrame")
+	{
+		pg::World& world = pg::World::Create();
+
+		s_RemoveTarget = pg::World::GetRegistryDirect().create();
+		pg::World::GetRegistryDirect().emplace<CompA>(s_RemoveTarget);
+
+		world.RegisterSystem(std::make_unique<RemoverSystem>());
+
+		world.Update(pg::Timestep(0));
+
+		CHECK(pg::World::GetRegistryDirect().all_of<CompA>(s_RemoveTarget) == false);
 	}
 } // End namespace: CatchTestsetFail
 

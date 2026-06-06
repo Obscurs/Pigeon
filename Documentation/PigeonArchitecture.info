@@ -98,6 +98,6 @@ UI
 | `Code/PigeonLib/Pigeon/Core/Application.h` | Application singleton — window, layer stack, boot sequence |
 | `Code/PigeonLib/Pigeon/ECS/Entity.h` | ECS abstraction layer — `pg::ecs` names (`Entity`, `null`, `Registry`, `Dispatcher`, `exclude`) over the EnTT library |
 | `Code/PigeonLib/Pigeon/ECS/World.h` | ECS World API — registry, system registration, deferred operations |
-| `Code/PigeonLib/Pigeon/ECS/CheckedRegistryAccessor.h` | Accessor API — view, get, emplace_deferred, emplace_inframe, EmplaceEvent |
+| `Code/PigeonLib/Pigeon/ECS/CheckedRegistryAccessor.h` | Accessor API — View, Get, EmplaceDeferred, EmplaceInframe, EmplaceEvent |
 | `Code/PigeonLib/Pigeon/ECS/System.h` | Base System class and SystemAccessDecl struct |
 | `Code/SandboxApp/Sandbox2D.cpp` | Entry point — CreateApplication() + client system registration |

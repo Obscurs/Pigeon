@@ -29,7 +29,7 @@ namespace
 		{
 			DestroyUI(accessor, child);
 		}
-		accessor.destroy_deferred(ent);
+		accessor.DestroyDeferred(ent);
 	}
 
 	void ParseImageComponentFromJson(pg::CheckedRegistryAccessor& accessor, const json& jsonObject, pg::ecs::Entity ent)
@@ -41,7 +41,7 @@ namespace
 			component.m_TextureHandle = pg::UUID(jsonObject["id"].get<std::string>());
 		}
 
-		accessor.emplace_deferred<pg::ui::ImageComponent>(ent, std::move(component));
+		accessor.EmplaceDeferred<pg::ui::ImageComponent>(ent, std::move(component));
 	}
 
 	void ParseTextComponentFromJson(pg::CheckedRegistryAccessor& accessor, const json& jsonObject, pg::ecs::Entity ent)
@@ -87,7 +87,7 @@ namespace
 			PG_CORE_EXCEPT(jsonObject["font"].is_string(), "unable to parse json, font is not a string");
 			component.m_FontID = pg::UUID(jsonObject["font"].get<std::string>());
 		}
-		accessor.emplace_deferred<pg::ui::TextComponent>(ent, std::move(component));
+		accessor.EmplaceDeferred<pg::ui::TextComponent>(ent, std::move(component));
 	}
 
 	void ParseJsonUIElement(pg::CheckedRegistryAccessor& accessor, const json& jsonObject, pg::ecs::Entity parent)
@@ -95,7 +95,7 @@ namespace
 		if (jsonObject.contains("ui") && jsonObject["ui"].is_object())
 		{
 			const json& uiJsonObject = jsonObject["ui"];
-			pg::ecs::Entity ent = accessor.create();
+			pg::ecs::Entity ent = accessor.Create();
 			pg::ui::BaseComponent baseComp;
 			baseComp.m_Parent = parent;
 
@@ -161,7 +161,7 @@ namespace
 				baseComp.m_UUID = pg::UUID(jsonObject["uuid"].get<std::string>());
 			}
 
-			accessor.emplace_deferred<pg::ui::BaseComponent>(ent, std::move(baseComp));
+			accessor.EmplaceDeferred<pg::ui::BaseComponent>(ent, std::move(baseComp));
 
 			if (jsonObject.contains("children"))
 			{
@@ -254,14 +254,14 @@ void pg::ui::UIControlSystem::Update(const pg::Timestep& ts)
 {
 	auto accessor = pg::World::GetRegistry();
 
-	auto resourcesView = accessor.view<const pg::ResourceMapSingletonComponent>();
+	auto resourcesView = accessor.View<const pg::ResourceMapSingletonComponent>();
 	if (resourcesView.empty())
 	{
 		return;
 	}
 	const pg::ResourceMapSingletonComponent& resourcesComponent = resourcesView.get<const pg::ResourceMapSingletonComponent>(resourcesView.front());
 
-	auto viewTransform = accessor.view<pg::ui::BaseComponent, const pg::ui::UIUpdateTransformOneFrameComponent>();
+	auto viewTransform = accessor.View<pg::ui::BaseComponent, const pg::ui::UIUpdateTransformOneFrameComponent>();
 	for (auto ent : viewTransform)
 	{
 		pg::ui::BaseComponent& baseComponent = viewTransform.get<pg::ui::BaseComponent>(ent);
@@ -272,7 +272,7 @@ void pg::ui::UIControlSystem::Update(const pg::Timestep& ts)
 		baseComponent.m_Spacing = updateComponent.m_Spacing;
 	}
 
-	auto viewParent = accessor.view<pg::ui::BaseComponent, const pg::ui::UIUpdateParentOneFrameComponent>();
+	auto viewParent = accessor.View<pg::ui::BaseComponent, const pg::ui::UIUpdateParentOneFrameComponent>();
 	for (auto ent : viewParent)
 	{
 		pg::ui::BaseComponent& baseComponent = viewParent.get<pg::ui::BaseComponent>(ent);
@@ -280,7 +280,7 @@ void pg::ui::UIControlSystem::Update(const pg::Timestep& ts)
 		baseComponent.m_Parent = updateComponent.m_Parent;
 	}
 
-	auto viewEnable = accessor.view<pg::ui::BaseComponent, const pg::ui::UIUpdateEnableOneFrameComponent>();
+	auto viewEnable = accessor.View<pg::ui::BaseComponent, const pg::ui::UIUpdateEnableOneFrameComponent>();
 	for (auto ent : viewEnable)
 	{
 		pg::ui::BaseComponent& baseComponent = viewEnable.get<pg::ui::BaseComponent>(ent);
@@ -288,7 +288,7 @@ void pg::ui::UIControlSystem::Update(const pg::Timestep& ts)
 		baseComponent.m_Enabled = updateComponent.m_Enabled;
 	}
 
-	auto viewUUID = accessor.view<pg::ui::BaseComponent, const pg::ui::UIUpdateUUIDOneFrameComponent>();
+	auto viewUUID = accessor.View<pg::ui::BaseComponent, const pg::ui::UIUpdateUUIDOneFrameComponent>();
 	for (auto ent : viewUUID)
 	{
 		pg::ui::BaseComponent& baseComponent = viewUUID.get<pg::ui::BaseComponent>(ent);
@@ -296,7 +296,7 @@ void pg::ui::UIControlSystem::Update(const pg::Timestep& ts)
 		baseComponent.m_UUID = updateComponent.m_UUID;
 	}
 
-	auto viewImage = accessor.view<pg::ui::ImageComponent, const pg::ui::UIUpdateImageUUIDOneFrameComponent>();
+	auto viewImage = accessor.View<pg::ui::ImageComponent, const pg::ui::UIUpdateImageUUIDOneFrameComponent>();
 	for (auto ent : viewImage)
 	{
 		pg::ui::ImageComponent& imageComponent = viewImage.get<pg::ui::ImageComponent>(ent);
@@ -304,7 +304,7 @@ void pg::ui::UIControlSystem::Update(const pg::Timestep& ts)
 		imageComponent.m_TextureHandle = updateComponent.m_UUID;
 	}
 
-	auto viewText = accessor.view<pg::ui::TextComponent, const pg::ui::UIUpdateTextOneFrameComponent>();
+	auto viewText = accessor.View<pg::ui::TextComponent, const pg::ui::UIUpdateTextOneFrameComponent>();
 	for (auto ent : viewText)
 	{
 		pg::ui::TextComponent& textComponent = viewText.get<pg::ui::TextComponent>(ent);
@@ -316,13 +316,13 @@ void pg::ui::UIControlSystem::Update(const pg::Timestep& ts)
 		textComponent.m_Text = updateComponent.m_Text;
 	}
 
-	auto viewLoad = accessor.view<const pg::ui::LoadLayoutEvent>();
+	auto viewLoad = accessor.View<const pg::ui::LoadLayoutEvent>();
 	for (auto entJson : viewLoad)
 	{
 		LoadLayoutFromUUID(resourcesComponent, viewLoad.get<const pg::ui::LoadLayoutEvent>(entJson).m_UUID);
 	}
 
-	auto viewDestroy = accessor.view<const pg::ui::UIDestroyOneFrameComponent>();
+	auto viewDestroy = accessor.View<const pg::ui::UIDestroyOneFrameComponent>();
 	for (auto ent : viewDestroy)
 	{
 		DestroyUI(accessor, ent);

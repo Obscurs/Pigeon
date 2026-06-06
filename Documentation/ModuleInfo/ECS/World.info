@@ -32,13 +32,13 @@ access declarations made in `DeclareAccess()` at runtime.
 
 | Operation | Accessor method | When applied | Visibility |
 |---|---|---|---|
-| Add component | `emplace_deferred` | End of current frame | Next frame |
-| Add one-frame component | `emplace_oneframe` | End of frame; removed end of next frame | One frame |
+| Add component | `EmplaceDeferred` | End of current frame | Next frame |
+| Add one-frame component | `EmplaceOneframe` | End of frame; removed end of next frame | One frame |
 | Emit event entity | `EmplaceEvent` | End of current frame | Next frame; auto-destroyed |
-| Add in-frame component | `emplace_inframe` | Immediately | Same frame (later systems only) |
+| Add in-frame component | `EmplaceInframe` | Immediately | Same frame (later systems only) |
 | Emit in-frame event | `EmplaceInframeEvent` | Immediately | Same frame; auto-destroyed at frame end |
-| Remove component | `remove_deferred` | End of current frame | Removed next frame |
-| Destroy entity | `destroy_deferred` | End of current frame (after emplaces) | Destroyed next frame |
+| Remove component | `RemoveDeferred` | End of current frame | Removed next frame |
+| Destroy entity | `DestroyDeferred` | End of current frame (after emplaces) | Destroyed next frame |
 
 ## Testing Support
 - `UpdateRetainingEvents` (compiled only under `TESTS_ENABLED`): runs one frame exactly like

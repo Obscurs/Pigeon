@@ -90,6 +90,8 @@ set(CMAKE_EXE_LINKER_FLAGS_TESTING "${CMAKE_EXE_LINKER_FLAGS_DEBUG}" CACHE STRIN
 add_compile_options(
   "$<$<CONFIG:Testing>:-DTESTS_ENABLED>"
 )
+# Sources are UTF-8; tell MSVC so it does not warn (C4819/C4566) under non-UTF code pages.
+add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 # Command to output information to the console
 # Useful for displaying errors, warnings, and debugging
 message ("cxx Flags: " ${CMAKE_CXX_FLAGS})

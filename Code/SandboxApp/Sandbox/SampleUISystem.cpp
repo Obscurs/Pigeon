@@ -44,21 +44,21 @@ void sbx::SampleUISystem::Update(const pg::Timestep& ts)
 {
 	auto accessor = pg::World::GetRegistry();
 
-	auto resourcesView = accessor.view<const pg::ResourceMapSingletonComponent>();
-	auto configView = accessor.view<const sbx::SampleUIConfigSingletonComponent>();
+	auto resourcesView = accessor.View<const pg::ResourceMapSingletonComponent>();
+	auto configView = accessor.View<const sbx::SampleUIConfigSingletonComponent>();
 	if (resourcesView.empty() || configView.empty())
 	{
 		return;
 	}
 	const pg::ResourceMapSingletonComponent& resourcesComponent = resourcesView.get<const pg::ResourceMapSingletonComponent>(resourcesView.front());
 	const sbx::SampleUIConfigSingletonComponent& configComponent = configView.get<const sbx::SampleUIConfigSingletonComponent>(configView.front());
-	auto view = accessor.view<sbx::SampleUISingletonComponent>();
+	auto view = accessor.View<sbx::SampleUISingletonComponent>();
 	if (view.empty())
 	{
 		sbx::SampleUISingletonComponent component;
-		pg::ecs::Entity entity = accessor.create();
+		pg::ecs::Entity entity = accessor.Create();
 
-		pg::ecs::Entity cameraEntity = accessor.create();
+		pg::ecs::Entity cameraEntity = accessor.Create();
 
 		pg::OrthographicCameraComponent cameraComponent;
 
@@ -84,13 +84,13 @@ void sbx::SampleUISystem::Update(const pg::Timestep& ts)
 		component.m_UUIDUI1 = pg::UUID(configComponent.m_UUIDUI1);
 		component.m_UUIDUI2 = pg::UUID(configComponent.m_UUIDUI2);
 
-		accessor.emplace_deferred<sbx::SampleUISingletonComponent>(entity, std::move(component));
+		accessor.EmplaceDeferred<sbx::SampleUISingletonComponent>(entity, std::move(component));
 
 		pg::ui::LoadLayoutEvent layoutEvent;
 		layoutEvent.m_UUID = configComponent.m_MainLayoutID;
 		accessor.EmplaceEvent<pg::ui::LoadLayoutEvent>(std::move(layoutEvent));
 
-		accessor.emplace_deferred<pg::OrthographicCameraComponent>(cameraEntity, std::move(cameraComponent));
+		accessor.EmplaceDeferred<pg::OrthographicCameraComponent>(cameraEntity, std::move(cameraComponent));
 	}
 	else
 	{
@@ -112,7 +112,7 @@ void sbx::SampleUISystem::Update(const pg::Timestep& ts)
 			quadEvent.m_Color = component.m_ColorQuad1;
 			accessor.EmplaceInframeEvent<pg::DrawQuadInFrameEvent>(std::move(quadEvent));
 
-			auto viewImageUI = accessor.view<const pg::ui::BaseComponent, const pg::ui::ImageComponent>();
+			auto viewImageUI = accessor.View<const pg::ui::BaseComponent, const pg::ui::ImageComponent>();
 			for (auto ent : viewImageUI)
 			{
 				const pg::ui::BaseComponent& baseComponent = viewImageUI.get<const pg::ui::BaseComponent>(ent);

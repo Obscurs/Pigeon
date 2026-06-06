@@ -7,7 +7,7 @@
 
 pg::U_Ptr<pg::World> pg::World::s_Instance = nullptr;
 
-void pg::CheckedRegistryAccessor::pushDeferredRequest(
+void pg::CheckedRegistryAccessor::PushDeferredRequest(
 	pg::ecs::Entity e, void* payload, CheckedRegistryAccessor* self,
 	void(*apply)(CheckedRegistryAccessor*, pg::ecs::Registry&, pg::ecs::Entity, void*),
 	void(*destroy)(void*))
@@ -15,7 +15,7 @@ void pg::CheckedRegistryAccessor::pushDeferredRequest(
 	pg::World::Get().PushDeferredRequest({ e, payload, self, apply, destroy });
 }
 
-void pg::CheckedRegistryAccessor::pushDeferredOneFrameRequest(
+void pg::CheckedRegistryAccessor::PushDeferredOneFrameRequest(
 	pg::ecs::Entity e, void* payload, CheckedRegistryAccessor* self,
 	void(*apply)(CheckedRegistryAccessor*, pg::ecs::Registry&, pg::ecs::Entity, void*),
 	void(*destroy)(void*))
@@ -23,7 +23,7 @@ void pg::CheckedRegistryAccessor::pushDeferredOneFrameRequest(
 	pg::World::Get().PushDeferredOneFrameRequest({ e, payload, self, apply, destroy });
 }
 
-void pg::CheckedRegistryAccessor::pushDeferredDestroy(const pg::ecs::Entity& e)
+void pg::CheckedRegistryAccessor::PushDeferredDestroy(const pg::ecs::Entity& e)
 {
 	pg::World::Get().PushDeferredDestroy(e);
 }

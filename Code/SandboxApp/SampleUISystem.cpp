@@ -22,20 +22,20 @@ void sbx::SampleUISystem::Update(const pg::Timestep& ts)
 	auto accessor = pg::World::GetRegistry();
 	pg::ecs::Registry& reg = accessor.GetInternalRegistry();
 
-	auto viewRenderConfig = accessor.view<const pg::ui::RendererConfig>();
+	auto viewRenderConfig = accessor.View<const pg::ui::RendererConfig>();
 	if (viewRenderConfig.size() == 0)
 	{
 		pg::ui::RendererConfig config;
 		config.m_Font = m_Helper->CreateUIFont();
-		pg::ecs::Entity configEntity = accessor.create();
-		accessor.emplace_deferred<pg::ui::RendererConfig>(configEntity, std::move(config));
+		pg::ecs::Entity configEntity = accessor.Create();
+		accessor.EmplaceDeferred<pg::ui::RendererConfig>(configEntity, std::move(config));
 		return;
 	}
 	PG_CORE_ASSERT(viewRenderConfig.size() == 1, "There should only be one ui render config component");
 	const pg::ui::RendererConfig& renderComponent = viewRenderConfig.get<const pg::ui::RendererConfig>(viewRenderConfig.front());
 
 	m_Helper->RendererBeginScene(renderComponent.m_Camera);
-	auto viewImages = accessor.view<const pg::ui::BaseComponent, const pg::ui::ImageComponent>();
+	auto viewImages = accessor.View<const pg::ui::BaseComponent, const pg::ui::ImageComponent>();
 	for (auto ent : viewImages)
 	{
 		const pg::ui::BaseComponent& baseComponent = viewImages.get<pg::ui::BaseComponent>(ent);
@@ -48,7 +48,7 @@ void sbx::SampleUISystem::Update(const pg::Timestep& ts)
 		}
 	}
 
-	auto viewText = accessor.view<const pg::ui::BaseComponent, const pg::ui::TextComponent>();
+	auto viewText = accessor.View<const pg::ui::BaseComponent, const pg::ui::TextComponent>();
 	for (auto ent : viewText)
 	{
 		const pg::ui::BaseComponent& baseComponent = viewText.get<pg::ui::BaseComponent>(ent);

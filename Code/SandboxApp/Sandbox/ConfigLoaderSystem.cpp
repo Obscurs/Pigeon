@@ -39,10 +39,10 @@ void sbx::ConfigLoaderSystem::Update(const pg::Timestep& ts)
 {
 	auto accessor = pg::World::GetRegistry();
 
-	if (accessor.view<const sbx::SampleUIConfigSingletonComponent>().empty())
+	if (accessor.View<const sbx::SampleUIConfigSingletonComponent>().empty())
 	{
 		sbx::SampleUIConfigSingletonComponent component;
-		pg::ecs::Entity ent = accessor.create();
+		pg::ecs::Entity ent = accessor.Create();
 		std::string configStr = ReadJSONFileToString("Assets/App/Config.json");
 		json jsonObject = json::parse(configStr);
 
@@ -55,6 +55,6 @@ void sbx::ConfigLoaderSystem::Update(const pg::Timestep& ts)
 		component.m_UUIDUI1 = pg::UUID(jsonObject["uuidui1"].get<std::string>());
 		component.m_UUIDUI2 = pg::UUID(jsonObject["uuidui2"].get<std::string>());
 		component.m_MainLayoutID = pg::UUID(jsonObject["mainLayoutId"].get<std::string>());
-		accessor.emplace_deferred<sbx::SampleUIConfigSingletonComponent>(ent, std::move(component));
+		accessor.EmplaceDeferred<sbx::SampleUIConfigSingletonComponent>(ent, std::move(component));
 	}
 }

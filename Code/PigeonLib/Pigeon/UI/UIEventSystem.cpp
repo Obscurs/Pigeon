@@ -38,18 +38,18 @@ void pg::ui::UIEventSystem::Update(const pg::Timestep& ts)
 {
 	auto accessor = pg::World::GetRegistry();
 
-	auto viewInput = accessor.view<const pg::InputStateSingletonComponent>();
+	auto viewInput = accessor.View<const pg::InputStateSingletonComponent>();
 	if (viewInput.size() != 1)
 		return;
 
-	auto viewRenderConfig = accessor.view<const pg::ui::RendererConfigSingletonComponent>();
+	auto viewRenderConfig = accessor.View<const pg::ui::RendererConfigSingletonComponent>();
 	if (viewRenderConfig.size() != 1)
 		return;
 
 	const pg::InputStateSingletonComponent& inputComponent = viewInput.get<const pg::InputStateSingletonComponent>(viewInput.front());
 	const pg::ui::RendererConfigSingletonComponent& renderComponent = viewRenderConfig.get<const pg::ui::RendererConfigSingletonComponent>(viewRenderConfig.front());
 
-	auto viewUI = accessor.view<const pg::ui::BaseComponent>();
+	auto viewUI = accessor.View<const pg::ui::BaseComponent>();
 	for (auto ent : viewUI)
 	{
 		const pg::ui::BaseComponent& baseComponent = viewUI.get<pg::ui::BaseComponent>(ent);
@@ -62,19 +62,19 @@ void pg::ui::UIEventSystem::Update(const pg::Timestep& ts)
 			{
 				pg::ui::UIOnHoverOneFrameComponent hoverComp;
 				hoverComp.m_ElementID = baseComponent.m_UUID;
-				accessor.emplace_oneframe<pg::ui::UIOnHoverOneFrameComponent>(ent, std::move(hoverComp));
+				accessor.EmplaceOneframe<pg::ui::UIOnHoverOneFrameComponent>(ent, std::move(hoverComp));
 
 				if (inputComponent.m_KeysPressed.find(PG_MOUSE_BUTTON_LEFT) != inputComponent.m_KeysPressed.end())
 				{
 					pg::ui::UIOnClickOneFrameComponent clickComp;
 					clickComp.m_ElementID = baseComponent.m_UUID;
-					accessor.emplace_oneframe<pg::ui::UIOnClickOneFrameComponent>(ent, std::move(clickComp));
+					accessor.EmplaceOneframe<pg::ui::UIOnClickOneFrameComponent>(ent, std::move(clickComp));
 				}
 				else if (inputComponent.m_KeysReleased.find(PG_MOUSE_BUTTON_LEFT) != inputComponent.m_KeysReleased.end())
 				{
 					pg::ui::UIOnReleaseOneFrameComponent releaseComp;
 					releaseComp.m_ElementID = baseComponent.m_UUID;
-					accessor.emplace_oneframe<pg::ui::UIOnReleaseOneFrameComponent>(ent, std::move(releaseComp));
+					accessor.EmplaceOneframe<pg::ui::UIOnReleaseOneFrameComponent>(ent, std::move(releaseComp));
 				}
 			}
 		}

@@ -98,23 +98,23 @@ void pg::InputSystem::Update(const pg::Timestep& ts)
 {
 	auto accessor = pg::World::GetRegistry();
 
-	auto view = accessor.view<pg::InputStateSingletonComponent>();
+	auto view = accessor.View<pg::InputStateSingletonComponent>();
 	if (view.empty())
 	{
 		pg::InputStateSingletonComponent component;
-		pg::ecs::Entity entity = accessor.create();
-		accessor.emplace_deferred<pg::InputStateSingletonComponent>(entity, std::move(component));
+		pg::ecs::Entity entity = accessor.Create();
+		accessor.EmplaceDeferred<pg::InputStateSingletonComponent>(entity, std::move(component));
 	}
 	else
 	{
 		std::vector<InputEvent> events;
-		auto viewKeyPressedEvents = accessor.view<const pg::KeyPressedEventComponent>();
-		auto viewKeyReleasedEvents = accessor.view<const pg::KeyReleasedEventComponent>();
-		auto viewKeyTypedEvents = accessor.view<const pg::KeyTypedEventComponent>();
-		auto viewMouseMovedEvents = accessor.view<const pg::MouseMovedEventComponent>();
-		auto viewMousePressedEvents = accessor.view<const pg::MouseButtonPressedEventComponent>();
-		auto viewMouseReleasedEvents = accessor.view<const pg::MouseButtonReleasedEventComponent>();
-		auto viewMouseScrolledEvents = accessor.view<const pg::MouseScrolledEventComponent>();
+		auto viewKeyPressedEvents = accessor.View<const pg::KeyPressedEventComponent>();
+		auto viewKeyReleasedEvents = accessor.View<const pg::KeyReleasedEventComponent>();
+		auto viewKeyTypedEvents = accessor.View<const pg::KeyTypedEventComponent>();
+		auto viewMouseMovedEvents = accessor.View<const pg::MouseMovedEventComponent>();
+		auto viewMousePressedEvents = accessor.View<const pg::MouseButtonPressedEventComponent>();
+		auto viewMouseReleasedEvents = accessor.View<const pg::MouseButtonReleasedEventComponent>();
+		auto viewMouseScrolledEvents = accessor.View<const pg::MouseScrolledEventComponent>();
 
 		pg::InputStateSingletonComponent& component = view.get<pg::InputStateSingletonComponent>(view.front());
 

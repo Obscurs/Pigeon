@@ -26,16 +26,16 @@ void pg::CameraSystem::Update(const pg::Timestep& ts)
 {
 	auto accessor = pg::World::GetRegistry();
 
-	auto viewKeyPressedEvents = accessor.view<const pg::KeyPressedEventComponent>();
-	auto viewScrollEvents = accessor.view<const pg::MouseScrolledEventComponent>();
-	auto viewResizeEvents = accessor.view<const pg::WindowResizeEventComponent>();
+	auto viewKeyPressedEvents = accessor.View<const pg::KeyPressedEventComponent>();
+	auto viewScrollEvents = accessor.View<const pg::MouseScrolledEventComponent>();
+	auto viewResizeEvents = accessor.View<const pg::WindowResizeEventComponent>();
 
 	if (!viewKeyPressedEvents.empty() ||
 		!viewScrollEvents.empty() ||
 		!viewResizeEvents.empty()
 		)
 	{
-		auto view = accessor.view<pg::OrthographicCameraComponent>();
+		auto view = accessor.View<pg::OrthographicCameraComponent>();
 
 		for (auto ent : view)
 		{
