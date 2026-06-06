@@ -57,7 +57,7 @@ void pg::WindowsWindow::Init(const pg::WindowProps& props)
 	);
 	if (!m_Window) {
 		DWORD errorCode = GetLastError();
-		PG_CORE_ASSERT(false, "error creating window, error code %d", int(errorCode));
+		PG_CORE_ASSERT(false, "error creating window, error code {0}", int(errorCode));
 		// Now you can use errorCode to understand the issue.
 		// You might want to convert it to a human-readable error message.
 	}

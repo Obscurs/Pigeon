@@ -216,7 +216,7 @@ namespace
 		}
 		else
 		{
-			PG_CORE_ASSERT(false, "Texture %s not fount in renderer2d batch map", textureID.ToString().c_str());
+			PG_CORE_ASSERT(false, "Texture {0} not found in renderer2d batch map", textureID.ToString());
 		}
 	}
 
@@ -293,7 +293,7 @@ namespace
 		}
 		else
 		{
-			PG_CORE_ASSERT(false, "Texture %s not fount in renderer2d batch map", textureID.ToString().c_str());
+			PG_CORE_ASSERT(false, "Texture {0} not found in renderer2d batch map", textureID.ToString());
 		}
 	}
 
