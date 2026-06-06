@@ -7,8 +7,8 @@
 
 #include "Utils/TestApp.h"
 
-#include <Pigeon/Core/Log.h>
-#include <Pigeon/Core/UUID.h>
+#include "Pigeon/Core/Log.h"
+#include "Pigeon/Core/UUID.h"
 
 #define FLOAT_EQ(x, y) (std::fabs((x) - (y)) < 1e-6)
 

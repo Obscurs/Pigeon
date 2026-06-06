@@ -1,5 +1,5 @@
 ﻿#include "pch.h"
-#include "ConfigLoaderSystem.h"
+#include "Sandbox/ConfigLoaderSystem.h"
 
 #include "Pigeon/Core/Clock.h"
 #include "Pigeon/ECS/World.h"

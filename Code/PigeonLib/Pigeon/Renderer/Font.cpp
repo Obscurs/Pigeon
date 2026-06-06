@@ -1,6 +1,6 @@
 ﻿#include "pch.h"
 
-#include "Font.h"
+#include "Pigeon/Renderer/Font.h"
 
 #include "Pigeon/Renderer/MSDFData.h"
 #include "FontGeometry.h"
@@ -15,7 +15,7 @@ namespace
 {
 	struct CharsetRange
 	{
-		uint32_t Begin, End;
+		uint32_t m_Begin, m_End;
 	};
 
 	static const CharsetRange s_CharsetRanges[] =
@@ -64,13 +64,13 @@ pg::Font::Font(const std::filesystem::path& filepath, pg::TextureData& textureDa
 	msdf_atlas::Charset charset;
 	for (CharsetRange range : s_CharsetRanges)
 	{
-		for (uint32_t c = range.Begin; c <= range.End; c++)
+		for (uint32_t c = range.m_Begin; c <= range.m_End; c++)
 			charset.add(c);
 	}
 
 	const double fontScale = 1.0;
-	m_Data->FontGeometry = msdf_atlas::FontGeometry(&m_Data->Glyphs);
-	const int glyphsLoaded = m_Data->FontGeometry.loadCharset(font, fontScale, charset);
+	m_Data->m_FontGeometry = msdf_atlas::FontGeometry(&m_Data->m_Glyphs);
+	const int glyphsLoaded = m_Data->m_FontGeometry.loadCharset(font, fontScale, charset);
 	PG_CORE_INFO("Loaded {} glyphs from font (out of {})", glyphsLoaded, charset.size());
 
 	double emSize = 40.0;
@@ -81,7 +81,7 @@ pg::Font::Font(const std::filesystem::path& filepath, pg::TextureData& textureDa
 	atlasPacker.setMiterLimit(1.0);
 	atlasPacker.setPadding(0);
 	atlasPacker.setScale(emSize);
-	int remaining = atlasPacker.pack(m_Data->Glyphs.data(), (int)m_Data->Glyphs.size());
+	int remaining = atlasPacker.pack(m_Data->m_Glyphs.data(), (int)m_Data->m_Glyphs.size());
 	PG_CORE_ASSERT(remaining == 0, "Failed to pak atlas data");
 
 	int width, height;
@@ -94,24 +94,24 @@ pg::Font::Font(const std::filesystem::path& filepath, pg::TextureData& textureDa
 	bool expensiveColoring = false;
 	if (expensiveColoring)
 	{
-		msdf_atlas::Workload([&glyphs = m_Data->Glyphs, &coloringSeed](int i, int threadNo) -> bool 
+		msdf_atlas::Workload([&glyphs = m_Data->m_Glyphs, &coloringSeed](int i, int threadNo) -> bool 
 			{
 			unsigned long long glyphSeed = (LCG_MULTIPLIER * (coloringSeed ^ i) + LCG_INCREMENT) * !!coloringSeed;
 			glyphs[i].edgeColoring(msdfgen::edgeColoringInkTrap, DEFAULT_ANGLE_THRESHOLD, glyphSeed);
 			return true;
-			}, m_Data->Glyphs.size()).finish(THREAD_COUNT);
+			}, m_Data->m_Glyphs.size()).finish(THREAD_COUNT);
 	}
 	else 
 	{
 		unsigned long long glyphSeed = coloringSeed;
-		for (msdf_atlas::GlyphGeometry& glyph : m_Data->Glyphs)
+		for (msdf_atlas::GlyphGeometry& glyph : m_Data->m_Glyphs)
 		{
 			glyphSeed *= LCG_MULTIPLIER;
 			glyph.edgeColoring(msdfgen::edgeColoringInkTrap, DEFAULT_ANGLE_THRESHOLD, glyphSeed);
 		}
 	}
 	
-	CreateAndCacheAtlas<uint8_t, float, 3, msdf_atlas::msdfGenerator>((float)emSize, m_Data->Glyphs, m_Data->FontGeometry, width, height, textureData);
+	CreateAndCacheAtlas<uint8_t, float, 3, msdf_atlas::msdfGenerator>((float)emSize, m_Data->m_Glyphs, m_Data->m_FontGeometry, width, height, textureData);
 	m_FontID = textureData.m_TextureID;
 	//Uncomment to test single character
 	/*
@@ -141,7 +141,7 @@ pg::Font::~Font()
 glm::dvec2 pg::Font::GetCharacterAdvance(char c1, char c2, float kerning, float linespacing) const
 {
 	glm::dvec2 advance{ 0.0,0.0 };
-	const auto& fontGeometry = m_Data->FontGeometry;
+	const auto& fontGeometry = m_Data->m_FontGeometry;
 	const auto& metrics = fontGeometry.getMetrics();
 	double fsScale = GetFsScale();
 	if (c1 == '\n')
@@ -169,7 +169,7 @@ bool pg::Font::IsCharacterDrawable(char c) const
 		c != '\r' &&
 		c != ' ' &&
 		c != '\t' &&
-		m_Data->FontGeometry.getGlyph(c);
+		m_Data->m_FontGeometry.getGlyph(c);
 }
 
 bool pg::Font::IsCharacterNewLine(char c) const
@@ -179,9 +179,9 @@ bool pg::Font::IsCharacterNewLine(char c) const
 
 const msdf_atlas::GlyphGeometry* pg::Font::GetGlyph(char c) const
 {
-	const msdf_atlas::GlyphGeometry* glyph = m_Data->FontGeometry.getGlyph(c);
+	const msdf_atlas::GlyphGeometry* glyph = m_Data->m_FontGeometry.getGlyph(c);
 	if (!glyph)
-		glyph = m_Data->FontGeometry.getGlyph('?');
+		glyph = m_Data->m_FontGeometry.getGlyph('?');
 	if (!glyph)
 		return nullptr;
 	return glyph;
@@ -266,7 +266,7 @@ glm::vec2 pg::Font::GetStringBounds(std::string string, float kerning, float lin
 
 double pg::Font::GetFsScale() const
 {
-	const auto& metrics = m_Data->FontGeometry.getMetrics();
+	const auto& metrics = m_Data->m_FontGeometry.getMetrics();
 	return 1.0 / (metrics.ascenderY - metrics.descenderY);
 }
 

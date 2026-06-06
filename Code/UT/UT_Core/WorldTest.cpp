@@ -3,8 +3,8 @@
 #include <cstdlib>
 #include "Utils/TestApp.h"
 
-#include <Pigeon/ECS/World.h>
-#include <Pigeon/ECS/System.h>
+#include "Pigeon/ECS/System.h"
+#include "Pigeon/ECS/World.h"
 
 #define FLOAT_EQ(x, y) (std::fabs((x) - (y)) < 1e-6)
 

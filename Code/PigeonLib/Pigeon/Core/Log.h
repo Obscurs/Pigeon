@@ -1,6 +1,7 @@
 ﻿#pragma once
 
-#include "Core.h"
+#include "Pigeon/Core/Core.h"
+
 #include "spdlog/spdlog.h"
 #include "spdlog/fmt/ostr.h"
 

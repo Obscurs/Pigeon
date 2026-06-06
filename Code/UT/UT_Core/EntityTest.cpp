@@ -3,8 +3,8 @@
 #include <entt/entt.hpp>
 #include <type_traits>
 
-#include <Pigeon/ECS/Entity.h>
-#include <Pigeon/ECS/World.h>
+#include "Pigeon/ECS/Entity.h"
+#include "Pigeon/ECS/World.h"
 
 // These tests pin the pg::ecs abstraction layer over the underlying ECS library.
 // Engine and game code must use the pg::ecs names; entt:: is named only here (to

@@ -1,5 +1,5 @@
 ﻿#include "pch.h"
-#include "Sprite.h"
+#include "Pigeon/Renderer/Sprite.h"
 
 #include "Pigeon/Renderer/Texture.h"
 

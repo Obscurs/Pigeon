@@ -1,9 +1,9 @@
 ﻿#include "pch.h"
-#include "TestingWindow.h"
+#include "Platform/Testing/TestingWindow.h"
 
-#include <Pigeon/Events/ApplicationEvent.h>
-#include <Pigeon/Events/MouseEvent.h>
-#include <Pigeon/Events/KeyEvent.h>
+#include "Pigeon/Events/ApplicationEvent.h"
+#include "Pigeon/Events/KeyEvent.h"
+#include "Pigeon/Events/MouseEvent.h"
 
 #ifdef TESTS_ENABLED
 pg::Window::Data pg::Window::m_Data;
@@ -28,7 +28,7 @@ void pg::TestingWindow::Shutdown()
 
 void pg::TestingWindow::TESTING_TriggerEvent(pg::Event* event)
 {
-	m_Data.EventCallback(*event);
+	m_Data.m_EventCallback(*event);
 }
 
 void pg::TestingWindow::OnUpdate()

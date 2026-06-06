@@ -35,22 +35,22 @@ namespace pg
 
 	struct BufferElement
 	{
-		std::string Name;
-		ShaderDataType Type;
-		uint32_t Size;
-		uint32_t Offset;
-		bool Normalized;
+		std::string m_Name;
+		ShaderDataType m_Type;
+		uint32_t m_Size;
+		uint32_t m_Offset;
+		bool m_Normalized;
 
 		BufferElement() {}
 
 		BufferElement(ShaderDataType type, const std::string& name, bool normalized = false)
-			: Name(name), Type(type), Size(ShaderDataTypeSize(type)), Offset(0), Normalized(normalized)
+			: m_Name(name), m_Type(type), m_Size(ShaderDataTypeSize(type)), m_Offset(0), m_Normalized(normalized)
 		{
 		}
 
 		uint32_t GetComponentCount() const
 		{
-			switch (Type)
+			switch (m_Type)
 			{
 			case ShaderDataType::Float:   return 1;
 			case ShaderDataType::Float2:  return 2;
@@ -101,9 +101,9 @@ namespace pg
 			m_Stride = 0;
 			for (auto& element : m_Elements)
 			{
-				element.Offset = offset;
-				offset += element.Size;
-				m_Stride += element.Size;
+				element.m_Offset = offset;
+				offset += element.m_Size;
+				m_Stride += element.m_Size;
 			}
 		}
 	private:

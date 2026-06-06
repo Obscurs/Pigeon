@@ -2,17 +2,17 @@
 #include <catch2/catch.hpp>
 #include "Utils/TestApp.h"
 
-#include <Pigeon/ECS/World.h>
-#include <Pigeon/ECS/System.h>
-#include <Pigeon/Renderer/OrthographicCameraComponent.h>
-#include <Pigeon/Core/ResourceMapSingletonComponent.h>
-#include <Pigeon/Renderer/DrawQuadInFrameEvent.h>
-#include <Pigeon/Renderer/DrawSpriteInFrameEvent.h>
-#include <Pigeon/Renderer/DrawStringInFrameEvent.h>
-#include <Pigeon/UI/UIComponents.h>
-#include "Sandbox/SampleUISystem.h"
+#include "Pigeon/Core/ResourceMapSingletonComponent.h"
+#include "Pigeon/ECS/System.h"
+#include "Pigeon/ECS/World.h"
+#include "Pigeon/Renderer/DrawQuadInFrameEvent.h"
+#include "Pigeon/Renderer/DrawSpriteInFrameEvent.h"
+#include "Pigeon/Renderer/DrawStringInFrameEvent.h"
+#include "Pigeon/Renderer/OrthographicCameraComponent.h"
+#include "Pigeon/UI/UIComponents.h"
 #include "Sandbox/SampleUIConfigSingletonComponent.h"
 #include "Sandbox/SampleUISingletonComponent.h"
+#include "Sandbox/SampleUISystem.h"
 
 namespace CatchTestsetFail
 {

@@ -1,5 +1,5 @@
 ﻿#include "pch.h"
-#include "ConfigLoaderSystem.h"
+#include "Pigeon/Core/ConfigLoaderSystem.h"
 
 #include "Pigeon/Core/Clock.h"
 #include "Pigeon/Core/EngineConfigSingletonComponent.h"

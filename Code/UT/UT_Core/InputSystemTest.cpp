@@ -2,19 +2,19 @@
 #include <catch2/catch.hpp>
 #include "Utils/TestApp.h"
 
-#include <Pigeon/ECS/World.h>
-#include <Pigeon/ECS/System.h>
-#include <Pigeon/Core/EventComponent.h>
-#include <Pigeon/Core/InputSystem.h>
-#include <Pigeon/Core/InputStateSingletonComponent.h>
-#include <Pigeon/Core/KeyCodes.h>
-#include <Pigeon/Core/KeyPressedEventComponent.h>
-#include <Pigeon/Core/KeyReleasedEventComponent.h>
-#include <Pigeon/Core/KeyTypedEventComponent.h>
-#include <Pigeon/Core/MouseButtonPressedEventComponent.h>
-#include <Pigeon/Core/MouseButtonReleasedEventComponent.h>
-#include <Pigeon/Core/MouseMovedEventComponent.h>
-#include <Pigeon/Core/MouseScrolledEventComponent.h>
+#include "Pigeon/Core/EventComponent.h"
+#include "Pigeon/Core/InputStateSingletonComponent.h"
+#include "Pigeon/Core/InputSystem.h"
+#include "Pigeon/Core/KeyCodes.h"
+#include "Pigeon/Core/KeyPressedEventComponent.h"
+#include "Pigeon/Core/KeyReleasedEventComponent.h"
+#include "Pigeon/Core/KeyTypedEventComponent.h"
+#include "Pigeon/Core/MouseButtonPressedEventComponent.h"
+#include "Pigeon/Core/MouseButtonReleasedEventComponent.h"
+#include "Pigeon/Core/MouseMovedEventComponent.h"
+#include "Pigeon/Core/MouseScrolledEventComponent.h"
+#include "Pigeon/ECS/System.h"
+#include "Pigeon/ECS/World.h"
 
 namespace
 {

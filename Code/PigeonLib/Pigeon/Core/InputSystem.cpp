@@ -1,7 +1,5 @@
 ﻿#include "pch.h"
-#include "InputSystem.h"
-
-#include <imgui.h>
+#include "Pigeon/Core/InputSystem.h"
 
 #include "Pigeon/Core/Application.h"
 #include "Pigeon/Core/Input.h"
@@ -15,8 +13,9 @@
 #include "Pigeon/Core/MouseMovedEventComponent.h"
 #include "Pigeon/Core/MouseScrolledEventComponent.h"
 #include "Pigeon/ECS/World.h"
-#include "Pigeon/Events/MouseEvent.h"
 #include "Pigeon/Events/KeyEvent.h"
+#include "Pigeon/Events/MouseEvent.h"
+#include <imgui.h>
 
 namespace
 {

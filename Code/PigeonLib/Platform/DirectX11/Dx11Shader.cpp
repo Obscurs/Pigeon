@@ -1,13 +1,11 @@
 ﻿#include "pch.h"
-#include "Dx11Shader.h"
+#include "Platform/DirectX11/Dx11Shader.h"
 
-#include <D3DCompiler.h>
-#include <fstream>
- 
 #include "Pigeon/Core/Application.h"
-
 #include "Platform/DirectX11/Dx11Buffer.h"
 #include "Platform/DirectX11/Dx11Context.h"
+#include <D3DCompiler.h>
+#include <fstream>
 
 namespace
 {
@@ -31,31 +29,31 @@ namespace
 
 	struct IntBufferType
 	{
-		int data;
-		int padding[3] = { 0, 0, 0 }; // Padding to align to 16 bytes
+		int m_Data;
+		int m_Padding[3] = { 0, 0, 0 }; // Padding to align to 16 bytes
 	};
 
 	struct FloatBufferType
 	{
-		float data;
-		float padding[3] = { 0.f, 0.f, 0.f }; // Padding to align to 16 bytes
+		float m_Data;
+		float m_Padding[3] = { 0.f, 0.f, 0.f }; // Padding to align to 16 bytes
 	};
 
 	struct Vector2BufferType
 	{
-		DirectX::XMFLOAT2 data;
-		float padding[2] = { 0.f, 0.f}; // Padding to align to 16 bytes
+		DirectX::XMFLOAT2 m_Data;
+		float m_Padding[2] = { 0.f, 0.f}; // Padding to align to 16 bytes
 	};
 
 	struct Vector3BufferType
 	{
-		DirectX::XMFLOAT3 data;
-		float padding = 0.f; // Padding to align to 16 bytes
+		DirectX::XMFLOAT3 m_Data;
+		float m_Padding = 0.f; // Padding to align to 16 bytes
 	};
 
 	struct Vector4BufferType
 	{
-		DirectX::XMFLOAT4 data;
+		DirectX::XMFLOAT4 m_Data;
 	};
 
 	static unsigned int GetConstantBufferSlot(std::string name)
@@ -135,7 +133,7 @@ namespace
 	{
 		for (const pg::BufferElement& elem : bufferLayout)
 		{
-			layoutDesc.push_back({ elem.Name.c_str(), 0, ShaderDataTypeToDx11BaseType(elem.Type), 0, elem.Offset, D3D11_INPUT_PER_VERTEX_DATA, 0 });
+			layoutDesc.push_back({ elem.m_Name.c_str(), 0, ShaderDataTypeToDx11BaseType(elem.m_Type), 0, elem.m_Offset, D3D11_INPUT_PER_VERTEX_DATA, 0 });
 		}
 	}
 
@@ -366,7 +364,7 @@ void pg::Dx11Shader::Unbind() const
 void pg::Dx11Shader::UploadUniformInt(const std::string& name, int value) const
 {
 	IntBufferType vectorData;
-	vectorData.data = value;
+	vectorData.m_Data = value;
 
 	auto context = static_cast<pg::Dx11Context*>(pg::Application::Get().GetWindow().GetGraphicsContext());
 	ID3D11DeviceContext* deviceContext = context->GetPd3dDeviceContext();
@@ -378,7 +376,7 @@ void pg::Dx11Shader::UploadUniformInt(const std::string& name, int value) const
 void pg::Dx11Shader::UploadUniformFloat(const std::string& name, float value) const
 {
 	FloatBufferType vectorData;
-	vectorData.data = value;
+	vectorData.m_Data = value;
 
 	auto context = static_cast<pg::Dx11Context*>(pg::Application::Get().GetWindow().GetGraphicsContext());
 	ID3D11DeviceContext* deviceContext = context->GetPd3dDeviceContext();
@@ -390,7 +388,7 @@ void pg::Dx11Shader::UploadUniformFloat(const std::string& name, float value) co
 void pg::Dx11Shader::UploadUniformFloat2(const std::string& name, const glm::vec2& value) const
 {
 	Vector2BufferType vectorData;
-	vectorData.data = DirectX::XMFLOAT2(value.x, value.y);
+	vectorData.m_Data = DirectX::XMFLOAT2(value.x, value.y);
 
 	auto context = static_cast<pg::Dx11Context*>(pg::Application::Get().GetWindow().GetGraphicsContext());
 	ID3D11DeviceContext* deviceContext = context->GetPd3dDeviceContext();
@@ -402,7 +400,7 @@ void pg::Dx11Shader::UploadUniformFloat2(const std::string& name, const glm::vec
 void pg::Dx11Shader::UploadUniformFloat3(const std::string& name, const glm::vec3& value) const
 {
 	Vector3BufferType vectorData;
-	vectorData.data = DirectX::XMFLOAT3(value.x, value.y, value.z);
+	vectorData.m_Data = DirectX::XMFLOAT3(value.x, value.y, value.z);
 
 	auto context = static_cast<pg::Dx11Context*>(pg::Application::Get().GetWindow().GetGraphicsContext());
 	ID3D11DeviceContext* deviceContext = context->GetPd3dDeviceContext();
@@ -414,7 +412,7 @@ void pg::Dx11Shader::UploadUniformFloat3(const std::string& name, const glm::vec
 void pg::Dx11Shader::UploadUniformFloat4(const std::string& name, const glm::vec4& value) const
 {
 	Vector4BufferType vectorData;
-	vectorData.data = DirectX::XMFLOAT4(value.x, value.y, value.z, value.w);
+	vectorData.m_Data = DirectX::XMFLOAT4(value.x, value.y, value.z, value.w);
 
 	auto context = static_cast<pg::Dx11Context*>(pg::Application::Get().GetWindow().GetGraphicsContext());
 	ID3D11DeviceContext* deviceContext = context->GetPd3dDeviceContext();

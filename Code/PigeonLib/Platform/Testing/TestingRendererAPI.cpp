@@ -1,7 +1,7 @@
 ﻿#include "pch.h"
-#include "TestingRendererAPI.h"
+#include "Platform/Testing/TestingRendererAPI.h"
 
-#include <Platform/Testing/TestingHelper.h>
+#include "Platform/Testing/TestingHelper.h"
 
 void pg::TestingRendererAPI::Init()
 {

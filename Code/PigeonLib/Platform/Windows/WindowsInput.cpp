@@ -1,10 +1,10 @@
 ﻿#include "pch.h"
-#include "WindowsInput.h"
+#include "Platform/Windows/WindowsInput.h"
 
 #include "Pigeon/Core/Application.h"
 #include "Pigeon/Core/KeyCodes.h"
-#include "Platform/Windows/WindowsWindow.h"
 #include "Platform/Windows/WindowsInputKeyCodeMapping.h"
+#include "Platform/Windows/WindowsWindow.h"
 
 #ifndef TESTS_ENABLED
 pg::S_Ptr<pg::PlatformInput> pg::PlatformInput::s_Instance = std::make_shared<pg::WindowsInput>();

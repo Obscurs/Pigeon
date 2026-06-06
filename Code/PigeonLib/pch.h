@@ -20,8 +20,8 @@ using json = nlohmann::json;
 #include <utility>
 #include <vector>
 
-#include <Pigeon/Core/Log.h>
-#include <Pigeon/Core/UUID.h>
+#include "Pigeon/Core/Log.h"
+#include "Pigeon/Core/UUID.h"
 
 #ifdef PG_PLATFORM_WINDOWS
 	#include <Windows.h>

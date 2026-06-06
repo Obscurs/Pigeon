@@ -1,7 +1,7 @@
 ﻿#include "pch.h"
-#include "Dx11RendererAPI.h"
-#include "Pigeon/Core/Application.h"
+#include "Platform/DirectX11/Dx11RendererAPI.h"
 
+#include "Pigeon/Core/Application.h"
 #include "Platform/DirectX11/Dx11Context.h"
 
 void pg::Dx11RendererAPI::Init()
@@ -41,8 +41,8 @@ void pg::Dx11RendererAPI::Init()
     }
 
     // Setup blend state
-    const float blend_factor[4] = {0.f, 0.f, 0.f, 0.f};
-    context->GetPd3dDeviceContext()->OMSetBlendState(pBlendState, blend_factor, 0xffffffff);
+    const float blendFactor[4] = {0.f, 0.f, 0.f, 0.f};
+    context->GetPd3dDeviceContext()->OMSetBlendState(pBlendState, blendFactor, 0xffffffff);
     context->GetPd3dDeviceContext()->OMSetDepthStencilState(pDepthStencilState, 0);
 
 	m_Data.m_Initialized = true;

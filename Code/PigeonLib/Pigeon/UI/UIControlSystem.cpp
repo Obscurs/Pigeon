@@ -1,10 +1,10 @@
-﻿#include "UIControlSystem.h"
+﻿#include "Pigeon/UI/UIControlSystem.h"
 
 #include "Pigeon/Core/ResourceMapSingletonComponent.h"
+#include "Pigeon/ECS/CheckedRegistryAccessor.h"
+#include "Pigeon/ECS/World.h"
 #include "Pigeon/UI/UIComponents.h"
 #include "Pigeon/UI/UIHelpers.h"
-#include "Pigeon/ECS/World.h"
-#include "Pigeon/ECS/CheckedRegistryAccessor.h"
 
 namespace
 {

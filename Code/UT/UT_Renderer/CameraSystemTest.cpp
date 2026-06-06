@@ -1,14 +1,14 @@
 ﻿#include <catch2/catch.hpp>
 #include "Utils/TestApp.h"
 
-#include <Pigeon/ECS/World.h>
-#include <Pigeon/ECS/System.h>
-#include <Pigeon/Renderer/CameraSystem.h>
-#include <Pigeon/Renderer/OrthographicCameraComponent.h>
-#include <Pigeon/Core/KeyCodes.h>
-#include <Pigeon/Core/KeyPressedEventComponent.h>
-#include <Pigeon/Core/MouseScrolledEventComponent.h>
-#include <Pigeon/Core/WindowResizeEventComponent.h>
+#include "Pigeon/Core/KeyCodes.h"
+#include "Pigeon/Core/KeyPressedEventComponent.h"
+#include "Pigeon/Core/MouseScrolledEventComponent.h"
+#include "Pigeon/Core/WindowResizeEventComponent.h"
+#include "Pigeon/ECS/System.h"
+#include "Pigeon/ECS/World.h"
+#include "Pigeon/Renderer/CameraSystem.h"
+#include "Pigeon/Renderer/OrthographicCameraComponent.h"
 
 #define FLOAT_EQ(x, y) (std::fabs((x) - (y)) < 1e-6)
 

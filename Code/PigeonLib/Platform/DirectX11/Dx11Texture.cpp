@@ -1,6 +1,6 @@
 ﻿#include "pch.h"
 
-#include "Dx11Texture.h"
+#include "Platform/DirectX11/Dx11Texture.h"
 
 #include "Pigeon/Core/Application.h"
 #include "Platform/DirectX11/Dx11Context.h"

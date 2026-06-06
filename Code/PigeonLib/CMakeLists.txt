@@ -4,9 +4,9 @@ file(GLOB ROOT
 
 file(GLOB PGCORE
     "Pigeon/Core/Application.cpp"
+    "Pigeon/Core/Clock.h"
     "Pigeon/Core/ConfigLoaderSystem.cpp"
     "Pigeon/Core/Core.h"
-    "Pigeon/Core/Clock.h"
     "Pigeon/Core/EngineConfigSingletonComponent.h"
     "Pigeon/Core/EntryPoint.h"
     "Pigeon/Core/EventComponent.h"
@@ -39,23 +39,22 @@ file(GLOB PGIMGUI
 
 file(GLOB RENDERER
     "Pigeon/Renderer/Buffer.cpp"
+    "Pigeon/Renderer/CameraSystem.cpp"
     "Pigeon/Renderer/DrawQuadInFrameEvent.h"
     "Pigeon/Renderer/DrawSpriteInFrameEvent.h"
     "Pigeon/Renderer/DrawStringInFrameEvent.h"
     "Pigeon/Renderer/DrawUIQuadInFrameEvent.h"
     "Pigeon/Renderer/DrawUIStringInFrameEvent.h"
-    "Pigeon/Renderer/RendererDataSingletonComponent.h"
     "Pigeon/Renderer/Font.cpp"
     "Pigeon/Renderer/GraphicsContext.cpp"
     "Pigeon/Renderer/MSDFData.h"
-    "Pigeon/Renderer/CameraSystem.cpp"
-    "Pigeon/Renderer/CameraSystem.h"
     "Pigeon/Renderer/OrthographicCamera.cpp"
     "Pigeon/Renderer/OrthographicCameraComponent.h"
     "Pigeon/Renderer/RenderCommand.cpp"
     "Pigeon/Renderer/Renderer.cpp"
     "Pigeon/Renderer/Renderer2DSystem.cpp"
     "Pigeon/Renderer/RendererAPI.cpp"
+    "Pigeon/Renderer/RendererDataSingletonComponent.h"
     "Pigeon/Renderer/Shader.cpp"
     "Pigeon/Renderer/Sprite.cpp"
     "Pigeon/Renderer/Texture.cpp"
@@ -82,9 +81,9 @@ file(GLOB ECS_SYSTEMS)
 file(GLOB ECS_COMPONENTS)
 
 file(GLOB PLATFORM_WIN
-    "Platform/Windows/WindowsWindow.cpp"
     "Platform/Windows/WindowsInput.cpp"
     "Platform/Windows/WindowsInputKeyCodeMapping.h"
+    "Platform/Windows/WindowsWindow.cpp"
 )
 
 file(GLOB PLATFORM_DX

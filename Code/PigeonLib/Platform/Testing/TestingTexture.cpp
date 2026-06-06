@@ -1,6 +1,6 @@
 ﻿#include "pch.h"
 
-#include "TestingTexture.h"
+#include "Platform/Testing/TestingTexture.h"
 
 uint32_t pg::TestingTexture2D::s_ExpectedWidth = 0;
 uint32_t pg::TestingTexture2D::s_ExpectedHeight = 0;

@@ -1,5 +1,5 @@
 ﻿#include "pch.h"
-#include "TestingInput.h"
+#include "Platform/Testing/TestingInput.h"
 
 #ifdef TESTS_ENABLED
 pg::S_Ptr<pg::PlatformInput> pg::PlatformInput::s_Instance = std::make_shared<pg::TestingInput>();

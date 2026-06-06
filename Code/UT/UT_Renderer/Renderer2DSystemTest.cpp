@@ -2,20 +2,20 @@
 #include <catch2/catch.hpp>
 #include "Utils/TestApp.h"
 
-#include <Pigeon/ECS/World.h>
-#include <Pigeon/ECS/System.h>
-#include <Pigeon/Core/EngineConfigSingletonComponent.h>
-#include <Pigeon/Renderer/OrthographicCameraComponent.h>
-#include <Pigeon/Core/ResourceMapSingletonComponent.h>
-#include <Pigeon/Renderer/Renderer2DSystem.h>
-#include <Pigeon/Renderer/RendererDataSingletonComponent.h>
-#include <Pigeon/Renderer/DrawQuadInFrameEvent.h>
-#include <Pigeon/Renderer/DrawSpriteInFrameEvent.h>
-#include <Pigeon/Renderer/DrawStringInFrameEvent.h>
-#include <Pigeon/Renderer/DrawUIQuadInFrameEvent.h>
-#include <Pigeon/Renderer/DrawUIStringInFrameEvent.h>
-#include <Pigeon/Renderer/Shader.h>
-#include <Pigeon/Renderer/Texture.h>
+#include "Pigeon/Core/EngineConfigSingletonComponent.h"
+#include "Pigeon/Core/ResourceMapSingletonComponent.h"
+#include "Pigeon/ECS/System.h"
+#include "Pigeon/ECS/World.h"
+#include "Pigeon/Renderer/DrawQuadInFrameEvent.h"
+#include "Pigeon/Renderer/DrawSpriteInFrameEvent.h"
+#include "Pigeon/Renderer/DrawStringInFrameEvent.h"
+#include "Pigeon/Renderer/DrawUIQuadInFrameEvent.h"
+#include "Pigeon/Renderer/DrawUIStringInFrameEvent.h"
+#include "Pigeon/Renderer/OrthographicCameraComponent.h"
+#include "Pigeon/Renderer/Renderer2DSystem.h"
+#include "Pigeon/Renderer/RendererDataSingletonComponent.h"
+#include "Pigeon/Renderer/Shader.h"
+#include "Pigeon/Renderer/Texture.h"
 
 #include <glm/glm.hpp>
 #include <vector>

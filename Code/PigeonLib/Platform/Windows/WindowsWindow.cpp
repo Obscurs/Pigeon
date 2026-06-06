@@ -1,13 +1,11 @@
 ﻿#include "pch.h"
-#include "WindowsWindow.h"
-
-#include <imgui.h>
+#include "Platform/Windows/WindowsWindow.h"
 
 #include "Pigeon/Events/ApplicationEvent.h"
-#include "Pigeon/Events/MouseEvent.h"
 #include "Pigeon/Events/KeyEvent.h"
-
+#include "Pigeon/Events/MouseEvent.h"
 #include "Platform/Windows/WindowsInputKeyCodeMapping.h"
+#include <imgui.h>
 
 // Forward declare message handler from imgui_impl_win32.cpp
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -25,7 +23,7 @@ pg::WindowsWindow::WindowsData pg::WindowsWindow::m_WindowsData;
 
 pg::WindowsWindow::WindowsWindow(const pg::WindowProps& props)
 {
-	m_Data.m_Title = props.Title.c_str();
+	m_Data.m_Title = props.m_Title.c_str();
 	m_WindowsData.m_HInstance = GetModuleHandle(nullptr);
 	Init(props);
 }
@@ -46,9 +44,9 @@ void pg::WindowsWindow::Init(const pg::WindowProps& props)
 
 	RECT winRect;
 	winRect.left = 100;
-	winRect.right = props.Width + winRect.left;
+	winRect.right = props.m_Width + winRect.left;
 	winRect.top = 100;
-	winRect.bottom = props.Height + winRect.top;
+	winRect.bottom = props.m_Height + winRect.top;
 	AdjustWindowRect(&winRect, WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU, false);
 
 	m_Window = CreateWindow(
@@ -66,9 +64,9 @@ void pg::WindowsWindow::Init(const pg::WindowProps& props)
 
 	m_Context = std::move(pg::GraphicsContext::Create(this));
 	m_Context->Init();
-	m_Context->SetSize(props.Width, props.Height);
+	m_Context->SetSize(props.m_Width, props.m_Height);
 
-	PG_CORE_INFO("Creating window {0} ({1}, {2})", props.Title, props.Width, props.Height);
+	PG_CORE_INFO("Creating window {0} ({1}, {2})", props.m_Title, props.m_Width, props.m_Height);
 
 	ShowWindow(m_Window, SW_SHOWDEFAULT);
 	UpdateWindow(m_Window);
@@ -176,13 +174,13 @@ bool pg::WindowsWindow::ProcessEvent(UINT msg, WPARAM wParam, LPARAM lParam)
 void pg::WindowsWindow::ProcessCharPressedEvent(WPARAM wParam)
 {
 	pg::KeyTypedEvent event(static_cast<int>(wParam));
-	m_Data.EventCallback(event);
+	m_Data.m_EventCallback(event);
 }
 
 void pg::WindowsWindow::ProcessKeyUpEvent(WPARAM wParam)
 {
 	pg::KeyReleasedEvent event(static_cast<int>(wParam));
-	m_Data.EventCallback(event);
+	m_Data.m_EventCallback(event);
 }
 
 void pg::WindowsWindow::ProcessKeyDownEvent(LPARAM lParam, WPARAM wParam)
@@ -192,12 +190,12 @@ void pg::WindowsWindow::ProcessKeyDownEvent(LPARAM lParam, WPARAM wParam)
 	if (!isRepeat) {
 		// Key has been pressed (not a repeat)
 		pg::KeyPressedEvent event(static_cast<int>(wParam), 0);
-		m_Data.EventCallback(event);
+		m_Data.m_EventCallback(event);
 	}
 	else
 	{
 		pg::KeyPressedEvent event(static_cast<int>(wParam), 1);
-		m_Data.EventCallback(event);
+		m_Data.m_EventCallback(event);
 	}
 }
 
@@ -208,37 +206,37 @@ void pg::WindowsWindow::ProcessMouseButtonEvent(UINT msg)
 	case WM_LBUTTONDOWN:
 	{
 		pg::MouseButtonPressedEvent event(WIN_PG_MOUSE_BUTTON_LEFT);
-		m_Data.EventCallback(event);
+		m_Data.m_EventCallback(event);
 		break;
 	}
 	case WM_RBUTTONDOWN:
 	{
 		pg::MouseButtonPressedEvent event(WIN_PG_MOUSE_BUTTON_RIGHT);
-		m_Data.EventCallback(event);
+		m_Data.m_EventCallback(event);
 		break;
 	}
 	case WM_MBUTTONDOWN:
 	{
 		pg::MouseButtonPressedEvent event(WIN_PG_MOUSE_BUTTON_MIDDLE);
-		m_Data.EventCallback(event);
+		m_Data.m_EventCallback(event);
 		break;
 	}
 	case WM_LBUTTONUP:
 	{
 		pg::MouseButtonReleasedEvent event(WIN_PG_MOUSE_BUTTON_LEFT);
-		m_Data.EventCallback(event);
+		m_Data.m_EventCallback(event);
 		break;
 	}
 	case WM_RBUTTONUP:
 	{
 		pg::MouseButtonReleasedEvent event(WIN_PG_MOUSE_BUTTON_RIGHT);
-		m_Data.EventCallback(event);
+		m_Data.m_EventCallback(event);
 		break;
 	}
 	case WM_MBUTTONUP:
 	{
 		pg::MouseButtonReleasedEvent event(WIN_PG_MOUSE_BUTTON_MIDDLE);
-		m_Data.EventCallback(event);
+		m_Data.m_EventCallback(event);
 		break;
 	}
 	}
@@ -251,7 +249,7 @@ void pg::WindowsWindow::ProcessMouseWheelEvent(WPARAM wParam)
 	float xOffset = 0.0f;
 
 	pg::MouseScrolledEvent event((float)xOffset, (float)yOffset);
-	m_Data.EventCallback(event);
+	m_Data.m_EventCallback(event);
 }
 
 void pg::WindowsWindow::ProcessMouseMoveEvent(LPARAM lParam)
@@ -260,7 +258,7 @@ void pg::WindowsWindow::ProcessMouseMoveEvent(LPARAM lParam)
 	int y = HIWORD(lParam);
 	// Do something with x and y, like creating a mouse event and dispatching it.
 	pg::MouseMovedEvent event((float)x, (float)y);
-	m_Data.EventCallback(event);
+	m_Data.m_EventCallback(event);
 }
 
 void pg::WindowsWindow::ProcessWindowResizeEvent(LPARAM lParam)
@@ -271,15 +269,15 @@ void pg::WindowsWindow::ProcessWindowResizeEvent(LPARAM lParam)
 
 	// Now create a WindowResizeEvent and dispatch it
 	pg::WindowResizeEvent event(width, height);
-	if (m_Data.EventCallback)
-		m_Data.EventCallback(event);
+	if (m_Data.m_EventCallback)
+		m_Data.m_EventCallback(event);
 }
 
 bool pg::WindowsWindow::ProcessWindowDestroyEvent()
 {
 	pg::WindowCloseEvent event;
-	if (m_Data.EventCallback)
-		m_Data.EventCallback(event);
+	if (m_Data.m_EventCallback)
+		m_Data.m_EventCallback(event);
 	PostQuitMessage(0);
 	return false;
 }

@@ -117,7 +117,7 @@ namespace pg::ui
 		UIDestroyOneFrameComponent() = default;
 		UIDestroyOneFrameComponent(const UIDestroyOneFrameComponent&) = default;
 
-		bool m_DUMMYVAR{};
+		bool m_Dummy{};
 	};
 
 	struct UIUpdateImageUUIDOneFrameComponent

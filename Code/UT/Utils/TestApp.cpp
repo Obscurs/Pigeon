@@ -1,6 +1,6 @@
-﻿#include "TestApp.h"
+﻿#include "Utils/TestApp.h"
 
-#include <Platform/Testing/TestingHelper.h>
+#include "Platform/Testing/TestingHelper.h"
 
 pg::Application& pg::CreateApplication()
 {

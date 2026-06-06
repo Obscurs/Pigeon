@@ -1,8 +1,7 @@
 ﻿#include "pch.h"
-#include "Renderer2DSystem.h"
+#include "Pigeon/Renderer/Renderer2DSystem.h"
 
 #include "Pigeon/Core/EngineConfigSingletonComponent.h"
-#include "Pigeon/Renderer/OrthographicCameraComponent.h"
 #include "Pigeon/Core/ResourceMapSingletonComponent.h"
 #include "Pigeon/ECS/World.h"
 #include "Pigeon/Renderer/DrawQuadInFrameEvent.h"
@@ -11,7 +10,8 @@
 #include "Pigeon/Renderer/DrawUIQuadInFrameEvent.h"
 #include "Pigeon/Renderer/DrawUIStringInFrameEvent.h"
 #include "Pigeon/Renderer/Font.h"
-#include "Pigeon/Renderer/Msdfdata.h"
+#include "Pigeon/Renderer/MSDFData.h"
+#include "Pigeon/Renderer/OrthographicCameraComponent.h"
 #include "Pigeon/Renderer/RenderCommand.h"
 #include "Pigeon/Renderer/RendererDataSingletonComponent.h"
 #include "Pigeon/Renderer/Texture.h"
@@ -54,15 +54,15 @@ namespace
 			const glm::mat4 translateBack = glm::translate(glm::mat4(1.0f), origin);
 			const glm::mat4 combinedTransform = translateBack * transform * translateToOrigin;
 
-			const glm::vec4 pos_v1 = combinedTransform * glm::vec4(0, 0, 0, 1);
-			const glm::vec4 pos_v2 = combinedTransform * glm::vec4(0, 1, 0, 1);
-			const glm::vec4 pos_v3 = combinedTransform * glm::vec4(1, 1, 0, 1);
-			const glm::vec4 pos_v4 = combinedTransform * glm::vec4(1, 0, 0, 1);
+			const glm::vec4 posV1 = combinedTransform * glm::vec4(0, 0, 0, 1);
+			const glm::vec4 posV2 = combinedTransform * glm::vec4(0, 1, 0, 1);
+			const glm::vec4 posV3 = combinedTransform * glm::vec4(1, 1, 0, 1);
+			const glm::vec4 posV4 = combinedTransform * glm::vec4(1, 0, 0, 1);
 
-			memcpy(m_SquareVertices, VertexData(pos_v1, color, textureId, glm::vec2(texCoordsRect.x, texCoordsRect.y)).m_Data, pg::VERTEX_ATRIB_COUNT * sizeof(float));
-			memcpy(&m_SquareVertices[pg::VERTEX_ATRIB_COUNT], VertexData(pos_v2, color, textureId, glm::vec2(texCoordsRect.x, texCoordsRect.w)).m_Data, pg::VERTEX_ATRIB_COUNT * sizeof(float));
-			memcpy(&m_SquareVertices[pg::VERTEX_ATRIB_COUNT*2], VertexData(pos_v3, color, textureId, glm::vec2(texCoordsRect.z, texCoordsRect.w)).m_Data, pg::VERTEX_ATRIB_COUNT * sizeof(float));
-			memcpy(&m_SquareVertices[pg::VERTEX_ATRIB_COUNT*3], VertexData(pos_v4, color, textureId, glm::vec2(texCoordsRect.z, texCoordsRect.y)).m_Data, pg::VERTEX_ATRIB_COUNT * sizeof(float));
+			memcpy(m_SquareVertices, VertexData(posV1, color, textureId, glm::vec2(texCoordsRect.x, texCoordsRect.y)).m_Data, pg::VERTEX_ATRIB_COUNT * sizeof(float));
+			memcpy(&m_SquareVertices[pg::VERTEX_ATRIB_COUNT], VertexData(posV2, color, textureId, glm::vec2(texCoordsRect.x, texCoordsRect.w)).m_Data, pg::VERTEX_ATRIB_COUNT * sizeof(float));
+			memcpy(&m_SquareVertices[pg::VERTEX_ATRIB_COUNT*2], VertexData(posV3, color, textureId, glm::vec2(texCoordsRect.z, texCoordsRect.w)).m_Data, pg::VERTEX_ATRIB_COUNT * sizeof(float));
+			memcpy(&m_SquareVertices[pg::VERTEX_ATRIB_COUNT*3], VertexData(posV4, color, textureId, glm::vec2(texCoordsRect.z, texCoordsRect.y)).m_Data, pg::VERTEX_ATRIB_COUNT * sizeof(float));
 
 			m_SquareIndices[0] = s_SuareIndices[0] + offsetIndices;
 			m_SquareIndices[1] = s_SuareIndices[1] + offsetIndices;

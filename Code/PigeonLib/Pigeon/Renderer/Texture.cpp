@@ -1,7 +1,7 @@
 ﻿#include "pch.h"
-#include "Texture.h"
+#include "Pigeon/Renderer/Texture.h"
 
-#include "Renderer.h"
+#include "Pigeon/Renderer/Renderer.h"
 #include "Platform/DirectX11/Dx11Texture.h"
 #include "Platform/Testing/TestingTexture.h"
 

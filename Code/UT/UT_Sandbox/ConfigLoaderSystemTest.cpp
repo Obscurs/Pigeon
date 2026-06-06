@@ -2,8 +2,8 @@
 #include <catch2/catch.hpp>
 #include "Utils/TestApp.h"
 
-#include <Pigeon/ECS/World.h>
-#include <Pigeon/ECS/System.h>
+#include "Pigeon/ECS/System.h"
+#include "Pigeon/ECS/World.h"
 #include "Sandbox/ConfigLoaderSystem.h"
 #include "Sandbox/SampleUIConfigSingletonComponent.h"
 

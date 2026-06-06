@@ -7,13 +7,12 @@
 
 #include "Utils/TestApp.h"
 
-#include <Pigeon/Renderer/OrthographicCamera.h>
-#include <Pigeon/Renderer/Texture.h>
-
-#include <Platform/DirectX11/Dx11Buffer.h>
-#include <Platform/DirectX11/Dx11Context.h>
-#include <Platform/DirectX11/Dx11RendererAPI.h>
-#include <Platform/DirectX11/Dx11Shader.h>
+#include "Pigeon/Renderer/OrthographicCamera.h"
+#include "Pigeon/Renderer/Texture.h"
+#include "Platform/DirectX11/Dx11Buffer.h"
+#include "Platform/DirectX11/Dx11Context.h"
+#include "Platform/DirectX11/Dx11RendererAPI.h"
+#include "Platform/DirectX11/Dx11Shader.h"
 
 #define FLOAT_EQ(x, y) (std::fabs((x) - (y)) < 1e-6)
 

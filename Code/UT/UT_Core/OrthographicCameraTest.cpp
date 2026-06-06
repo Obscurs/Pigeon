@@ -7,12 +7,10 @@
 
 #include "Utils/TestApp.h"
 
-#include <Pigeon/Core/KeyCodes.h>
-
-#include <Pigeon/Renderer/OrthographicCamera.h>
-#include <Pigeon/Renderer/Texture.h>
-
-#include <Platform/Testing/TestingWindow.h>
+#include "Pigeon/Core/KeyCodes.h"
+#include "Pigeon/Renderer/OrthographicCamera.h"
+#include "Pigeon/Renderer/Texture.h"
+#include "Platform/Testing/TestingWindow.h"
 
 #define FLOAT_EQ(x, y) (std::fabs((x) - (y)) < 1e-6)
 

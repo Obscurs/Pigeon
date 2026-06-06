@@ -9,14 +9,14 @@ namespace pg {
 
 	struct WindowProps
 	{
-		std::string Title;
-		unsigned int Width;
-		unsigned int Height;
+		std::string m_Title;
+		unsigned int m_Width;
+		unsigned int m_Height;
 
 		WindowProps(const std::string& title = "Pigeon Engine",
 			        unsigned int width = 1280,
 			        unsigned int height = 720)
-			: Title(title), Width(width), Height(height)
+			: m_Title(title), m_Width(width), m_Height(height)
 		{
 		}
 	};
@@ -30,7 +30,7 @@ namespace pg {
 		struct Data
 		{
 			const char* m_Title = "Windows Window";
-			EventCallbackFn EventCallback;
+			EventCallbackFn m_EventCallback;
 		};
 
 		virtual ~Window() {}
@@ -42,7 +42,7 @@ namespace pg {
 
 		// Window attributes
 
-		inline void SetEventCallback(const EventCallbackFn& callback) { m_Data.EventCallback = callback; }
+		inline void SetEventCallback(const EventCallbackFn& callback) { m_Data.m_EventCallback = callback; }
 		virtual void SetVSync(bool enabled) = 0;
 		virtual bool IsVSync() const = 0;
 

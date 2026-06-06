@@ -1,9 +1,8 @@
 ﻿#include "pch.h"
-#include "Shader.h"
+#include "Pigeon/Renderer/Shader.h"
 
-#include "Renderer.h"
 #include "Pigeon/Core/Application.h"
-
+#include "Pigeon/Renderer/Renderer.h"
 #include "Platform/DirectX11/Dx11Shader.h"
 #include "Platform/Testing/TestingShader.h"
 

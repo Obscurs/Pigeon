@@ -1,9 +1,9 @@
 ﻿#include "pch.h"
 
-#include "World.h"
+#include "Pigeon/ECS/World.h"
 
-#include "Pigeon/ECS/System.h"
 #include "Pigeon/ECS/CheckedRegistryAccessor.h"
+#include "Pigeon/ECS/System.h"
 
 pg::U_Ptr<pg::World> pg::World::s_Instance = nullptr;
 

@@ -1,13 +1,12 @@
 ﻿#pragma once
 
-#include "Core.h"
-
-#include "Window.h"
-#include "Pigeon/Events/Event.h"
-#include "Pigeon/Events/ApplicationEvent.h"
-#include "Pigeon/Core/LayerStack.h"
-#include "Pigeon/Renderer/Buffer.h"
 #include "Pigeon/Core/Clock.h"
+#include "Pigeon/Core/Core.h"
+#include "Pigeon/Core/LayerStack.h"
+#include "Pigeon/Core/Window.h"
+#include "Pigeon/Events/ApplicationEvent.h"
+#include "Pigeon/Events/Event.h"
+#include "Pigeon/Renderer/Buffer.h"
 
 namespace pg
 {

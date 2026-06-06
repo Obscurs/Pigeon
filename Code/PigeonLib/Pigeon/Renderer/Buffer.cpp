@@ -1,8 +1,7 @@
 ﻿#include "pch.h"
-#include "Buffer.h"
+#include "Pigeon/Renderer/Buffer.h"
 
-#include "Renderer.h"
-
+#include "Pigeon/Renderer/Renderer.h"
 #include "Platform/DirectX11/Dx11Buffer.h"
 #include "Platform/Testing/TestingBuffer.h"
 

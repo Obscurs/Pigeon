@@ -2,12 +2,12 @@
 #include <catch2/catch.hpp>
 #include "Utils/TestApp.h"
 
-#include <Pigeon/ECS/World.h>
-#include <Pigeon/ECS/System.h>
-#include <Pigeon/Core/InputStateSingletonComponent.h>
-#include <Pigeon/Core/KeyCodes.h>
-#include <Pigeon/UI/UIComponents.h>
-#include <Pigeon/UI/UIEventSystem.h>
+#include "Pigeon/Core/InputStateSingletonComponent.h"
+#include "Pigeon/Core/KeyCodes.h"
+#include "Pigeon/ECS/System.h"
+#include "Pigeon/ECS/World.h"
+#include "Pigeon/UI/UIComponents.h"
+#include "Pigeon/UI/UIEventSystem.h"
 
 namespace CatchTestsetFail
 {

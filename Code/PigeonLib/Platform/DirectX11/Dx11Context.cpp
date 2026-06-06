@@ -1,6 +1,6 @@
 ﻿#include "pch.h"
 
-#include "Dx11Context.h"
+#include "Platform/DirectX11/Dx11Context.h"
 
 pg::Dx11Context::Dx11Context(HWND windowHandle)
 {

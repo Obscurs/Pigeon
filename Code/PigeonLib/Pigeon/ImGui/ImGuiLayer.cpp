@@ -1,18 +1,16 @@
 ﻿#include "pch.h"
-#include "ImGuiLayer.h"
+#include "Pigeon/ImGui/ImGuiLayer.h"
 
+#include "Pigeon/Core/Application.h"
+#include "Pigeon/Core/KeyCodes.h"
+#include "Platform/DirectX11/Dx11Context.h"
+#include "Platform/Windows/WindowsWindow.h"
 #include <imgui.h>
 #include <backends/imgui_impl_dx11.h>
 #include <backends/imgui_impl_win32.h>
 
-#include "Pigeon/Core/Application.h"
-#include "Pigeon/Core/KeyCodes.h"
-
-#include "Platform/DirectX11/Dx11Context.h"
-#include "Platform/Windows/WindowsWindow.h"
-
-static bool s_show_demo_window = true;
-static bool s_show_another_window = false;
+static bool s_ShowDemoWindow = true;
+static bool s_ShowAnotherWindow = false;
 
 pg::ImGuiLayer::ImGuiLayer()
 	: Layer("ImGuiLayer"),
