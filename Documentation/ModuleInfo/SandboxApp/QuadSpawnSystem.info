@@ -1,0 +1,24 @@
+# QuadSpawnSystem  (sbx)
+
+## Purpose
+Owns the creation of world-space demo quads. Returns early until SandboxConfigSingletonComponent
+is available. On the first ready frame it seeds the persistent demo quads (a flat colour quad, a
+textured quad, an orbiting colour-cycling quad, and two overlapping layered quads) and creates
+SpawnerSingletonComponent, whose presence is the "already seeded" guard. On every later frame,
+when the spacebar was pressed this frame (InputStateSingletonComponent), it spawns one temporary
+spinning quad carrying a LifetimeComponent and increments the spawn count.
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| SandboxConfigSingletonComponent | read | Texture ids for seeded quads; guard (returns early if absent) |
+| InputStateSingletonComponent | read | A fresh spacebar press triggers a spawn |
+| SpawnerSingletonComponent | write | Guard + spawn count |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| SpawnerSingletonComponent | write / add (deferred) | Created once; spawn count incremented per spawn |
+| QuadComponent | add (deferred) | Seeded persistent quads and spawned temporary quads |
+| SpinComponent | add (deferred) | Animation parameters for every created quad |
+| LifetimeComponent | add (deferred) | Only on spawned (temporary) quads |

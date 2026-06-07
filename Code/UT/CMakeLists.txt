@@ -11,7 +11,20 @@ file(GLOB SRC_TESTS_SANDBOX "UT_Sandbox/*.cpp")
 
 set(SRC_SANDBOX_SYSTEMS
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/ConfigLoaderSystem.cpp"
-    "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/SampleUISystem.cpp"
+    "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/DebugPanelSystem.cpp"
+    "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/InputReadoutSystem.cpp"
+    "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/LifetimeSystem.cpp"
+    "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/QuadAnimationSystem.cpp"
+    "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/QuadRenderSystem.cpp"
+    "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/QuadSpawnSystem.cpp"
+    "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/SceneSetupSystem.cpp"
+    "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/SpriteRenderSystem.cpp"
+    "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/TextRenderSystem.cpp"
+    "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/UIButtonSystem.cpp"
+    "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/UIButtonVisualSystem.cpp"
+    "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/UICloseSystem.cpp"
+    "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/UIElementHelpers.cpp"
+    "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/UIStatusSystem.cpp"
 )
 
 source_group("" FILES ${SRC_MAIN})

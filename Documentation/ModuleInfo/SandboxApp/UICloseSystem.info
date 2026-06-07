@@ -1,0 +1,19 @@
+# UICloseSystem  (sbx)
+
+## Purpose
+Dismisses a UI element on demand. Returns early until SandboxConfigSingletonComponent is present.
+When the close button is released (a UIOnReleaseOneFrameComponent whose element id matches the close
+button), it finds the close-target element by UUID and emits a UIDestroyOneFrameComponent, which
+UIControlSystem turns into a deferred destroy of that element and its children.
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| SandboxConfigSingletonComponent | read | Close button and close-target ids; guard |
+| UIOnReleaseOneFrameComponent | read | Release on the close button triggers the dismiss |
+| BaseComponent | read | Locates the close-target element by UUID |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| UIDestroyOneFrameComponent | add (oneframe) | Emitted on the close-target element to destroy it |

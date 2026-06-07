@@ -1,62 +1,95 @@
 # SandboxApp Architecture
 
+## Overview
+
+SandboxApp is a showcase that exercises every PigeonLib capability through small,
+single-responsibility ECS systems that communicate only via components and events. The engine
+systems (CameraSystem, ConfigLoaderSystem, InputSystem, Renderer2DSystem, ResourceManagerSystem,
+UIControlSystem, UIEventSystem, UIRenderSystem) are registered by `Application::Init`. The sandbox
+registers only the systems below; execution order is derived automatically from each system's
+`DeclareAccess()`, so registration order is irrelevant.
+
 ## System Registration
 
 ```
 pg::CreateApplication()  [Sandbox2D.cpp]
   ├── Sandbox::Create()                       (delegates to pg::Application::Create())
-  ├── World::RegisterSystem(sbx::ConfigLoaderSystem)
-  └── World::RegisterSystem(sbx::SampleUISystem)
+  └── World::RegisterSystem(...) for:
+        sbx::ConfigLoaderSystem        Assets/App/Config.json -> SandboxConfigSingletonComponent
+        sbx::SceneSetupSystem          camera + sprite + labels + LoadLayoutEvent (once)
+        sbx::QuadSpawnSystem           seeds demo quads; spawns temporary quads on SPACE
+        sbx::QuadAnimationSystem       animates QuadComponent from SpinComponent + time
+        sbx::LifetimeSystem            counts down LifetimeComponent; deferred-destroys expired
+        sbx::QuadRenderSystem          QuadComponent      -> DrawQuadInFrameEvent
+        sbx::SpriteRenderSystem        SpriteComponent    -> DrawSpriteInFrameEvent
+        sbx::TextRenderSystem          LabelComponent     -> DrawStringInFrameEvent
+        sbx::InputReadoutSystem        InputState         -> readout LabelComponent text
+        sbx::UIButtonVisualSystem      hover/click        -> UIUpdateImageUUID (button image)
+        sbx::UIButtonSystem            release            -> UIUpdateEnable (toggle panel)
+        sbx::UICloseSystem             release            -> UIDestroy (dismiss element)
+        sbx::UIStatusSystem            spawn count        -> UIUpdateText (status label)
+        sbx::DebugPanelSystem          ImGui panel; owns DebugControlsSingletonComponent
 ```
 
-Neither system shares a write or inframe-add dependency with the other, so the ECS topological sort
-preserves registration order: ConfigLoaderSystem always executes before SampleUISystem.
-
-## Boot Sequence (Frames 1–3)
+## Boot Sequence
 
 ```
 Frame 1
-  ConfigLoaderSystem  reads Assets/App/Config.json
-                      defers SampleUIConfigSingletonComponent
-  SampleUISystem      returns early — ResourceMapSingletonComponent not yet flushed
+  engine ConfigLoaderSystem   -> EngineConfigSingletonComponent  (deferred)
+  engine ResourceManagerSystem-> ResourceMapSingletonComponent   (deferred)
+  sbx::ConfigLoaderSystem     -> SandboxConfigSingletonComponent (deferred)
+  the lazy-singleton systems (QuadSpawn, UIButtonVisual, UIStatus, DebugPanel) create their
+    state singletons; every other sandbox system guards on missing inputs and no-ops
 
 Frame 2
-  ConfigLoaderSystem  no-op (SampleUIConfigSingletonComponent already exists)
-  SampleUISystem      both guards pass; defers SampleUISingletonComponent + OrthographicCameraComponent
-                      emits LoadLayoutEvent → UIControlSystem loads SandboxUI.json next frame
+  sbx::SceneSetupSystem  both config + resources present -> creates the scene camera, the demo
+                         sprite, the title/instructions/input-readout labels, emits LoadLayoutEvent,
+                         and creates SceneReadySingletonComponent (its run-once guard)
+  sbx::QuadSpawnSystem   config present, spawner absent -> seeds the persistent demo quads and
+                         creates SpawnerSingletonComponent
 
 Frame 3+  (steady state)
-  ConfigLoaderSystem  no-op
-  SampleUISystem      emits DrawQuadInFrameEvent, DrawSpriteInFrameEvent, DrawStringInFrameEvent × 2
-                      renders ImGui "Settings" panel (live-edit of quad/text transforms)
+  engine UIControlSystem loads Data/Assets/App/UI/SandboxUI.json (from LoadLayoutEvent)
+  the render bridges, animation, input, and UI interaction systems run every frame (below)
 ```
 
 ## Steady-State Data Flow
 
 ```
-Assets/App/Config.json
-  └── sbx::ConfigLoaderSystem
-        └── SampleUIConfigSingletonComponent
-              └── sbx::SampleUISystem
-                    ├── SampleUISingletonComponent    (mutable scene state, ImGui-editable)
-                    ├── OrthographicCameraComponent   (scene camera; 1280x720, ReactsToInput=true)
-                    ├── DrawQuadInFrameEvent          (flat coloured quad each frame)
-                    ├── DrawSpriteInFrameEvent        (sub-texture sprite, matched by UI entity UUID)
-                    └── DrawStringInFrameEvent × 2    (static text + animated elapsed-time clock)
+Input (engine InputSystem -> InputStateSingletonComponent)
+  ├── engine CameraSystem        WASD pan / scroll zoom / resize aspect -> OrthographicCameraComponent
+  ├── sbx::QuadSpawnSystem        SPACE -> QuadComponent + SpinComponent + LifetimeComponent
+  └── sbx::InputReadoutSystem     mouse/keys/scroll -> readout LabelComponent text
 
-Data/Assets/App/UI/SandboxUI.json  (loaded once via LoadLayoutEvent)
-  └── pg::UIControlSystem
-        └── BaseComponent + ImageComponent + TextComponent entities
-              └── pg::UIRenderSystem
-                    └── DrawUIQuadInFrameEvent, DrawUIStringInFrameEvent
+World-space rendering
+  SpinComponent --(sbx::QuadAnimationSystem, scaled by DebugControls)--> QuadComponent
+  QuadComponent   --(sbx::QuadRenderSystem)--> DrawQuadInFrameEvent
+  SpriteComponent --(sbx::SpriteRenderSystem)--> DrawSpriteInFrameEvent
+  LabelComponent  --(sbx::TextRenderSystem, via ResourceMap font)--> DrawStringInFrameEvent
+        └── engine Renderer2DSystem batches all draw events into GPU draw calls
+  LifetimeComponent --(sbx::LifetimeSystem)--> deferred entity destroy when expired
+
+UI (engine UIControlSystem + UIEventSystem + UIRenderSystem)
+  UIEventSystem hit-tests the mouse -> UIOnClick / UIOnHover / UIOnRelease one-frame components
+  ├── sbx::UIButtonVisualSystem  hover/click -> UIUpdateImageUUIDOneFrameComponent (button image)
+  ├── sbx::UIButtonSystem        release on toggle button -> UIUpdateEnableOneFrameComponent (panel)
+  ├── sbx::UICloseSystem         release on close button  -> UIDestroyOneFrameComponent (target)
+  └── sbx::UIStatusSystem        SpawnerSingletonComponent count -> UIUpdateTextOneFrameComponent
+        └── engine UIControlSystem applies the UIUpdate*/UIDestroy components to BaseComponent /
+            ImageComponent / TextComponent; UIRenderSystem then emits DrawUIQuad/DrawUIString events
+
+ImGui
+  sbx::DebugPanelSystem  slider -> DebugControlsSingletonComponent.m_AnimationSpeed
+        └── read by sbx::QuadAnimationSystem to scale animation speed
 ```
 
 ## Key Files
 
 | File | Purpose |
 |---|---|
-| `Code/SandboxApp/Sandbox2D.cpp` | Entry point — CreateApplication() and system registration |
-| `Code/SandboxApp/Sandbox/ConfigLoaderSystem.cpp` | Reads Config.json, creates SampleUIConfigSingletonComponent |
-| `Code/SandboxApp/Sandbox/SampleUISystem.cpp` | Scene init and per-frame draw event emission |
-| `Data/Assets/App/Config.json` | UUID references for UI elements, font, and layout |
-| `Data/Assets/App/UI/SandboxUI.json` | Root UI layout definition (two children: image + text widget) |
+| `Code/SandboxApp/Sandbox2D.cpp` | Entry point — CreateApplication() and sandbox system registration |
+| `Code/SandboxApp/Sandbox/*System.cpp` | One focused system per file (see Documentation/ModuleInfo/SandboxApp) |
+| `Code/SandboxApp/Sandbox/*Component.h` | Pure-data components and state singletons |
+| `Code/SandboxApp/Sandbox/UIElementHelpers.*` | Shared sandbox helpers: find a UI element by UUID; UI event predicates |
+| `Data/Assets/App/Config.json` | UUID references for fonts, textures, the UI layout, and targeted UI elements |
+| `Data/Assets/App/UI/SandboxUI.json` | Root UI layout: toggle button + a dismissible panel (status text, note, close button) |

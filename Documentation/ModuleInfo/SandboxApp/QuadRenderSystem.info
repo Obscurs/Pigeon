@@ -1,0 +1,17 @@
+# QuadRenderSystem  (sbx)
+
+## Purpose
+Render bridge for world-space quads: sole adder of DrawQuadInFrameEvent. Each frame it emits one
+in-frame draw event per QuadComponent, copying the quad's transform, colour, origin and texture
+id. A null texture id yields a flat colour quad; a set texture id yields a textured quad
+(Renderer2DSystem then batches and draws them).
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| QuadComponent | read | One draw event emitted per quad |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| DrawQuadInFrameEvent | add (inframe) | One per QuadComponent; consumed by Renderer2DSystem this frame |

@@ -1,0 +1,20 @@
+# UIButtonSystem  (sbx)
+
+## Purpose
+Toggles the demo UI panel's visibility. Returns early until SandboxConfigSingletonComponent is
+present. When the toggle button is released (a UIOnReleaseOneFrameComponent whose element id matches
+the toggle button), it finds the panel by UUID and emits a UIUpdateEnableOneFrameComponent flipping
+the panel's current enabled flag. Acting on release rather than press debounces the interaction to
+one toggle per click.
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| SandboxConfigSingletonComponent | read | Toggle button and panel ids; guard |
+| UIOnReleaseOneFrameComponent | read | Release on the toggle button triggers the toggle |
+| BaseComponent | read | Locates the panel by UUID and reads its current enabled flag |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| UIUpdateEnableOneFrameComponent | add (oneframe) | Emitted on the panel to flip its enabled flag |

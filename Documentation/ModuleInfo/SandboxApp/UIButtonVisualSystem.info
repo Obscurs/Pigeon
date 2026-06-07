@@ -1,0 +1,24 @@
+# UIButtonVisualSystem  (sbx)
+
+## Purpose
+Drives the toggle button's image from its interaction state. Returns early until
+SandboxConfigSingletonComponent is present; lazily creates UIButtonVisualStateSingletonComponent on
+the first ready frame. Each frame it computes the button's state - pressed (a UIOnClickOneFrameComponent
+for the toggle button) takes priority over hovered (a UIOnHoverOneFrameComponent), otherwise default -
+and, only when that state changed since the previous frame, emits a UIUpdateImageUUIDOneFrameComponent
+on the button with the matching texture.
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| SandboxConfigSingletonComponent | read | Toggle button id and the three button texture ids; guard |
+| UIOnClickOneFrameComponent | read | Pressed state for the toggle button |
+| UIOnHoverOneFrameComponent | read | Hover state for the toggle button |
+| BaseComponent | read | Locates the toggle button entity by UUID |
+| UIButtonVisualStateSingletonComponent | write | Last-pushed image state (change detection) |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| UIButtonVisualStateSingletonComponent | write / add (deferred) | Created once; updated when the state changes |
+| UIUpdateImageUUIDOneFrameComponent | add (oneframe) | Emitted on the button only when its interaction state changes |

@@ -1,6 +1,15 @@
 {
-	"uuidui1": "92345678-9abc-def0-1234-56789abcdef2",
-	"uuidui2": "92345678-9abc-def0-1234-56789abcdef1",
 	"defaultFont": "a60c36f6-3c65-4bc5-8279-30ce17d854c6",
-	"mainLayoutId": "e48eb073-fcb1-44eb-a3b0-eb2f186a5831"
+	"boldFont": "1f701e90-545e-4e74-87f4-00bcc293cf4c",
+	"spriteTexture": "34b58f09-e65f-44cf-b640-344c728bc2ea",
+	"texturedQuadTexture": "e3afff59-1ee8-4396-b9ed-b093dd521f91",
+	"mainLayoutId": "e48eb073-fcb1-44eb-a3b0-eb2f186a5831",
+	"toggleButton": "a1000000-0000-4000-8000-000000000001",
+	"togglePanel": "a1000000-0000-4000-8000-000000000002",
+	"statusText": "a1000000-0000-4000-8000-000000000003",
+	"closeButton": "a1000000-0000-4000-8000-000000000004",
+	"closeTarget": "a1000000-0000-4000-8000-000000000005",
+	"buttonImage": "989d3ba6-0062-4cf2-bab5-1c6de7ea2da3",
+	"buttonHoverImage": "c5ceb129-c518-4048-9856-a26e00f2676a",
+	"buttonPressedImage": "132fdaf4-2f53-48a9-aed0-a803c503ca07"
 }

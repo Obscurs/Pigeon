@@ -1,0 +1,18 @@
+# InputReadoutSystem  (sbx)
+
+## Purpose
+Sole writer of LabelComponent. Returns early until the InputStateSingletonComponent is present.
+Each frame it formats the live input state (mouse position, number of held keys, scroll offset)
+into a string and writes it to the m_Text of every label tagged with InputReadoutTagComponent.
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| InputStateSingletonComponent | read | Source of mouse/key/scroll state; guard (returns early if absent) |
+| InputReadoutTagComponent | read | Selects which labels to rewrite |
+| LabelComponent | write | m_Text rewritten with the formatted input state |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| LabelComponent | write | m_Text set to the formatted input readout |

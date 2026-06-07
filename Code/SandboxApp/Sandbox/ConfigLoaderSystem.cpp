@@ -1,16 +1,15 @@
-﻿#include "pch.h"
 #include "Sandbox/ConfigLoaderSystem.h"
 
-#include "Pigeon/Core/Clock.h"
 #include "Pigeon/ECS/World.h"
-#include "Sandbox/SampleUIConfigSingletonComponent.h"
+#include "Sandbox/SandboxConfigSingletonComponent.h"
 
 namespace
 {
 	std::string ReadJSONFileToString(const std::string& filePath)
 	{
 		std::ifstream file(filePath);
-		if (!file.is_open()) {
+		if (!file.is_open())
+		{
 			PG_CORE_ASSERT(false, "Could not open file");
 			return "";
 		}
@@ -20,6 +19,12 @@ namespace
 		file.close();
 		return ss.str();
 	}
+
+	pg::UUID ParseRequiredUUID(const json& jsonObject, const char* key)
+	{
+		PG_CORE_EXCEPT(jsonObject.contains(key) && jsonObject[key].is_string(), "Missing string field in app config");
+		return pg::UUID(jsonObject[key].get<std::string>());
+	}
 }
 
 pg::SystemAccessDecl sbx::ConfigLoaderSystem::DeclareAccess() const
@@ -27,34 +32,41 @@ pg::SystemAccessDecl sbx::ConfigLoaderSystem::DeclareAccess() const
 	pg::SystemAccessDecl decl;
 
 	decl.readSet = {
-		std::type_index(typeid(sbx::SampleUIConfigSingletonComponent)),
+		std::type_index(typeid(sbx::SandboxConfigSingletonComponent)),
 	};
 	decl.addSet = {
-		std::type_index(typeid(sbx::SampleUIConfigSingletonComponent)),
+		std::type_index(typeid(sbx::SandboxConfigSingletonComponent)),
 	};
 	return decl;
 }
 
 void sbx::ConfigLoaderSystem::Update(const pg::Timestep& ts)
 {
-	auto accessor = pg::World::GetRegistry();
+	pg::CheckedRegistryAccessor accessor = pg::World::GetRegistry();
 
-	if (accessor.View<const sbx::SampleUIConfigSingletonComponent>().empty())
+	if (!accessor.View<const sbx::SandboxConfigSingletonComponent>().empty())
 	{
-		sbx::SampleUIConfigSingletonComponent component;
-		pg::ecs::Entity ent = accessor.Create();
-		std::string configStr = ReadJSONFileToString("Assets/App/Config.json");
-		json jsonObject = json::parse(configStr);
-
-		PG_CORE_EXCEPT(jsonObject.contains("uuidui1") && jsonObject["uuidui1"].is_string(), "Missing uuidui1 in app config");
-		PG_CORE_EXCEPT(jsonObject.contains("uuidui2") && jsonObject["uuidui2"].is_string(), "Missing uuidui2 in app config");
-		PG_CORE_EXCEPT(jsonObject.contains("defaultFont") && jsonObject["defaultFont"].is_string(), "Missing defaultFont in app config");
-		PG_CORE_EXCEPT(jsonObject.contains("mainLayoutId") && jsonObject["mainLayoutId"].is_string(), "Missing mainLayoutId in app config");
-
-		component.m_DefaultFontID = pg::UUID(jsonObject["defaultFont"].get<std::string>());
-		component.m_UUIDUI1 = pg::UUID(jsonObject["uuidui1"].get<std::string>());
-		component.m_UUIDUI2 = pg::UUID(jsonObject["uuidui2"].get<std::string>());
-		component.m_MainLayoutID = pg::UUID(jsonObject["mainLayoutId"].get<std::string>());
-		accessor.EmplaceDeferred<sbx::SampleUIConfigSingletonComponent>(ent, std::move(component));
+		return;
 	}
+
+	const std::string configStr = ReadJSONFileToString("Assets/App/Config.json");
+	const json jsonObject = json::parse(configStr);
+
+	sbx::SandboxConfigSingletonComponent component;
+	component.m_DefaultFontID = ParseRequiredUUID(jsonObject, "defaultFont");
+	component.m_BoldFontID = ParseRequiredUUID(jsonObject, "boldFont");
+	component.m_SpriteTextureID = ParseRequiredUUID(jsonObject, "spriteTexture");
+	component.m_TexturedQuadTextureID = ParseRequiredUUID(jsonObject, "texturedQuadTexture");
+	component.m_MainLayoutID = ParseRequiredUUID(jsonObject, "mainLayoutId");
+	component.m_ToggleButtonID = ParseRequiredUUID(jsonObject, "toggleButton");
+	component.m_TogglePanelID = ParseRequiredUUID(jsonObject, "togglePanel");
+	component.m_StatusTextID = ParseRequiredUUID(jsonObject, "statusText");
+	component.m_CloseButtonID = ParseRequiredUUID(jsonObject, "closeButton");
+	component.m_CloseTargetID = ParseRequiredUUID(jsonObject, "closeTarget");
+	component.m_ButtonImageID = ParseRequiredUUID(jsonObject, "buttonImage");
+	component.m_ButtonHoverImageID = ParseRequiredUUID(jsonObject, "buttonHoverImage");
+	component.m_ButtonPressedImageID = ParseRequiredUUID(jsonObject, "buttonPressedImage");
+
+	pg::ecs::Entity ent = accessor.Create();
+	accessor.EmplaceDeferred<sbx::SandboxConfigSingletonComponent>(ent, std::move(component));
 }

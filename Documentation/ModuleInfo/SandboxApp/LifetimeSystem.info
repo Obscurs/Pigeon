@@ -1,0 +1,20 @@
+# LifetimeSystem  (sbx)
+
+## Purpose
+Generic time-to-live system. Each frame it subtracts the frame delta from every
+LifetimeComponent's remaining seconds and deferred-destroys any entity whose remaining time has
+reached zero. Used to expire the temporary quads spawned by QuadSpawnSystem; demonstrates
+deferred entity destruction.
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| LifetimeComponent | write | Remaining time decremented in place; entity destroyed when it hits zero |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| LifetimeComponent | write | m_Remaining decremented by the frame delta |
+
+Entities whose remaining time reaches zero are destroyed via deferred entity destruction (no
+component-access declaration required).

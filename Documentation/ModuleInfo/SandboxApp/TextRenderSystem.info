@@ -1,0 +1,18 @@
+# TextRenderSystem  (sbx)
+
+## Purpose
+Render bridge for world-space text: sole adder of DrawStringInFrameEvent. Returns early until the
+ResourceMapSingletonComponent is present. Each frame it resolves every LabelComponent's font id
+against the resource map's font map and emits one draw event per label (transform, text, font,
+colour, kerning, line spacing). Labels whose font id is not in the map are skipped.
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| ResourceMapSingletonComponent | read | Resolves font ids to fonts; guard (returns early if absent) |
+| LabelComponent | read | One draw event emitted per label with a resolvable font |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| DrawStringInFrameEvent | add (inframe) | One per drawable label; consumed by Renderer2DSystem this frame |

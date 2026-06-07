@@ -1,0 +1,22 @@
+# UIStatusSystem  (sbx)
+
+## Purpose
+Keeps the UI status text in sync with the spawn count. Returns early until both
+SpawnerSingletonComponent and SandboxConfigSingletonComponent are present; lazily creates
+StatusDisplaySingletonComponent on the first ready frame. When the spawn count differs from the last
+value shown, it finds the status text element by UUID and emits a UIUpdateTextOneFrameComponent with
+the new "Spawned: N" string.
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| SpawnerSingletonComponent | read | Current spawn count; guard |
+| SandboxConfigSingletonComponent | read | Status text element id and font id; guard |
+| BaseComponent | read | Locates the status text element by UUID |
+| StatusDisplaySingletonComponent | write | Last-shown spawn count (change detection) |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| StatusDisplaySingletonComponent | write / add (deferred) | Created once; updated when the count changes |
+| UIUpdateTextOneFrameComponent | add (oneframe) | Emitted on the status text element when the count changes |

@@ -1,0 +1,21 @@
+# DebugPanelSystem  (sbx)
+
+## Purpose
+Renders the ImGui debug panel and owns DebugControlsSingletonComponent. Lazily creates the controls
+singleton on the first frame. On later frames it draws an ImGui window exposing an animation-speed
+slider (written back into DebugControlsSingletonComponent, which QuadAnimationSystem reads) plus
+read-only readouts of the spawn count and live input state. All ImGui calls are skipped when no
+ImGui context exists (e.g. under the test build, which has no ImGuiLayer), so there the system only
+maintains the controls singleton.
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| SpawnerSingletonComponent | read | Spawn-count readout (optional) |
+| InputStateSingletonComponent | read | Mouse position / held-key readout (optional) |
+| DebugControlsSingletonComponent | write | Animation-speed slider value |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| DebugControlsSingletonComponent | write / add (deferred) | Created once; m_AnimationSpeed driven by the ImGui slider |

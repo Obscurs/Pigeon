@@ -1,13 +1,19 @@
-﻿#include "Pigeon.h"
-#include "Pigeon/Core/Clock.h"
-#include "Pigeon/Renderer/Font.h"
-#include "Pigeon/Renderer/Sprite.h"
-#include "Pigeon/UI/UIComponents.h"
+#include "Pigeon.h"
+#include "Pigeon/ECS/World.h"
 #include "Sandbox/ConfigLoaderSystem.h"
-#include "Sandbox/SampleUISystem.h"
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <imgui.h>
+#include "Sandbox/DebugPanelSystem.h"
+#include "Sandbox/InputReadoutSystem.h"
+#include "Sandbox/LifetimeSystem.h"
+#include "Sandbox/QuadAnimationSystem.h"
+#include "Sandbox/QuadRenderSystem.h"
+#include "Sandbox/QuadSpawnSystem.h"
+#include "Sandbox/SceneSetupSystem.h"
+#include "Sandbox/SpriteRenderSystem.h"
+#include "Sandbox/TextRenderSystem.h"
+#include "Sandbox/UIButtonSystem.h"
+#include "Sandbox/UIButtonVisualSystem.h"
+#include "Sandbox/UICloseSystem.h"
+#include "Sandbox/UIStatusSystem.h"
 
 class Sandbox : public pg::Application
 {
@@ -19,8 +25,25 @@ public:
 pg::Application& pg::CreateApplication()
 {
 	pg::Application& sandbox = Sandbox::Create();
-	pg::World::Get().RegisterSystem(std::move(std::make_unique<sbx::ConfigLoaderSystem>()));
-	pg::World::Get().RegisterSystem(std::move(std::make_unique<sbx::SampleUISystem>()));
+	pg::World& world = pg::World::Get();
+
+	// Engine systems (camera, input, resources, renderer, UI) are registered by Application::Init.
+	// The sandbox registers only its own systems; execution order is derived automatically from
+	// each system's DeclareAccess(), so registration order here does not matter.
+	world.RegisterSystem(std::make_unique<sbx::ConfigLoaderSystem>());
+	world.RegisterSystem(std::make_unique<sbx::SceneSetupSystem>());
+	world.RegisterSystem(std::make_unique<sbx::QuadSpawnSystem>());
+	world.RegisterSystem(std::make_unique<sbx::QuadAnimationSystem>());
+	world.RegisterSystem(std::make_unique<sbx::LifetimeSystem>());
+	world.RegisterSystem(std::make_unique<sbx::QuadRenderSystem>());
+	world.RegisterSystem(std::make_unique<sbx::SpriteRenderSystem>());
+	world.RegisterSystem(std::make_unique<sbx::TextRenderSystem>());
+	world.RegisterSystem(std::make_unique<sbx::InputReadoutSystem>());
+	world.RegisterSystem(std::make_unique<sbx::UIButtonVisualSystem>());
+	world.RegisterSystem(std::make_unique<sbx::UIButtonSystem>());
+	world.RegisterSystem(std::make_unique<sbx::UICloseSystem>());
+	world.RegisterSystem(std::make_unique<sbx::UIStatusSystem>());
+	world.RegisterSystem(std::make_unique<sbx::DebugPanelSystem>());
 
 	return sandbox;
 }

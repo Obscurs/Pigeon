@@ -1,0 +1,25 @@
+# SceneSetupSystem  (sbx)
+
+## Purpose
+One-shot scene builder. Returns early until both SandboxConfigSingletonComponent and
+ResourceMapSingletonComponent are present. On the first ready frame it creates the input-reactive
+scene camera, the demo sprite, the world-space labels (a title, an instructions label, and a
+tagged input-readout label), emits a LoadLayoutEvent to load the UI layout, and creates
+SceneReadySingletonComponent as its run-once guard.
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| SandboxConfigSingletonComponent | read | Font/texture/layout ids for the scene; guard (returns early if absent) |
+| ResourceMapSingletonComponent | read | Guard only: ensures the layout load will resolve |
+| SceneReadySingletonComponent | read | Run-once guard |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| OrthographicCameraComponent | add (deferred) | Input-reactive scene camera (CameraSystem then drives it) |
+| SpriteComponent | add (deferred) | The demo sub-texture sprite |
+| LabelComponent | add (deferred) | Title, instructions and the input-readout label |
+| InputReadoutTagComponent | add (deferred) | Marks the readout label for InputReadoutSystem |
+| LoadLayoutEvent | add (deferred) | Emitted once to load the UI layout |
+| SceneReadySingletonComponent | add (deferred) | Run-once guard |
