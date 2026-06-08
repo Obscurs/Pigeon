@@ -9,6 +9,19 @@
 
 namespace CatchTestsetFail
 {
+	namespace
+	{
+		// Reads a JSON file relative to the test working directory (bin/<Config>).
+		json LoadJsonFixture(const std::string& path)
+		{
+			std::ifstream file(path);
+			REQUIRE(file.is_open());
+			std::ostringstream ss;
+			ss << file.rdbuf();
+			return json::parse(ss.str());
+		}
+	}
+
 	// ---------------------------------------------------------------------------
 	// Happy path: first Update() with no EngineConfigSingletonComponent ->
 	// system creates one via deferred add. Visible next frame.
@@ -90,6 +103,70 @@ namespace CatchTestsetFail
 		CHECK(cfg.m_SoundVolume <= 1.0f);
 		CHECK(cfg.m_MusicVolume >= 0.0f);
 		CHECK(cfg.m_MusicVolume <= 1.0f);
+	}
+
+	// ---------------------------------------------------------------------------
+	// Savedata override: a value present in the savedata config wins over the
+	// engine config value (override semantics).
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Core.ConfigLoaderSystem::SavedataConfigOverridesEngineValue")
+	{
+		const json engineJson = LoadJsonFixture("Assets/Engine/Config.json");
+		REQUIRE(engineJson.contains("savedataPath"));
+
+		const std::string savedataConfigPath =
+			engineJson["savedataPath"].get<std::string>() + "/Config.json";
+		const json savedataJson = LoadJsonFixture(savedataConfigPath);
+
+		REQUIRE(engineJson.contains("musicVolume"));
+		REQUIRE(savedataJson.contains("musicVolume"));
+		const float engineMusic = engineJson["musicVolume"].get<float>();
+		const float savedataMusic = savedataJson["musicVolume"].get<float>();
+		// The override is only meaningful if the two values actually differ.
+		REQUIRE(engineMusic != Approx(savedataMusic));
+
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ConfigLoaderSystem>());
+
+		world.Update(pg::Timestep(0));
+
+		auto view = pg::World::GetRegistryDirect().view<pg::EngineConfigSingletonComponent>();
+		REQUIRE(view.size() == 1);
+		const pg::EngineConfigSingletonComponent& cfg =
+			view.get<pg::EngineConfigSingletonComponent>(view.front());
+
+		CHECK(cfg.m_MusicVolume == Approx(savedataMusic));
+	}
+
+	// ---------------------------------------------------------------------------
+	// Savedata override: a key absent from the savedata config keeps the engine
+	// config value (partial override / fallback).
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Core.ConfigLoaderSystem::EngineValueKeptWhenSavedataOmitsKey")
+	{
+		const json engineJson = LoadJsonFixture("Assets/Engine/Config.json");
+		REQUIRE(engineJson.contains("savedataPath"));
+
+		const std::string savedataConfigPath =
+			engineJson["savedataPath"].get<std::string>() + "/Config.json";
+		const json savedataJson = LoadJsonFixture(savedataConfigPath);
+
+		REQUIRE(engineJson.contains("masterVolume"));
+		// This test relies on the savedata fixture NOT overriding masterVolume.
+		REQUIRE(!savedataJson.contains("masterVolume"));
+		const float engineMaster = engineJson["masterVolume"].get<float>();
+
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ConfigLoaderSystem>());
+
+		world.Update(pg::Timestep(0));
+
+		auto view = pg::World::GetRegistryDirect().view<pg::EngineConfigSingletonComponent>();
+		REQUIRE(view.size() == 1);
+		const pg::EngineConfigSingletonComponent& cfg =
+			view.get<pg::EngineConfigSingletonComponent>(view.front());
+
+		CHECK(cfg.m_MasterVolume == Approx(engineMaster));
 	}
 
 	// ---------------------------------------------------------------------------

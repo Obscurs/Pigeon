@@ -4,5 +4,6 @@
 	"defaultFont": "79e69fe7-4e41-42b0-a47f-a4bb8040f02f",
 	"masterVolume": 0.8,
 	"soundVolume": 0.9,
-	"musicVolume": 0.6
+	"musicVolume": 0.6,
+	"savedataPath": "../SaveData"
 }

@@ -244,4 +244,9 @@ add_custom_command(TARGET PigeonLib POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${DATA_TO_COPY}
     ${PROJECT_BINARY_DIR}/bin/$(Configuration)
+    # SaveData sits beside the running exe (../SaveData from bin/$(Configuration)),
+    # mirroring its source layout as a sibling of Data.
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${PROJECT_SOURCE_DIR}/SaveData
+    ${PROJECT_BINARY_DIR}/bin/SaveData
 )

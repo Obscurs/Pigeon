@@ -75,7 +75,7 @@ Platform
                                 ▼
 Core
   ├── Application          boot sequence, layer stack, OS event bridge
-  ├── ConfigLoaderSystem   Assets/Engine/Config.json  →  EngineConfigSingletonComponent  (frame 1 only)
+  ├── ConfigLoaderSystem   Assets/Engine/Config.json (+ <savedataPath>/Config.json override)  →  EngineConfigSingletonComponent  (frame 1 only)
   ├── InputSystem          input event components  →  InputStateSingletonComponent
   └── ResourceManagerSystem  manifests  →  ResourceMapSingletonComponent  (frame 1 only)
                                 │

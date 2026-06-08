@@ -6,6 +6,15 @@ EngineConfigSingletonComponent with the UUIDs of the default quad shader, text s
 the master/sound/music audio volumes (optional keys; default to full volume when absent).
 No-op on all subsequent frames (presence check guards early exit).
 
+## Savedata Override
+The engine config may declare a `savedataPath` entry pointing at the SaveData folder (a sibling of
+Data, `../SaveData` from the working directory). After seeding the component from the engine config,
+the system reads `<savedataPath>/Config.json` if it exists and overlays its entries on top — every
+field is optional, so a key present in the savedata config overrides the engine value while absent
+keys keep the engine value. When `savedataPath` is missing or the savedata config file does not
+exist, the engine config values stand unchanged. The savedata file is the place for user/persisted
+overrides (e.g. adjusted audio volumes) that must survive without editing the shipped engine config.
+
 ## Input Components
 | Component | Access | Notes |
 |---|---|---|
