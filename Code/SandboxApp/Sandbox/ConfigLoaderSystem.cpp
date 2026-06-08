@@ -66,6 +66,8 @@ void sbx::ConfigLoaderSystem::Update(const pg::Timestep& ts)
 	component.m_ButtonImageID = ParseRequiredUUID(jsonObject, "buttonImage");
 	component.m_ButtonHoverImageID = ParseRequiredUUID(jsonObject, "buttonHoverImage");
 	component.m_ButtonPressedImageID = ParseRequiredUUID(jsonObject, "buttonPressedImage");
+	component.m_SampleSoundID = ParseRequiredUUID(jsonObject, "sampleSound");
+	component.m_SampleMusicID = ParseRequiredUUID(jsonObject, "sampleMusic");
 
 	pg::ecs::Entity ent = accessor.Create();
 	accessor.EmplaceDeferred<sbx::SandboxConfigSingletonComponent>(ent, std::move(component));

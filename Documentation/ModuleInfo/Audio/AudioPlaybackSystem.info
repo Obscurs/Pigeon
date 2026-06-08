@@ -1,0 +1,26 @@
+# AudioPlaybackSystem
+
+## Purpose
+Drives the audio device from App requests. On the first frame it lazily creates
+`AudioDeviceSingletonComponent` (holding the platform `AudioDevice`) and returns. Once the device
+exists, each frame it: applies the current category volumes to all voices, processes stop/pause/resume
+requests, then play requests (looking the clip up in `ResourceMapSingletonComponent::m_SoundMap` and
+using the caller-assigned voice handle), and finally reaps finished voices via `AudioDevice::Update()`.
+Play requests for an unknown clip UUID are ignored. Volumes default to 1.0 while
+`AudioVolumeSingletonComponent` is absent.
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| AudioDeviceSingletonComponent | read | Presence-check + access to the device; created lazily on the first frame |
+| ResourceMapSingletonComponent | read | Resolves `m_ClipID` to a `SoundClip` via `m_SoundMap` |
+| AudioVolumeSingletonComponent | read | Current master/sound/music volumes; absent → defaults of 1.0 |
+| PlayAudioRequestOneFrameComponent | read | clip id, voice id, category, loop, volume |
+| StopAudioRequestOneFrameComponent | read | voice id to stop |
+| PauseAudioRequestOneFrameComponent | read | voice id to pause |
+| ResumeAudioRequestOneFrameComponent | read | voice id to resume |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| AudioDeviceSingletonComponent | add (deferred) | Created once on the first frame; holds the platform audio device that playback is driven through |

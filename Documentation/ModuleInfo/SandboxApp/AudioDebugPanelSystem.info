@@ -1,0 +1,17 @@
+# AudioDebugPanelSystem
+
+## Purpose
+Renders an ImGui "Audio" panel with master/sound/music volume sliders seeded from the current
+`AudioVolumeSingletonComponent`. When a slider changes it emits a `SetAudioVolumeRequestOneFrameComponent`
+carrying the new master/sound/music triplet so the engine updates the live volumes. Returns early when
+the volume singleton is absent or when no ImGui context exists (the Testing build pushes no ImGui layer).
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| AudioVolumeSingletonComponent | read | Seeds the sliders with the current volumes |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| SetAudioVolumeRequestOneFrameComponent | add (oneframe) | Emitted when a slider value changes |

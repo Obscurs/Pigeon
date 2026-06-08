@@ -2,6 +2,8 @@
 
 #include "Pigeon/Core/Application.h"
 
+#include "Pigeon/Audio/AudioPlaybackSystem.h"
+#include "Pigeon/Audio/AudioVolumeSystem.h"
 #include "Pigeon/Core/ConfigLoaderSystem.h"
 #include "Pigeon/Core/InputSystem.h"
 #include "Pigeon/Core/KeyPressedEventComponent.h"
@@ -156,6 +158,8 @@ void pg::Application::Init()
 	m_Data.m_Window->SetEventCallback(pg::BindEventFn<&Application::OnEvent, Application>(this));
 	pg::World& world = pg::World::Create();
 
+	world.RegisterSystem(std::move(std::make_unique<pg::AudioPlaybackSystem>()));
+	world.RegisterSystem(std::move(std::make_unique<pg::AudioVolumeSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pg::CameraSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pg::ConfigLoaderSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pg::InputSystem>()));

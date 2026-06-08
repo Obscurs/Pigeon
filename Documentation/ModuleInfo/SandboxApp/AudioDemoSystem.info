@@ -1,0 +1,24 @@
+# AudioDemoSystem
+
+## Purpose
+Demonstrates the engine audio capability through the keyboard. Owns
+`AudioDemoStateSingletonComponent` (created lazily on the first frame, tracking the music voice handle
+and its play/pause state). Each frame it reads just-pressed keys and emits engine audio requests:
+`S` plays the sample sound effect as a new overlapping voice; `M` toggles the looping music on/off; `P`
+pauses or resumes the music. Returns early while the sandbox config or input state is absent.
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| SandboxConfigSingletonComponent | read | Sound/music clip UUIDs |
+| InputStateSingletonComponent | read | Just-pressed key detection |
+| AudioDemoStateSingletonComponent | write | Presence-check; created lazily; tracks the music voice |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| AudioDemoStateSingletonComponent | write / add (deferred) | Created once; tracks music voice id + play/pause flags |
+| PlayAudioRequestOneFrameComponent | add (oneframe) | Emitted for sound effects and music start |
+| StopAudioRequestOneFrameComponent | add (oneframe) | Emitted to stop the music |
+| PauseAudioRequestOneFrameComponent | add (oneframe) | Emitted to pause the music |
+| ResumeAudioRequestOneFrameComponent | add (oneframe) | Emitted to resume the music |

@@ -2,6 +2,7 @@
 #include <catch2/catch.hpp>
 #include "Utils/TestApp.h"
 
+#include "Pigeon/Audio/SoundClip.h"
 #include "Pigeon/Core/ResourceManagerSystem.h"
 #include "Pigeon/Core/ResourceMapSingletonComponent.h"
 #include "Pigeon/ECS/System.h"
@@ -84,6 +85,31 @@ namespace CatchTestsetFail
 			view.get<pg::ResourceMapSingletonComponent>(view.front());
 
 		CHECK(!map.m_ShaderMap.empty());
+	}
+
+	// ---------------------------------------------------------------------------
+	// Happy path: loaded resource map has at least one sound clip entry
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Core.ResourceManagerSystem::LoadedMapHasSounds")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ResourceManagerSystem>());
+
+		world.Update(pg::Timestep(0));
+
+		auto view = pg::World::GetRegistryDirect().view<pg::ResourceMapSingletonComponent>();
+		REQUIRE(view.size() == 1);
+
+		const pg::ResourceMapSingletonComponent& map =
+			view.get<pg::ResourceMapSingletonComponent>(view.front());
+
+		REQUIRE(!map.m_SoundMap.empty());
+		// Every loaded clip exposes its resolved path.
+		for (const std::pair<const pg::UUID, pg::S_Ptr<pg::SoundClip>>& entry : map.m_SoundMap)
+		{
+			CHECK(entry.second != nullptr);
+			CHECK(!entry.second->GetPath().empty());
+		}
 	}
 
 	// ---------------------------------------------------------------------------

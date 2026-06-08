@@ -1,5 +1,7 @@
 #include "Pigeon.h"
 #include "Pigeon/ECS/World.h"
+#include "Sandbox/AudioDebugPanelSystem.h"
+#include "Sandbox/AudioDemoSystem.h"
 #include "Sandbox/ConfigLoaderSystem.h"
 #include "Sandbox/DebugPanelSystem.h"
 #include "Sandbox/InputReadoutSystem.h"
@@ -31,6 +33,8 @@ pg::Application& pg::CreateApplication()
 	// Engine systems (camera, input, resources, renderer, UI) are registered by Application::Init.
 	// The sandbox registers only its own systems; execution order is derived automatically from
 	// each system's DeclareAccess(), so registration order here does not matter.
+	world.RegisterSystem(std::make_unique<sbx::AudioDemoSystem>());
+	world.RegisterSystem(std::make_unique<sbx::AudioDebugPanelSystem>());
 	world.RegisterSystem(std::make_unique<sbx::ConfigLoaderSystem>());
 	world.RegisterSystem(std::make_unique<sbx::TransformResolveSystem>());
 	world.RegisterSystem(std::make_unique<sbx::SceneSetupSystem>());

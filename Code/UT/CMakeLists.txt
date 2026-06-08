@@ -3,6 +3,7 @@ file(GLOB SRC_MAIN
     "Utils/TestApp.cpp"
 )
 
+file(GLOB SRC_TESTS_AUDIO "UT_Audio/*.cpp")
 file(GLOB SRC_TESTS_CORE "UT_Core/*.cpp")
 file(GLOB SRC_TESTS_INTERFACE "UT_Interface/*.cpp")
 file(GLOB SRC_TESTS_UI "UT_UI/*.cpp")
@@ -11,6 +12,8 @@ file(GLOB SRC_TESTS_SANDBOX "UT_Sandbox/*.cpp")
 file(GLOB SRC_TESTS_TRANSFORM "UT_Transform/*.cpp")
 
 set(SRC_SANDBOX_SYSTEMS
+    "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/AudioDebugPanelSystem.cpp"
+    "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/AudioDemoSystem.cpp"
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/ConfigLoaderSystem.cpp"
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/DebugPanelSystem.cpp"
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/InputReadoutSystem.cpp"
@@ -31,6 +34,7 @@ set(SRC_SANDBOX_SYSTEMS
 
 source_group("" FILES ${SRC_MAIN})
 
+source_group("Tests/Audio" FILES ${SRC_TESTS_AUDIO})
 source_group("Tests/Core" FILES ${SRC_TESTS_CORE})
 source_group("Tests/Interface" FILES ${SRC_TESTS_INTERFACE})
 source_group("Tests/UI" FILES ${SRC_TESTS_UI})
@@ -53,6 +57,7 @@ link_directories (
 add_executable (UT
     ${OBJS}
     ${SRC_MAIN}
+    ${SRC_TESTS_AUDIO}
     ${SRC_TESTS_CORE}
     ${SRC_TESTS_INTERFACE}
     ${SRC_TESTS_UI}

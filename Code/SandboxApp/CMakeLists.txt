@@ -1,5 +1,8 @@
 file(GLOB SRCS
     "Sandbox/AnimationTransformRequestOneFrameComponent.h"
+    "Sandbox/AudioDebugPanelSystem.cpp"
+    "Sandbox/AudioDemoStateSingletonComponent.h"
+    "Sandbox/AudioDemoSystem.cpp"
     "Sandbox/ConfigLoaderSystem.cpp"
     "Sandbox/DebugControlsSingletonComponent.h"
     "Sandbox/DebugPanelSystem.cpp"

@@ -9,6 +9,8 @@ main()  [EntryPoint.h]
               └── Init()
                     ├── Window::Create()               (platform window + graphics context)
                     ├── World::Create()                (ECS registry, clears all state)
+                    ├── RegisterSystem(AudioPlaybackSystem)
+                    ├── RegisterSystem(AudioVolumeSystem)
                     ├── RegisterSystem(CameraSystem)
                     ├── RegisterSystem(ConfigLoaderSystem)
                     ├── RegisterSystem(InputSystem)
@@ -78,6 +80,13 @@ Core
   └── ResourceManagerSystem  manifests  →  ResourceMapSingletonComponent  (frame 1 only)
                                 │
                                 ▼
+Audio
+  ├── AudioVolumeSystem    EngineConfigSingletonComponent (volumes) + SetAudioVolumeRequest
+  │                          →  AudioVolumeSingletonComponent (live master/sound/music volumes)
+  └── AudioPlaybackSystem  ResourceMapSingletonComponent (m_SoundMap) + AudioVolumeSingletonComponent
+                             + Play/Stop/Pause/ResumeAudioRequest (from app)
+                             →  AudioDeviceSingletonComponent (platform mixer); voices keyed by UUID handle
+
 Transform
   ├── TransformResolveSystem  ResolvedTransformRequest (from app) + CameraTransformRequest
   │                           →  PositionComponent, RotationComponent, ScaleComponent, LocalBoundsComponent
@@ -105,6 +114,8 @@ UI
 | File | Purpose |
 |---|---|
 | `Code/PigeonLib/Pigeon/Core/Application.h` | Application singleton — window, layer stack, boot sequence |
+| `Code/PigeonLib/Pigeon/Audio/` | Audio module — SoundClip resource, abstract AudioDevice mixer, the volume + playback systems, request components (see Documentation/ModuleInfo/Audio) |
+| `Code/PigeonLib/Platform/Miniaudio/MiniaudioAudioDevice.cpp` | Real audio backend (miniaudio); Testing build uses Platform/Testing/TestingAudioDevice |
 | `Code/PigeonLib/Pigeon/ECS/Entity.h` | ECS abstraction layer — `pg::ecs` names (`Entity`, `null`, `Registry`, `Dispatcher`, `exclude`) over the EnTT library |
 | `Code/PigeonLib/Pigeon/ECS/World.h` | ECS World API — registry, system registration, deferred operations |
 | `Code/PigeonLib/Pigeon/ECS/CheckedRegistryAccessor.h` | Accessor API — View, Get, EmplaceDeferred, EmplaceInframe, EmplaceEvent |

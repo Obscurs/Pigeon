@@ -2,6 +2,26 @@ file(GLOB ROOT
     "Pigeon.h"
 )
 
+file(GLOB PGAUDIO
+    "Pigeon/Audio/AudioDevice.cpp"
+    "Pigeon/Audio/AudioDevice.h"
+    "Pigeon/Audio/AudioDeviceSingletonComponent.h"
+    "Pigeon/Audio/AudioPlaybackSystem.cpp"
+    "Pigeon/Audio/AudioPlaybackSystem.h"
+    "Pigeon/Audio/AudioVolume.h"
+    "Pigeon/Audio/AudioVolumeSingletonComponent.h"
+    "Pigeon/Audio/AudioVolumeSystem.cpp"
+    "Pigeon/Audio/AudioVolumeSystem.h"
+    "Pigeon/Audio/EAudioCategory.h"
+    "Pigeon/Audio/PauseAudioRequestOneFrameComponent.h"
+    "Pigeon/Audio/PlayAudioRequestOneFrameComponent.h"
+    "Pigeon/Audio/ResumeAudioRequestOneFrameComponent.h"
+    "Pigeon/Audio/SetAudioVolumeRequestOneFrameComponent.h"
+    "Pigeon/Audio/SoundClip.cpp"
+    "Pigeon/Audio/SoundClip.h"
+    "Pigeon/Audio/StopAudioRequestOneFrameComponent.h"
+)
+
 file(GLOB PGCORE
     "Pigeon/Core/Application.cpp"
     "Pigeon/Core/Clock.h"
@@ -107,6 +127,11 @@ file(GLOB PLATFORM_DX
     "Platform/DirectX11/Dx11Texture.cpp"
 )
 
+file(GLOB PLATFORM_MINIAUDIO
+    "Platform/Miniaudio/MiniaudioAudioDevice.cpp"
+    "Platform/Miniaudio/MiniaudioAudioDevice.h"
+)
+
 file(GLOB PLATFORM_TESTING
     "Platform/Testing/TestingBuffer.cpp"
     "Platform/Testing/TestingContext.cpp"
@@ -119,6 +144,7 @@ file(GLOB PLATFORM_TESTING
 )
 
 file(GLOB VENDOR
+    "vendor/miniaudio/miniaudio.cpp"
     "vendor/stb_image/stb_image.cpp"
 )
 
@@ -131,11 +157,14 @@ file(GLOB_RECURSE SRC
     "ECS/*.h"
     "ECS/Systems/*.cpp"
     "ECS/Components/*.h"
+    "vendor/miniaudio/*.cpp"
+    "vendor/miniaudio/*.h"
     "vendor/stb_image/*.cpp"
     "vendor/stb_image/*.h"
 )
 
 source_group("" FILES ${ROOT})
+source_group("Pigeon\\Audio" FILES ${PGAUDIO})
 source_group("Pigeon\\Core" FILES ${PGCORE})
 source_group("Pigeon\\ImGui" FILES ${PGIMGUI})
 source_group("Pigeon\\Renderer" FILES ${RENDERER})
@@ -143,6 +172,7 @@ source_group("Pigeon\\UI" FILES ${UI})
 source_group("Pigeon\\Transform" FILES ${TRANSFORM})
 source_group("Platform\\Testing" FILES ${PLATFORM_TESTING})
 source_group("Platform\\DirectX11" FILES ${PLATFORM_DX})
+source_group("Platform\\Miniaudio" FILES ${PLATFORM_MINIAUDIO})
 source_group("Pigeon\\ECS" FILES ${ECS_WORLD})
 source_group("Pigeon\\ECS\\Systems" FILES ${ECS_SYSTEMS})
 source_group("Pigeon\\ECS\\Components" FILES ${ECS_COMPONENTS})

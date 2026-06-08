@@ -23,3 +23,14 @@
 | Transform Resolve | Applying transform requests to the canonical Position/Rotation/Scale/Local Bounds components. Two-tier: an app aggregator collapses all app requests into one resolved request, and an engine resolver applies the resolved request (plus engine-origin requests) — it is the sole adder and writer of the canonical components. |
 | Transform Compose | Building the World Transform from Position/Rotation/Scale, and the render sort key from the World Transform and Local Bounds. |
 | Render order (Y-sort) | World draw order derived from the world-space Y of an entity's bottom edge (Local Bounds min, transformed to world): lower Y draws behind, higher Y draws in front. UI always draws on top of all world geometry. |
+
+## Audio
+
+| Term | Meaning |
+|---|---|
+| Sound Clip | A loadable audio resource (`pg::SoundClip`). Holds the resolved file path of an audio asset; loaded by the resource manager into the resource map alongside textures, fonts, shaders, and UI layouts. The device decodes it lazily on play. |
+| Audio Device | The platform-abstracted mixer/output (`pg::AudioDevice`). Owns the active voices and is the only platform-specific audio piece; the miniaudio backend serves real builds, a no-op mock serves tests. |
+| Voice | One playing instance of a sound clip. Many voices play simultaneously, including multiple voices of the same clip. |
+| Voice Handle | A caller-assigned UUID identifying a voice. The app passes it in the play request and reuses it to pause, resume, or stop that specific voice. Music is a looping voice whose handle the app remembers. |
+| Audio Category | Whether a voice is a Sound (effect) or Music. Selects which category volume scales the voice. |
+| Volume (master / sound / music) | Mix levels seeded from `Config.json` into the engine config, then held live in `AudioVolumeSingletonComponent`. A voice's effective gain is master × category volume × the per-voice base volume. |

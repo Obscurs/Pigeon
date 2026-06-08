@@ -2,7 +2,8 @@
 
 ## Purpose
 One-shot initialization system. On the first frame, reads `Assets/Engine/Config.json` and creates
-EngineConfigSingletonComponent with the UUIDs of the default quad shader, text shader, and font.
+EngineConfigSingletonComponent with the UUIDs of the default quad shader, text shader, and font, plus
+the master/sound/music audio volumes (optional keys; default to full volume when absent).
 No-op on all subsequent frames (presence check guards early exit).
 
 ## Input Components
@@ -13,4 +14,4 @@ No-op on all subsequent frames (presence check guards early exit).
 ## Output Components
 | Component | Access | Notes |
 |---|---|---|
-| EngineConfigSingletonComponent | add (deferred) | Created once from Config.json; contains default shader and font UUIDs |
+| EngineConfigSingletonComponent | add (deferred) | Created once from Config.json; contains default shader and font UUIDs and master/sound/music volumes |

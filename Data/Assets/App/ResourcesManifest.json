@@ -15,5 +15,9 @@
 		{"id": "a60c36f6-3c65-4bc5-8279-30ce17d854c6", "path" : "opensans/OpenSans-Regular.ttf"}
 	],
 	"shaders": [
+	],
+	"sounds": [
+		{"id": "b2000000-0000-4000-8000-000000000001", "path" : "sampleSound.mp3"},
+		{"id": "b2000000-0000-4000-8000-000000000002", "path" : "sampleMusic.mp3"}
 	]
 }

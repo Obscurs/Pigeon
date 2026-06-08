@@ -16,7 +16,8 @@
 
 ## Platform Abstractions
 
-- All OS and GPU code lives in `Platform/`. Engine code uses only the abstract interfaces in `Pigeon/Core/` and `Pigeon/Renderer/`.
+- All OS and GPU code lives in `Platform/`. Engine code uses only the abstract interfaces in `Pigeon/Core/`, `Pigeon/Renderer/`, and `Pigeon/Audio/`.
+- Audio playback is platform code: `Pigeon/Audio/AudioDevice` is abstract, with `AudioDevice::Create()` selecting the miniaudio backend (`Platform/Miniaudio/`) for real builds and a no-op mock (`Platform/Testing/`) for tests — the same renderer-API switch (`pg::Renderer::GetAPI()`) used by `Texture2D::Create`.
 - `TESTS_ENABLED` switches `Window`, `PlatformInput`, and `RendererAPI` implementations at link time — there are no runtime branches.
 - Never reference concrete platform types (`WindowsWindow`, `Dx11Context`, etc.) from engine code outside of `ImGuiLayer`, which is a deliberate exception.
 

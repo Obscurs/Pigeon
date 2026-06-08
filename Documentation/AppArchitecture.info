@@ -30,6 +30,8 @@ pg::CreateApplication()  [Sandbox2D.cpp]
         sbx::UICloseSystem             release            -> UIDestroy (dismiss element)
         sbx::UIStatusSystem            spawn count        -> UIUpdateText (status label)
         sbx::DebugPanelSystem          ImGui panel; owns DebugControlsSingletonComponent
+        sbx::AudioDemoSystem           S/M/P keys -> Play/Stop/Pause/Resume audio requests; owns AudioDemoState
+        sbx::AudioDebugPanelSystem     ImGui "Audio" panel; volume sliders -> SetAudioVolumeRequest
 ```
 
 ## Boot Sequence
@@ -89,6 +91,12 @@ UI (engine UIControlSystem + UIEventSystem + UIRenderSystem)
 ImGui
   sbx::DebugPanelSystem  slider -> DebugControlsSingletonComponent.m_AnimationSpeed
         └── read by sbx::QuadAnimationSystem to scale animation speed
+
+Audio (engine AudioVolumeSystem + AudioPlaybackSystem)
+  sbx::AudioDemoSystem        S -> one-shot sound voice; M -> toggle looping music; P -> pause/resume music
+        └── emits Play/Stop/Pause/ResumeAudioRequest consumed by engine AudioPlaybackSystem
+  sbx::AudioDebugPanelSystem  master/sound/music sliders -> SetAudioVolumeRequest
+        └── engine AudioVolumeSystem writes AudioVolumeSingletonComponent; AudioPlaybackSystem applies it to voices
 ```
 
 ## Key Files

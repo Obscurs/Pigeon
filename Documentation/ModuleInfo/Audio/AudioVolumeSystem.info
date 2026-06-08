@@ -1,0 +1,19 @@
+# AudioVolumeSystem
+
+## Purpose
+Owns the live audio volumes. On the first frame the `EngineConfigSingletonComponent` is present, it
+creates `AudioVolumeSingletonComponent` initialised from the config's master/sound/music volumes.
+Thereafter it applies `SetAudioVolumeRequestOneFrameComponent` requests (the App's runtime volume
+changes) into that singleton. Returns early while the engine config is absent.
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| EngineConfigSingletonComponent | read | Source of the initial master/sound/music volumes |
+| SetAudioVolumeRequestOneFrameComponent | read | App request carrying the desired master/sound/music volumes |
+| AudioVolumeSingletonComponent | write | Presence-check; created lazily once config exists, then updated in place |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| AudioVolumeSingletonComponent | write / add (deferred) | Created once from config; updated in place by volume requests |

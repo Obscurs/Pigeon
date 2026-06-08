@@ -1,6 +1,7 @@
 ﻿#include "pch.h"
 #include "Pigeon/Core/ResourceManagerSystem.h"
 
+#include "Pigeon/Audio/SoundClip.h"
 #include "Pigeon/Core/Clock.h"
 #include "Pigeon/Core/ResourceMapSingletonComponent.h"
 #include "Pigeon/ECS/World.h"
@@ -58,6 +59,11 @@ namespace
 		component.m_ShaderMap[resource.m_UUID] = std::move(pg::Shader::Create(resource.m_Path));
 	}
 
+	void LoadSoundFromResource(pg::ResourceMapSingletonComponent& component, const ParsedResource& resource)
+	{
+		component.m_SoundMap[resource.m_UUID] = pg::SoundClip::Create(resource.m_Path);
+	}
+
 	void LoadResourcesFromPath(pg::ResourceMapSingletonComponent& component, const std::string& filePath, const std::string& prefix)
 	{
 		json jsonObject = ReadJSONFileToString(filePath);
@@ -92,6 +98,14 @@ namespace
 			for (json child : jsonObject["shaders"])
 			{
 				LoadShaderFromResource(component, GetParsedResourceFromJsonItem(child, prefix, "Shaders"));
+			}
+		}
+		if (jsonObject.contains("sounds"))
+		{
+			PG_CORE_EXCEPT(jsonObject["sounds"].is_array(), "could not parse sounds from resource manifest");
+			for (json child : jsonObject["sounds"])
+			{
+				LoadSoundFromResource(component, GetParsedResourceFromJsonItem(child, prefix, "Audio"));
 			}
 		}
 	}

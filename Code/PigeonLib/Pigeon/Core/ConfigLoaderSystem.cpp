@@ -53,6 +53,21 @@ void pg::ConfigLoaderSystem::Update(const pg::Timestep& ts)
 		component.m_DefaultFontID = pg::UUID(jsonObject["defaultFont"].get<std::string>());
 		component.m_DefaultQuadShaderID = pg::UUID(jsonObject["defaultQuadShader"].get<std::string>());
 		component.m_DefaultTextShaderID = pg::UUID(jsonObject["defaultTextShader"].get<std::string>());
+
+		// Audio volumes are optional; absent keys keep the full-volume defaults.
+		if (jsonObject.contains("masterVolume") && jsonObject["masterVolume"].is_number())
+		{
+			component.m_MasterVolume = jsonObject["masterVolume"].get<float>();
+		}
+		if (jsonObject.contains("soundVolume") && jsonObject["soundVolume"].is_number())
+		{
+			component.m_SoundVolume = jsonObject["soundVolume"].get<float>();
+		}
+		if (jsonObject.contains("musicVolume") && jsonObject["musicVolume"].is_number())
+		{
+			component.m_MusicVolume = jsonObject["musicVolume"].get<float>();
+		}
+
 		accessor.EmplaceDeferred<pg::EngineConfigSingletonComponent>(ent, std::move(component));
 	}
 }

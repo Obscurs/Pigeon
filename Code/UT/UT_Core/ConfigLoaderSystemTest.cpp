@@ -69,6 +69,30 @@ namespace CatchTestsetFail
 	}
 
 	// ---------------------------------------------------------------------------
+	// Happy path: loaded config exposes the audio volumes within the valid [0,1] range
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Core.ConfigLoaderSystem::LoadedConfigHasAudioVolumes")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ConfigLoaderSystem>());
+
+		world.Update(pg::Timestep(0));
+
+		auto view = pg::World::GetRegistryDirect().view<pg::EngineConfigSingletonComponent>();
+		REQUIRE(view.size() == 1);
+
+		const pg::EngineConfigSingletonComponent& cfg =
+			view.get<pg::EngineConfigSingletonComponent>(view.front());
+
+		CHECK(cfg.m_MasterVolume >= 0.0f);
+		CHECK(cfg.m_MasterVolume <= 1.0f);
+		CHECK(cfg.m_SoundVolume >= 0.0f);
+		CHECK(cfg.m_SoundVolume <= 1.0f);
+		CHECK(cfg.m_MusicVolume >= 0.0f);
+		CHECK(cfg.m_MusicVolume <= 1.0f);
+	}
+
+	// ---------------------------------------------------------------------------
 	// DeclareAccess: verify declared sets match the system's actual access
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Core.ConfigLoaderSystem::DeclareAccessIsCorrect")

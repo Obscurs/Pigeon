@@ -1,0 +1,30 @@
+# Audio (infrastructure)
+
+## Purpose
+The Audio module adds sound playback to PigeonLib. It introduces a loadable sound resource and a
+platform-abstracted audio device (mixer), plus two ECS systems that drive playback and volume.
+
+## Abstractions
+| Type | Role |
+|---|---|
+| `pg::SoundClip` | Loadable audio resource. Holds the resolved file path of an audio asset. Created by ResourceManagerSystem from the `sounds` array of a resource manifest and stored in `ResourceMapSingletonComponent::m_SoundMap` keyed by UUID. Path-only, mirroring how UI layouts are stored. |
+| `pg::AudioDevice` | Platform-abstracted mixer/output device. Owns the set of active voices. Created via `AudioDevice::Create()` which selects the miniaudio backend for the real build and a no-op mock for the Testing build (switched on `pg::Renderer::GetAPI()`, same mechanism as `Texture2D::Create`). |
+| `pg::EAudioCategory` | `eSound` or `eMusic` — selects which category volume applies to a voice. |
+| `pg::ComputeVoiceVolume` | Free function: effective linear gain = `master * categoryVolume * baseVolume`. Shared by every backend so the mixing math is defined once. |
+
+## Voice model
+A voice is one playing instance of a sound, addressed by a caller-assigned `pg::UUID` handle. The App
+generates the handle, passes it in the play request, and reuses it to pause/resume/stop that specific
+voice. Many voices may play simultaneously, including multiple voices of the same clip. Music is simply
+a looping voice whose handle the App remembers.
+
+## AudioDevice interface
+| Method | Behaviour |
+|---|---|
+| `Play(voiceId, clip, category, loop, baseVolume)` | Starts a new voice for `clip` under `voiceId`. Stores category + base volume for later volume recomputation. |
+| `Pause(voiceId)` | Pauses the voice, keeping its playback position. No-op if the voice is unknown. |
+| `Resume(voiceId)` | Resumes a paused voice. No-op if the voice is unknown. |
+| `Stop(voiceId)` | Stops and discards the voice. No-op if the voice is unknown. |
+| `SetCategoryVolumes(master, sound, music)` | Recomputes and applies the effective volume of every active voice. |
+| `Update()` | Reaps finished non-looping voices so they stop counting as active. |
+| `IsVoiceActive(voiceId)` / `IsVoicePaused(voiceId)` / `GetVoiceVolume(voiceId)` / `GetActiveVoiceCount()` | Queries used by the playback system and tests. |

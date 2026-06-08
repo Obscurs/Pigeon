@@ -11,5 +11,10 @@ namespace pg
 		pg::UUID m_DefaultQuadShaderID;
 		pg::UUID m_DefaultTextShaderID;
 		pg::UUID m_DefaultFontID;
+
+		// Audio mix levels read from Config.json; default to full volume when the keys are absent.
+		float m_MasterVolume = 1.0f;
+		float m_SoundVolume = 1.0f;
+		float m_MusicVolume = 1.0f;
 	};
 }

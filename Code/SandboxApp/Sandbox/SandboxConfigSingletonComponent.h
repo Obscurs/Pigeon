@@ -33,5 +33,9 @@ namespace sbx
 		pg::UUID m_ButtonImageID;
 		pg::UUID m_ButtonHoverImageID;
 		pg::UUID m_ButtonPressedImageID;
+
+		// Audio clips for the sound demo.
+		pg::UUID m_SampleSoundID; // one-shot sound effect
+		pg::UUID m_SampleMusicID; // looping music track
 	};
 }
