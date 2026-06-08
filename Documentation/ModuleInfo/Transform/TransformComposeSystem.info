@@ -1,0 +1,23 @@
+# TransformComposeSystem
+
+## Purpose
+Composes the resolved world transform for every entity that has the canonical transform components.
+Sole adder and writer of WorldTransformComponent. Reads Position, Rotation, and Scale and writes the
+TRS matrix (translate * rotate * scale); reads LocalBounds to compute the render sort key as the
+world-space Y of the local bottom-edge (Local Bounds min corner transformed by the world matrix).
+Adds WorldTransformComponent (deferred) the first frame an entity has Position/Rotation/Scale, and
+writes it in place thereafter.
+
+## Input Components
+| Component | Access |
+|---|---|
+| PositionComponent | read |
+| RotationComponent | read |
+| ScaleComponent | read |
+| LocalBoundsComponent | read |
+| WorldTransformComponent | write |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| WorldTransformComponent | write / add (deferred) | m_Matrix = TRS matrix; m_SortKey = world Y of local bottom edge; added deferred on first appearance |

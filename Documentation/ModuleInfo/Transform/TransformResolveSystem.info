@@ -1,0 +1,28 @@
+# TransformResolveSystem
+
+## Purpose
+Engine tier of transform resolution. Applies transform change requests to the canonical transform
+components, and is the sole adder and writer of PositionComponent, RotationComponent, ScaleComponent,
+and LocalBoundsComponent. Reads the single aggregated app request (ResolvedTransformRequestOneFrameComponent,
+emitted by the SandboxApp transform resolve tier) and engine-origin requests
+(CameraTransformRequestOneFrameComponent, emitted by CameraSystem). For each requested entity it
+writes the dirty channels in place when the component already exists, or adds the component
+(deferred) on first request. Requests carry absolute values; they do not accumulate.
+
+## Input Components
+| Component | Access |
+|---|---|
+| ResolvedTransformRequestOneFrameComponent | read |
+| CameraTransformRequestOneFrameComponent | read |
+| PositionComponent | write |
+| RotationComponent | write |
+| ScaleComponent | write |
+| LocalBoundsComponent | write |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| PositionComponent | write / add (deferred) | written in place when present; added deferred on first request |
+| RotationComponent | write / add (deferred) | quaternion orientation |
+| ScaleComponent | write / add (deferred) | |
+| LocalBoundsComponent | write / add (deferred) | local-space AABB min/max |

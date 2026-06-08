@@ -1,21 +1,23 @@
 # QuadAnimationSystem  (sbx)
 
 ## Purpose
-Sole writer of QuadComponent. Each frame, for every entity carrying a SpinComponent and a
-QuadComponent, advances the spin's accumulated time (scaled by the DebugControls animation-speed
-multiplier when present, otherwise 1.0) and recomputes the quad's transform (anchor + optional
-orbit, rotation about z, scale, layer from anchor.z) and colour (constant base colour, or an
-animated cycle when m_ColorCycleSpeed is non-zero).
+Sole writer of QuadComponent's colour and sole adder of AnimationTransformRequestOneFrameComponent.
+Each frame, for every entity carrying a SpinComponent and a QuadComponent, advances the spin's
+accumulated time (scaled by the DebugControls animation-speed multiplier when present, otherwise 1.0),
+recomputes the quad's colour (constant base colour, or an animated cycle when m_ColorCycleSpeed is
+non-zero), and emits a transform request carrying the quad's animated position (anchor + optional
+orbit) and rotation (about z). Scale and bounds are set once at spawn, not here.
 
 ## Input Components
 | Component | Access | Notes |
 |---|---|---|
 | DebugControlsSingletonComponent | read | Optional animation-speed multiplier; defaults to 1.0 when absent |
 | SpinComponent | write | Read for parameters; accumulated time advanced in place |
-| QuadComponent | write | Transform and colour recomputed each frame |
+| QuadComponent | write | Colour recomputed each frame |
 
 ## Output Components
 | Component | Access | Notes |
 |---|---|---|
 | SpinComponent | write | m_Elapsed advanced by the (scaled) frame delta |
-| QuadComponent | write | m_Transform and m_Color recomputed from the spin parameters |
+| QuadComponent | write | m_Color recomputed from the spin parameters |
+| AnimationTransformRequestOneFrameComponent | add (oneframe) | animated position + rotation for the quad |

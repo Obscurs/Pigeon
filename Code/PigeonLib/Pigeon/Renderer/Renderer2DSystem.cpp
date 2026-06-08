@@ -16,6 +16,10 @@
 #include "Pigeon/Renderer/RendererDataSingletonComponent.h"
 #include "Pigeon/Renderer/Texture.h"
 
+#include <algorithm>
+#include <memory>
+#include <vector>
+
 namespace
 {
 	static const unsigned int VERTEX_STRIDE = pg::VERTEX_ATRIB_COUNT * pg::QUAD_VERTEX_COUNT * sizeof(float);
@@ -112,68 +116,133 @@ namespace
 		pg::RenderCommand::DrawIndexed(count);
 	}
 
-	void Flush(pg::RendererDataSingletonComponent& rendererDataComponent, const pg::ResourceMapSingletonComponent& resourcesComponent)
-	{
-		for (auto& batch : rendererDataComponent.m_BatchMap)
-		{
-			auto& tex = resourcesComponent.m_TextureMap.find(batch.first);
-			PG_CORE_ASSERT(tex != resourcesComponent.m_TextureMap.end(), "unable to bind texture, texture not found");
-			if (tex != resourcesComponent.m_TextureMap.end())
-			{
-				tex->second.m_Texture->Bind(0);
-				switch (tex->second.m_TextureType)
-				{
-				case pg::EMappedTextureType::eQuad:
-					rendererDataComponent.m_QuadShader->Bind(); break;
-				case pg::EMappedTextureType::eText:
-					rendererDataComponent.m_TextShader->Bind(); break;
-				default:
-					PG_CORE_ASSERT(false, "EMappedTextureType not implemented");
-				}
-				rendererDataComponent.m_VertexBuffer->SetVertices(batch.second.m_VertexBuffer, batch.second.m_VertexCount, 0);
-				rendererDataComponent.m_IndexBuffer->SetIndices(batch.second.m_IndexBuffer, batch.second.m_IndexCount, 0);
-				Submit(batch.second.m_IndexCount);
-			}
-		}
-		rendererDataComponent.m_BatchMap.clear();
+	const pg::Texture2D& GetTexture(const pg::ResourceMapSingletonComponent& resourcesComponent, const pg::UUID& textureID);
 
-		for (int i = 0; i < 100; i++)
+	// A single quad ready to draw: four transformed vertices, the texture it samples, and the world
+	// draw-order key. Items are sorted by m_SortKey (lower draws behind) before being batched.
+	struct DrawItem
+	{
+		float m_Vertices[pg::VERTEX_ATRIB_COUNT * pg::QUAD_VERTEX_COUNT];
+		pg::UUID m_TextureID;
+		float m_SortKey = 0.f;
+	};
+
+	void FlushBatch(pg::RendererDataSingletonComponent& rendererDataComponent, const pg::ResourceMapSingletonComponent& resourcesComponent, pg::RendererDataSingletonComponent::BatchData& batch, const pg::UUID& textureID)
+	{
+		if (batch.m_IndexCount == 0)
 		{
-			auto& layer = rendererDataComponent.m_LayerBatchMap.find(i);
-			if (layer != rendererDataComponent.m_LayerBatchMap.end())
+			return;
+		}
+		const std::unordered_map<pg::UUID, pg::MappedTexture>::const_iterator tex = resourcesComponent.m_TextureMap.find(textureID);
+		PG_CORE_ASSERT(tex != resourcesComponent.m_TextureMap.end(), "unable to bind texture, texture not found");
+		if (tex != resourcesComponent.m_TextureMap.end())
+		{
+			tex->second.m_Texture->Bind(0);
+			switch (tex->second.m_TextureType)
 			{
-				std::unordered_map<pg::UUID, pg::RendererDataSingletonComponent::BatchData>& texBatches = layer->second;
-				for (auto& batch : texBatches)
-				{
-					auto& tex = resourcesComponent.m_TextureMap.find(batch.first);
-					PG_CORE_ASSERT(tex != resourcesComponent.m_TextureMap.end(), "unable to bind texture, texture not found");
-					if (tex != resourcesComponent.m_TextureMap.end())
-					{
-						tex->second.m_Texture->Bind(0);
-						switch (tex->second.m_TextureType)
-						{
-						case pg::EMappedTextureType::eQuad:
-							rendererDataComponent.m_QuadShader->Bind(); break;
-						case pg::EMappedTextureType::eText:
-							rendererDataComponent.m_TextShader->Bind(); break;
-						default:
-							PG_CORE_ASSERT(false, "EMappedTextureType not implemented");
-						}
-						rendererDataComponent.m_VertexBuffer->SetVertices(batch.second.m_VertexBuffer, batch.second.m_VertexCount, 0);
-						rendererDataComponent.m_IndexBuffer->SetIndices(batch.second.m_IndexBuffer, batch.second.m_IndexCount, 0);
-						Submit(batch.second.m_IndexCount);
-					}
-				}
-				texBatches.clear();
+			case pg::EMappedTextureType::eQuad:
+				rendererDataComponent.m_QuadShader->Bind(); break;
+			case pg::EMappedTextureType::eText:
+				rendererDataComponent.m_TextShader->Bind(); break;
+			default:
+				PG_CORE_ASSERT(false, "EMappedTextureType not implemented");
+			}
+			rendererDataComponent.m_VertexBuffer->SetVertices(batch.m_VertexBuffer, batch.m_VertexCount, 0);
+			rendererDataComponent.m_IndexBuffer->SetIndices(batch.m_IndexBuffer, batch.m_IndexCount, 0);
+			Submit(batch.m_IndexCount);
+		}
+		batch.m_VertexCount = 0;
+		batch.m_IndexCount = 0;
+	}
+
+	// Draws items strictly in list order, merging runs of the same texture into one draw call and
+	// flushing whenever the texture changes or the batch fills. Order in equals draw order out, so the
+	// caller controls layering by ordering the list.
+	void DrawOrderedItems(pg::RendererDataSingletonComponent& rendererDataComponent, const pg::ResourceMapSingletonComponent& resourcesComponent, const std::vector<DrawItem>& items)
+	{
+		if (items.empty())
+		{
+			return;
+		}
+		std::unique_ptr<pg::RendererDataSingletonComponent::BatchData> batch = std::make_unique<pg::RendererDataSingletonComponent::BatchData>();
+		pg::UUID currentTexture = items.front().m_TextureID;
+		for (const DrawItem& item : items)
+		{
+			const bool batchFull = batch->m_IndexCount >= pg::BATCH_MAX_COUNT * pg::QUAD_INDEX_COUNT;
+			if (item.m_TextureID != currentTexture || batchFull)
+			{
+				FlushBatch(rendererDataComponent, resourcesComponent, *batch, currentTexture);
+				currentTexture = item.m_TextureID;
+			}
+			const unsigned int vertexOffset = batch->m_VertexCount * pg::VERTEX_ATRIB_COUNT;
+			memcpy(&batch->m_VertexBuffer[vertexOffset], item.m_Vertices, pg::VERTEX_ATRIB_COUNT * pg::QUAD_VERTEX_COUNT * sizeof(float));
+			for (unsigned int i = 0; i < pg::QUAD_INDEX_COUNT; ++i)
+			{
+				batch->m_IndexBuffer[batch->m_IndexCount + i] = s_SuareIndices[i] + batch->m_VertexCount;
+			}
+			batch->m_VertexCount += pg::QUAD_VERTEX_COUNT;
+			batch->m_IndexCount += pg::QUAD_INDEX_COUNT;
+		}
+		FlushBatch(rendererDataComponent, resourcesComponent, *batch, currentTexture);
+	}
+
+	// Builds a quad's transformed vertices and appends it as a draw item. The translation z is dropped:
+	// this is a 2D renderer, depth never affects geometry — world draw order comes from m_SortKey.
+	void AppendQuad(std::vector<DrawItem>& items, const pg::ResourceMapSingletonComponent& resourcesComponent, const glm::mat4& transform, const glm::vec4& color, const pg::UUID& textureID, const glm::vec4& texCoordsRect, const glm::vec3& origin, float sortKey)
+	{
+		if (resourcesComponent.m_TextureMap.find(textureID) == resourcesComponent.m_TextureMap.end())
+		{
+			PG_CORE_ASSERT(false, "Texture {0} not found in renderer2d batch map", textureID.ToString());
+			return;
+		}
+		glm::mat4 flatTransform = transform;
+		flatTransform[3][2] = 0.f;
+		QuadData quad(flatTransform, color, 0, 0, texCoordsRect, origin);
+
+		DrawItem item;
+		memcpy(item.m_Vertices, quad.m_SquareVertices, pg::VERTEX_ATRIB_COUNT * pg::QUAD_VERTEX_COUNT * sizeof(float));
+		item.m_TextureID = textureID;
+		item.m_SortKey = sortKey;
+		items.push_back(item);
+	}
+
+	void AppendString(std::vector<DrawItem>& items, const pg::ResourceMapSingletonComponent& resourcesComponent, const glm::mat4& transform, const std::string& string, pg::S_Ptr<pg::Font> font, const glm::vec4& color, float kerning, float linespacing, float sortKey)
+	{
+		const pg::Texture2D& fontAtlas = GetTexture(resourcesComponent, font->GetFontID());
+
+		glm::mat4 flatTransform = transform;
+		flatTransform[3][2] = 0.f;
+
+		glm::dvec2 charOffset{ 0.0, 0.0 };
+		const glm::vec3 originSprite(0.f, 0.0f, 0.f);
+
+		for (size_t i = 0; i < string.size(); i++)
+		{
+			char character = string[i];
+
+			if (font->IsCharacterDrawable(character))
+			{
+				const glm::vec4 texCoords = font->GetCharacterTexCoordsQuad(character, fontAtlas);
+				const glm::vec4 charQuad = font->GetCharacterVertexQuad(character, charOffset);
+				const glm::mat4 charTransform = font->GetCharacterTransform(charQuad, flatTransform);
+
+				AppendQuad(items, resourcesComponent, charTransform, color, font->GetFontID(), texCoords, originSprite, sortKey);
+			}
+
+			if (font->IsCharacterNewLine(character))
+			{
+				charOffset.x = 0.0;
+			}
+			if (i < string.size() - 1)
+			{
+				glm::dvec2 charAdvance = font->GetCharacterAdvance(character, string[i + 1], kerning, linespacing);
+				charOffset += charAdvance;
 			}
 		}
-		rendererDataComponent.m_LayerBatchMap.clear();
 	}
 
 	void EndScene(pg::RendererDataSingletonComponent& rendererDataComponent, const pg::ResourceMapSingletonComponent& resourcesComponent)
 	{
-		Flush(rendererDataComponent, resourcesComponent);
-
 		pg::RenderCommand::End();
 		rendererDataComponent.m_VertexBuffer->Unbind();
 		rendererDataComponent.m_IndexBuffer->Unbind();
@@ -193,157 +262,44 @@ namespace
 		}
 	}
 
-	void DrawLayerBatch(pg::RendererDataSingletonComponent& rendererDataComponent, const pg::ResourceMapSingletonComponent& resourcesComponent, const glm::mat4& transform, const glm::vec3& col, const pg::UUID& textureID, glm::vec4 texRect, const glm::vec3& origin)
-	{
-		if (resourcesComponent.m_TextureMap.find(textureID) != resourcesComponent.m_TextureMap.end())
-		{
-			int layer = int(transform[3][2]);
-			glm::mat4 finalTransform = transform;
-			finalTransform[3][2] = 0;
-			std::unordered_map<pg::UUID, pg::RendererDataSingletonComponent::BatchData>& texBatches = rendererDataComponent.m_LayerBatchMap[layer];
-			pg::RendererDataSingletonComponent::BatchData& texBatch = texBatches[textureID];
-
-			QuadData quad(finalTransform, glm::vec4(col, 1.f), texBatch.m_VertexCount, 0, texRect, origin);
-			const unsigned int vertexBufferOffset = texBatch.m_VertexCount * pg::VERTEX_ATRIB_COUNT;
-			const unsigned int indexBufferOffset = texBatch.m_IndexCount;
-
-			PG_CORE_EXCEPT(texBatch.m_IndexCount < pg::BATCH_MAX_COUNT * pg::QUAD_INDEX_COUNT, "We are trying to allocate out of bounds, increase the limit or change the implementation to do not depend on a fixed size");
-			memcpy(&texBatch.m_VertexBuffer[vertexBufferOffset], quad.m_SquareVertices, VERTEX_STRIDE);
-			memcpy(&texBatch.m_IndexBuffer[indexBufferOffset], quad.m_SquareIndices, INDEX_STRIDE);
-
-			texBatch.m_IndexCount += 6;
-			texBatch.m_VertexCount += 4;
-		}
-		else
-		{
-			PG_CORE_ASSERT(false, "Texture {0} not found in renderer2d batch map", textureID.ToString());
-		}
-	}
-
-	void DrawQuad(pg::RendererDataSingletonComponent& rendererDataComponent, const pg::ResourceMapSingletonComponent& resourcesComponent, const glm::mat4& transform, const glm::vec3& col, const glm::vec3& origin)
-	{
-		DrawLayerBatch(rendererDataComponent, resourcesComponent, transform, col, resourcesComponent.m_DefaultTexture, glm::vec4(0.f, 0.f, 1.f, 1.f), origin);
-	}
-
-	void DrawSprite(pg::RendererDataSingletonComponent& rendererDataComponent, const pg::ResourceMapSingletonComponent& resourcesComponent, const pg::Sprite& sprite)
-	{
-		DrawLayerBatch(rendererDataComponent, resourcesComponent, sprite.GetTransform(), glm::vec3(1.f), sprite.GetTextureID(), sprite.GetTexCoordsRect(), sprite.GetOrigin());
-	}
-
-	void DrawString(pg::RendererDataSingletonComponent& rendererDataComponent, const pg::ResourceMapSingletonComponent& resourcesComponent, const glm::mat4& transform, const std::string& string, pg::S_Ptr<pg::Font> font, const glm::vec4& color, float kerning, float linespacing)
-	{
-		const pg::Texture2D& fontAtlas = GetTexture(resourcesComponent, font->GetFontID());
-
-		glm::dvec2 charOffset{ 0.0, 0.0 };
-		const glm::vec3 originSprite(0.f, 0.0f, 0.f);
-
-		for (size_t i = 0; i < string.size(); i++)
-		{
-			char character = string[i];
-
-			if (font->IsCharacterDrawable(character))
-			{
-				const glm::vec4 texCoords = font->GetCharacterTexCoordsQuad(character, fontAtlas);
-				const glm::vec4 charQuad = font->GetCharacterVertexQuad(character, charOffset);
-				const glm::mat4 charTransform = font->GetCharacterTransform(charQuad, transform);
-
-				DrawLayerBatch(rendererDataComponent, resourcesComponent, charTransform, color, font->GetFontID(), texCoords, originSprite);
-			}
-
-			if (font->IsCharacterNewLine(character))
-			{
-				charOffset.x = 0.0;
-			}
-			if (i < string.size() - 1)
-			{
-				glm::dvec2 charAdvance = font->GetCharacterAdvance(character, string[i + 1], kerning, linespacing);
-				charOffset += charAdvance;
-			}
-		}
-	}
-
-	void DrawQuad(pg::RendererDataSingletonComponent& rendererDataComponent, const pg::ResourceMapSingletonComponent& resourcesComponent, const glm::mat4& transform, const pg::UUID& textureID, const glm::vec3& origin)
-	{
-		DrawLayerBatch(rendererDataComponent, resourcesComponent, transform, glm::vec3(1.f), textureID, glm::vec4(0.f, 0.f, 1.f, 1.f), origin);
-	}
-
-	void DrawBatch(pg::RendererDataSingletonComponent& rendererDataComponent, const pg::ResourceMapSingletonComponent& resourcesComponent, const glm::mat4& transform, const glm::vec3& col, const pg::UUID& textureID, glm::vec4 texRect, const glm::vec3& origin)
-	{
-		if (resourcesComponent.m_TextureMap.find(textureID) != resourcesComponent.m_TextureMap.end())
-		{
-			pg::RendererDataSingletonComponent::BatchData& texBatch = rendererDataComponent.m_BatchMap[textureID];
-
-			if (texBatch.m_IndexCount == pg::BATCH_MAX_COUNT * pg::QUAD_INDEX_COUNT)
-			{
-				Flush(rendererDataComponent, resourcesComponent);
-				DrawBatch(rendererDataComponent, resourcesComponent, transform, col, textureID, texRect, origin);
-			}
-			else
-			{
-				QuadData quad(transform, glm::vec4(col, 1.f), texBatch.m_VertexCount, 0, texRect, origin);
-				const unsigned int vertexBufferOffset = texBatch.m_VertexCount * pg::VERTEX_ATRIB_COUNT;
-				const unsigned int indexBufferOffset = texBatch.m_IndexCount;
-
-				memcpy(&texBatch.m_VertexBuffer[vertexBufferOffset], quad.m_SquareVertices, VERTEX_STRIDE);
-				memcpy(&texBatch.m_IndexBuffer[indexBufferOffset], quad.m_SquareIndices, INDEX_STRIDE);
-
-				texBatch.m_IndexCount += 6;
-				texBatch.m_VertexCount += 4;
-			}
-		}
-		else
-		{
-			PG_CORE_ASSERT(false, "Texture {0} not found in renderer2d batch map", textureID.ToString());
-		}
-	}
-
-	void Destroy(pg::RendererDataSingletonComponent& rendererDataComponent)
-	{
-		rendererDataComponent.m_BatchMap.clear();
-		rendererDataComponent.m_LayerBatchMap.clear();
-	}
-
 	void ProcessRenderRequests(pg::CheckedRegistryAccessor& accessor, pg::RendererDataSingletonComponent& rendererDataComponent, const pg::ResourceMapSingletonComponent& resourcesComponent)
 	{
+		std::vector<DrawItem> worldItems;
+		std::vector<DrawItem> uiItems;
+
 		auto viewDrawQuad = accessor.View<const pg::DrawQuadInFrameEvent>();
 		for (auto ent : viewDrawQuad)
 		{
 			const pg::DrawQuadInFrameEvent& event = viewDrawQuad.get<const pg::DrawQuadInFrameEvent>(ent);
-			if (event.m_TextureID.IsNull())
-			{
-				DrawQuad(rendererDataComponent, resourcesComponent, event.m_Transform, event.m_Color, event.m_Origin);
-			}
-			else
-			{
-				DrawQuad(rendererDataComponent, resourcesComponent, event.m_Transform, event.m_TextureID, event.m_Origin);
-			}
+			const pg::UUID textureID = event.m_TextureID.IsNull() ? resourcesComponent.m_DefaultTexture : event.m_TextureID;
+			const glm::vec4 color = event.m_TextureID.IsNull() ? glm::vec4(event.m_Color, 1.f) : glm::vec4(1.f);
+			AppendQuad(worldItems, resourcesComponent, event.m_Transform, color, textureID, glm::vec4(0.f, 0.f, 1.f, 1.f), event.m_Origin, event.m_SortKey);
 		}
-		auto viewDrawUIQuad = accessor.View<const pg::DrawUIQuadInFrameEvent>();
-		for (auto ent : viewDrawUIQuad)
-		{
-			const pg::DrawUIQuadInFrameEvent& event = viewDrawUIQuad.get<const pg::DrawUIQuadInFrameEvent>(ent);
-			if (event.m_TextureID.IsNull())
-			{
-				DrawQuad(rendererDataComponent, resourcesComponent, event.m_Transform, event.m_Color, event.m_Origin);
-			}
-			else
-			{
-				DrawQuad(rendererDataComponent, resourcesComponent, event.m_Transform, event.m_TextureID, event.m_Origin);
-			}
-		}
+
 		auto viewDrawSprite = accessor.View<const pg::DrawSpriteInFrameEvent>();
 		for (auto ent : viewDrawSprite)
 		{
 			const pg::DrawSpriteInFrameEvent& event = viewDrawSprite.get<const pg::DrawSpriteInFrameEvent>(ent);
-			
-			DrawSprite(rendererDataComponent, resourcesComponent, event.m_Sprite);
+			const pg::Sprite& sprite = event.m_Sprite;
+			AppendQuad(worldItems, resourcesComponent, sprite.GetTransform(), glm::vec4(1.f), sprite.GetTextureID(), sprite.GetTexCoordsRect(), sprite.GetOrigin(), event.m_SortKey);
 		}
+
 		auto viewDrawString = accessor.View<const pg::DrawStringInFrameEvent>();
 		for (auto ent : viewDrawString)
 		{
 			const pg::DrawStringInFrameEvent& event = viewDrawString.get<const pg::DrawStringInFrameEvent>(ent);
+			AppendString(worldItems, resourcesComponent, event.m_Transform, event.m_String, event.m_Font, event.m_Color, event.m_Kerning, event.m_Linespacing, event.m_SortKey);
+		}
 
-			DrawString(rendererDataComponent, resourcesComponent, event.m_Transform, event.m_String, event.m_Font, event.m_Color, event.m_Kerning, event.m_Linespacing);
+		// UI elements keep their nesting level packed into the transform z; it is used purely to order
+		// the UI pass among itself. UI is never part of the world Y-sort.
+		auto viewDrawUIQuad = accessor.View<const pg::DrawUIQuadInFrameEvent>();
+		for (auto ent : viewDrawUIQuad)
+		{
+			const pg::DrawUIQuadInFrameEvent& event = viewDrawUIQuad.get<const pg::DrawUIQuadInFrameEvent>(ent);
+			const pg::UUID textureID = event.m_TextureID.IsNull() ? resourcesComponent.m_DefaultTexture : event.m_TextureID;
+			const glm::vec4 color = event.m_TextureID.IsNull() ? glm::vec4(event.m_Color, 1.f) : glm::vec4(1.f);
+			AppendQuad(uiItems, resourcesComponent, event.m_Transform, color, textureID, glm::vec4(0.f, 0.f, 1.f, 1.f), event.m_Origin, event.m_Transform[3][2]);
 		}
 
 		auto viewDrawUIString = accessor.View<const pg::DrawUIStringInFrameEvent>();
@@ -351,8 +307,17 @@ namespace
 		{
 			const pg::DrawUIStringInFrameEvent& event = viewDrawUIString.get<const pg::DrawUIStringInFrameEvent>(ent);
 			PG_CORE_EXCEPT(resourcesComponent.m_FontMap.find(event.m_FontID) != resourcesComponent.m_FontMap.end(), "Could not find font");
-			DrawString(rendererDataComponent, resourcesComponent, event.m_Transform, event.m_String, resourcesComponent.m_FontMap.at(event.m_FontID), event.m_Color, event.m_Kerning, event.m_Linespacing);
+			AppendString(uiItems, resourcesComponent, event.m_Transform, event.m_String, resourcesComponent.m_FontMap.at(event.m_FontID), event.m_Color, event.m_Kerning, event.m_Linespacing, event.m_Transform[3][2]);
 		}
+
+		std::stable_sort(worldItems.begin(), worldItems.end(),
+			[](const DrawItem& lhs, const DrawItem& rhs) { return lhs.m_SortKey < rhs.m_SortKey; });
+		std::stable_sort(uiItems.begin(), uiItems.end(),
+			[](const DrawItem& lhs, const DrawItem& rhs) { return lhs.m_SortKey < rhs.m_SortKey; });
+
+		// UI is appended after every world item so it always draws on top.
+		worldItems.insert(worldItems.end(), uiItems.begin(), uiItems.end());
+		DrawOrderedItems(rendererDataComponent, resourcesComponent, worldItems);
 	}
 	void Render(pg::CheckedRegistryAccessor& accessor, const pg::OrthographicCamera& ortoCamera, pg::RendererDataSingletonComponent& rendererDataComponent, const pg::ResourceMapSingletonComponent& resourcesComponent)
 	{

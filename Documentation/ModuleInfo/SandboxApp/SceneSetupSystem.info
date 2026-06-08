@@ -3,9 +3,10 @@
 ## Purpose
 One-shot scene builder. Returns early until both SandboxConfigSingletonComponent and
 ResourceMapSingletonComponent are present. On the first ready frame it creates the input-reactive
-scene camera, the demo sprite, the world-space labels (a title, an instructions label, and a
-tagged input-readout label), emits a LoadLayoutEvent to load the UI layout, and creates
-SceneReadySingletonComponent as its run-once guard.
+scene camera, the demo sprite, and the world-space labels (a title, an instructions label, and a
+tagged input-readout label), emitting a SceneTransformRequestOneFrameComponent to seed each one's
+world transform (position-only for the camera). It also emits a LoadLayoutEvent to load the UI layout
+and creates SceneReadySingletonComponent as its run-once guard.
 
 ## Input Components
 | Component | Access | Notes |
@@ -20,6 +21,7 @@ SceneReadySingletonComponent as its run-once guard.
 | OrthographicCameraComponent | add (deferred) | Input-reactive scene camera (CameraSystem then drives it) |
 | SpriteComponent | add (deferred) | The demo sub-texture sprite |
 | LabelComponent | add (deferred) | Title, instructions and the input-readout label |
+| SceneTransformRequestOneFrameComponent | add (oneframe) | Seeds the world transform for the camera, sprite and labels |
 | InputReadoutTagComponent | add (deferred) | Marks the readout label for InputReadoutSystem |
 | LoadLayoutEvent | add (deferred) | Emitted once to load the UI layout |
 | SceneReadySingletonComponent | add (deferred) | Run-once guard |

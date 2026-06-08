@@ -2,15 +2,17 @@
 
 ## Purpose
 Render bridge for world-space text: sole adder of DrawStringInFrameEvent. Returns early until the
-ResourceMapSingletonComponent is present. Each frame it resolves every LabelComponent's font id
-against the resource map's font map and emits one draw event per label (transform, text, font,
-colour, kerning, line spacing). Labels whose font id is not in the map are skipped.
+ResourceMapSingletonComponent is present. Each frame it emits one draw event per entity that has a
+LabelComponent, a resolved WorldTransformComponent, and a font id present in the resource map's font
+map (world matrix + sort key, text, font, colour, kerning, line spacing). Labels with no world
+transform yet or an unresolved font id are skipped.
 
 ## Input Components
 | Component | Access | Notes |
 |---|---|---|
 | ResourceMapSingletonComponent | read | Resolves font ids to fonts; guard (returns early if absent) |
-| LabelComponent | read | One draw event emitted per label with a resolvable font |
+| LabelComponent | read | Text + font id + style |
+| WorldTransformComponent | read | World matrix + render sort key |
 
 ## Output Components
 | Component | Access | Notes |

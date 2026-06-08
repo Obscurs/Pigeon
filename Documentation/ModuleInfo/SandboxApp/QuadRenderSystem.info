@@ -2,16 +2,18 @@
 
 ## Purpose
 Render bridge for world-space quads: sole adder of DrawQuadInFrameEvent. Each frame it emits one
-in-frame draw event per QuadComponent, copying the quad's transform, colour, origin and texture
-id. A null texture id yields a flat colour quad; a set texture id yields a textured quad
-(Renderer2DSystem then batches and draws them).
+in-frame draw event per entity that has both a QuadComponent and a resolved WorldTransformComponent,
+copying the world matrix and sort key plus the quad's colour and texture id. A null texture id yields
+a flat colour quad; a set texture id yields a textured quad. Quads without a world transform yet
+(freshly spawned) are skipped until the transform pipeline resolves them.
 
 ## Input Components
 | Component | Access | Notes |
 |---|---|---|
-| QuadComponent | read | One draw event emitted per quad |
+| QuadComponent | read | Colour + texture id |
+| WorldTransformComponent | read | World matrix + render sort key |
 
 ## Output Components
 | Component | Access | Notes |
 |---|---|---|
-| DrawQuadInFrameEvent | add (inframe) | One per QuadComponent; consumed by Renderer2DSystem this frame |
+| DrawQuadInFrameEvent | add (inframe) | One per drawable quad; consumed by Renderer2DSystem this frame |

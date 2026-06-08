@@ -9,6 +9,7 @@
 #include "Sandbox/LifetimeComponent.h"
 #include "Sandbox/QuadComponent.h"
 #include "Sandbox/QuadSpawnSystem.h"
+#include "Sandbox/QuadSpawnTransformRequestOneFrameComponent.h"
 #include "Sandbox/SandboxConfigSingletonComponent.h"
 #include "Sandbox/SpawnerSingletonComponent.h"
 #include "Sandbox/SpinComponent.h"
@@ -61,6 +62,8 @@ namespace CatchTestsetFail
 		auto spinView = pg::World::GetRegistryDirect().view<sbx::SpinComponent>();
 		CHECK(quadView.size() > 0);
 		CHECK(spinView.size() == quadView.size());
+		// Each seeded quad requests its initial transform.
+		CHECK(pg::World::GetRegistryDirect().view<sbx::QuadSpawnTransformRequestOneFrameComponent>().size() == quadView.size());
 		// Seeded quads are persistent: no LifetimeComponent yet.
 		CHECK(pg::World::GetRegistryDirect().view<sbx::LifetimeComponent>().size() == 0);
 
@@ -145,6 +148,7 @@ namespace CatchTestsetFail
 		CHECK(decl.readSet.count(std::type_index(typeid(pg::InputStateSingletonComponent))) > 0);
 		CHECK(decl.writeSet.count(std::type_index(typeid(sbx::SpawnerSingletonComponent))) > 0);
 		CHECK(decl.addSet.count(std::type_index(typeid(sbx::QuadComponent))) > 0);
+		CHECK(decl.addSet.count(std::type_index(typeid(sbx::QuadSpawnTransformRequestOneFrameComponent))) > 0);
 		CHECK(decl.addSet.count(std::type_index(typeid(sbx::SpinComponent))) > 0);
 		CHECK(decl.addSet.count(std::type_index(typeid(sbx::LifetimeComponent))) > 0);
 		CHECK(decl.addSet.count(std::type_index(typeid(sbx::SpawnerSingletonComponent))) > 0);

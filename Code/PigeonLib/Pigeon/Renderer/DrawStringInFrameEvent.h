@@ -18,5 +18,6 @@ namespace pg
 		glm::vec4 m_Color{ 0.f, 0.f, 0.f, 0.f };
 		float m_Kerning = 0.f;
 		float m_Linespacing = 0.f;
+		float m_SortKey = 0.f; // world draw order: lower draws behind
 	};
 }

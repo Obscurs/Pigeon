@@ -4,6 +4,7 @@
 
 #include "Pigeon/ECS/System.h"
 #include "Pigeon/ECS/World.h"
+#include "Sandbox/AnimationTransformRequestOneFrameComponent.h"
 #include "Sandbox/DebugControlsSingletonComponent.h"
 #include "Sandbox/QuadAnimationSystem.h"
 #include "Sandbox/QuadComponent.h"
@@ -45,7 +46,8 @@ namespace CatchTestsetFail
 	}
 
 	// ---------------------------------------------------------------------------
-	// Happy path: a static spin (no speeds) places the quad at its anchor, scaled.
+	// Happy path: a static spin (no speeds) requests the quad's position at its anchor
+	// with identity rotation, and preserves the base colour.
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Sandbox.QuadAnimationSystem::StaticQuadSitsAtAnchor")
 	{
@@ -60,20 +62,22 @@ namespace CatchTestsetFail
 
 		world.Update(pg::Timestep(1000));
 
-		const sbx::QuadComponent& quad = pg::World::GetRegistryDirect().get<sbx::QuadComponent>(ent);
-		// Translation column carries the anchor (z selects the render layer).
-		CHECK(std::fabs(quad.m_Transform[3][0] - 1.f) < 1e-4f);
-		CHECK(std::fabs(quad.m_Transform[3][1] - 2.f) < 1e-4f);
-		CHECK(std::fabs(quad.m_Transform[3][2] - 3.f) < 1e-4f);
-		// No rotation -> diagonal carries the scale.
-		CHECK(std::fabs(quad.m_Transform[0][0] - 0.5f) < 1e-4f);
-		CHECK(std::fabs(quad.m_Transform[1][1] - 0.25f) < 1e-4f);
+		REQUIRE(pg::World::GetRegistryDirect().all_of<sbx::AnimationTransformRequestOneFrameComponent>(ent));
+		const pg::TransformRequestData& data = pg::World::GetRegistryDirect().get<sbx::AnimationTransformRequestOneFrameComponent>(ent).m_Data;
+		CHECK(data.m_SetPosition);
+		CHECK(std::fabs(data.m_Position.x - 1.f) < 1e-4f);
+		CHECK(std::fabs(data.m_Position.y - 2.f) < 1e-4f);
+		CHECK(std::fabs(data.m_Position.z - 3.f) < 1e-4f);
+		// No spin -> identity rotation requested.
+		CHECK(data.m_SetRotation);
+		CHECK(std::fabs(data.m_Rotation.w - 1.f) < 1e-4f);
 		// No colour cycle -> base colour preserved (all channels).
+		const sbx::QuadComponent& quad = pg::World::GetRegistryDirect().get<sbx::QuadComponent>(ent);
 		CHECK(quad.m_Color == glm::vec3(0.3f, 0.6f, 0.9f));
 	}
 
 	// ---------------------------------------------------------------------------
-	// Happy path: orbit displaces the quad's position around the anchor.
+	// Happy path: orbit displaces the requested position around the anchor.
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Sandbox.QuadAnimationSystem::OrbitDisplacesPosition")
 	{
@@ -88,9 +92,9 @@ namespace CatchTestsetFail
 
 		world.Update(pg::Timestep(1000)); // elapsed = 1 -> angle 1 rad
 
-		const sbx::QuadComponent& quad = pg::World::GetRegistryDirect().get<sbx::QuadComponent>(ent);
-		CHECK(std::fabs(quad.m_Transform[3][0] - std::cos(1.f)) < 1e-3f);
-		CHECK(std::fabs(quad.m_Transform[3][1] - std::sin(1.f)) < 1e-3f);
+		const pg::TransformRequestData& data = pg::World::GetRegistryDirect().get<sbx::AnimationTransformRequestOneFrameComponent>(ent).m_Data;
+		CHECK(std::fabs(data.m_Position.x - std::cos(1.f)) < 1e-3f);
+		CHECK(std::fabs(data.m_Position.y - std::sin(1.f)) < 1e-3f);
 	}
 
 	// ---------------------------------------------------------------------------
@@ -146,6 +150,7 @@ namespace CatchTestsetFail
 		CHECK(decl.readSet.count(std::type_index(typeid(sbx::DebugControlsSingletonComponent))) > 0);
 		CHECK(decl.writeSet.count(std::type_index(typeid(sbx::SpinComponent))) > 0);
 		CHECK(decl.writeSet.count(std::type_index(typeid(sbx::QuadComponent))) > 0);
+		CHECK(decl.addSet.count(std::type_index(typeid(sbx::AnimationTransformRequestOneFrameComponent))) > 0);
 	}
 
 } // namespace CatchTestsetFail

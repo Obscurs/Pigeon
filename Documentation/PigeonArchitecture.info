@@ -13,6 +13,8 @@ main()  [EntryPoint.h]
                     ├── RegisterSystem(ConfigLoaderSystem)
                     ├── RegisterSystem(InputSystem)
                     ├── RegisterSystem(ResourceManagerSystem)
+                    ├── RegisterSystem(TransformComposeSystem)
+                    ├── RegisterSystem(TransformResolveSystem)
                     ├── RegisterSystem(UIControlSystem)
                     ├── RegisterSystem(UIEventSystem)
                     ├── RegisterSystem(UIRenderSystem)
@@ -76,12 +78,19 @@ Core
   └── ResourceManagerSystem  manifests  →  ResourceMapSingletonComponent  (frame 1 only)
                                 │
                                 ▼
+Transform
+  ├── TransformResolveSystem  ResolvedTransformRequest (from app) + CameraTransformRequest
+  │                           →  PositionComponent, RotationComponent, ScaleComponent, LocalBoundsComponent
+  └── TransformComposeSystem  Position/Rotation/Scale/LocalBounds  →  WorldTransformComponent (matrix + sort key)
+                                │ (render bridges read WorldTransformComponent)
+                                ▼
 Renderer
-  ├── CameraSystem         KeyPressedEvent + ScrollEvent + ResizeEvent  →  OrthographicCameraComponent
+  ├── CameraSystem         KeyPressedEvent + ScrollEvent + ResizeEvent + PositionComponent
+  │                          →  OrthographicCameraComponent + CameraTransformRequest (pan)
   └── Renderer2DSystem
         reads:  OrthographicCameraComponent, EngineConfigSingletonComponent,
                 ResourceMapSingletonComponent, Draw*InFrameEvent
-        writes: RendererDataSingletonComponent → batched GPU draw calls
+        writes: RendererDataSingletonComponent → GPU draw calls, world draws Y-sorted, UI on top
                                 ▲
                                 │ (emits DrawUI*InFrameEvent)
 UI
@@ -100,4 +109,5 @@ UI
 | `Code/PigeonLib/Pigeon/ECS/World.h` | ECS World API — registry, system registration, deferred operations |
 | `Code/PigeonLib/Pigeon/ECS/CheckedRegistryAccessor.h` | Accessor API — View, Get, EmplaceDeferred, EmplaceInframe, EmplaceEvent |
 | `Code/PigeonLib/Pigeon/ECS/System.h` | Base System class and SystemAccessDecl struct |
+| `Code/PigeonLib/Pigeon/Transform/` | Transform components (Position/Rotation/Scale/LocalBounds/WorldTransform), the resolve + compose systems, and the request types (ADR 0003) |
 | `Code/SandboxApp/Sandbox2D.cpp` | Entry point — CreateApplication() + client system registration |

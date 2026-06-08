@@ -10,6 +10,7 @@
 #include "Sandbox/SceneSetupSystem.h"
 #include "Sandbox/SpriteRenderSystem.h"
 #include "Sandbox/TextRenderSystem.h"
+#include "Sandbox/TransformResolveSystem.h"
 #include "Sandbox/UIButtonSystem.h"
 #include "Sandbox/UIButtonVisualSystem.h"
 #include "Sandbox/UICloseSystem.h"
@@ -31,6 +32,7 @@ pg::Application& pg::CreateApplication()
 	// The sandbox registers only its own systems; execution order is derived automatically from
 	// each system's DeclareAccess(), so registration order here does not matter.
 	world.RegisterSystem(std::make_unique<sbx::ConfigLoaderSystem>());
+	world.RegisterSystem(std::make_unique<sbx::TransformResolveSystem>());
 	world.RegisterSystem(std::make_unique<sbx::SceneSetupSystem>());
 	world.RegisterSystem(std::make_unique<sbx::QuadSpawnSystem>());
 	world.RegisterSystem(std::make_unique<sbx::QuadAnimationSystem>());

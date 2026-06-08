@@ -1,11 +1,13 @@
 # CameraSystem
 
 ## Purpose
-Updates the orthographic camera each frame in response to keyboard, scroll, and window-resize input
-events. Window-resize events update m_AspectRatio and rebuild the projection matrix for ALL cameras
-regardless of m_ReactsToInput. Translation (WASD) and zoom (scroll wheel) are applied only to cameras
-where m_ReactsToInput = true. Camera matrix is rebuilt every frame an event is present; skipped
-entirely when no relevant events arrived.
+Drives the orthographic camera each frame. Window-resize events update m_AspectRatio and mark the
+projection dirty for ALL cameras regardless of m_ReactsToInput. For cameras with m_ReactsToInput =
+true, scroll events adjust m_ZoomLevel (clamped) and WASD key presses emit a
+CameraTransformRequestOneFrameComponent that pans the camera's PositionComponent (read as the current
+location). Every frame it syncs the internal camera from the resolved PositionComponent and rebuilds
+the projection when zoom or aspect could have changed. The camera's world position lives in its
+PositionComponent (written by the transform pipeline), not on this component.
 
 ## Input Components
 | Component | Access |
@@ -13,9 +15,11 @@ entirely when no relevant events arrived.
 | KeyPressedEventComponent | read |
 | MouseScrolledEventComponent | read |
 | WindowResizeEventComponent | read |
+| PositionComponent | read |
 | OrthographicCameraComponent | write |
 
 ## Output Components
 | Component | Access | Notes |
 |---|---|---|
-| OrthographicCameraComponent | write | Updates m_CameraPosition, m_ZoomLevel, m_AspectRatio, and the internal view-projection matrix |
+| OrthographicCameraComponent | write | Updates m_ZoomLevel, m_AspectRatio, m_CameraTranslationSpeed, and the internal view-projection matrix |
+| CameraTransformRequestOneFrameComponent | add (oneframe) | Pan request applied by the engine TransformResolveSystem |

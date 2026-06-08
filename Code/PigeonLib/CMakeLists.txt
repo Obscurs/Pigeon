@@ -68,6 +68,19 @@ file(GLOB UI
     "Pigeon/UI/UIRenderSystem.cpp"
 )
 
+file(GLOB TRANSFORM
+    "Pigeon/Transform/CameraTransformRequestOneFrameComponent.h"
+    "Pigeon/Transform/LocalBoundsComponent.h"
+    "Pigeon/Transform/PositionComponent.h"
+    "Pigeon/Transform/ResolvedTransformRequestOneFrameComponent.h"
+    "Pigeon/Transform/RotationComponent.h"
+    "Pigeon/Transform/ScaleComponent.h"
+    "Pigeon/Transform/TransformComposeSystem.cpp"
+    "Pigeon/Transform/TransformRequestData.h"
+    "Pigeon/Transform/TransformResolveSystem.cpp"
+    "Pigeon/Transform/WorldTransformComponent.h"
+)
+
 file(GLOB ECS_WORLD
     "Pigeon/ECS/CheckedRegistryAccessor.h"
     "Pigeon/ECS/Entity.h"
@@ -127,6 +140,7 @@ source_group("Pigeon\\Core" FILES ${PGCORE})
 source_group("Pigeon\\ImGui" FILES ${PGIMGUI})
 source_group("Pigeon\\Renderer" FILES ${RENDERER})
 source_group("Pigeon\\UI" FILES ${UI})
+source_group("Pigeon\\Transform" FILES ${TRANSFORM})
 source_group("Platform\\Testing" FILES ${PLATFORM_TESTING})
 source_group("Platform\\DirectX11" FILES ${PLATFORM_DX})
 source_group("Pigeon\\ECS" FILES ${ECS_WORLD})

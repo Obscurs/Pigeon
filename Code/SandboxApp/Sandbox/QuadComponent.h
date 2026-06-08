@@ -5,16 +5,15 @@
 
 namespace sbx
 {
-	// A world-space quad to render. m_TextureID null => flat colour quad; set => textured quad.
-	// The z component of m_Transform's translation selects the render layer (Renderer2D layering).
+	// Visual data for a world-space quad. Placement comes from the transform components
+	// (Position/Rotation/Scale/LocalBounds); QuadRenderSystem reads the resolved WorldTransform.
+	// m_TextureID null => flat colour quad; set => textured quad.
 	struct QuadComponent
 	{
 		QuadComponent() = default;
 		QuadComponent(const QuadComponent&) = default;
 
-		glm::mat4 m_Transform{ 1.f };
 		glm::vec3 m_Color{ 1.f, 1.f, 1.f };
-		glm::vec3 m_Origin{ 0.f, 0.f, 0.f };
 		pg::UUID m_TextureID;
 	};
 }

@@ -8,6 +8,7 @@
 #include "Pigeon/Renderer/DrawStringInFrameEvent.h"
 #include "Pigeon/Renderer/Font.h"
 #include "Pigeon/Renderer/Texture.h"
+#include "Pigeon/Transform/WorldTransformComponent.h"
 #include "Sandbox/LabelComponent.h"
 #include "Sandbox/TextRenderSystem.h"
 
@@ -44,15 +45,17 @@ namespace CatchTestsetFail
 		const pg::UUID fontID = pg::UUID::Generate();
 		pg::S_Ptr<pg::Font> font = SeedResourceMapWithFont(pg::World::GetRegistryDirect(), fontID);
 
-		// LabelComponent is added in production by SceneSetupSystem (a different system).
+		// LabelComponent and WorldTransformComponent are added in production by other systems.
 		pg::ecs::Entity ent = pg::World::GetRegistryDirect().create();
 		sbx::LabelComponent& label = pg::World::GetRegistryDirect().emplace<sbx::LabelComponent>(ent);
-		label.m_Transform = glm::translate(glm::mat4(1.f), glm::vec3(3.f, 4.f, 0.f));
 		label.m_Text = "hello";
 		label.m_FontID = fontID;
 		label.m_Color = { 0.1f, 0.2f, 0.3f, 0.4f };
 		label.m_Kerning = 0.2f;
 		label.m_Linespacing = 0.3f;
+		pg::WorldTransformComponent& worldTransform = pg::World::GetRegistryDirect().emplace<pg::WorldTransformComponent>(ent);
+		worldTransform.m_Matrix = glm::translate(glm::mat4(1.f), glm::vec3(3.f, 4.f, 0.f));
+		worldTransform.m_SortKey = 4.f;
 
 		world.UpdateRetainingEvents(pg::Timestep(0));
 
@@ -61,7 +64,8 @@ namespace CatchTestsetFail
 		const pg::DrawStringInFrameEvent& event = view.get<const pg::DrawStringInFrameEvent>(view.front());
 		CHECK(event.m_String == "hello");
 		CHECK(event.m_Font == font);
-		CHECK(event.m_Transform == label.m_Transform);
+		CHECK(event.m_Transform == worldTransform.m_Matrix);
+		CHECK(event.m_SortKey == Approx(4.f));
 		CHECK(event.m_Color == label.m_Color);
 		CHECK(std::fabs(event.m_Kerning - 0.2f) < 1e-4f);
 		CHECK(std::fabs(event.m_Linespacing - 0.3f) < 1e-4f);
@@ -96,6 +100,7 @@ namespace CatchTestsetFail
 		// Label references a font id that is not present in the resource map.
 		pg::ecs::Entity ent = pg::World::GetRegistryDirect().create();
 		pg::World::GetRegistryDirect().emplace<sbx::LabelComponent>(ent).m_FontID = pg::UUID::Generate();
+		pg::World::GetRegistryDirect().emplace<pg::WorldTransformComponent>(ent);
 
 		world.UpdateRetainingEvents(pg::Timestep(0));
 
@@ -112,6 +117,7 @@ namespace CatchTestsetFail
 
 		CHECK(decl.readSet.count(std::type_index(typeid(pg::ResourceMapSingletonComponent))) > 0);
 		CHECK(decl.readSet.count(std::type_index(typeid(sbx::LabelComponent))) > 0);
+		CHECK(decl.readSet.count(std::type_index(typeid(pg::WorldTransformComponent))) > 0);
 		CHECK(decl.inframeAddSet.count(std::type_index(typeid(pg::DrawStringInFrameEvent))) > 0);
 	}
 

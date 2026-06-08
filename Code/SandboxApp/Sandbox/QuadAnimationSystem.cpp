@@ -1,12 +1,15 @@
 #include "Sandbox/QuadAnimationSystem.h"
 
 #include "Pigeon/ECS/World.h"
+#include "Pigeon/Transform/TransformRequestData.h"
+#include "Sandbox/AnimationTransformRequestOneFrameComponent.h"
 #include "Sandbox/DebugControlsSingletonComponent.h"
 #include "Sandbox/QuadComponent.h"
 #include "Sandbox/SpinComponent.h"
 
 #include <cmath>
-#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <utility>
 
 namespace
 {
@@ -35,7 +38,7 @@ namespace
 			0.5f + 0.5f * std::sin(t + 4.1888f));
 	}
 
-	glm::mat4 ComputeTransform(const sbx::SpinComponent& spin)
+	glm::vec3 ComputePosition(const sbx::SpinComponent& spin)
 	{
 		glm::vec3 position = spin.m_Anchor;
 		if (spin.m_OrbitRadius != 0.f)
@@ -44,15 +47,16 @@ namespace
 			position.x += std::cos(orbitAngle) * spin.m_OrbitRadius;
 			position.y += std::sin(orbitAngle) * spin.m_OrbitRadius;
 		}
+		return position;
+	}
 
-		glm::mat4 transform(1.f);
-		transform = glm::translate(transform, position);
-		if (spin.m_RotationSpeed != 0.f)
+	glm::quat ComputeRotation(const sbx::SpinComponent& spin)
+	{
+		if (spin.m_RotationSpeed == 0.f)
 		{
-			transform = glm::rotate(transform, spin.m_Elapsed * spin.m_RotationSpeed, glm::vec3(0.f, 0.f, 1.f));
+			return glm::quat(1.f, 0.f, 0.f, 0.f);
 		}
-		transform = glm::scale(transform, spin.m_Scale);
-		return transform;
+		return glm::angleAxis(spin.m_Elapsed * spin.m_RotationSpeed, glm::vec3(0.f, 0.f, 1.f));
 	}
 }
 
@@ -65,6 +69,9 @@ pg::SystemAccessDecl sbx::QuadAnimationSystem::DeclareAccess() const
 	decl.writeSet = {
 		std::type_index(typeid(sbx::SpinComponent)),
 		std::type_index(typeid(sbx::QuadComponent)),
+	};
+	decl.addSet = {
+		std::type_index(typeid(sbx::AnimationTransformRequestOneFrameComponent)),
 	};
 	return decl;
 }
@@ -82,7 +89,13 @@ void sbx::QuadAnimationSystem::Update(const pg::Timestep& ts)
 		sbx::QuadComponent& quad = view.get<sbx::QuadComponent>(ent);
 
 		spin.m_Elapsed += deltaSeconds;
-		quad.m_Transform = ComputeTransform(spin);
 		quad.m_Color = ComputeColor(spin);
+
+		sbx::AnimationTransformRequestOneFrameComponent request;
+		request.m_Data.m_SetPosition = true;
+		request.m_Data.m_Position = ComputePosition(spin);
+		request.m_Data.m_SetRotation = true;
+		request.m_Data.m_Rotation = ComputeRotation(spin);
+		accessor.EmplaceOneframe<sbx::AnimationTransformRequestOneFrameComponent>(ent, std::move(request));
 	}
 }

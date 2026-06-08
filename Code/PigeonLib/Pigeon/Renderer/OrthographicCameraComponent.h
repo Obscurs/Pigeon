@@ -12,7 +12,8 @@ namespace pg
 		float m_ZoomLevel = 1.0f;
 		pg::OrthographicCamera m_Camera = pg::OrthographicCamera(-1.0f, 1.0f, -1.0f, 1.0f);
 
-		glm::vec3 m_CameraPosition = { 0.0f, 0.0f, 0.0f };
+		// World position lives in the camera entity's PositionComponent; CameraSystem syncs m_Camera
+		// from it and emits a CameraTransformRequest to pan it.
 		float m_CameraTranslationSpeed = 5.0f;
 		bool m_ReactsToInput = false;
 	};

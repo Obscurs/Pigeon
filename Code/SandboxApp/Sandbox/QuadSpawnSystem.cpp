@@ -3,11 +3,15 @@
 #include "Pigeon/Core/InputStateSingletonComponent.h"
 #include "Pigeon/Core/KeyCodes.h"
 #include "Pigeon/ECS/World.h"
+#include "Pigeon/Transform/TransformRequestData.h"
 #include "Sandbox/LifetimeComponent.h"
 #include "Sandbox/QuadComponent.h"
+#include "Sandbox/QuadSpawnTransformRequestOneFrameComponent.h"
 #include "Sandbox/SandboxConfigSingletonComponent.h"
 #include "Sandbox/SpawnerSingletonComponent.h"
 #include "Sandbox/SpinComponent.h"
+
+#include <glm/gtc/quaternion.hpp>
 
 namespace
 {
@@ -32,6 +36,19 @@ namespace
 		quad.m_Color = spec.m_BaseColor;
 		quad.m_TextureID = spec.m_TextureID;
 		accessor.EmplaceDeferred<sbx::QuadComponent>(ent, std::move(quad));
+
+		// Seed the quad's full transform once; QuadAnimationSystem updates position/rotation each frame.
+		sbx::QuadSpawnTransformRequestOneFrameComponent transformRequest;
+		transformRequest.m_Data.m_SetPosition = true;
+		transformRequest.m_Data.m_Position = spec.m_Anchor;
+		transformRequest.m_Data.m_SetRotation = true;
+		transformRequest.m_Data.m_Rotation = glm::quat(1.f, 0.f, 0.f, 0.f);
+		transformRequest.m_Data.m_SetScale = true;
+		transformRequest.m_Data.m_Scale = spec.m_Scale;
+		transformRequest.m_Data.m_SetBounds = true;
+		transformRequest.m_Data.m_BoundsMin = glm::vec3(0.f, 0.f, 0.f);
+		transformRequest.m_Data.m_BoundsMax = glm::vec3(1.f, 1.f, 0.f);
+		accessor.EmplaceOneframe<sbx::QuadSpawnTransformRequestOneFrameComponent>(ent, std::move(transformRequest));
 
 		sbx::SpinComponent spin;
 		spin.m_Anchor = spec.m_Anchor;
@@ -78,18 +95,18 @@ namespace
 		orbiter.m_ColorCycleSpeed = 1.0f;
 		CreateQuad(accessor, orbiter);
 
-		// Two overlapping quads at different layers (anchor.z selects the render layer).
-		QuadSpec lowerLayer;
-		lowerLayer.m_Anchor = { 1.3f, -0.1f, 1.f };
-		lowerLayer.m_Scale = { 0.5f, 0.5f, 1.f };
-		lowerLayer.m_BaseColor = { 0.9f, 0.25f, 0.25f };
-		CreateQuad(accessor, lowerLayer);
+		// Two overlapping quads; the lower one (smaller Y) draws behind the higher one.
+		QuadSpec behindQuad;
+		behindQuad.m_Anchor = { 1.3f, -0.1f, 0.f };
+		behindQuad.m_Scale = { 0.5f, 0.5f, 1.f };
+		behindQuad.m_BaseColor = { 0.9f, 0.25f, 0.25f };
+		CreateQuad(accessor, behindQuad);
 
-		QuadSpec upperLayer;
-		upperLayer.m_Anchor = { 1.5f, 0.1f, 2.f };
-		upperLayer.m_Scale = { 0.5f, 0.5f, 1.f };
-		upperLayer.m_BaseColor = { 0.25f, 0.4f, 0.95f };
-		CreateQuad(accessor, upperLayer);
+		QuadSpec frontQuad;
+		frontQuad.m_Anchor = { 1.5f, 0.1f, 0.f };
+		frontQuad.m_Scale = { 0.5f, 0.5f, 1.f };
+		frontQuad.m_BaseColor = { 0.25f, 0.4f, 0.95f };
+		CreateQuad(accessor, frontQuad);
 	}
 
 	bool WasKeyJustPressed(const pg::InputStateSingletonComponent& input, int key)
@@ -111,6 +128,7 @@ pg::SystemAccessDecl sbx::QuadSpawnSystem::DeclareAccess() const
 	};
 	decl.addSet = {
 		std::type_index(typeid(sbx::QuadComponent)),
+		std::type_index(typeid(sbx::QuadSpawnTransformRequestOneFrameComponent)),
 		std::type_index(typeid(sbx::SpinComponent)),
 		std::type_index(typeid(sbx::LifetimeComponent)),
 		std::type_index(typeid(sbx::SpawnerSingletonComponent)),

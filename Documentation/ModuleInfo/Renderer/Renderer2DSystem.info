@@ -2,16 +2,18 @@
 
 ## Purpose
 Each frame: clears the screen, reads all in-frame draw events (quads, sprites, text, UI quads,
-UI text), batches them by texture and draw layer, and submits each non-empty batch to the GPU as
-a single indexed draw call via the DirectX 11 backend.
+UI text), builds a transformed quad per draw, orders them, and submits them to the GPU as indexed
+draw calls via the DirectX 11 backend.
 
 On the first frame, allocates dynamic GPU vertex and index buffers and resolves default shaders
 from ResourceMapSingletonComponent. Lazy-initializes by deferring RendererDataSingletonComponent
 on the first frame and returning; rendering begins from the second frame.
 
-Draw layer is encoded in the Z component of each draw event's transform matrix. Quads/sprites/text
-are sorted into layers 0–99 and flushed in ascending order, ensuring correct depth ordering without
-explicit Z testing.
+World draws (quads, sprites, text) are sorted by their render sort key (the world-space Y of each
+entity's local bottom edge, supplied on the draw event): lower keys draw behind higher ones. UI draws
+(quads, text) are drawn in a separate pass after all world draws so the UI is always on top; within
+that pass they are ordered by the nesting level packed in the UI transform's Z. Consecutive draws that
+share a texture are merged into one indexed draw call; a texture change flushes the current batch.
 
 ## Input Components
 | Component | Access |
@@ -29,4 +31,4 @@ explicit Z testing.
 ## Output Components
 | Component | Access | Notes |
 |---|---|---|
-| RendererDataSingletonComponent | write / add (deferred) | Holds GPU buffer handles and per-frame batch maps; created on first frame |
+| RendererDataSingletonComponent | write / add (deferred) | Holds GPU buffer handles and default shaders; created on first frame |

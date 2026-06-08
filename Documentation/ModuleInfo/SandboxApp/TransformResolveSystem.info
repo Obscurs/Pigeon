@@ -1,0 +1,20 @@
+# TransformResolveSystem (SandboxApp)
+
+## Purpose
+App tier of transform resolution. Aggregates every SandboxApp transform change request (one request
+type per app mover, since the one-adder rule forbids two systems adding the same type) into the single
+engine-typed ResolvedTransformRequestOneFrameComponent that the engine TransformResolveSystem applies.
+For each requested entity it merges the set channels of all present app requests (later mover wins per
+channel) and emits one resolved request. Sole adder of ResolvedTransformRequestOneFrameComponent.
+
+## Input Components
+| Component | Access |
+|---|---|
+| SceneTransformRequestOneFrameComponent | read |
+| QuadSpawnTransformRequestOneFrameComponent | read |
+| AnimationTransformRequestOneFrameComponent | read |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| ResolvedTransformRequestOneFrameComponent | add (oneframe) | one aggregated request per requested entity |

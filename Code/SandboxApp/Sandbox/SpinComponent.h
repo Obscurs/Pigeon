@@ -3,14 +3,15 @@
 
 namespace sbx
 {
-	// Per-quad animation parameters consumed by QuadAnimationSystem to recompute the quad's
-	// transform and colour each frame. A quad whose speeds are all zero renders static at its anchor.
+	// Per-quad animation parameters consumed by QuadAnimationSystem to compute the quad's position,
+	// rotation, and colour each frame (emitted as a transform request). A quad whose speeds are all
+	// zero renders static at its anchor.
 	struct SpinComponent
 	{
 		SpinComponent() = default;
 		SpinComponent(const SpinComponent&) = default;
 
-		glm::vec3 m_Anchor{ 0.f, 0.f, 0.f }; // base position; z selects the render layer
+		glm::vec3 m_Anchor{ 0.f, 0.f, 0.f }; // base world position (render order comes from world Y)
 		glm::vec3 m_Scale{ 1.f, 1.f, 1.f };
 		glm::vec3 m_BaseColor{ 1.f, 1.f, 1.f };
 

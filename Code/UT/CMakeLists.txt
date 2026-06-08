@@ -8,6 +8,7 @@ file(GLOB SRC_TESTS_INTERFACE "UT_Interface/*.cpp")
 file(GLOB SRC_TESTS_UI "UT_UI/*.cpp")
 file(GLOB SRC_TESTS_RENDERER "UT_Renderer/*.cpp")
 file(GLOB SRC_TESTS_SANDBOX "UT_Sandbox/*.cpp")
+file(GLOB SRC_TESTS_TRANSFORM "UT_Transform/*.cpp")
 
 set(SRC_SANDBOX_SYSTEMS
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/ConfigLoaderSystem.cpp"
@@ -20,6 +21,7 @@ set(SRC_SANDBOX_SYSTEMS
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/SceneSetupSystem.cpp"
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/SpriteRenderSystem.cpp"
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/TextRenderSystem.cpp"
+    "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/TransformResolveSystem.cpp"
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/UIButtonSystem.cpp"
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/UIButtonVisualSystem.cpp"
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/UICloseSystem.cpp"
@@ -34,6 +36,7 @@ source_group("Tests/Interface" FILES ${SRC_TESTS_INTERFACE})
 source_group("Tests/UI" FILES ${SRC_TESTS_UI})
 source_group("Tests/Renderer" FILES ${SRC_TESTS_RENDERER})
 source_group("Tests/Sandbox" FILES ${SRC_TESTS_SANDBOX})
+source_group("Tests/Transform" FILES ${SRC_TESTS_TRANSFORM})
 
 include_directories (
     "${PROJECT_SOURCE_DIR}/Code/PigeonLib"
@@ -55,6 +58,7 @@ add_executable (UT
     ${SRC_TESTS_UI}
     ${SRC_TESTS_RENDERER}
     ${SRC_TESTS_SANDBOX}
+    ${SRC_TESTS_TRANSFORM}
     ${SRC_SANDBOX_SYSTEMS}
 )
 

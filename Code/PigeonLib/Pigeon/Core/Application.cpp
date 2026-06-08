@@ -21,6 +21,8 @@
 #include "Pigeon/Renderer/CameraSystem.h"
 #include "Pigeon/Renderer/Renderer.h"
 #include "Pigeon/Renderer/Renderer2DSystem.h"
+#include "Pigeon/Transform/TransformComposeSystem.h"
+#include "Pigeon/Transform/TransformResolveSystem.h"
 #include "Pigeon/UI/UIControlSystem.h"
 #include "Pigeon/UI/UIEventSystem.h"
 #include "Pigeon/UI/UIRenderSystem.h"
@@ -159,6 +161,8 @@ void pg::Application::Init()
 	world.RegisterSystem(std::move(std::make_unique<pg::InputSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pg::Renderer2DSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pg::ResourceManagerSystem>()));
+	world.RegisterSystem(std::move(std::make_unique<pg::TransformComposeSystem>()));
+	world.RegisterSystem(std::move(std::make_unique<pg::TransformResolveSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pg::ui::UIControlSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pg::ui::UIEventSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pg::ui::UIRenderSystem>()));

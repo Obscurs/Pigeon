@@ -43,8 +43,5 @@ namespace pg
 
 		pg::S_Ptr<pg::Shader> m_QuadShader = nullptr;
 		pg::S_Ptr<pg::Shader> m_TextShader = nullptr;
-
-		std::unordered_map<pg::UUID, BatchData> m_BatchMap;
-		std::unordered_map<int, std::unordered_map<pg::UUID, BatchData>> m_LayerBatchMap;
 	};
 }

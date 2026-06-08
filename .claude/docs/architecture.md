@@ -2,7 +2,7 @@
 
 ## Engine vs. Game Split
 
-- **PigeonLib** — engine-generic code only: windowing, rendering, ECS primitives, UI, events, input. No application-specific logic.
+- **PigeonLib** — engine-generic code only: windowing, rendering, ECS primitives, transforms, UI, events, input. No application-specific logic.
 - **SandboxApp** — application code that uses PigeonLib. All domain-specific systems, components, and assets live here.
 
 ## ECS Contract

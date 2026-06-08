@@ -16,8 +16,10 @@
 #include "Pigeon/Renderer/RendererDataSingletonComponent.h"
 #include "Pigeon/Renderer/Shader.h"
 #include "Pigeon/Renderer/Texture.h"
+#include "Platform/Testing/TestingHelper.h"
 
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <vector>
 
 namespace
@@ -144,9 +146,6 @@ namespace CatchTestsetFail
 		CHECK(data.m_IndexBuffer != nullptr);
 		CHECK(data.m_QuadShader != nullptr);
 		CHECK(data.m_TextShader != nullptr);
-		// Batches are flushed and cleared by the end of the frame.
-		CHECK(data.m_BatchMap.empty());
-		CHECK(data.m_LayerBatchMap.empty());
 	}
 
 	// ---------------------------------------------------------------------------
@@ -186,6 +185,78 @@ namespace CatchTestsetFail
 
 		CHECK(decl.addSet.count(std::type_index(typeid(pg::RendererDataSingletonComponent))) > 0);
 		CHECK(decl.writeSet.count(std::type_index(typeid(pg::RendererDataSingletonComponent))) > 0);
+	}
+
+	// ---------------------------------------------------------------------------
+	// World draws are ordered by sort key: lower sort key is written (drawn) first.
+	// Two quads sharing the default texture batch into a single submission, so the
+	// first vertices in the buffer belong to the lower-sort-key quad.
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Renderer.Renderer2DSystem::OrdersWorldDrawsBySortKey")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::Renderer2DSystem>());
+		SeedValidRenderState();
+
+		pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+
+		// Quad A: high sort key, placed at x = 5. Emitted first.
+		pg::ecs::Entity entA = registry.create();
+		pg::DrawQuadInFrameEvent a;
+		a.m_Transform = glm::translate(glm::mat4(1.f), glm::vec3(5.f, 0.f, 0.f));
+		a.m_SortKey = 5.f;
+		registry.emplace<pg::DrawQuadInFrameEvent>(entA, a);
+
+		// Quad B: low sort key, placed at x = 1. Emitted second but must draw first.
+		pg::ecs::Entity entB = registry.create();
+		pg::DrawQuadInFrameEvent b;
+		b.m_Transform = glm::translate(glm::mat4(1.f), glm::vec3(1.f, 0.f, 0.f));
+		b.m_SortKey = 1.f;
+		registry.emplace<pg::DrawQuadInFrameEvent>(entB, b);
+
+		world.Update(pg::Timestep(0));
+
+		// Same texture -> a single batched submission of two quads (8 vertices).
+		REQUIRE(pg::TestingHelper::GetInstance().m_VertexBufferSetVertices.size() == 1);
+		CHECK(pg::TestingHelper::GetInstance().m_VertexBufferSetVertices[0].m_Count == 8);
+		// First vertex written belongs to the lower-sort-key quad (x = 1).
+		CHECK(pg::TestingHelper::GetInstance().m_Vertices[pg::ATRIB_POS_X_INDEX] == Approx(1.f));
+	}
+
+	// ---------------------------------------------------------------------------
+	// Draws with different textures cannot share a batch: a texture change forces a
+	// new submission, so two differently-textured quads produce two submissions.
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Renderer.Renderer2DSystem::SeparatesBatchesByTexture")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::Renderer2DSystem>());
+		SeedValidRenderState();
+
+		pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+		auto resourcesView = registry.view<pg::ResourceMapSingletonComponent>();
+		pg::ResourceMapSingletonComponent& resources = resourcesView.get<pg::ResourceMapSingletonComponent>(resourcesView.front());
+		const pg::UUID secondTexture = pg::UUID::Generate();
+		std::vector<unsigned char> pixels(2 * 2 * 4, 255);
+		resources.m_TextureMap[secondTexture] = pg::MappedTexture{ pg::Texture2D::Create(2, 2, 4, pixels.data()), pg::EMappedTextureType::eQuad };
+
+		// Lower sort key uses the default texture; higher uses the second texture.
+		pg::ecs::Entity e1 = registry.create();
+		pg::DrawQuadInFrameEvent q1;
+		q1.m_Transform = glm::mat4(1.f);
+		q1.m_SortKey = 0.f;
+		registry.emplace<pg::DrawQuadInFrameEvent>(e1, q1);
+
+		pg::ecs::Entity e2 = registry.create();
+		pg::DrawQuadInFrameEvent q2;
+		q2.m_Transform = glm::mat4(1.f);
+		q2.m_TextureID = secondTexture;
+		q2.m_SortKey = 1.f;
+		registry.emplace<pg::DrawQuadInFrameEvent>(e2, q2);
+
+		world.Update(pg::Timestep(0));
+
+		CHECK(pg::TestingHelper::GetInstance().m_VertexBufferSetVertices.size() == 2);
 	}
 
 } // namespace CatchTestsetFail

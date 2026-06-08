@@ -3,6 +3,7 @@
 #include "Pigeon/Core/ResourceMapSingletonComponent.h"
 #include "Pigeon/ECS/World.h"
 #include "Pigeon/Renderer/DrawStringInFrameEvent.h"
+#include "Pigeon/Transform/WorldTransformComponent.h"
 #include "Sandbox/LabelComponent.h"
 
 pg::SystemAccessDecl sbx::TextRenderSystem::DeclareAccess() const
@@ -11,6 +12,7 @@ pg::SystemAccessDecl sbx::TextRenderSystem::DeclareAccess() const
 	decl.readSet = {
 		std::type_index(typeid(pg::ResourceMapSingletonComponent)),
 		std::type_index(typeid(sbx::LabelComponent)),
+		std::type_index(typeid(pg::WorldTransformComponent)),
 	};
 	decl.inframeAddSet = {
 		std::type_index(typeid(pg::DrawStringInFrameEvent)),
@@ -29,10 +31,11 @@ void sbx::TextRenderSystem::Update(const pg::Timestep& ts)
 	}
 	const pg::ResourceMapSingletonComponent& resources = resourcesView.get<const pg::ResourceMapSingletonComponent>(resourcesView.front());
 
-	auto view = accessor.View<const sbx::LabelComponent>();
+	auto view = accessor.View<const sbx::LabelComponent, const pg::WorldTransformComponent>();
 	for (pg::ecs::Entity ent : view)
 	{
 		const sbx::LabelComponent& label = view.get<const sbx::LabelComponent>(ent);
+		const pg::WorldTransformComponent& worldTransform = view.get<const pg::WorldTransformComponent>(ent);
 		const std::unordered_map<pg::UUID, pg::S_Ptr<pg::Font>>::const_iterator fontIt = resources.m_FontMap.find(label.m_FontID);
 		if (fontIt == resources.m_FontMap.end())
 		{
@@ -40,7 +43,8 @@ void sbx::TextRenderSystem::Update(const pg::Timestep& ts)
 		}
 
 		pg::DrawStringInFrameEvent event;
-		event.m_Transform = label.m_Transform;
+		event.m_Transform = worldTransform.m_Matrix;
+		event.m_SortKey = worldTransform.m_SortKey;
 		event.m_String = label.m_Text;
 		event.m_Font = fontIt->second;
 		event.m_Color = label.m_Color;

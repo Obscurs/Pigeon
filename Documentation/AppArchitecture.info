@@ -16,13 +16,14 @@ pg::CreateApplication()  [Sandbox2D.cpp]
   ├── Sandbox::Create()                       (delegates to pg::Application::Create())
   └── World::RegisterSystem(...) for:
         sbx::ConfigLoaderSystem        Assets/App/Config.json -> SandboxConfigSingletonComponent
-        sbx::SceneSetupSystem          camera + sprite + labels + LoadLayoutEvent (once)
-        sbx::QuadSpawnSystem           seeds demo quads; spawns temporary quads on SPACE
-        sbx::QuadAnimationSystem       animates QuadComponent from SpinComponent + time
+        sbx::TransformResolveSystem    app transform requests -> ResolvedTransformRequest (engine type)
+        sbx::SceneSetupSystem          camera + sprite + labels + transform requests + LoadLayoutEvent (once)
+        sbx::QuadSpawnSystem           seeds demo quads (+ spawn transform requests); spawns on SPACE
+        sbx::QuadAnimationSystem       SpinComponent + time -> QuadComponent colour + AnimationTransformRequest
         sbx::LifetimeSystem            counts down LifetimeComponent; deferred-destroys expired
-        sbx::QuadRenderSystem          QuadComponent      -> DrawQuadInFrameEvent
-        sbx::SpriteRenderSystem        SpriteComponent    -> DrawSpriteInFrameEvent
-        sbx::TextRenderSystem          LabelComponent     -> DrawStringInFrameEvent
+        sbx::QuadRenderSystem          QuadComponent + WorldTransform  -> DrawQuadInFrameEvent
+        sbx::SpriteRenderSystem        SpriteComponent + WorldTransform -> DrawSpriteInFrameEvent
+        sbx::TextRenderSystem          LabelComponent + WorldTransform  -> DrawStringInFrameEvent
         sbx::InputReadoutSystem        InputState         -> readout LabelComponent text
         sbx::UIButtonVisualSystem      hover/click        -> UIUpdateImageUUID (button image)
         sbx::UIButtonSystem            release            -> UIUpdateEnable (toggle panel)
@@ -57,16 +58,23 @@ Frame 3+  (steady state)
 
 ```
 Input (engine InputSystem -> InputStateSingletonComponent)
-  ├── engine CameraSystem        WASD pan / scroll zoom / resize aspect -> OrthographicCameraComponent
+  ├── engine CameraSystem        scroll zoom / resize aspect -> OrthographicCameraComponent; WASD pan -> CameraTransformRequest
   ├── sbx::QuadSpawnSystem        SPACE -> QuadComponent + SpinComponent + LifetimeComponent
   └── sbx::InputReadoutSystem     mouse/keys/scroll -> readout LabelComponent text
 
+Transforms (ADR 0003, two-tier resolve)
+  app movers emit per-mover requests:
+    SpinComponent --(sbx::QuadAnimationSystem)--> AnimationTransformRequest (position + rotation)
+    sbx::QuadSpawnSystem / sbx::SceneSetupSystem --> spawn / scene transform requests (initial P/R/S/Bounds)
+  sbx::TransformResolveSystem aggregates all app requests --> one pg::ResolvedTransformRequest per entity
+        └── engine TransformResolveSystem (+ camera pan request) writes Position/Rotation/Scale/LocalBounds
+              └── engine TransformComposeSystem --> WorldTransformComponent (matrix + world-Y sort key)
+
 World-space rendering
-  SpinComponent --(sbx::QuadAnimationSystem, scaled by DebugControls)--> QuadComponent
-  QuadComponent   --(sbx::QuadRenderSystem)--> DrawQuadInFrameEvent
-  SpriteComponent --(sbx::SpriteRenderSystem)--> DrawSpriteInFrameEvent
-  LabelComponent  --(sbx::TextRenderSystem, via ResourceMap font)--> DrawStringInFrameEvent
-        └── engine Renderer2DSystem batches all draw events into GPU draw calls
+  QuadComponent   + WorldTransform --(sbx::QuadRenderSystem)--> DrawQuadInFrameEvent
+  SpriteComponent + WorldTransform --(sbx::SpriteRenderSystem)--> DrawSpriteInFrameEvent
+  LabelComponent  + WorldTransform --(sbx::TextRenderSystem, via ResourceMap font)--> DrawStringInFrameEvent
+        └── engine Renderer2DSystem Y-sorts world draws (lower Y behind), draws UI on top, into GPU draw calls
   LifetimeComponent --(sbx::LifetimeSystem)--> deferred entity destroy when expired
 
 UI (engine UIControlSystem + UIEventSystem + UIRenderSystem)

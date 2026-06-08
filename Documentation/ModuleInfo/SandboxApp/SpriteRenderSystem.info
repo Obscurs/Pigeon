@@ -1,16 +1,18 @@
 # SpriteRenderSystem  (sbx)
 
 ## Purpose
-Render bridge for world-space sprites: sole adder of DrawSpriteInFrameEvent. Each frame it emits
-one in-frame draw event per SpriteComponent, building a sprite from the component's transform,
-sub-texture rectangle, texture id and origin.
+Render bridge for world-space sprites: sole adder of DrawSpriteInFrameEvent. Each frame it emits one
+in-frame draw event per entity that has both a SpriteComponent and a resolved WorldTransformComponent,
+building a sprite from the world matrix, the component's sub-texture rectangle and texture id, and the
+world transform's render sort key. Sprites without a world transform yet are skipped.
 
 ## Input Components
 | Component | Access | Notes |
 |---|---|---|
-| SpriteComponent | read | One draw event emitted per sprite |
+| SpriteComponent | read | Sub-texture rectangle + texture id |
+| WorldTransformComponent | read | World matrix + render sort key |
 
 ## Output Components
 | Component | Access | Notes |
 |---|---|---|
-| DrawSpriteInFrameEvent | add (inframe) | One per SpriteComponent; consumed by Renderer2DSystem this frame |
+| DrawSpriteInFrameEvent | add (inframe) | One per drawable sprite; consumed by Renderer2DSystem this frame |

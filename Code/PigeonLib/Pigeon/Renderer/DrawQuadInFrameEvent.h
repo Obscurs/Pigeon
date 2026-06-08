@@ -15,5 +15,6 @@ namespace pg
 		glm::vec3 m_Color { 0.f, 0.f, 0.f };
 		glm::vec3 m_Origin { 0.f, 0.f, 0.f };
 		pg::UUID m_TextureID;
+		float m_SortKey { 0.f }; // world draw order: lower draws behind
 	};
 }

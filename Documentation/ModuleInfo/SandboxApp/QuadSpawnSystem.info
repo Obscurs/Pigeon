@@ -3,10 +3,11 @@
 ## Purpose
 Owns the creation of world-space demo quads. Returns early until SandboxConfigSingletonComponent
 is available. On the first ready frame it seeds the persistent demo quads (a flat colour quad, a
-textured quad, an orbiting colour-cycling quad, and two overlapping layered quads) and creates
-SpawnerSingletonComponent, whose presence is the "already seeded" guard. On every later frame,
+textured quad, an orbiting colour-cycling quad, and two overlapping quads ordered by world Y) and
+creates SpawnerSingletonComponent, whose presence is the "already seeded" guard. On every later frame,
 when the spacebar was pressed this frame (InputStateSingletonComponent), it spawns one temporary
-spinning quad carrying a LifetimeComponent and increments the spawn count.
+spinning quad carrying a LifetimeComponent and increments the spawn count. Every created quad gets a
+QuadSpawnTransformRequestOneFrameComponent seeding its full initial transform.
 
 ## Input Components
 | Component | Access | Notes |
@@ -19,6 +20,7 @@ spinning quad carrying a LifetimeComponent and increments the spawn count.
 | Component | Access | Notes |
 |---|---|---|
 | SpawnerSingletonComponent | write / add (deferred) | Created once; spawn count incremented per spawn |
-| QuadComponent | add (deferred) | Seeded persistent quads and spawned temporary quads |
+| QuadComponent | add (deferred) | Visual data for seeded and spawned quads |
+| QuadSpawnTransformRequestOneFrameComponent | add (oneframe) | Initial position/rotation/scale/bounds per quad |
 | SpinComponent | add (deferred) | Animation parameters for every created quad |
 | LifetimeComponent | add (deferred) | Only on spawned (temporary) quads |
