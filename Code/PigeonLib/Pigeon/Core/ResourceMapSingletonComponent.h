@@ -1,4 +1,6 @@
 ﻿#pragma once
+#include <nlohmann/json.hpp>
+
 #include "Pigeon/Audio/SoundClip.h"
 #include "Pigeon/Core/Core.h"
 #include "Pigeon/Core/UUID.h"
@@ -24,6 +26,7 @@ namespace pg
 		std::unordered_map<pg::UUID, pg::S_Ptr<pg::Font>> m_FontMap;
 		std::unordered_map<pg::UUID, std::string> m_UILayoutMap;
 		std::unordered_map<pg::UUID, pg::S_Ptr<pg::SoundClip>> m_SoundMap;
+		std::unordered_map<pg::UUID, nlohmann::json> m_JSONMap;
 
 		pg::UUID m_DefaultTexture = pg::UUID::Generate();
 	};

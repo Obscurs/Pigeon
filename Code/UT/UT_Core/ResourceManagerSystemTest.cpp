@@ -113,6 +113,35 @@ namespace CatchTestsetFail
 	}
 
 	// ---------------------------------------------------------------------------
+	// Happy path: loaded resource map has the JSON asset declared in the manifest,
+	// keyed by its UUID and holding the parsed file content.
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Core.ResourceManagerSystem::LoadedMapHasJSONAsset")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ResourceManagerSystem>());
+
+		world.Update(pg::Timestep(0));
+
+		auto view = pg::World::GetRegistryDirect().view<pg::ResourceMapSingletonComponent>();
+		REQUIRE(view.size() == 1);
+
+		const pg::ResourceMapSingletonComponent& map =
+			view.get<pg::ResourceMapSingletonComponent>(view.front());
+
+		REQUIRE(!map.m_JSONMap.empty());
+
+		std::unordered_map<pg::UUID, nlohmann::json>::const_iterator it =
+			map.m_JSONMap.find(pg::UUID("d4000000-0000-4000-8000-000000000001"));
+		REQUIRE(it != map.m_JSONMap.end());
+
+		const nlohmann::json& asset = it->second;
+		CHECK(asset["name"].get<std::string>() == "test-asset");
+		CHECK(asset["value"].get<int>() == 42);
+		CHECK(asset["nested"]["flag"].get<bool>() == true);
+	}
+
+	// ---------------------------------------------------------------------------
 	// DeclareAccess: verify declared sets match the system's actual access
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Core.ResourceManagerSystem::DeclareAccessIsCorrect")

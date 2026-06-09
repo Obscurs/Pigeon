@@ -9,6 +9,7 @@
 #include "Sandbox/QuadAnimationSystem.h"
 #include "Sandbox/QuadRenderSystem.h"
 #include "Sandbox/QuadSpawnSystem.h"
+#include "Sandbox/SaveDataDebugPanelSystem.h"
 #include "Sandbox/SceneSetupSystem.h"
 #include "Sandbox/SpriteRenderSystem.h"
 #include "Sandbox/TextRenderSystem.h"
@@ -52,6 +53,7 @@ pg::Application& pg::CreateApplication()
 	world.RegisterSystem(std::make_unique<sbx::UIStatusSystem>());
 	world.RegisterSystem(std::make_unique<sbx::DebugPanelSystem>());
 	world.RegisterSystem(std::make_unique<sbx::WindowDebugPanelSystem>());
+	world.RegisterSystem(std::make_unique<sbx::SaveDataDebugPanelSystem>());
 
 	return sandbox;
 }

@@ -44,3 +44,19 @@
 | Window Config | The live window resolution + mode (`WindowConfigSingletonComponent`), seeded once from the engine config and updated by resolution requests. |
 | Set Window Resolution Request | An engine-typed one-frame request (`SetWindowResolutionRequestOneFrameComponent`) carrying a desired resolution + mode. The app emits it; the engine `WindowConfigSystem` applies it to the live window and persists it to the savedata `Config.json`. Like the audio request, it must be an engine (`pg`) type so the engine system can read it. |
 | Savedata Path | The directory (relative to the working dir) holding the override `Config.json`; declared by the `savedataPath` key in the engine config and recorded in `EngineConfigSingletonComponent.m_SavedataPath` so the runtime knows where to persist changes. |
+
+## Save Data
+
+| Term | Meaning |
+|---|---|
+| Save Slot | One persisted JSON document, identified by a UUID. Stored on disk as `<savedataPath>/SaveSlots/<uuid>.json` (the filename stem is the slot UUID) and held live in the `SaveDataSingletonComponent` map (UUID → JSON). |
+| Save Data Resource | The live in-memory map of all save slots (`SaveDataSingletonComponent`), loaded once at startup from the `SaveSlots` folder. The single value the App reads to display or read back slot contents. Owned (added + written) solely by `SaveDataSystem`. |
+| Set Save Data Request | An engine-typed one-frame request (`SetSaveDataRequestOneFrameComponent`) carrying a slot UUID + new JSON. The App emits it; the engine `SaveDataSystem` updates both the loaded resource (the map entry) and the data resource (the `<uuid>.json` file). Like the window/audio requests, it must be an engine (`pg`) type so the engine system can read it. |
+
+## Resources
+
+| Term | Meaning |
+|---|---|
+| Resource Map | The single live store of all loaded assets (`ResourceMapSingletonComponent`): textures, shaders, fonts, UI layouts, sound clips, and JSON assets, each keyed by UUID. Loaded once at startup by `ResourceManagerSystem` from the engine and app resource manifests. |
+| Resource Manifest | The per-project JSON file (`Assets/<project>/ResourcesManifest.json`) that declares every asset to load, grouped by category array (`textures`, `fonts`, `shaders`, `ui`, `sounds`, `json`). Each entry is an `{id, path}` pair; the path is resolved under the category's folder (`Assets/<project>/<Folder>/<path>`). |
+| JSON Asset | A loadable JSON data asset, declared in the `json` array of a resource manifest and loaded from the project's `JSON` folder (`Assets/<project>/JSON/<path>`). Parsed at load time and held live in the resource map's `m_JSONMap` (UUID → parsed `nlohmann::json`). The engine and app declare these the same way as any other resource; the parsed content is the value other systems read. |

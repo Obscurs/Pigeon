@@ -1,0 +1,34 @@
+# SaveDataSystem
+
+## Purpose
+Owns the live save-data resource: a map of slot UUID → JSON document. On the first frame the
+`EngineConfigSingletonComponent` is present, it creates `SaveDataSingletonComponent` by loading every
+`<savedataPath>/SaveSlots/<uuid>.json` file (the filename stem is the slot UUID). Thereafter it applies
+`SetSaveDataRequestOneFrameComponent` requests from the App: each request updates the in-memory slot
+entry and rewrites the matching `<uuid>.json` file on disk. Returns early while the engine config is
+absent.
+
+When `savedataPath` is empty the singleton is still created (empty map) so requests have somewhere to
+land, but no files are read or written — the same no-disk fallback `WindowConfigSystem` uses for the
+Testing build.
+
+## Persistence
+On a save request the system writes `<savedataPath>/SaveSlots/<uuid>.json` with the request's JSON,
+creating the `SaveSlots` directory when missing. File I/O goes through the shared `pg::FileUtils`
+helpers. The startup load does not write anything back.
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| EngineConfigSingletonComponent | read | Source of the savedata path; gates singleton creation |
+| SetSaveDataRequestOneFrameComponent | read | App request carrying the slot UUID + new JSON |
+| SaveDataSingletonComponent | write | Presence-check; created lazily once config exists, then updated in place |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| SaveDataSingletonComponent | write / add (deferred) | Created once from the SaveSlots folder; slot entries updated in place by save requests |
+
+## Side Effects
+- Reads every `<savedataPath>/SaveSlots/*.json` on startup.
+- Writes `<savedataPath>/SaveSlots/<uuid>.json` on each save request.

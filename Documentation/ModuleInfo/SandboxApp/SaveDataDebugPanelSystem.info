@@ -1,0 +1,25 @@
+# SaveDataDebugPanelSystem
+
+## Purpose
+ImGui debug panel demoing the save-data save/load flow. Reads the engine `SaveDataSingletonComponent`
+to list the existing slots and, for the selected slot, shows an editable JSON text buffer. "Load"
+refreshes the buffer from the in-memory slot; "Save" parses the buffer and emits a
+`SetSaveDataRequestOneFrameComponent` (slot UUID + parsed JSON) for the engine to apply and persist.
+"New slot" seeds the buffer with an empty object under a freshly generated UUID.
+
+Panel state (selected slot, edit buffer) lives in ECS as `SaveDataPanelStateSingletonComponent`, seeded
+once from the first available slot. Like the other debug panels, the system no-ops when the savedata
+singleton is absent and guards every ImGui call so the Testing build (no ImGui context) emits no
+request.
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| SaveDataSingletonComponent | read | Source of the slot list and per-slot JSON shown in the panel |
+| SaveDataPanelStateSingletonComponent | write | Presence-check; created lazily, then updated as the user edits |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| SaveDataPanelStateSingletonComponent | write / add (deferred) | Holds the selected slot UUID and the editable JSON buffer |
+| SetSaveDataRequestOneFrameComponent | add (oneframe) | Emitted on Save with the slot UUID + parsed JSON |

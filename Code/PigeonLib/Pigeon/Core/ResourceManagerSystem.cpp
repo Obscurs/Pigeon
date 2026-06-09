@@ -64,6 +64,11 @@ namespace
 		component.m_SoundMap[resource.m_UUID] = pg::SoundClip::Create(resource.m_Path);
 	}
 
+	void LoadJSONFromResource(pg::ResourceMapSingletonComponent& component, const ParsedResource& resource)
+	{
+		component.m_JSONMap[resource.m_UUID] = ReadJSONFileToString(resource.m_Path);
+	}
+
 	void LoadResourcesFromPath(pg::ResourceMapSingletonComponent& component, const std::string& filePath, const std::string& prefix)
 	{
 		json jsonObject = ReadJSONFileToString(filePath);
@@ -106,6 +111,14 @@ namespace
 			for (json child : jsonObject["sounds"])
 			{
 				LoadSoundFromResource(component, GetParsedResourceFromJsonItem(child, prefix, "Audio"));
+			}
+		}
+		if (jsonObject.contains("json"))
+		{
+			PG_CORE_EXCEPT(jsonObject["json"].is_array(), "could not parse json from resource manifest");
+			for (json child : jsonObject["json"])
+			{
+				LoadJSONFromResource(component, GetParsedResourceFromJsonItem(child, prefix, "JSON"));
 			}
 		}
 	}

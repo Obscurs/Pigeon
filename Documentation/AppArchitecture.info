@@ -33,6 +33,7 @@ pg::CreateApplication()  [Sandbox2D.cpp]
         sbx::AudioDemoSystem           S/M/P keys -> Play/Stop/Pause/Resume audio requests; owns AudioDemoState
         sbx::AudioDebugPanelSystem     ImGui "Audio" panel; volume sliders -> SetAudioVolumeRequest
         sbx::WindowDebugPanelSystem    ImGui "Window" panel; resolution preset + mode -> SetWindowResolutionRequest
+        sbx::SaveDataDebugPanelSystem  ImGui "Save Data" panel; slot list + JSON editor -> SetSaveDataRequest
 ```
 
 ## Boot Sequence
@@ -103,6 +104,12 @@ Window (engine WindowConfigSystem)
   sbx::WindowDebugPanelSystem  resolution preset dropdown + windowed/fullscreen radio + Apply -> SetWindowResolutionRequest
         └── engine WindowConfigSystem updates WindowConfigSingletonComponent, applies it to the live Window
             (windowed ↔ borderless fullscreen), and persists windowWidth/Height/Mode to <savedataPath>/Config.json
+
+Save Data (engine SaveDataSystem)
+  sbx::SaveDataDebugPanelSystem  slot list (from SaveDataSingletonComponent) + JSON text editor;
+                                 Save -> SetSaveDataRequest (slot UUID + parsed JSON); Load refreshes the editor
+        └── engine SaveDataSystem updates the slot in SaveDataSingletonComponent and rewrites
+            <savedataPath>/SaveSlots/<uuid>.json
 ```
 
 ## Key Files

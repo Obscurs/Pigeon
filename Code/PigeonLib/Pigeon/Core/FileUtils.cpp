@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Pigeon/Core/FileUtils.h"
 
+#include <filesystem>
 #include <fstream>
 
 bool pg::FileExists(const std::string& path)
@@ -35,4 +36,36 @@ void pg::WriteStringToFile(const std::string& path, const std::string& content)
 
 	file << content;
 	file.close();
+}
+
+void pg::EnsureDirectoryExists(const std::string& dir)
+{
+	if (dir.empty())
+	{
+		return;
+	}
+	std::filesystem::create_directories(dir);
+}
+
+std::vector<std::string> pg::ListFilesWithExtension(const std::string& dir, const std::string& extension)
+{
+	std::vector<std::string> result;
+	if (dir.empty() || !std::filesystem::exists(dir))
+	{
+		return result;
+	}
+
+	for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(dir))
+	{
+		if (entry.is_regular_file() && entry.path().extension() == extension)
+		{
+			result.push_back(entry.path().generic_string());
+		}
+	}
+	return result;
+}
+
+std::string pg::GetFileStem(const std::string& path)
+{
+	return std::filesystem::path(path).stem().generic_string();
 }
