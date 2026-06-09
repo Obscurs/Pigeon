@@ -32,6 +32,7 @@ pg::CreateApplication()  [Sandbox2D.cpp]
         sbx::DebugPanelSystem          ImGui panel; owns DebugControlsSingletonComponent
         sbx::AudioDemoSystem           S/M/P keys -> Play/Stop/Pause/Resume audio requests; owns AudioDemoState
         sbx::AudioDebugPanelSystem     ImGui "Audio" panel; volume sliders -> SetAudioVolumeRequest
+        sbx::WindowDebugPanelSystem    ImGui "Window" panel; resolution preset + mode -> SetWindowResolutionRequest
 ```
 
 ## Boot Sequence
@@ -97,6 +98,11 @@ Audio (engine AudioVolumeSystem + AudioPlaybackSystem)
         └── emits Play/Stop/Pause/ResumeAudioRequest consumed by engine AudioPlaybackSystem
   sbx::AudioDebugPanelSystem  master/sound/music sliders -> SetAudioVolumeRequest
         └── engine AudioVolumeSystem writes AudioVolumeSingletonComponent; AudioPlaybackSystem applies it to voices
+
+Window (engine WindowConfigSystem)
+  sbx::WindowDebugPanelSystem  resolution preset dropdown + windowed/fullscreen radio + Apply -> SetWindowResolutionRequest
+        └── engine WindowConfigSystem updates WindowConfigSingletonComponent, applies it to the live Window
+            (windowed ↔ borderless fullscreen), and persists windowWidth/Height/Mode to <savedataPath>/Config.json
 ```
 
 ## Key Files

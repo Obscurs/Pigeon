@@ -1,0 +1,37 @@
+# WindowConfigSystem
+
+## Purpose
+Owns the live window resolution + display mode. On the first frame the `EngineConfigSingletonComponent`
+is present, it creates `WindowConfigSingletonComponent` initialised from the config's window width/height/
+mode and applies that resolution to the live window (startup apply). Thereafter it applies
+`SetWindowResolutionRequestOneFrameComponent` requests (the App's runtime resolution changes) into that
+singleton, applies them to the live window, and persists the new window values to the savedata
+`Config.json`. Returns early while the engine config is absent.
+
+The live `pg::Window` is a platform resource owned by the Application host, so it is reached via
+`pg::Application::Get().GetWindow()` (guarded by `Application::HasInstance()`) rather than held as a
+system member. The Testing build has no Application, so the window apply is skipped and the seed /
+request / persist logic remains unit-testable without a real window. Fullscreen is borderless windowed —
+see `Window::ApplyWindowConfig` and ADR 0004.
+
+## Persistence
+On a resolution request (not on the startup seed) the system merges `windowWidth`, `windowHeight`, and
+`windowMode` into `<savedataPath>/Config.json` via the shared `pg::FileUtils` helpers, preserving any
+other override keys already in that file. The savedata path comes from
+`EngineConfigSingletonComponent.m_SavedataPath`; when it is empty no file is written.
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| EngineConfigSingletonComponent | read | Source of the initial window resolution/mode and the savedata path |
+| SetWindowResolutionRequestOneFrameComponent | read | App request carrying the desired resolution + mode |
+| WindowConfigSingletonComponent | write | Presence-check; created lazily once config exists, then updated in place |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| WindowConfigSingletonComponent | write / add (deferred) | Created once from config (and applied to the window); updated in place by resolution requests |
+
+## Side Effects
+- Calls `pg::Window::ApplyWindowConfig` on the injected window when one is present.
+- Writes `<savedataPath>/Config.json` on resolution requests.

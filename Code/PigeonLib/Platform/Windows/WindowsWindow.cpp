@@ -107,6 +107,44 @@ unsigned int pg::WindowsWindow::GetHeight() const
 	return m_Context->GetHeight();
 }
 
+void pg::WindowsWindow::ApplyWindowConfig(unsigned int width, unsigned int height, pg::EWindowMode mode)
+{
+	PG_CORE_ASSERT(m_Window, "window is null");
+	if (!m_Window)
+	{
+		return;
+	}
+
+	// Windowed uses the same caption style as creation; fullscreen is a borderless popup sized to the
+	// primary monitor. Either way SetWindowPos raises WM_SIZE, which drives the swapchain/renderer resize
+	// through the existing event path.
+	if (mode == pg::EWindowMode::eFullscreen)
+	{
+		const int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+		const int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+
+		SetWindowLongPtr(m_Window, GWL_STYLE, WS_POPUP | WS_VISIBLE);
+		SetWindowPos(m_Window, HWND_TOP, 0, 0, screenWidth, screenHeight, SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+	}
+	else
+	{
+		const LONG style = WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU | WS_VISIBLE;
+
+		RECT winRect;
+		winRect.left = 100;
+		winRect.top = 100;
+		winRect.right = static_cast<LONG>(width) + winRect.left;
+		winRect.bottom = static_cast<LONG>(height) + winRect.top;
+		AdjustWindowRect(&winRect, style, false);
+
+		SetWindowLongPtr(m_Window, GWL_STYLE, style);
+		SetWindowPos(m_Window, HWND_TOP, winRect.left, winRect.top,
+			winRect.right - winRect.left, winRect.bottom - winRect.top, SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+	}
+
+	PG_CORE_INFO("Applying window config ({0}, {1}) mode {2}", width, height, pg::WindowModeToString(mode));
+}
+
 void pg::WindowsWindow::OnUpdate()
 {
 	ProcessMessages();

@@ -17,6 +17,7 @@
 #include "Sandbox/UIButtonVisualSystem.h"
 #include "Sandbox/UICloseSystem.h"
 #include "Sandbox/UIStatusSystem.h"
+#include "Sandbox/WindowDebugPanelSystem.h"
 
 class Sandbox : public pg::Application
 {
@@ -50,6 +51,7 @@ pg::Application& pg::CreateApplication()
 	world.RegisterSystem(std::make_unique<sbx::UICloseSystem>());
 	world.RegisterSystem(std::make_unique<sbx::UIStatusSystem>());
 	world.RegisterSystem(std::make_unique<sbx::DebugPanelSystem>());
+	world.RegisterSystem(std::make_unique<sbx::WindowDebugPanelSystem>());
 
 	return sandbox;
 }

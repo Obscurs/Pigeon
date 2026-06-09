@@ -32,6 +32,9 @@ namespace pg
 		unsigned int GetWidth() const override { return 0; };
 		unsigned int GetHeight() const override { return 0; };
 
+		// No real windowing in the Testing build.
+		void ApplyWindowConfig(unsigned int width, unsigned int height, EWindowMode mode) override {};
+
 		// Window attributes
 		void SetVSync(bool enabled) override {};
 		bool IsVSync() const override { return false; };

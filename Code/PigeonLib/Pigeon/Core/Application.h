@@ -60,6 +60,7 @@ namespace pg
 		inline InputLayer& GetInputLayer() { return *m_Data.m_InputLayer; }
 
 		inline static Application& Get() { return *s_Instance; }
+		inline static bool HasInstance() { return s_Instance != nullptr; }
 	private:
 		void Shutdown();
 		void Init();

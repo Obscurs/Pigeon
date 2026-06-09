@@ -3,6 +3,7 @@
 #include "pch.h"
 
 #include "Pigeon/Core/Core.h"
+#include "Pigeon/Core/EWindowMode.h"
 #include "Pigeon/Events/Event.h"
 
 namespace pg {
@@ -39,6 +40,11 @@ namespace pg {
 		virtual void Shutdown() = 0;
 		virtual unsigned int GetWidth() const = 0;
 		virtual unsigned int GetHeight() const = 0;
+
+		// Resizes the live window and switches its display mode. Fullscreen is borderless windowed
+		// (a borderless window sized to the primary monitor); width/height are the windowed client size.
+		// The resulting OS resize event drives the swapchain/renderer resize through the normal path.
+		virtual void ApplyWindowConfig(unsigned int width, unsigned int height, EWindowMode mode) = 0;
 
 		// Window attributes
 

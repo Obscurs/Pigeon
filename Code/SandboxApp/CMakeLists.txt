@@ -34,6 +34,9 @@ file(GLOB SRCS
     "Sandbox/UIElementHelpers.cpp"
     "Sandbox/UIElementHelpers.h"
     "Sandbox/UIStatusSystem.cpp"
+    "Sandbox/WindowDebugPanelSystem.cpp"
+    "Sandbox/WindowDebugPanelSystem.h"
+    "Sandbox/WindowPanelSelectionSingletonComponent.h"
     "Sandbox2D.cpp"
 )
 

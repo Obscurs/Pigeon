@@ -5,5 +5,8 @@
 	"masterVolume": 0.8,
 	"soundVolume": 0.9,
 	"musicVolume": 0.6,
+	"windowWidth": 1280,
+	"windowHeight": 720,
+	"windowMode": "windowed",
 	"savedataPath": "../SaveData"
 }

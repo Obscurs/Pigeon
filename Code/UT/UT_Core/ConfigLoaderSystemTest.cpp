@@ -3,6 +3,7 @@
 #include "Utils/TestApp.h"
 
 #include "Pigeon/Core/ConfigLoaderSystem.h"
+#include "Pigeon/Core/EWindowMode.h"
 #include "Pigeon/Core/EngineConfigSingletonComponent.h"
 #include "Pigeon/ECS/System.h"
 #include "Pigeon/ECS/World.h"
@@ -103,6 +104,82 @@ namespace CatchTestsetFail
 		CHECK(cfg.m_SoundVolume <= 1.0f);
 		CHECK(cfg.m_MusicVolume >= 0.0f);
 		CHECK(cfg.m_MusicVolume <= 1.0f);
+	}
+
+	// ---------------------------------------------------------------------------
+	// Happy path: loaded config exposes a positive default window resolution and a
+	// valid display mode (windowed or fullscreen).
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Core.ConfigLoaderSystem::LoadedConfigHasWindowResolution")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ConfigLoaderSystem>());
+
+		world.Update(pg::Timestep(0));
+
+		auto view = pg::World::GetRegistryDirect().view<pg::EngineConfigSingletonComponent>();
+		REQUIRE(view.size() == 1);
+
+		const pg::EngineConfigSingletonComponent& cfg =
+			view.get<pg::EngineConfigSingletonComponent>(view.front());
+
+		CHECK(cfg.m_WindowWidth > 0);
+		CHECK(cfg.m_WindowHeight > 0);
+		CHECK((cfg.m_WindowMode == pg::EWindowMode::eWindowed || cfg.m_WindowMode == pg::EWindowMode::eFullscreen));
+	}
+
+	// ---------------------------------------------------------------------------
+	// Savedata override: the savedata window width wins over the engine config
+	// value, mirroring the audio-volume override semantics.
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Core.ConfigLoaderSystem::SavedataConfigOverridesWindowResolution")
+	{
+		const json engineJson = LoadJsonFixture("Assets/Engine/Config.json");
+		REQUIRE(engineJson.contains("savedataPath"));
+
+		const std::string savedataConfigPath =
+			engineJson["savedataPath"].get<std::string>() + "/Config.json";
+		const json savedataJson = LoadJsonFixture(savedataConfigPath);
+
+		REQUIRE(engineJson.contains("windowWidth"));
+		REQUIRE(savedataJson.contains("windowWidth"));
+		const unsigned int savedataWidth = savedataJson["windowWidth"].get<unsigned int>();
+		// The override is only meaningful if the two values actually differ.
+		REQUIRE(engineJson["windowWidth"].get<unsigned int>() != savedataWidth);
+
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ConfigLoaderSystem>());
+
+		world.Update(pg::Timestep(0));
+
+		auto view = pg::World::GetRegistryDirect().view<pg::EngineConfigSingletonComponent>();
+		REQUIRE(view.size() == 1);
+		const pg::EngineConfigSingletonComponent& cfg =
+			view.get<pg::EngineConfigSingletonComponent>(view.front());
+
+		CHECK(cfg.m_WindowWidth == savedataWidth);
+	}
+
+	// ---------------------------------------------------------------------------
+	// The engine config records the savedata path so the runtime can persist back to it.
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Core.ConfigLoaderSystem::LoadedConfigRecordsSavedataPath")
+	{
+		const json engineJson = LoadJsonFixture("Assets/Engine/Config.json");
+		REQUIRE(engineJson.contains("savedataPath"));
+		const std::string expectedPath = engineJson["savedataPath"].get<std::string>();
+
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ConfigLoaderSystem>());
+
+		world.Update(pg::Timestep(0));
+
+		auto view = pg::World::GetRegistryDirect().view<pg::EngineConfigSingletonComponent>();
+		REQUIRE(view.size() == 1);
+		const pg::EngineConfigSingletonComponent& cfg =
+			view.get<pg::EngineConfigSingletonComponent>(view.front());
+
+		CHECK(cfg.m_SavedataPath == expectedPath);
 	}
 
 	// ---------------------------------------------------------------------------

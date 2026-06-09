@@ -39,6 +39,8 @@ namespace pg
 		unsigned int GetWidth() const override;
 		unsigned int GetHeight() const override;
 
+		void ApplyWindowConfig(unsigned int width, unsigned int height, EWindowMode mode) override;
+
 		// Window attributes
 		void SetVSync(bool enabled) override {};
 		bool IsVSync() const override { return false; };

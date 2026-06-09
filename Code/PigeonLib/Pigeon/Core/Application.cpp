@@ -16,6 +16,7 @@
 #include "Pigeon/Core/MouseScrolledEventComponent.h"
 #include "Pigeon/Core/ResourceManagerSystem.h"
 #include "Pigeon/Core/WindowCloseEventComponent.h"
+#include "Pigeon/Core/WindowConfigSystem.h"
 #include "Pigeon/Core/WindowResizeEventComponent.h"
 #include "Pigeon/ECS/World.h"
 #include "Pigeon/Events/ApplicationEvent.h"
@@ -167,6 +168,7 @@ void pg::Application::Init()
 	world.RegisterSystem(std::move(std::make_unique<pg::ResourceManagerSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pg::TransformComposeSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pg::TransformResolveSystem>()));
+	world.RegisterSystem(std::move(std::make_unique<pg::WindowConfigSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pg::ui::UIControlSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pg::ui::UIEventSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pg::ui::UIRenderSystem>()));

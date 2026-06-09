@@ -2,31 +2,13 @@
 #include "Pigeon/Core/ConfigLoaderSystem.h"
 
 #include "Pigeon/Core/Clock.h"
+#include "Pigeon/Core/EWindowMode.h"
 #include "Pigeon/Core/EngineConfigSingletonComponent.h"
+#include "Pigeon/Core/FileUtils.h"
 #include "Pigeon/ECS/World.h"
 
 namespace
 {
-	std::string ReadJSONFileToString(const std::string& filePath)
-	{
-		std::ifstream file(filePath);
-		if (!file.is_open()) {
-			PG_CORE_ASSERT(false, "Could not open file");
-			return "";
-		}
-
-		std::ostringstream ss;
-		ss << file.rdbuf();
-		file.close();
-		return ss.str();
-	}
-
-	bool FileExists(const std::string& filePath)
-	{
-		std::ifstream file(filePath);
-		return file.good();
-	}
-
 	// Applies any engine-config entries present in jsonObject onto component.
 	// Every field is optional: absent keys leave the existing value untouched, so
 	// the same routine seeds the base engine config and overlays the savedata
@@ -57,6 +39,18 @@ namespace
 		{
 			component.m_MusicVolume = jsonObject["musicVolume"].get<float>();
 		}
+		if (jsonObject.contains("windowWidth") && jsonObject["windowWidth"].is_number_unsigned())
+		{
+			component.m_WindowWidth = jsonObject["windowWidth"].get<unsigned int>();
+		}
+		if (jsonObject.contains("windowHeight") && jsonObject["windowHeight"].is_number_unsigned())
+		{
+			component.m_WindowHeight = jsonObject["windowHeight"].get<unsigned int>();
+		}
+		if (jsonObject.contains("windowMode") && jsonObject["windowMode"].is_string())
+		{
+			component.m_WindowMode = pg::WindowModeFromString(jsonObject["windowMode"].get<std::string>());
+		}
 	}
 }
 
@@ -81,7 +75,7 @@ void pg::ConfigLoaderSystem::Update(const pg::Timestep& ts)
 	{
 		pg::EngineConfigSingletonComponent component;
 		pg::ecs::Entity ent = accessor.Create();
-		std::string configStr = ReadJSONFileToString("Assets/Engine/Config.json");
+		std::string configStr = pg::ReadFileToString("Assets/Engine/Config.json");
 		json jsonObject = json::parse(configStr);
 
 		PG_CORE_EXCEPT(jsonObject.contains("defaultQuadShader") && jsonObject["defaultQuadShader"].is_string(), "Missing defaultQuadShader in engine config");
@@ -96,10 +90,13 @@ void pg::ConfigLoaderSystem::Update(const pg::Timestep& ts)
 		// the engine config values stand unchanged.
 		if (jsonObject.contains("savedataPath") && jsonObject["savedataPath"].is_string())
 		{
-			const std::string savedataConfigPath = jsonObject["savedataPath"].get<std::string>() + "/Config.json";
-			if (FileExists(savedataConfigPath))
+			// Record the savedata directory so the runtime knows where to persist config changes.
+			component.m_SavedataPath = jsonObject["savedataPath"].get<std::string>();
+
+			const std::string savedataConfigPath = component.m_SavedataPath + "/Config.json";
+			if (pg::FileExists(savedataConfigPath))
 			{
-				const json savedataJson = json::parse(ReadJSONFileToString(savedataConfigPath));
+				const json savedataJson = json::parse(pg::ReadFileToString(savedataConfigPath));
 				ApplyConfigEntries(component, savedataJson);
 			}
 		}

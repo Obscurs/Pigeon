@@ -20,6 +20,7 @@ main()  [EntryPoint.h]
                     ├── RegisterSystem(UIControlSystem)
                     ├── RegisterSystem(UIEventSystem)
                     ├── RegisterSystem(UIRenderSystem)
+                    ├── RegisterSystem(WindowConfigSystem)  (reaches the live Window via Application::Get())
                     ├── Renderer::Init()               (RendererAPI, RenderCommand setup)
                     ├── PushOverlay(ImGuiLayer)         [non-test builds only]
                     └── m_Initialized = true
@@ -77,7 +78,9 @@ Core
   ├── Application          boot sequence, layer stack, OS event bridge
   ├── ConfigLoaderSystem   Assets/Engine/Config.json (+ <savedataPath>/Config.json override)  →  EngineConfigSingletonComponent  (frame 1 only)
   ├── InputSystem          input event components  →  InputStateSingletonComponent
-  └── ResourceManagerSystem  manifests  →  ResourceMapSingletonComponent  (frame 1 only)
+  ├── ResourceManagerSystem  manifests  →  ResourceMapSingletonComponent  (frame 1 only)
+  └── WindowConfigSystem   EngineConfigSingletonComponent (window resolution/mode) + SetWindowResolutionRequest
+                             →  WindowConfigSingletonComponent; applies to the live Window + persists <savedataPath>/Config.json
                                 │
                                 ▼
 Audio
@@ -121,4 +124,7 @@ UI
 | `Code/PigeonLib/Pigeon/ECS/CheckedRegistryAccessor.h` | Accessor API — View, Get, EmplaceDeferred, EmplaceInframe, EmplaceEvent |
 | `Code/PigeonLib/Pigeon/ECS/System.h` | Base System class and SystemAccessDecl struct |
 | `Code/PigeonLib/Pigeon/Transform/` | Transform components (Position/Rotation/Scale/LocalBounds/WorldTransform), the resolve + compose systems, and the request types (ADR 0003) |
+| `Code/PigeonLib/Pigeon/Core/WindowConfigSystem.*` | Window resolution/mode: seeds + owns WindowConfigSingletonComponent, applies to the live Window, persists savedata Config.json (ADR 0004) |
+| `Code/PigeonLib/Pigeon/Core/FileUtils.*` | Shared text-file read/write/exists helpers used by the config loader and writer |
+| `Code/PigeonLib/Pigeon/Core/Window.h` | Abstract window — `ApplyWindowConfig(width, height, mode)` resizes / switches windowed↔borderless-fullscreen |
 | `Code/SandboxApp/Sandbox2D.cpp` | Entry point — CreateApplication() + client system registration |

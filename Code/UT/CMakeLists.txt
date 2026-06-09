@@ -30,6 +30,7 @@ set(SRC_SANDBOX_SYSTEMS
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/UICloseSystem.cpp"
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/UIElementHelpers.cpp"
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/UIStatusSystem.cpp"
+    "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/WindowDebugPanelSystem.cpp"
 )
 
 source_group("" FILES ${SRC_MAIN})

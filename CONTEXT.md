@@ -34,3 +34,13 @@
 | Voice Handle | A caller-assigned UUID identifying a voice. The app passes it in the play request and reuses it to pause, resume, or stop that specific voice. Music is a looping voice whose handle the app remembers. |
 | Audio Category | Whether a voice is a Sound (effect) or Music. Selects which category volume scales the voice. |
 | Volume (master / sound / music) | Mix levels seeded from `Config.json` into the engine config, then held live in `AudioVolumeSingletonComponent`. A voice's effective gain is master × category volume × the per-voice base volume. |
+
+## Window
+
+| Term | Meaning |
+|---|---|
+| Window Resolution | The client-area width/height of the OS window. Declared in `Config.json` (engine default) and overridable in the savedata `Config.json`, seeded into `EngineConfigSingletonComponent`, then held live in `WindowConfigSingletonComponent`. |
+| Window Mode | Whether the window is Windowed or Fullscreen (`pg::EWindowMode`). Fullscreen is **borderless windowed** — a borderless window sized to the primary monitor, not exclusive DXGI fullscreen. |
+| Window Config | The live window resolution + mode (`WindowConfigSingletonComponent`), seeded once from the engine config and updated by resolution requests. |
+| Set Window Resolution Request | An engine-typed one-frame request (`SetWindowResolutionRequestOneFrameComponent`) carrying a desired resolution + mode. The app emits it; the engine `WindowConfigSystem` applies it to the live window and persists it to the savedata `Config.json`. Like the audio request, it must be an engine (`pg`) type so the engine system can read it. |
+| Savedata Path | The directory (relative to the working dir) holding the override `Config.json`; declared by the `savedataPath` key in the engine config and recorded in `EngineConfigSingletonComponent.m_SavedataPath` so the runtime knows where to persist changes. |

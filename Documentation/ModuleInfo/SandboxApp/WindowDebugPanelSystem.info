@@ -1,0 +1,25 @@
+# WindowDebugPanelSystem
+
+## Purpose
+Renders an ImGui "Window" panel with a preset-resolution dropdown (1280x720, 1600x900, 1920x1080), a
+Windowed/Fullscreen radio, and an Apply button. The current live resolution + mode (from
+`WindowConfigSingletonComponent`) is shown and seeds the panel selection on first use. On Apply it emits
+a `SetWindowResolutionRequestOneFrameComponent` carrying the chosen resolution + mode so the engine
+`WindowConfigSystem` applies it to the live window and persists it to the savedata config. Returns early
+when the window-config singleton is absent or when no ImGui context exists (the Testing build pushes no
+ImGui layer).
+
+The in-progress panel selection (chosen preset + mode) is held in `WindowPanelSelectionSingletonComponent`,
+owned by this system and seeded once from the live window config — mirroring how `DebugPanelSystem` keeps
+its controls in a singleton. It is owned by the user between frames until Apply.
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| WindowConfigSingletonComponent | read | Shows the current resolution/mode and seeds the panel selection |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| WindowPanelSelectionSingletonComponent | write / add (deferred) | The panel's pending preset + mode; created once seeded from the live config, then updated in place |
+| SetWindowResolutionRequestOneFrameComponent | add (oneframe) | Emitted when Apply is pressed |
