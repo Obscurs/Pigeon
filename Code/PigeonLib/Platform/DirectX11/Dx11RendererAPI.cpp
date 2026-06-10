@@ -45,6 +45,22 @@ void pg::Dx11RendererAPI::Init()
     context->GetPd3dDeviceContext()->OMSetBlendState(pBlendState, blendFactor, 0xffffffff);
     context->GetPd3dDeviceContext()->OMSetDepthStencilState(pDepthStencilState, 0);
 
+    // Rasterizer with scissor enabled so the UI pass can mask clipped sub-trees; otherwise it matches the
+    // device-default raster (solid fill, back-face cull). The scissor rect is set to the full window each
+    // frame in Begin() and narrowed per clipped UI draw via SetScissor().
+    {
+        ID3D11RasterizerState* pRasterizerState = nullptr;
+        D3D11_RASTERIZER_DESC desc;
+        ZeroMemory(&desc, sizeof(desc));
+        desc.FillMode = D3D11_FILL_SOLID;
+        desc.CullMode = D3D11_CULL_BACK;
+        desc.FrontCounterClockwise = FALSE;
+        desc.DepthClipEnable = TRUE;
+        desc.ScissorEnable = TRUE;
+        context->GetPd3dDevice()->CreateRasterizerState(&desc, &pRasterizerState);
+        m_Data.m_RasterizerState.reset(pRasterizerState);
+    }
+
 	m_Data.m_Initialized = true;
 	CreateRenderTarget();
 }
@@ -104,6 +120,29 @@ void pg::Dx11RendererAPI::Begin()
 	viewport.MaxDepth = 1.0f;
 
 	context->GetPd3dDeviceContext()->RSSetViewports(1, &viewport);
+
+	// Bind our scissor-enabled rasterizer (ImGui may have swapped it) and reset the scissor to the full
+	// window so the world pass is unclipped; the UI pass narrows it per clipped sub-tree.
+	context->GetPd3dDeviceContext()->RSSetState(m_Data.m_RasterizerState.get());
+
+	D3D11_RECT scissor;
+	scissor.left = 0;
+	scissor.top = 0;
+	scissor.right = static_cast<LONG>(context->GetWidth());
+	scissor.bottom = static_cast<LONG>(context->GetHeight());
+	context->GetPd3dDeviceContext()->RSSetScissorRects(1, &scissor);
+}
+
+void pg::Dx11RendererAPI::SetScissor(int x, int y, int width, int height)
+{
+	auto context = static_cast<pg::Dx11Context*>(pg::Application::Get().GetWindow().GetGraphicsContext());
+
+	D3D11_RECT scissor;
+	scissor.left = static_cast<LONG>(x);
+	scissor.top = static_cast<LONG>(y);
+	scissor.right = static_cast<LONG>(x + width);
+	scissor.bottom = static_cast<LONG>(y + height);
+	context->GetPd3dDeviceContext()->RSSetScissorRects(1, &scissor);
 }
 
 void pg::Dx11RendererAPI::End()

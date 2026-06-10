@@ -20,6 +20,9 @@ namespace
 	const char* kHierRootUUID  = "11111111-1111-1111-1111-1111111111a0"; // UTControlHierarchy.json
 	const char* kHierMidUUID   = "11111111-1111-1111-1111-1111111111a1";
 	const char* kHierLeafUUID  = "11111111-1111-1111-1111-1111111111a2";
+	const char* kContainerUUID = "11111111-1111-1111-1111-1111111111b0"; // UTControlContainer.json
+	const char* kContChild0UUID = "11111111-1111-1111-1111-1111111111b1";
+	const char* kContChild1UUID = "11111111-1111-1111-1111-1111111111b2";
 
 	// UIControlSystem owns BaseComponent/ImageComponent/TextComponent: they are in its
 	// addSet, created only when the system parses a layout. A test must therefore not
@@ -98,19 +101,21 @@ namespace CatchTestsetFail
 
 		pg::ui::UIUpdateTransformOneFrameComponent& upd =
 			pg::World::GetRegistryDirect().emplace<pg::ui::UIUpdateTransformOneFrameComponent>(ent);
-		upd.m_Size    = { 300.f, 400.f };
-		upd.m_Spacing = { 15.f,  25.f  };
-		upd.m_HAlign  = pg::ui::EHAlignType::eLeft;
-		upd.m_VAlign  = pg::ui::EVAlignType::eBottom;
+		upd.m_AnchorMin        = { 0.1f, 0.2f };
+		upd.m_AnchorMax        = { 0.3f, 0.4f };
+		upd.m_Pivot            = { 0.5f, 0.6f };
+		upd.m_AnchoredPosition = { 15.f, 25.f };
+		upd.m_Size             = { 300.f, 400.f };
 
 		world.Update(pg::Timestep(0));
 
 		const pg::ui::BaseComponent& result =
 			pg::World::GetRegistryDirect().get<pg::ui::BaseComponent>(ent);
-		CHECK(result.m_Size    == glm::vec2(300.f, 400.f));
-		CHECK(result.m_Spacing == glm::vec2(15.f, 25.f));
-		CHECK(result.m_HAlign  == pg::ui::EHAlignType::eLeft);
-		CHECK(result.m_VAlign  == pg::ui::EVAlignType::eBottom);
+		CHECK(result.m_AnchorMin        == glm::vec2(0.1f, 0.2f));
+		CHECK(result.m_AnchorMax        == glm::vec2(0.3f, 0.4f));
+		CHECK(result.m_Pivot            == glm::vec2(0.5f, 0.6f));
+		CHECK(result.m_AnchoredPosition == glm::vec2(15.f, 25.f));
+		CHECK(result.m_Size             == glm::vec2(300.f, 400.f));
 	}
 
 	// ---------------------------------------------------------------------------
@@ -299,6 +304,70 @@ namespace CatchTestsetFail
 	}
 
 	// ---------------------------------------------------------------------------
+	// Happy path: a JSON node with a "layout" object yields a LayoutContainerComponent
+	// on the parent with the parsed fields, and its children receive sequential
+	// m_SiblingIndex values from their array order.
+	// ---------------------------------------------------------------------------
+	TEST_CASE("UI.UIControlSystem::ParsesLayoutContainerAndSiblingIndices")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ui::UIControlSystem>());
+
+		LoadLayout(world, "UTControlContainer.json");
+
+		pg::ecs::Entity parentEnt = FindBaseByUUID(kContainerUUID);
+		REQUIRE(pg::World::GetRegistryDirect().valid(parentEnt));
+		REQUIRE(pg::World::GetRegistryDirect().any_of<pg::ui::LayoutContainerComponent>(parentEnt));
+
+		const pg::ui::LayoutContainerComponent& container =
+			pg::World::GetRegistryDirect().get<pg::ui::LayoutContainerComponent>(parentEnt);
+		CHECK(container.m_Type == pg::ui::ELayoutType::eGrid);
+		CHECK(container.m_Columns == 3);
+		CHECK(container.m_Padding == glm::vec4(10.f, 12.f, 14.f, 16.f));
+		CHECK(container.m_Spacing == glm::vec2(5.f, 7.f));
+		CHECK(container.m_CellSize == glm::vec2(64.f, 48.f));
+
+		// The same node also declares a clip with a scroll offset.
+		REQUIRE(pg::World::GetRegistryDirect().any_of<pg::ui::UIClipComponent>(parentEnt));
+		const pg::ui::UIClipComponent& clip =
+			pg::World::GetRegistryDirect().get<pg::ui::UIClipComponent>(parentEnt);
+		CHECK(clip.m_ScrollOffset == glm::vec2(3.f, -9.f));
+
+		// Children take their sibling index from their order in the JSON children array.
+		pg::ecs::Entity child0 = FindBaseByUUID(kContChild0UUID);
+		pg::ecs::Entity child1 = FindBaseByUUID(kContChild1UUID);
+		REQUIRE(pg::World::GetRegistryDirect().valid(child0));
+		REQUIRE(pg::World::GetRegistryDirect().valid(child1));
+		CHECK(pg::World::GetRegistryDirect().get<pg::ui::BaseComponent>(child0).m_SiblingIndex == 0);
+		CHECK(pg::World::GetRegistryDirect().get<pg::ui::BaseComponent>(child1).m_SiblingIndex == 1);
+	}
+
+	// ---------------------------------------------------------------------------
+	// Happy path: UIUpdateClipOffsetOneFrameComponent drives the clip's scroll offset
+	// at runtime (so an app can scroll a clip view).
+	// ---------------------------------------------------------------------------
+	TEST_CASE("UI.UIControlSystem::UpdateClipOffsetApplied")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ui::UIControlSystem>());
+
+		LoadLayout(world, "UTControlContainer.json");
+		pg::ecs::Entity ent = FindBaseByUUID(kContainerUUID);
+		REQUIRE(pg::World::GetRegistryDirect().valid(ent));
+		REQUIRE(pg::World::GetRegistryDirect().any_of<pg::ui::UIClipComponent>(ent));
+
+		pg::ui::UIUpdateClipOffsetOneFrameComponent& upd =
+			pg::World::GetRegistryDirect().emplace<pg::ui::UIUpdateClipOffsetOneFrameComponent>(ent);
+		upd.m_ScrollOffset = { 40.f, -15.f };
+
+		world.Update(pg::Timestep(0));
+
+		const pg::ui::UIClipComponent& result =
+			pg::World::GetRegistryDirect().get<pg::ui::UIClipComponent>(ent);
+		CHECK(result.m_ScrollOffset == glm::vec2(40.f, -15.f));
+	}
+
+	// ---------------------------------------------------------------------------
 	// DeclareAccess: verify declared access contains expected component types
 	// ---------------------------------------------------------------------------
 	TEST_CASE("UI.UIControlSystem::DeclareAccessIsCorrect")
@@ -314,6 +383,7 @@ namespace CatchTestsetFail
 		CHECK(decl.readSet.count(std::type_index(typeid(pg::ui::UIUpdateUUIDOneFrameComponent))) > 0);
 		CHECK(decl.readSet.count(std::type_index(typeid(pg::ui::UIUpdateImageUUIDOneFrameComponent))) > 0);
 		CHECK(decl.readSet.count(std::type_index(typeid(pg::ui::UIUpdateTextOneFrameComponent))) > 0);
+		CHECK(decl.readSet.count(std::type_index(typeid(pg::ui::UIUpdateClipOffsetOneFrameComponent))) > 0);
 		CHECK(decl.readSet.count(std::type_index(typeid(pg::ui::LoadLayoutEvent))) > 0);
 		CHECK(decl.readSet.count(std::type_index(typeid(pg::ui::UIDestroyOneFrameComponent))) > 0);
 		CHECK(decl.readSet.count(std::type_index(typeid(pg::ui::BaseComponent))) > 0);
@@ -322,11 +392,14 @@ namespace CatchTestsetFail
 		CHECK(decl.writeSet.count(std::type_index(typeid(pg::ui::BaseComponent))) > 0);
 		CHECK(decl.writeSet.count(std::type_index(typeid(pg::ui::ImageComponent))) > 0);
 		CHECK(decl.writeSet.count(std::type_index(typeid(pg::ui::TextComponent))) > 0);
+		CHECK(decl.writeSet.count(std::type_index(typeid(pg::ui::UIClipComponent))) > 0);
 
-		// addSet must include BaseComponent, ImageComponent, TextComponent (deferred from JSON load)
+		// addSet must include BaseComponent, ImageComponent, TextComponent, LayoutContainerComponent (deferred from JSON load)
 		CHECK(decl.addSet.count(std::type_index(typeid(pg::ui::BaseComponent))) > 0);
 		CHECK(decl.addSet.count(std::type_index(typeid(pg::ui::ImageComponent))) > 0);
 		CHECK(decl.addSet.count(std::type_index(typeid(pg::ui::TextComponent))) > 0);
+		CHECK(decl.addSet.count(std::type_index(typeid(pg::ui::LayoutContainerComponent))) > 0);
+		CHECK(decl.addSet.count(std::type_index(typeid(pg::ui::UIClipComponent))) > 0);
 	}
 
 } // namespace CatchTestsetFail

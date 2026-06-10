@@ -1,0 +1,23 @@
+# UIScrollSystem
+
+## Purpose
+Scrolls the configured UI clip panel with the mouse wheel while the pointer is over it. Each frame, if a
+MouseScrolledEventComponent is present and a UIOnHoverOneFrameComponent targets the scroll panel (or any
+of its descendants), it accumulates the wheel delta into the panel's current UIClipComponent scroll
+offset (clamped to the scrollable range) and emits a UIUpdateClipOffsetOneFrameComponent so the engine
+applies it next frame. No-op when the config, the panel, or its UIClipComponent is absent, when there is
+no scroll this frame, or when the pointer is not over the panel.
+
+## Input Components
+| Component | Access |
+|---|---|
+| SandboxConfigSingletonComponent | read |
+| MouseScrolledEventComponent | read |
+| UIOnHoverOneFrameComponent | read |
+| BaseComponent | read |
+| UIClipComponent | read |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| UIUpdateClipOffsetOneFrameComponent | add (oneframe) | New absolute scroll offset for the panel; applied by UIControlSystem |

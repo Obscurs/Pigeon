@@ -30,6 +30,7 @@ set(SRC_SANDBOX_SYSTEMS
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/UIButtonVisualSystem.cpp"
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/UICloseSystem.cpp"
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/UIElementHelpers.cpp"
+    "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/UIScrollSystem.cpp"
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/UIStatusSystem.cpp"
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/WindowDebugPanelSystem.cpp"
 )

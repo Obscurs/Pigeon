@@ -1,11 +1,19 @@
 # UIEventSystem
 
 ## Purpose
-Performs hit-testing each frame. For every enabled UI entity, computes its world-space bounding
-box via recursive parent-chain traversal, then checks the current mouse position against it.
-Emits one-frame hover, click, and release events on matching entities. Each event carries the
-UUID of the hit entity so downstream systems can identify which element was interacted with
-without holding a pg::ecs::Entity handle.
+Performs hit-testing each frame and resolves the pointer to a single element (top-most input capture,
+ADR 0005). For every enabled UI entity it computes the logical-canvas rect via recursive parent-chain
+traversal and tests the mouse against it; the mouse arrives in window pixels and is converted into
+logical-canvas units (divided by the UI scale factor from RendererConfigSingletonComponent) first, so
+hit-testing matches rendering at any window resolution. Among all elements under the cursor it keeps
+only the front-most (greatest nesting depth, later iteration winning ties) and emits one-frame hover,
+click, and release events on that element only — never leaking to elements behind it. Each event
+carries the hit element's UUID.
+
+When the front-most element is interactive (carries an ImageComponent or TextComponent) it also raises
+an in-frame UIInputCapturedInFrameEvent so gameplay systems can ignore a pointer interaction that
+landed on UI; bare layout containers do not raise it, leaving gameplay pointer input working over empty
+UI areas.
 
 Guards on InputStateSingletonComponent and RendererConfigSingletonComponent presence; returns
 immediately if either is absent.
@@ -16,10 +24,13 @@ immediately if either is absent.
 | InputStateSingletonComponent | read |
 | RendererConfigSingletonComponent | read |
 | BaseComponent | read |
+| LayoutContainerComponent | read |
+| UIClipComponent | read |
 
 ## Output Components
 | Component | Access | Notes |
 |---|---|---|
-| UIOnHoverOneFrameComponent | add (oneframe) | Emitted when mouse position is inside the entity's world-space bounds |
-| UIOnClickOneFrameComponent | add (oneframe) | Emitted when left mouse button is pressed while hovering |
-| UIOnReleaseOneFrameComponent | add (oneframe) | Emitted when left mouse button is released while hovering; mutually exclusive with click per frame |
+| UIOnHoverOneFrameComponent | add (oneframe) | Emitted on the front-most element under the cursor |
+| UIOnClickOneFrameComponent | add (oneframe) | Emitted on the front-most element when the left mouse button is pressed while hovering |
+| UIOnReleaseOneFrameComponent | add (oneframe) | Emitted on the front-most element when the left mouse button is released while hovering; mutually exclusive with click per frame |
+| UIInputCapturedInFrameEvent | add (inframe) | Raised when the front-most element is interactive (image/text); signals gameplay that UI owns the pointer this frame |

@@ -42,6 +42,16 @@ namespace pg
 		std::vector<IndexBufferSetVerticesData> m_IndexBufferSetIndices;
 		std::vector<IndexBufferSetVerticesData> m_IndexBufferAppendIndices;
 
+		// Scissor rects (x, y, width, height) set via the RendererAPI this frame, in submission order.
+		struct ScissorData
+		{
+			int m_X = 0;
+			int m_Y = 0;
+			int m_Width = 0;
+			int m_Height = 0;
+		};
+		std::vector<ScissorData> m_Scissors;
+
 		float m_Vertices[20000];
 		uint32_t m_Indices[20000];
 	private:

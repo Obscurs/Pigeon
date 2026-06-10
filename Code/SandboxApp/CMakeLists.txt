@@ -36,6 +36,7 @@ file(GLOB SRCS
     "Sandbox/UICloseSystem.cpp"
     "Sandbox/UIElementHelpers.cpp"
     "Sandbox/UIElementHelpers.h"
+    "Sandbox/UIScrollSystem.cpp"
     "Sandbox/UIStatusSystem.cpp"
     "Sandbox/WindowDebugPanelSystem.cpp"
     "Sandbox/WindowDebugPanelSystem.h"

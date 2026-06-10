@@ -129,6 +129,29 @@ namespace CatchTestsetFail
 	}
 
 	// ---------------------------------------------------------------------------
+	// Happy path: loaded config exposes a positive UI reference (canvas) resolution
+	// and a match factor within the valid [0,1] range (defaults when keys absent).
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Core.ConfigLoaderSystem::LoadedConfigHasUICanvasParams")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ConfigLoaderSystem>());
+
+		world.Update(pg::Timestep(0));
+
+		auto view = pg::World::GetRegistryDirect().view<pg::EngineConfigSingletonComponent>();
+		REQUIRE(view.size() == 1);
+
+		const pg::EngineConfigSingletonComponent& cfg =
+			view.get<pg::EngineConfigSingletonComponent>(view.front());
+
+		CHECK(cfg.m_UIReferenceWidth > 0.f);
+		CHECK(cfg.m_UIReferenceHeight > 0.f);
+		CHECK(cfg.m_UIMatchFactor >= 0.f);
+		CHECK(cfg.m_UIMatchFactor <= 1.f);
+	}
+
+	// ---------------------------------------------------------------------------
 	// Savedata override: the savedata window width wins over the engine config
 	// value, mirroring the audio-volume override semantics.
 	// ---------------------------------------------------------------------------

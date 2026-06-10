@@ -22,6 +22,15 @@ namespace
 		return ss.str();
 	}
 
+	glm::vec2 ParseVec2(const json& arr, const glm::vec2& fallback)
+	{
+		if (arr.is_array() && arr.size() == 2 && arr[0].is_number() && arr[1].is_number())
+		{
+			return glm::vec2(arr[0].get<float>(), arr[1].get<float>());
+		}
+		return fallback;
+	}
+
 	void DestroyUI(pg::CheckedRegistryAccessor& accessor, pg::ecs::Entity ent)
 	{
 		std::vector<pg::ecs::Entity> children = pg::ui::GetUIChildrenForElement(accessor, ent);
@@ -39,6 +48,14 @@ namespace
 		{
 			PG_CORE_EXCEPT(jsonObject["id"].is_string(), "unable to parse json, image id is not a string");
 			component.m_TextureHandle = pg::UUID(jsonObject["id"].get<std::string>());
+		}
+		if (jsonObject.contains("border"))
+		{
+			const json& border = jsonObject["border"];
+			if (border.is_array() && border.size() == 4 && border[0].is_number() && border[1].is_number() && border[2].is_number() && border[3].is_number())
+			{
+				component.m_NineSliceBorder = glm::vec4(border[0].get<float>(), border[1].get<float>(), border[2].get<float>(), border[3].get<float>());
+			}
 		}
 
 		accessor.EmplaceDeferred<pg::ui::ImageComponent>(ent, std::move(component));
@@ -87,10 +104,57 @@ namespace
 			PG_CORE_EXCEPT(jsonObject["font"].is_string(), "unable to parse json, font is not a string");
 			component.m_FontID = pg::UUID(jsonObject["font"].get<std::string>());
 		}
+		if (jsonObject.contains("align_h") && jsonObject["align_h"].is_string())
+		{
+			const std::string alignStr = jsonObject["align_h"].get<std::string>();
+			if (alignStr == "left")        component.m_HAlign = pg::ui::EHAlignType::eLeft;
+			else if (alignStr == "right")  component.m_HAlign = pg::ui::EHAlignType::eRight;
+			else if (alignStr == "center") component.m_HAlign = pg::ui::EHAlignType::eCenter;
+		}
+		if (jsonObject.contains("align_v") && jsonObject["align_v"].is_string())
+		{
+			const std::string alignStr = jsonObject["align_v"].get<std::string>();
+			if (alignStr == "top")         component.m_VAlign = pg::ui::EVAlignType::eTop;
+			else if (alignStr == "bottom") component.m_VAlign = pg::ui::EVAlignType::eBottom;
+			else if (alignStr == "center") component.m_VAlign = pg::ui::EVAlignType::eCenter;
+		}
 		accessor.EmplaceDeferred<pg::ui::TextComponent>(ent, std::move(component));
 	}
 
-	void ParseJsonUIElement(pg::CheckedRegistryAccessor& accessor, const json& jsonObject, pg::ecs::Entity parent)
+	void ParseLayoutContainerFromJson(pg::CheckedRegistryAccessor& accessor, const json& jsonObject, pg::ecs::Entity ent)
+	{
+		pg::ui::LayoutContainerComponent container;
+		if (jsonObject.contains("type") && jsonObject["type"].is_string())
+		{
+			const std::string type = jsonObject["type"].get<std::string>();
+			if (type == "vertical")        container.m_Type = pg::ui::ELayoutType::eVertical;
+			else if (type == "horizontal") container.m_Type = pg::ui::ELayoutType::eHorizontal;
+			else if (type == "grid")       container.m_Type = pg::ui::ELayoutType::eGrid;
+		}
+		if (jsonObject.contains("padding"))
+		{
+			const json& padding = jsonObject["padding"];
+			if (padding.is_array() && padding.size() == 4 && padding[0].is_number() && padding[1].is_number() && padding[2].is_number() && padding[3].is_number())
+			{
+				container.m_Padding = glm::vec4(padding[0].get<float>(), padding[1].get<float>(), padding[2].get<float>(), padding[3].get<float>());
+			}
+		}
+		if (jsonObject.contains("spacing"))
+		{
+			container.m_Spacing = ParseVec2(jsonObject["spacing"], container.m_Spacing);
+		}
+		if (jsonObject.contains("columns") && jsonObject["columns"].is_number_integer())
+		{
+			container.m_Columns = jsonObject["columns"].get<int>();
+		}
+		if (jsonObject.contains("cellSize"))
+		{
+			container.m_CellSize = ParseVec2(jsonObject["cellSize"], container.m_CellSize);
+		}
+		accessor.EmplaceDeferred<pg::ui::LayoutContainerComponent>(ent, std::move(container));
+	}
+
+	void ParseJsonUIElement(pg::CheckedRegistryAccessor& accessor, const json& jsonObject, pg::ecs::Entity parent, int siblingIndex)
 	{
 		if (jsonObject.contains("ui") && jsonObject["ui"].is_object())
 		{
@@ -98,62 +162,29 @@ namespace
 			pg::ecs::Entity ent = accessor.Create();
 			pg::ui::BaseComponent baseComp;
 			baseComp.m_Parent = parent;
+			baseComp.m_SiblingIndex = siblingIndex;
 
-			if (jsonObject.contains("width"))
+			// Anchor-rect layout: all fields optional, [x, y] arrays; absent keys keep the
+			// component defaults (a top-left point anchor).
+			if (jsonObject.contains("anchorMin"))
 			{
-				PG_CORE_EXCEPT(jsonObject["width"].is_number(), "unable to parse json, width is not a number");
-				baseComp.m_Size.x = jsonObject["width"].get<float>();
+				baseComp.m_AnchorMin = ParseVec2(jsonObject["anchorMin"], baseComp.m_AnchorMin);
 			}
-			if (jsonObject.contains("height"))
+			if (jsonObject.contains("anchorMax"))
 			{
-				PG_CORE_EXCEPT(jsonObject["height"].is_number(), "unable to parse json, height is not a number");
-				baseComp.m_Size.y = jsonObject["height"].get<float>();
+				baseComp.m_AnchorMax = ParseVec2(jsonObject["anchorMax"], baseComp.m_AnchorMax);
 			}
-			if (jsonObject.contains("spacing_x"))
+			if (jsonObject.contains("pivot"))
 			{
-				PG_CORE_EXCEPT(jsonObject["spacing_x"].is_number(), "unable to parse json, spacing_x is not a number");
-				baseComp.m_Spacing.x = jsonObject["spacing_x"].get<float>();
+				baseComp.m_Pivot = ParseVec2(jsonObject["pivot"], baseComp.m_Pivot);
 			}
-			if (jsonObject.contains("spacing_y"))
+			if (jsonObject.contains("anchoredPosition"))
 			{
-				PG_CORE_EXCEPT(jsonObject["spacing_y"].is_number(), "unable to parse json, spacing_y is not a number");
-				baseComp.m_Spacing.y = jsonObject["spacing_y"].get<float>();
+				baseComp.m_AnchoredPosition = ParseVec2(jsonObject["anchoredPosition"], baseComp.m_AnchoredPosition);
 			}
-
-			if (jsonObject.contains("alignment_h"))
+			if (jsonObject.contains("size"))
 			{
-				PG_CORE_EXCEPT(jsonObject["alignment_h"].is_string(), "unable to parse json, alignment_h is not a string");
-				std::string alignmentStr = jsonObject["alignment_h"].get<std::string>();
-				if (alignmentStr == "left")
-				{
-					baseComp.m_HAlign = pg::ui::EHAlignType::eLeft;
-				}
-				else if (alignmentStr == "right")
-				{
-					baseComp.m_HAlign = pg::ui::EHAlignType::eRight;
-				}
-				else if (alignmentStr == "center")
-				{
-					baseComp.m_HAlign = pg::ui::EHAlignType::eCenter;
-				}
-			}
-
-			if (jsonObject.contains("alignment_v"))
-			{
-				PG_CORE_EXCEPT(jsonObject["alignment_v"].is_string(), "unable to parse json, alignment_v is not a string");
-				std::string alignmentStr = jsonObject["alignment_v"].get<std::string>();
-				if (alignmentStr == "top")
-				{
-					baseComp.m_VAlign = pg::ui::EVAlignType::eTop;
-				}
-				else if (alignmentStr == "bottom")
-				{
-					baseComp.m_VAlign = pg::ui::EVAlignType::eBottom;
-				}
-				else if (alignmentStr == "center")
-				{
-					baseComp.m_VAlign = pg::ui::EVAlignType::eCenter;
-				}
+				baseComp.m_Size = ParseVec2(jsonObject["size"], baseComp.m_Size);
 			}
 
 			if (jsonObject.contains("uuid"))
@@ -163,12 +194,29 @@ namespace
 
 			accessor.EmplaceDeferred<pg::ui::BaseComponent>(ent, std::move(baseComp));
 
+			if (jsonObject.contains("layout") && jsonObject["layout"].is_object())
+			{
+				ParseLayoutContainerFromJson(accessor, jsonObject["layout"], ent);
+			}
+
+			if (jsonObject.contains("clip") && jsonObject["clip"].is_object())
+			{
+				pg::ui::UIClipComponent clip;
+				if (jsonObject["clip"].contains("scrollOffset"))
+				{
+					clip.m_ScrollOffset = ParseVec2(jsonObject["clip"]["scrollOffset"], clip.m_ScrollOffset);
+				}
+				accessor.EmplaceDeferred<pg::ui::UIClipComponent>(ent, std::move(clip));
+			}
+
 			if (jsonObject.contains("children"))
 			{
 				PG_CORE_EXCEPT(jsonObject["children"].is_array(), "unable to parse json, children is not a array");
+				int childIndex = 0;
 				for (json child : jsonObject["children"])
 				{
-					ParseJsonUIElement(accessor, child, ent);
+					ParseJsonUIElement(accessor, child, ent, childIndex);
+					++childIndex;
 				}
 			}
 
@@ -188,7 +236,7 @@ namespace
 			std::string path = jsonObject["uiFile"].get<std::string>();
 			const std::string jsonLoadedString = ReadFileToString(path);
 			json jsonLoadedObject = json::parse(jsonLoadedString);
-			ParseJsonUIElement(accessor, jsonLoadedObject, parent);
+			ParseJsonUIElement(accessor, jsonLoadedObject, parent, siblingIndex);
 		}
 	}
 
@@ -198,7 +246,7 @@ namespace
 		const std::string jsonString = ReadFileToString(resourcesComponent.m_UILayoutMap.at(layoutID));
 		json jsonObject = json::parse(jsonString);
 		auto accessor = pg::World::GetRegistry();
-		ParseJsonUIElement(accessor, jsonObject, pg::ecs::null);
+		ParseJsonUIElement(accessor, jsonObject, pg::ecs::null, 0);
 	}
 
 	void LoadLayoutFromFile(const std::string& path)
@@ -206,7 +254,7 @@ namespace
 		const std::string jsonString = ReadFileToString(path);
 		json jsonObject = json::parse(jsonString);
 		auto accessor = pg::World::GetRegistry();
-		ParseJsonUIElement(accessor, jsonObject, pg::ecs::null);
+		ParseJsonUIElement(accessor, jsonObject, pg::ecs::null, 0);
 	}
 
 	
@@ -225,6 +273,7 @@ pg::SystemAccessDecl pg::ui::UIControlSystem::DeclareAccess() const
 		std::type_index(typeid(pg::ui::UIUpdateUUIDOneFrameComponent)),
 		std::type_index(typeid(pg::ui::UIUpdateImageUUIDOneFrameComponent)),
 		std::type_index(typeid(pg::ui::UIUpdateTextOneFrameComponent)),
+		std::type_index(typeid(pg::ui::UIUpdateClipOffsetOneFrameComponent)),
 		std::type_index(typeid(pg::ui::LoadLayoutEvent)),
 		std::type_index(typeid(pg::ui::UIDestroyOneFrameComponent)),
 		std::type_index(typeid(pg::ui::BaseComponent)),
@@ -235,17 +284,21 @@ pg::SystemAccessDecl pg::ui::UIControlSystem::DeclareAccess() const
 		std::type_index(typeid(pg::ui::BaseComponent)),
 		std::type_index(typeid(pg::ui::ImageComponent)),
 		std::type_index(typeid(pg::ui::TextComponent)),
+		std::type_index(typeid(pg::ui::UIClipComponent)),
 		std::type_index(typeid(pg::ui::UIUpdateTransformOneFrameComponent)),
 		std::type_index(typeid(pg::ui::UIUpdateParentOneFrameComponent)),
 		std::type_index(typeid(pg::ui::UIUpdateEnableOneFrameComponent)),
 		std::type_index(typeid(pg::ui::UIUpdateUUIDOneFrameComponent)),
 		std::type_index(typeid(pg::ui::UIUpdateImageUUIDOneFrameComponent)),
 		std::type_index(typeid(pg::ui::UIUpdateTextOneFrameComponent)),
+		std::type_index(typeid(pg::ui::UIUpdateClipOffsetOneFrameComponent)),
 	};
 	decl.addSet = {
 		std::type_index(typeid(pg::ui::BaseComponent)),
 		std::type_index(typeid(pg::ui::ImageComponent)),
 		std::type_index(typeid(pg::ui::TextComponent)),
+		std::type_index(typeid(pg::ui::LayoutContainerComponent)),
+		std::type_index(typeid(pg::ui::UIClipComponent)),
 	};
 	return decl;
 }
@@ -266,10 +319,11 @@ void pg::ui::UIControlSystem::Update(const pg::Timestep& ts)
 	{
 		pg::ui::BaseComponent& baseComponent = viewTransform.get<pg::ui::BaseComponent>(ent);
 		const pg::ui::UIUpdateTransformOneFrameComponent& updateComponent = viewTransform.get<const pg::ui::UIUpdateTransformOneFrameComponent>(ent);
-		baseComponent.m_HAlign = updateComponent.m_HAlign;
-		baseComponent.m_VAlign = updateComponent.m_VAlign;
+		baseComponent.m_AnchorMin = updateComponent.m_AnchorMin;
+		baseComponent.m_AnchorMax = updateComponent.m_AnchorMax;
+		baseComponent.m_Pivot = updateComponent.m_Pivot;
+		baseComponent.m_AnchoredPosition = updateComponent.m_AnchoredPosition;
 		baseComponent.m_Size = updateComponent.m_Size;
-		baseComponent.m_Spacing = updateComponent.m_Spacing;
 	}
 
 	auto viewParent = accessor.View<pg::ui::BaseComponent, const pg::ui::UIUpdateParentOneFrameComponent>();
@@ -294,6 +348,14 @@ void pg::ui::UIControlSystem::Update(const pg::Timestep& ts)
 		pg::ui::BaseComponent& baseComponent = viewUUID.get<pg::ui::BaseComponent>(ent);
 		const pg::ui::UIUpdateUUIDOneFrameComponent& updateComponent = viewUUID.get<const pg::ui::UIUpdateUUIDOneFrameComponent>(ent);
 		baseComponent.m_UUID = updateComponent.m_UUID;
+	}
+
+	auto viewClipOffset = accessor.View<pg::ui::UIClipComponent, const pg::ui::UIUpdateClipOffsetOneFrameComponent>();
+	for (auto ent : viewClipOffset)
+	{
+		pg::ui::UIClipComponent& clipComponent = viewClipOffset.get<pg::ui::UIClipComponent>(ent);
+		const pg::ui::UIUpdateClipOffsetOneFrameComponent& updateComponent = viewClipOffset.get<const pg::ui::UIUpdateClipOffsetOneFrameComponent>(ent);
+		clipComponent.m_ScrollOffset = updateComponent.m_ScrollOffset;
 	}
 
 	auto viewImage = accessor.View<pg::ui::ImageComponent, const pg::ui::UIUpdateImageUUIDOneFrameComponent>();

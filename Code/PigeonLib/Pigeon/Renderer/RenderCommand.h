@@ -21,6 +21,11 @@ namespace pg
 			s_RendererAPI->SetViewport(x, y, width, height);
 		}
 
+		inline static void SetScissor(int x, int y, int width, int height)
+		{
+			s_RendererAPI->SetScissor(x, y, width, height);
+		}
+
 		inline static void SetClearColor(const glm::vec4& color)
 		{
 			s_RendererAPI->SetClearColor(color);

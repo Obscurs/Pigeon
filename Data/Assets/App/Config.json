@@ -9,6 +9,7 @@
 	"statusText": "a1000000-0000-4000-8000-000000000003",
 	"closeButton": "a1000000-0000-4000-8000-000000000004",
 	"closeTarget": "a1000000-0000-4000-8000-000000000005",
+	"scrollPanel": "d3000000-0000-4000-8000-000000000001",
 	"buttonImage": "989d3ba6-0062-4cf2-bab5-1c6de7ea2da3",
 	"buttonHoverImage": "c5ceb129-c518-4048-9856-a26e00f2676a",
 	"buttonPressedImage": "132fdaf4-2f53-48a9-aed0-a803c503ca07",

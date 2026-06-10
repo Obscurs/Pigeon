@@ -18,5 +18,9 @@ namespace pg
 		glm::vec4 m_Color{ 0.f, 0.f, 0.f, 0.f };
 		float m_Kerning = 0.f;
 		float m_Linespacing = 0.f;
+
+		// Scissor rect in window pixels (x, y, width, height) the draw is masked to; set by UIRenderSystem
+		// to the element's effective clip rect, or the full window when unclipped.
+		glm::vec4 m_ClipRect { 0.f, 0.f, 0.f, 0.f };
 	};
 }

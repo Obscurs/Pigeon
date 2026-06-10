@@ -1,6 +1,9 @@
 {
-  "width": 1.2,
-  "height": 2.3,
+  "anchorMin": [0, 0],
+  "anchorMax": [0, 0],
+  "pivot": [0, 0],
+  "anchoredPosition": [0, 0],
+  "size": [400, 50],
   "uuid": "11111111-1111-1111-1111-111111111102",
   "ui": {
     "text": {

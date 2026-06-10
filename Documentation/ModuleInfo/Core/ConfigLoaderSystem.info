@@ -4,9 +4,12 @@
 One-shot initialization system. On the first frame, reads `Assets/Engine/Config.json` and creates
 EngineConfigSingletonComponent with the UUIDs of the default quad shader, text shader, and font, plus
 the master/sound/music audio volumes and the default window resolution + display mode (`windowWidth`,
-`windowHeight`, `windowMode` — optional keys; default to `1280x720` windowed when absent).
-No-op on all subsequent frames (presence check guards early exit). File reads go through the shared
-`pg::FileUtils` helpers (also used by `WindowConfigSystem` when it persists changes).
+`windowHeight`, `windowMode` — optional keys; default to `1280x720` windowed when absent). It also
+reads the UI canvas parameters (`uiReferenceWidth`, `uiReferenceHeight`, `uiMatchFactor` — optional;
+default to `1920x1080` reference with a `0.5` match factor when absent), which seed the live UI canvas
+in `UIRenderSystem` (ADR 0005). No-op on all subsequent frames (presence check guards early exit).
+File reads go through the shared `pg::FileUtils` helpers (also used by `WindowConfigSystem` when it
+persists changes).
 
 ## Savedata Override
 The engine config may declare a `savedataPath` entry pointing at the SaveData folder (a sibling of
@@ -27,4 +30,4 @@ survive without editing the shipped engine config.
 ## Output Components
 | Component | Access | Notes |
 |---|---|---|
-| EngineConfigSingletonComponent | add (deferred) | Created once from Config.json; contains default shader and font UUIDs, master/sound/music volumes, default window resolution + mode, and the savedata path |
+| EngineConfigSingletonComponent | add (deferred) | Created once from Config.json; contains default shader and font UUIDs, master/sound/music volumes, default window resolution + mode, UI reference resolution + match factor, and the savedata path |

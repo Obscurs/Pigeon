@@ -104,16 +104,22 @@ Renderer
   ├── CameraSystem         KeyPressedEvent + ScrollEvent + ResizeEvent + PositionComponent
   │                          →  OrthographicCameraComponent + CameraTransformRequest (pan)
   └── Renderer2DSystem
-        reads:  OrthographicCameraComponent, EngineConfigSingletonComponent,
-                ResourceMapSingletonComponent, Draw*InFrameEvent
-        writes: RendererDataSingletonComponent → GPU draw calls, world draws Y-sorted, UI on top
+        reads:  OrthographicCameraComponent (gameplay cam), UICameraSingletonComponent (screen-space UI cam),
+                EngineConfigSingletonComponent, ResourceMapSingletonComponent, Draw*InFrameEvent
+        writes: RendererDataSingletonComponent → GPU draw calls; world pass (Y-sorted, gameplay cam),
+                then UI pass (UI cam, always on top)
                                 ▲
-                                │ (emits DrawUI*InFrameEvent)
-UI
-  ├── UIControlSystem      mutation commands  →  BaseComponent, ImageComponent, TextComponent
-  ├── UIEventSystem        InputStateSingletonComponent  →  UIOn*OneFrameComponent (hit-test results)
-  └── UIRenderSystem       BaseComponent + ImageComponent/TextComponent
-                             →  DrawUIQuadInFrameEvent, DrawUIStringInFrameEvent
+                                │ (emits DrawUI*InFrameEvent + UICameraSingletonComponent)
+UI  (canvas authored against a reference resolution; scaled to the window per ADR 0005)
+  ├── UIControlSystem      mutation commands + JSON layouts  →  BaseComponent, ImageComponent, TextComponent, LayoutContainerComponent, UIClipComponent
+  ├── UIEventSystem        InputStateSingletonComponent + RendererConfigSingletonComponent (scale factor)
+  │                          →  UIOn*OneFrameComponent (front-most element only, hit-test in logical-canvas units)
+  │                          →  UIInputCapturedInFrameEvent (gameplay pointer-capture signal over interactive UI)
+  └── UIRenderSystem       EngineConfigSingletonComponent + WindowResizeEventComponent + BaseComponent
+                             + ImageComponent/TextComponent
+                             →  RendererConfigSingletonComponent (live canvas: scale factor + logical size),
+                                UICameraSingletonComponent (screen-space UI camera),
+                                DrawUIQuadInFrameEvent, DrawUIStringInFrameEvent
 ```
 
 ## Key Files

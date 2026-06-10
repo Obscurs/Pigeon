@@ -15,6 +15,7 @@
 #include "Pigeon/Renderer/RenderCommand.h"
 #include "Pigeon/Renderer/RendererDataSingletonComponent.h"
 #include "Pigeon/Renderer/Texture.h"
+#include "Pigeon/Renderer/UICameraSingletonComponent.h"
 
 #include <algorithm>
 #include <memory>
@@ -125,6 +126,7 @@ namespace
 		float m_Vertices[pg::VERTEX_ATRIB_COUNT * pg::QUAD_VERTEX_COUNT];
 		pg::UUID m_TextureID;
 		float m_SortKey = 0.f;
+		glm::vec4 m_ClipRect{ 0.f, 0.f, 0.f, 0.f };  // window-pixel scissor rect; applied only in the UI pass
 	};
 
 	void FlushBatch(pg::RendererDataSingletonComponent& rendererDataComponent, const pg::ResourceMapSingletonComponent& resourcesComponent, pg::RendererDataSingletonComponent::BatchData& batch, const pg::UUID& textureID)
@@ -158,7 +160,14 @@ namespace
 	// Draws items strictly in list order, merging runs of the same texture into one draw call and
 	// flushing whenever the texture changes or the batch fills. Order in equals draw order out, so the
 	// caller controls layering by ordering the list.
-	void DrawOrderedItems(pg::RendererDataSingletonComponent& rendererDataComponent, const pg::ResourceMapSingletonComponent& resourcesComponent, const std::vector<DrawItem>& items)
+	// Applies the item's clip rect as a window-pixel scissor; used in the UI pass so a clip change flushes
+	// the current batch and narrows the scissor, exactly like a texture change.
+	void ApplyScissor(const glm::vec4& clipRect)
+	{
+		pg::RenderCommand::SetScissor(static_cast<int>(clipRect.x), static_cast<int>(clipRect.y), static_cast<int>(clipRect.z), static_cast<int>(clipRect.w));
+	}
+
+	void DrawOrderedItems(pg::RendererDataSingletonComponent& rendererDataComponent, const pg::ResourceMapSingletonComponent& resourcesComponent, const std::vector<DrawItem>& items, bool applyScissor)
 	{
 		if (items.empty())
 		{
@@ -166,13 +175,24 @@ namespace
 		}
 		std::unique_ptr<pg::RendererDataSingletonComponent::BatchData> batch = std::make_unique<pg::RendererDataSingletonComponent::BatchData>();
 		pg::UUID currentTexture = items.front().m_TextureID;
+		glm::vec4 currentClip = items.front().m_ClipRect;
+		if (applyScissor)
+		{
+			ApplyScissor(currentClip);
+		}
 		for (const DrawItem& item : items)
 		{
 			const bool batchFull = batch->m_IndexCount >= pg::BATCH_MAX_COUNT * pg::QUAD_INDEX_COUNT;
-			if (item.m_TextureID != currentTexture || batchFull)
+			const bool clipChanged = applyScissor && item.m_ClipRect != currentClip;
+			if (item.m_TextureID != currentTexture || batchFull || clipChanged)
 			{
 				FlushBatch(rendererDataComponent, resourcesComponent, *batch, currentTexture);
 				currentTexture = item.m_TextureID;
+				if (clipChanged)
+				{
+					currentClip = item.m_ClipRect;
+					ApplyScissor(currentClip);
+				}
 			}
 			const unsigned int vertexOffset = batch->m_VertexCount * pg::VERTEX_ATRIB_COUNT;
 			memcpy(&batch->m_VertexBuffer[vertexOffset], item.m_Vertices, pg::VERTEX_ATRIB_COUNT * pg::QUAD_VERTEX_COUNT * sizeof(float));
@@ -188,7 +208,7 @@ namespace
 
 	// Builds a quad's transformed vertices and appends it as a draw item. The translation z is dropped:
 	// this is a 2D renderer, depth never affects geometry — world draw order comes from m_SortKey.
-	void AppendQuad(std::vector<DrawItem>& items, const pg::ResourceMapSingletonComponent& resourcesComponent, const glm::mat4& transform, const glm::vec4& color, const pg::UUID& textureID, const glm::vec4& texCoordsRect, const glm::vec3& origin, float sortKey)
+	void AppendQuad(std::vector<DrawItem>& items, const pg::ResourceMapSingletonComponent& resourcesComponent, const glm::mat4& transform, const glm::vec4& color, const pg::UUID& textureID, const glm::vec4& texCoordsRect, const glm::vec3& origin, float sortKey, const glm::vec4& clipRect)
 	{
 		if (resourcesComponent.m_TextureMap.find(textureID) == resourcesComponent.m_TextureMap.end())
 		{
@@ -203,10 +223,11 @@ namespace
 		memcpy(item.m_Vertices, quad.m_SquareVertices, pg::VERTEX_ATRIB_COUNT * pg::QUAD_VERTEX_COUNT * sizeof(float));
 		item.m_TextureID = textureID;
 		item.m_SortKey = sortKey;
+		item.m_ClipRect = clipRect;
 		items.push_back(item);
 	}
 
-	void AppendString(std::vector<DrawItem>& items, const pg::ResourceMapSingletonComponent& resourcesComponent, const glm::mat4& transform, const std::string& string, pg::S_Ptr<pg::Font> font, const glm::vec4& color, float kerning, float linespacing, float sortKey)
+	void AppendString(std::vector<DrawItem>& items, const pg::ResourceMapSingletonComponent& resourcesComponent, const glm::mat4& transform, const std::string& string, pg::S_Ptr<pg::Font> font, const glm::vec4& color, float kerning, float linespacing, float sortKey, const glm::vec4& clipRect)
 	{
 		const pg::Texture2D& fontAtlas = GetTexture(resourcesComponent, font->GetFontID());
 
@@ -226,7 +247,7 @@ namespace
 				const glm::vec4 charQuad = font->GetCharacterVertexQuad(character, charOffset);
 				const glm::mat4 charTransform = font->GetCharacterTransform(charQuad, flatTransform);
 
-				AppendQuad(items, resourcesComponent, charTransform, color, font->GetFontID(), texCoords, originSprite, sortKey);
+				AppendQuad(items, resourcesComponent, charTransform, color, font->GetFontID(), texCoords, originSprite, sortKey, clipRect);
 			}
 
 			if (font->IsCharacterNewLine(character))
@@ -262,18 +283,18 @@ namespace
 		}
 	}
 
-	void ProcessRenderRequests(pg::CheckedRegistryAccessor& accessor, pg::RendererDataSingletonComponent& rendererDataComponent, const pg::ResourceMapSingletonComponent& resourcesComponent)
+	// Collects every in-frame draw request into two ordered lists: world items (Y-sorted) and UI items
+	// (ordered by their packed nesting level). The two lists are drawn in separate passes so UI can use
+	// the screen-space UI camera and always render on top of the world.
+	void CollectDrawItems(pg::CheckedRegistryAccessor& accessor, const pg::ResourceMapSingletonComponent& resourcesComponent, std::vector<DrawItem>& worldItems, std::vector<DrawItem>& uiItems)
 	{
-		std::vector<DrawItem> worldItems;
-		std::vector<DrawItem> uiItems;
-
 		auto viewDrawQuad = accessor.View<const pg::DrawQuadInFrameEvent>();
 		for (auto ent : viewDrawQuad)
 		{
 			const pg::DrawQuadInFrameEvent& event = viewDrawQuad.get<const pg::DrawQuadInFrameEvent>(ent);
 			const pg::UUID textureID = event.m_TextureID.IsNull() ? resourcesComponent.m_DefaultTexture : event.m_TextureID;
 			const glm::vec4 color = event.m_TextureID.IsNull() ? glm::vec4(event.m_Color, 1.f) : glm::vec4(1.f);
-			AppendQuad(worldItems, resourcesComponent, event.m_Transform, color, textureID, glm::vec4(0.f, 0.f, 1.f, 1.f), event.m_Origin, event.m_SortKey);
+			AppendQuad(worldItems, resourcesComponent, event.m_Transform, color, textureID, glm::vec4(0.f, 0.f, 1.f, 1.f), event.m_Origin, event.m_SortKey, glm::vec4(0.f));
 		}
 
 		auto viewDrawSprite = accessor.View<const pg::DrawSpriteInFrameEvent>();
@@ -281,14 +302,14 @@ namespace
 		{
 			const pg::DrawSpriteInFrameEvent& event = viewDrawSprite.get<const pg::DrawSpriteInFrameEvent>(ent);
 			const pg::Sprite& sprite = event.m_Sprite;
-			AppendQuad(worldItems, resourcesComponent, sprite.GetTransform(), glm::vec4(1.f), sprite.GetTextureID(), sprite.GetTexCoordsRect(), sprite.GetOrigin(), event.m_SortKey);
+			AppendQuad(worldItems, resourcesComponent, sprite.GetTransform(), glm::vec4(1.f), sprite.GetTextureID(), sprite.GetTexCoordsRect(), sprite.GetOrigin(), event.m_SortKey, glm::vec4(0.f));
 		}
 
 		auto viewDrawString = accessor.View<const pg::DrawStringInFrameEvent>();
 		for (auto ent : viewDrawString)
 		{
 			const pg::DrawStringInFrameEvent& event = viewDrawString.get<const pg::DrawStringInFrameEvent>(ent);
-			AppendString(worldItems, resourcesComponent, event.m_Transform, event.m_String, event.m_Font, event.m_Color, event.m_Kerning, event.m_Linespacing, event.m_SortKey);
+			AppendString(worldItems, resourcesComponent, event.m_Transform, event.m_String, event.m_Font, event.m_Color, event.m_Kerning, event.m_Linespacing, event.m_SortKey, glm::vec4(0.f));
 		}
 
 		// UI elements keep their nesting level packed into the transform z; it is used purely to order
@@ -299,7 +320,7 @@ namespace
 			const pg::DrawUIQuadInFrameEvent& event = viewDrawUIQuad.get<const pg::DrawUIQuadInFrameEvent>(ent);
 			const pg::UUID textureID = event.m_TextureID.IsNull() ? resourcesComponent.m_DefaultTexture : event.m_TextureID;
 			const glm::vec4 color = event.m_TextureID.IsNull() ? glm::vec4(event.m_Color, 1.f) : glm::vec4(1.f);
-			AppendQuad(uiItems, resourcesComponent, event.m_Transform, color, textureID, glm::vec4(0.f, 0.f, 1.f, 1.f), event.m_Origin, event.m_Transform[3][2]);
+			AppendQuad(uiItems, resourcesComponent, event.m_Transform, color, textureID, event.m_TexCoords, event.m_Origin, event.m_Transform[3][2], event.m_ClipRect);
 		}
 
 		auto viewDrawUIString = accessor.View<const pg::DrawUIStringInFrameEvent>();
@@ -307,23 +328,46 @@ namespace
 		{
 			const pg::DrawUIStringInFrameEvent& event = viewDrawUIString.get<const pg::DrawUIStringInFrameEvent>(ent);
 			PG_CORE_EXCEPT(resourcesComponent.m_FontMap.find(event.m_FontID) != resourcesComponent.m_FontMap.end(), "Could not find font");
-			AppendString(uiItems, resourcesComponent, event.m_Transform, event.m_String, resourcesComponent.m_FontMap.at(event.m_FontID), event.m_Color, event.m_Kerning, event.m_Linespacing, event.m_Transform[3][2]);
+			AppendString(uiItems, resourcesComponent, event.m_Transform, event.m_String, resourcesComponent.m_FontMap.at(event.m_FontID), event.m_Color, event.m_Kerning, event.m_Linespacing, event.m_Transform[3][2], event.m_ClipRect);
 		}
 
 		std::stable_sort(worldItems.begin(), worldItems.end(),
 			[](const DrawItem& lhs, const DrawItem& rhs) { return lhs.m_SortKey < rhs.m_SortKey; });
 		std::stable_sort(uiItems.begin(), uiItems.end(),
 			[](const DrawItem& lhs, const DrawItem& rhs) { return lhs.m_SortKey < rhs.m_SortKey; });
-
-		// UI is appended after every world item so it always draws on top.
-		worldItems.insert(worldItems.end(), uiItems.begin(), uiItems.end());
-		DrawOrderedItems(rendererDataComponent, resourcesComponent, worldItems);
 	}
-	void Render(pg::CheckedRegistryAccessor& accessor, const pg::OrthographicCamera& ortoCamera, pg::RendererDataSingletonComponent& rendererDataComponent, const pg::ResourceMapSingletonComponent& resourcesComponent)
+
+	// Rebinds the per-frame view-projection to a new camera without re-clearing the target. The matrix
+	// lives in a device-level constant buffer shared by the quad and text shaders, so a single upload
+	// switches the camera for both. Used to swap from the world camera to the UI camera mid-frame.
+	void UploadCamera(pg::RendererDataSingletonComponent& rendererDataComponent, const pg::OrthographicCamera& camera)
 	{
+		rendererDataComponent.m_QuadShader->Bind();
+		rendererDataComponent.m_QuadShader->UploadUniformMat4("u_ViewProjection", camera.GetViewProjectionMatrix());
+	}
+
+	void Render(pg::CheckedRegistryAccessor& accessor, const pg::OrthographicCamera& ortoCamera, const pg::OrthographicCamera* uiCamera, pg::RendererDataSingletonComponent& rendererDataComponent, const pg::ResourceMapSingletonComponent& resourcesComponent)
+	{
+		std::vector<DrawItem> worldItems;
+		std::vector<DrawItem> uiItems;
+		CollectDrawItems(accessor, resourcesComponent, worldItems, uiItems);
+
 		Clear({ 0.3f, 0.3f, 0.3f, 1.f });
+
+		// World pass: the gameplay camera (pan/zoom/aspect). BeginScene clears the target, so it must run
+		// before the UI pass.
 		BeginScene(ortoCamera, rendererDataComponent, resourcesComponent);
-		ProcessRenderRequests(accessor, rendererDataComponent, resourcesComponent);
+		DrawOrderedItems(rendererDataComponent, resourcesComponent, worldItems, false);
+
+		// UI pass: a dedicated screen-space camera, drawn after the world so UI is always on top. The UI
+		// camera appears one frame after the UI config (both created by UIRenderSystem); until then UI is
+		// not drawn.
+		if (uiCamera != nullptr)
+		{
+			UploadCamera(rendererDataComponent, *uiCamera);
+			DrawOrderedItems(rendererDataComponent, resourcesComponent, uiItems, true);
+		}
+
 		EndScene(rendererDataComponent, resourcesComponent);
 	}
 }
@@ -340,6 +384,7 @@ pg::SystemAccessDecl pg::Renderer2DSystem::DeclareAccess() const
 	decl.readSet = {
 		std::type_index(typeid(pg::EngineConfigSingletonComponent)),
 		std::type_index(typeid(pg::OrthographicCameraComponent)),
+		std::type_index(typeid(pg::UICameraSingletonComponent)),
 		std::type_index(typeid(pg::ResourceMapSingletonComponent)),
 		std::type_index(typeid(pg::DrawQuadInFrameEvent)),
 		std::type_index(typeid(pg::DrawSpriteInFrameEvent)),
@@ -365,18 +410,26 @@ void pg::Renderer2DSystem::Update(const pg::Timestep& ts)
 	const pg::OrthographicCamera& ortoCamera = viewCamera.get<const pg::OrthographicCameraComponent>(viewCamera.front()).m_Camera;
 	const pg::ResourceMapSingletonComponent& resourcesComponent = resourcesView.get<const pg::ResourceMapSingletonComponent>(resourcesView.front());
 	const pg::EngineConfigSingletonComponent& configComponent = configView.get<const pg::EngineConfigSingletonComponent>(configView.front());
+
+	// The screen-space UI camera is owned by the UI module; it may be absent for the first frame(s),
+	// in which case the UI pass is skipped.
+	auto viewUICamera = accessor.View<const pg::UICameraSingletonComponent>();
+	const pg::OrthographicCamera* uiCamera = viewUICamera.size() == 1
+		? &viewUICamera.get<const pg::UICameraSingletonComponent>(viewUICamera.front()).m_Camera
+		: nullptr;
+
 	if (rendererDataView.empty())
 	{
 		pg::RendererDataSingletonComponent rendererDataComponent;
 		pg::ecs::Entity singletonEntity = accessor.Create();
 		Init(rendererDataComponent, resourcesComponent, configComponent);
-		Render(accessor, ortoCamera, rendererDataComponent, resourcesComponent);
+		Render(accessor, ortoCamera, uiCamera, rendererDataComponent, resourcesComponent);
 		accessor.EmplaceDeferred<pg::RendererDataSingletonComponent>(singletonEntity, std::move(rendererDataComponent));
 	}
 	else
 	{
 		pg::RendererDataSingletonComponent& rendererDataComponent = rendererDataView.get<pg::RendererDataSingletonComponent>(rendererDataView.front());
-		Render(accessor, ortoCamera, rendererDataComponent, resourcesComponent);
+		Render(accessor, ortoCamera, uiCamera, rendererDataComponent, resourcesComponent);
 	}
 }
 

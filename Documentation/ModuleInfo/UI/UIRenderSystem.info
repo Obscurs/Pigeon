@@ -1,28 +1,55 @@
 # UIRenderSystem
 
 ## Purpose
-Translates all enabled UI entities into in-frame draw events each frame. Image entities become
-DrawUIQuadInFrameEvent; text entities become DrawUIStringInFrameEvent. World-space bounds are
-resolved via recursive parent-chain traversal; the nesting depth is encoded as the Z component
-of the transform, providing draw-layer ordering (children render over parents).
+Owns the live UI canvas and translates all enabled UI entities into in-frame draw events each frame.
+Each element's rect is resolved in logical-canvas units via recursive parent-chain traversal (the
+root element's parent is the logical canvas): from its own anchor-rect, or, when its parent is a
+layout container, from the container's layout (stack or grid). Image entities become a
+DrawUIQuadInFrameEvent filling their rect — or, when the image declares a nine-slice border, nine
+sub-quads (corners at the texture-pixel border size, edges/center stretched, each with its own UV
+sub-rect). Text entities become a DrawUIStringInFrameEvent whose font
+is scaled to fit the rect and whose glyph block is positioned within the rect per the text's own
+alignment. Each draw event also carries the element's effective clip rect (the intersection of
+ancestor UIClip rects) converted to window pixels for the renderer's scissor. The nesting depth is
+encoded as the Z component of the transform, providing draw-layer ordering (children render over
+parents).
 
-On the first frame, defers creation of RendererConfigSingletonComponent (fixed 1920x1080
-orthographic camera for UI coordinate space) and returns early; rendering begins from the second
-frame. Guards on EngineConfigSingletonComponent and ResourceMapSingletonComponent presence.
+On the first frame it defers creation of both RendererConfigSingletonComponent (the live UI canvas
+state) and UICameraSingletonComponent (the renderer's screen-space UI camera), then returns early;
+rendering begins from the second frame. Guards on EngineConfigSingletonComponent and
+ResourceMapSingletonComponent presence.
+
+## UI Canvas (ADR 0005)
+Each frame (once the canvas config exists and the engine config + resources are present) the system
+refreshes the live UI canvas before laying out elements:
+- Seeds the reference resolution + match factor from EngineConfigSingletonComponent.
+- Determines the live window client size — from a WindowResizeEventComponent raised this frame, or
+  seeded once from the engine config's window resolution and retained across resize-less frames.
+- Derives the UI scale factor with the Unity-style "match width or height" rule (log2 blend between
+  the window/reference width and height ratios), and the logical canvas (window size in reference
+  units = window / scale) that layout and hit-testing both resolve against.
+- Points UICameraSingletonComponent's orthographic projection at the logical canvas (y-down,
+  top-left origin), keeping the renderer's UI pass independent of the gameplay camera. The camera's
+  vertical bounds account for the renderer's Y-flip (true on DirectX11) so canvas y=0 maps to the top
+  of the screen on both flip conventions.
 
 ## Input Components
 | Component | Access |
 |---|---|
 | EngineConfigSingletonComponent | read |
 | ResourceMapSingletonComponent | read |
-| RendererConfigSingletonComponent | read |
+| RendererConfigSingletonComponent | read / write |
+| WindowResizeEventComponent | read |
 | BaseComponent | read |
 | ImageComponent | read |
 | TextComponent | read |
+| LayoutContainerComponent | read |
+| UIClipComponent | read |
 
 ## Output Components
 | Component | Access | Notes |
 |---|---|---|
-| RendererConfigSingletonComponent | add (deferred) | Created on first frame with 1920x1080 orthographic camera |
+| RendererConfigSingletonComponent | add (deferred) / write | Created on first frame; refreshed each frame with the live scale factor + logical canvas |
+| UICameraSingletonComponent | add (deferred) / write | Renderer-side (pg::) screen-space UI camera; created on first frame, projection synced to the logical canvas each frame |
 | DrawUIQuadInFrameEvent | add (inframe) | One per enabled image entity; Z encodes hierarchy depth |
 | DrawUIStringInFrameEvent | add (inframe) | One per enabled text entity; Z encodes hierarchy depth |

@@ -51,6 +51,18 @@ namespace
 		{
 			component.m_WindowMode = pg::WindowModeFromString(jsonObject["windowMode"].get<std::string>());
 		}
+		if (jsonObject.contains("uiReferenceWidth") && jsonObject["uiReferenceWidth"].is_number())
+		{
+			component.m_UIReferenceWidth = jsonObject["uiReferenceWidth"].get<float>();
+		}
+		if (jsonObject.contains("uiReferenceHeight") && jsonObject["uiReferenceHeight"].is_number())
+		{
+			component.m_UIReferenceHeight = jsonObject["uiReferenceHeight"].get<float>();
+		}
+		if (jsonObject.contains("uiMatchFactor") && jsonObject["uiMatchFactor"].is_number())
+		{
+			component.m_UIMatchFactor = jsonObject["uiMatchFactor"].get<float>();
+		}
 	}
 }
 

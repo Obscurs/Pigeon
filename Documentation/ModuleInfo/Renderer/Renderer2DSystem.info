@@ -9,17 +9,29 @@ On the first frame, allocates dynamic GPU vertex and index buffers and resolves 
 from ResourceMapSingletonComponent. Lazy-initializes by deferring RendererDataSingletonComponent
 on the first frame and returning; rendering begins from the second frame.
 
-World draws (quads, sprites, text) are sorted by their render sort key (the world-space Y of each
-entity's local bottom edge, supplied on the draw event): lower keys draw behind higher ones. UI draws
-(quads, text) are drawn in a separate pass after all world draws so the UI is always on top; within
-that pass they are ordered by the nesting level packed in the UI transform's Z. Consecutive draws that
-share a texture are merged into one indexed draw call; a texture change flushes the current batch.
+Draws happen in two passes within a single cleared frame (ADR 0005):
+- **World pass** — quads, sprites, and text are sorted by their render sort key (the world-space Y of
+  each entity's local bottom edge, supplied on the draw event; lower keys draw behind) and drawn
+  through the gameplay OrthographicCameraComponent (which pans/zooms with input).
+- **UI pass** — UI quads and text are drawn after the world so UI is always on top, through the
+  screen-space UICameraSingletonComponent rather than the gameplay camera, ordered by the nesting
+  level packed in the UI transform's Z. The view-projection is swapped to the UI camera by re-uploading
+  the shared device-level constant buffer (no second clear, which would wipe the world pass). The UI
+  pass is skipped while the UI camera is absent (the first frame before UIRenderSystem creates it).
+  Each UI draw carries a window-pixel clip rect; a clip change flushes the current batch and narrows
+  the scissor (RendererAPI SetScissor), masking clipped sub-trees. The world pass runs with the
+  full-window scissor set each frame in Begin().
+
+UI quads sample the per-event UV sub-rect (so nine-slice cells map to their texture region); world
+draws use the full texture or the sprite's coords. Consecutive draws that share a texture are merged
+into one indexed draw call; a texture change flushes the current batch.
 
 ## Input Components
 | Component | Access |
 |---|---|
 | EngineConfigSingletonComponent | read |
 | OrthographicCameraComponent | read |
+| UICameraSingletonComponent | read |
 | ResourceMapSingletonComponent | read |
 | DrawQuadInFrameEvent | read |
 | DrawSpriteInFrameEvent | read |

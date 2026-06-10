@@ -15,6 +15,7 @@
 #include "Pigeon/Renderer/Renderer2DSystem.h"
 #include "Pigeon/Renderer/RendererDataSingletonComponent.h"
 #include "Pigeon/Renderer/Shader.h"
+#include "Pigeon/Renderer/UICameraSingletonComponent.h"
 #include "Pigeon/Renderer/Texture.h"
 #include "Platform/Testing/TestingHelper.h"
 
@@ -176,6 +177,7 @@ namespace CatchTestsetFail
 
 		CHECK(decl.readSet.count(std::type_index(typeid(pg::EngineConfigSingletonComponent))) > 0);
 		CHECK(decl.readSet.count(std::type_index(typeid(pg::OrthographicCameraComponent))) > 0);
+		CHECK(decl.readSet.count(std::type_index(typeid(pg::UICameraSingletonComponent))) > 0);
 		CHECK(decl.readSet.count(std::type_index(typeid(pg::ResourceMapSingletonComponent))) > 0);
 		CHECK(decl.readSet.count(std::type_index(typeid(pg::DrawQuadInFrameEvent))) > 0);
 		CHECK(decl.readSet.count(std::type_index(typeid(pg::DrawSpriteInFrameEvent))) > 0);
@@ -221,6 +223,71 @@ namespace CatchTestsetFail
 		CHECK(pg::TestingHelper::GetInstance().m_VertexBufferSetVertices[0].m_Count == 8);
 		// First vertex written belongs to the lower-sort-key quad (x = 1).
 		CHECK(pg::TestingHelper::GetInstance().m_Vertices[pg::ATRIB_POS_X_INDEX] == Approx(1.f));
+	}
+
+	// ---------------------------------------------------------------------------
+	// UI pass applies the draw event's clip rect as a window-pixel scissor.
+	// A UI quad carrying a clip rect, drawn through the UI camera, records that scissor.
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Renderer.Renderer2DSystem::UIPassAppliesClipScissor")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::Renderer2DSystem>());
+		SeedValidRenderState();
+
+		pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+
+		// The UI camera is added in production by UIRenderSystem; supplied here so the UI pass runs.
+		pg::ecs::Entity uiCamEnt = registry.create();
+		registry.emplace<pg::UICameraSingletonComponent>(uiCamEnt);
+
+		// A UI quad (default texture) masked to a clip rect.
+		pg::ecs::Entity uiQuadEnt = registry.create();
+		pg::DrawUIQuadInFrameEvent uiQuad;
+		uiQuad.m_Transform = glm::mat4(1.f);
+		uiQuad.m_ClipRect = glm::vec4(10.f, 20.f, 100.f, 50.f);
+		registry.emplace<pg::DrawUIQuadInFrameEvent>(uiQuadEnt, uiQuad);
+
+		world.Update(pg::Timestep(0));
+
+		const std::vector<pg::TestingHelper::ScissorData>& scissors = pg::TestingHelper::GetInstance().m_Scissors;
+		bool found = false;
+		for (const pg::TestingHelper::ScissorData& s : scissors)
+		{
+			if (s.m_X == 10 && s.m_Y == 20 && s.m_Width == 100 && s.m_Height == 50)
+			{
+				found = true;
+			}
+		}
+		CHECK(found);
+	}
+
+	// ---------------------------------------------------------------------------
+	// UI quad samples its event's UV sub-rect (nine-slice cells rely on this): the
+	// first emitted vertex carries the sub-rect's (u0, v0).
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Renderer.Renderer2DSystem::UIQuadUsesEventTexCoords")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::Renderer2DSystem>());
+		SeedValidRenderState();
+
+		pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+
+		pg::ecs::Entity uiCamEnt = registry.create();
+		registry.emplace<pg::UICameraSingletonComponent>(uiCamEnt);
+
+		pg::ecs::Entity uiQuadEnt = registry.create();
+		pg::DrawUIQuadInFrameEvent uiQuad;
+		uiQuad.m_Transform = glm::mat4(1.f);
+		uiQuad.m_TexCoords = glm::vec4(0.25f, 0.5f, 0.75f, 1.0f);
+		registry.emplace<pg::DrawUIQuadInFrameEvent>(uiQuadEnt, uiQuad);
+
+		world.Update(pg::Timestep(0));
+
+		// The first vertex samples the sub-rect's minimum UV corner.
+		CHECK(pg::TestingHelper::GetInstance().m_Vertices[pg::ATRIB_TEX_X_INDEX] == Approx(0.25f));
+		CHECK(pg::TestingHelper::GetInstance().m_Vertices[pg::ATRIB_TEX_Y_INDEX] == Approx(0.5f));
 	}
 
 	// ---------------------------------------------------------------------------

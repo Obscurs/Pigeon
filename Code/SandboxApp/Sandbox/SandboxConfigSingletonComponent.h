@@ -28,6 +28,7 @@ namespace sbx
 		pg::UUID m_StatusTextID;   // live status text element
 		pg::UUID m_CloseButtonID;  // dismiss button
 		pg::UUID m_CloseTargetID;  // element destroyed by the dismiss button
+		pg::UUID m_ScrollPanelID;  // clip panel scrolled by the mouse wheel while hovered
 
 		// Button textures swapped on interaction (default / hovered / pressed).
 		pg::UUID m_ButtonImageID;
