@@ -41,7 +41,6 @@ namespace
 		camera.m_Camera = pg::OrthographicCamera(
 			-camera.m_AspectRatio * camera.m_ZoomLevel, camera.m_AspectRatio * camera.m_ZoomLevel,
 			-camera.m_ZoomLevel, camera.m_ZoomLevel);
-		camera.m_ReactsToInput = true;
 		accessor.EmplaceDeferred<pg::OrthographicCameraComponent>(ent, std::move(camera));
 
 		// The camera location lives in its PositionComponent; CameraSystem pans it from here.

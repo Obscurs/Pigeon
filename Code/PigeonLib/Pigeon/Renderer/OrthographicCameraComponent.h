@@ -13,8 +13,6 @@ namespace pg
 		pg::OrthographicCamera m_Camera = pg::OrthographicCamera(-1.0f, 1.0f, -1.0f, 1.0f);
 
 		// World position lives in the camera entity's PositionComponent; CameraSystem syncs m_Camera
-		// from it and emits a CameraTransformRequest to pan it.
-		float m_CameraTranslationSpeed = 5.0f;
-		bool m_ReactsToInput = false;
+		// from it and pans it (via a CameraTransformRequest) in response to the app's SetCameraRequest.
 	};
 }

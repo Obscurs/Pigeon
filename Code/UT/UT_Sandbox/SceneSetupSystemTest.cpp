@@ -79,7 +79,6 @@ namespace CatchTestsetFail
 		auto cameraView = pg::World::GetRegistryDirect().view<pg::OrthographicCameraComponent>();
 		REQUIRE(cameraView.size() == 1);
 		const pg::OrthographicCameraComponent& camera = cameraView.get<pg::OrthographicCameraComponent>(cameraView.front());
-		CHECK(camera.m_ReactsToInput == true);
 		CHECK(std::fabs(camera.m_AspectRatio - 1280.f / 720.f) < 1e-4f);
 
 		CHECK(pg::World::GetRegistryDirect().view<sbx::SpriteComponent>().size() == 1);

@@ -2,6 +2,7 @@
 #include "Pigeon/ECS/World.h"
 #include "Sandbox/AudioDebugPanelSystem.h"
 #include "Sandbox/AudioDemoSystem.h"
+#include "Sandbox/CameraControlSystem.h"
 #include "Sandbox/ConfigLoaderSystem.h"
 #include "Sandbox/DebugPanelSystem.h"
 #include "Sandbox/InputReadoutSystem.h"
@@ -38,6 +39,7 @@ pg::Application& pg::CreateApplication()
 	// each system's DeclareAccess(), so registration order here does not matter.
 	world.RegisterSystem(std::make_unique<sbx::AudioDemoSystem>());
 	world.RegisterSystem(std::make_unique<sbx::AudioDebugPanelSystem>());
+	world.RegisterSystem(std::make_unique<sbx::CameraControlSystem>());
 	world.RegisterSystem(std::make_unique<sbx::ConfigLoaderSystem>());
 	world.RegisterSystem(std::make_unique<sbx::TransformResolveSystem>());
 	world.RegisterSystem(std::make_unique<sbx::SceneSetupSystem>());

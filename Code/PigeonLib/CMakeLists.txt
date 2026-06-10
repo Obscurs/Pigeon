@@ -86,6 +86,7 @@ file(GLOB RENDERER
     "Pigeon/Renderer/Renderer2DSystem.cpp"
     "Pigeon/Renderer/RendererAPI.cpp"
     "Pigeon/Renderer/RendererDataSingletonComponent.h"
+    "Pigeon/Renderer/SetCameraRequestOneFrameComponent.h"
     "Pigeon/Renderer/Shader.cpp"
     "Pigeon/Renderer/Sprite.cpp"
     "Pigeon/Renderer/Texture.cpp"

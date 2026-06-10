@@ -18,6 +18,7 @@ pg::CreateApplication()  [Sandbox2D.cpp]
         sbx::ConfigLoaderSystem        Assets/App/Config.json -> SandboxConfigSingletonComponent
         sbx::TransformResolveSystem    app transform requests -> ResolvedTransformRequest (engine type)
         sbx::SceneSetupSystem          camera + sprite + labels + transform requests + LoadLayoutEvent (once)
+        sbx::CameraControlSystem       held WASD + scroll + camera -> SetCameraRequest (engine type)
         sbx::QuadSpawnSystem           seeds demo quads (+ spawn transform requests); spawns on SPACE
         sbx::QuadAnimationSystem       SpinComponent + time -> QuadComponent colour + AnimationTransformRequest
         sbx::LifetimeSystem            counts down LifetimeComponent; deferred-destroys expired
@@ -62,7 +63,8 @@ Frame 3+  (steady state)
 
 ```
 Input (engine InputSystem -> InputStateSingletonComponent)
-  ├── engine CameraSystem        scroll zoom / resize aspect -> OrthographicCameraComponent; WASD pan -> CameraTransformRequest
+  ├── sbx::CameraControlSystem    held WASD + scroll + camera zoom/pos -> SetCameraRequest (engine type)
+  │      └── engine CameraSystem  applies zoom + pans (CameraTransformRequest); resize aspect (viewport)
   ├── sbx::QuadSpawnSystem        SPACE -> QuadComponent + SpinComponent + LifetimeComponent
   └── sbx::InputReadoutSystem     mouse/keys/scroll -> readout LabelComponent text
 

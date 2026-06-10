@@ -45,6 +45,12 @@
 | Set Window Resolution Request | An engine-typed one-frame request (`SetWindowResolutionRequestOneFrameComponent`) carrying a desired resolution + mode. The app emits it; the engine `WindowConfigSystem` applies it to the live window and persists it to the savedata `Config.json`. Like the audio request, it must be an engine (`pg`) type so the engine system can read it. |
 | Savedata Path | The directory (relative to the working dir) holding the override `Config.json`; declared by the `savedataPath` key in the engine config and recorded in `EngineConfigSingletonComponent.m_SavedataPath` so the runtime knows where to persist changes. |
 
+## Camera
+
+| Term | Meaning |
+|---|---|
+| Set Camera Request | An engine-typed one-frame request (`SetCameraRequestOneFrameComponent`) carrying a new camera zoom level + world position. Camera input detection is an **app** responsibility: the app reads input and the camera's current zoom/position, computes the new absolute values, and emits this request; the engine `CameraSystem` applies the zoom to the camera, pans its position, and rebuilds the projection. Like the audio/window/savedata requests, it must be an engine (`pg`) type so the engine system can read it. |
+
 ## Save Data
 
 | Term | Meaning |

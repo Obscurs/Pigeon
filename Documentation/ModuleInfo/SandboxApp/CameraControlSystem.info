@@ -1,0 +1,23 @@
+# CameraControlSystem  (sbx)
+
+## Purpose
+Detects camera input each frame and drives the gameplay camera. Returns early until both
+InputStateSingletonComponent and at least one OrthographicCameraComponent exist. Reads held WASD keys
+(pan) and the mouse scroll offset (zoom); when there is any camera input it reads the camera's current
+zoom level and the camera entity's PositionComponent, computes the new clamped zoom and the new world
+position (pan speed scales with zoom, scaled by the frame delta), and emits a
+SetCameraRequestOneFrameComponent for the engine CameraSystem to apply. No-ops on a frame with no
+camera input.
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| InputStateSingletonComponent | read | Held WASD keys; guard (returns early if absent) |
+| MouseScrolledEventComponent | read | Per-frame scroll offset that drives zoom |
+| OrthographicCameraComponent | read | Current zoom level; locates the camera entity; guard (returns early if no camera) |
+| PositionComponent | read | The camera's current world position (pan origin) |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| SetCameraRequestOneFrameComponent | add (oneframe) | New zoom + world position; emitted only on a frame with camera input |

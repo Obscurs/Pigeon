@@ -3,6 +3,7 @@ file(GLOB SRCS
     "Sandbox/AudioDebugPanelSystem.cpp"
     "Sandbox/AudioDemoStateSingletonComponent.h"
     "Sandbox/AudioDemoSystem.cpp"
+    "Sandbox/CameraControlSystem.cpp"
     "Sandbox/ConfigLoaderSystem.cpp"
     "Sandbox/DebugControlsSingletonComponent.h"
     "Sandbox/DebugPanelSystem.cpp"

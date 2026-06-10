@@ -1,12 +1,10 @@
 #include "pch.h"
 #include "Pigeon/Renderer/CameraSystem.h"
 
-#include "Pigeon/Core/KeyCodes.h"
-#include "Pigeon/Core/KeyPressedEventComponent.h"
-#include "Pigeon/Core/MouseScrolledEventComponent.h"
 #include "Pigeon/Core/WindowResizeEventComponent.h"
 #include "Pigeon/ECS/World.h"
 #include "Pigeon/Renderer/OrthographicCameraComponent.h"
+#include "Pigeon/Renderer/SetCameraRequestOneFrameComponent.h"
 #include "Pigeon/Transform/CameraTransformRequestOneFrameComponent.h"
 #include "Pigeon/Transform/PositionComponent.h"
 
@@ -14,8 +12,7 @@ pg::SystemAccessDecl pg::CameraSystem::DeclareAccess() const
 {
 	pg::SystemAccessDecl decl;
 	decl.readSet = {
-		std::type_index(typeid(pg::KeyPressedEventComponent)),
-		std::type_index(typeid(pg::MouseScrolledEventComponent)),
+		std::type_index(typeid(pg::SetCameraRequestOneFrameComponent)),
 		std::type_index(typeid(pg::WindowResizeEventComponent)),
 		std::type_index(typeid(pg::PositionComponent)),
 	};
@@ -32,8 +29,17 @@ void pg::CameraSystem::Update(const pg::Timestep& ts)
 {
 	auto accessor = pg::World::GetRegistry();
 
-	auto viewKeyPressedEvents = accessor.View<const pg::KeyPressedEventComponent>();
-	auto viewScrollEvents = accessor.View<const pg::MouseScrolledEventComponent>();
+	// Input detection lives in the app, which emits a SetCameraRequest with the new zoom + position.
+	// The last request of the frame wins.
+	auto requestView = accessor.View<const pg::SetCameraRequestOneFrameComponent>();
+	bool hasRequest = false;
+	pg::SetCameraRequestOneFrameComponent request;
+	for (pg::ecs::Entity e : requestView)
+	{
+		request = requestView.get<const pg::SetCameraRequestOneFrameComponent>(e);
+		hasRequest = true;
+	}
+
 	auto viewResizeEvents = accessor.View<const pg::WindowResizeEventComponent>();
 
 	auto view = accessor.View<pg::OrthographicCameraComponent>();
@@ -60,57 +66,22 @@ void pg::CameraSystem::Update(const pg::Timestep& ts)
 			}
 		}
 
-		if (component.m_ReactsToInput)
+		// Apply the app's new zoom to the camera controller and pan its PositionComponent via the
+		// transform pipeline (the sole writer of PositionComponent).
+		if (hasRequest)
 		{
-			// Scroll first so the translation-speed sync below uses the updated zoom level.
-			for (pg::ecs::Entity e : viewScrollEvents)
-			{
-				const pg::MouseScrolledEventComponent& eventComponent = viewScrollEvents.get<const pg::MouseScrolledEventComponent>(e);
-				component.m_ZoomLevel -= eventComponent.m_YOffset * 0.25f;
-				component.m_ZoomLevel = std::max(component.m_ZoomLevel, 0.25f);
-			}
-			component.m_CameraTranslationSpeed = component.m_ZoomLevel;
+			component.m_ZoomLevel = request.m_ZoomLevel;
 
-			glm::vec3 pannedPosition = currentPosition;
-			bool panned = false;
-			for (pg::ecs::Entity e : viewKeyPressedEvents)
-			{
-				const pg::KeyPressedEventComponent& eventComponent = viewKeyPressedEvents.get<const pg::KeyPressedEventComponent>(e);
-				if (eventComponent.m_KeyCode == pg::PG_KEY_A)
-				{
-					pannedPosition.x -= component.m_CameraTranslationSpeed * ts.AsSeconds();
-					panned = true;
-				}
-				else if (eventComponent.m_KeyCode == pg::PG_KEY_D)
-				{
-					pannedPosition.x += component.m_CameraTranslationSpeed * ts.AsSeconds();
-					panned = true;
-				}
-				else if (eventComponent.m_KeyCode == pg::PG_KEY_W)
-				{
-					pannedPosition.y += component.m_CameraTranslationSpeed * ts.AsSeconds();
-					panned = true;
-				}
-				else if (eventComponent.m_KeyCode == pg::PG_KEY_S)
-				{
-					pannedPosition.y -= component.m_CameraTranslationSpeed * ts.AsSeconds();
-					panned = true;
-				}
-			}
-
-			if (panned)
-			{
-				pg::CameraTransformRequestOneFrameComponent request;
-				request.m_Data.m_SetPosition = true;
-				request.m_Data.m_Position = pannedPosition;
-				accessor.EmplaceOneframe<pg::CameraTransformRequestOneFrameComponent>(ent, std::move(request));
-			}
+			pg::CameraTransformRequestOneFrameComponent panRequest;
+			panRequest.m_Data.m_SetPosition = true;
+			panRequest.m_Data.m_Position = request.m_Position;
+			accessor.EmplaceOneframe<pg::CameraTransformRequestOneFrameComponent>(ent, std::move(panRequest));
 		}
 
 		// Keep the internal camera in sync with the resolved position every frame; rebuild the
 		// projection only when the zoom or aspect could have changed.
 		component.m_Camera.SetPosition(currentPosition);
-		if (component.m_ReactsToInput || aspectDirty)
+		if (hasRequest || aspectDirty)
 		{
 			component.m_Camera.SetProjection(-component.m_AspectRatio * component.m_ZoomLevel, component.m_AspectRatio * component.m_ZoomLevel, -component.m_ZoomLevel, component.m_ZoomLevel);
 		}

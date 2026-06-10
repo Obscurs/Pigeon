@@ -2,18 +2,17 @@
 
 ## Purpose
 Drives the orthographic camera each frame. Window-resize events update m_AspectRatio and mark the
-projection dirty for ALL cameras regardless of m_ReactsToInput. For cameras with m_ReactsToInput =
-true, scroll events adjust m_ZoomLevel (clamped) and WASD key presses emit a
-CameraTransformRequestOneFrameComponent that pans the camera's PositionComponent (read as the current
-location). Every frame it syncs the internal camera from the resolved PositionComponent and rebuilds
-the projection when zoom or aspect could have changed. The camera's world position lives in its
-PositionComponent (written by the transform pipeline), not on this component.
+projection dirty for ALL cameras (a viewport event, independent of input). Input detection lives in the
+app: it emits a SetCameraRequestOneFrameComponent carrying the new zoom level + world position, and this
+system applies that zoom to m_ZoomLevel and pans the camera's PositionComponent by emitting a
+CameraTransformRequestOneFrameComponent. Every frame it syncs the internal camera from the resolved
+PositionComponent and rebuilds the projection when zoom or aspect could have changed. The camera's world
+position lives in its PositionComponent (written by the transform pipeline), not on this component.
 
 ## Input Components
 | Component | Access |
 |---|---|
-| KeyPressedEventComponent | read |
-| MouseScrolledEventComponent | read |
+| SetCameraRequestOneFrameComponent | read |
 | WindowResizeEventComponent | read |
 | PositionComponent | read |
 | OrthographicCameraComponent | write |
@@ -21,5 +20,5 @@ PositionComponent (written by the transform pipeline), not on this component.
 ## Output Components
 | Component | Access | Notes |
 |---|---|---|
-| OrthographicCameraComponent | write | Updates m_ZoomLevel, m_AspectRatio, m_CameraTranslationSpeed, and the internal view-projection matrix |
+| OrthographicCameraComponent | write | Updates m_ZoomLevel, m_AspectRatio, and the internal view-projection matrix |
 | CameraTransformRequestOneFrameComponent | add (oneframe) | Pan request applied by the engine TransformResolveSystem |
