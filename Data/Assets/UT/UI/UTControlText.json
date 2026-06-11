@@ -13,7 +13,10 @@
       "colB": 3.4,
       "colA": 4.7,
       "kerning": 5.7,
-      "spacing": 6.7
+      "spacing": 6.7,
+      "fontSize": 28.0,
+      "wrap": true,
+      "visibleChars": 5
     }
   }
 }

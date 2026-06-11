@@ -264,6 +264,57 @@ glm::vec2 pg::Font::GetStringBounds(std::string string, float kerning, float lin
 	return glm::vec2(maxWidth, charOffset.y);
 }
 
+std::string pg::Font::WrapString(const std::string& string, float fixedFontSize, float kerning, float linespacing, float maxWidth) const
+{
+	if (maxWidth <= 0.f || fixedFontSize <= 0.f || string.empty())
+		return string;
+
+	// Budget per line expressed in the same em-normalized advance units GetCharacterAdvance returns
+	// (rendered width = advance * fontSize), so we compare advances directly against maxWidth / fontSize.
+	const double maxAdvance = static_cast<double>(maxWidth) / static_cast<double>(fixedFontSize);
+
+	std::string result = string;
+	double lineWidth = 0.0;          // committed advance on the current line, excluding the in-progress word
+	double wordWidth = 0.0;          // advance of the word currently being built since the last space
+	size_t lastSpace = std::string::npos;  // index of the last space: the break opportunity
+
+	for (size_t i = 0; i < result.size(); i++)
+	{
+		const char character = result[i];
+		if (IsCharacterNewLine(character))
+		{
+			lineWidth = 0.0;
+			wordWidth = 0.0;
+			lastSpace = std::string::npos;
+			continue;
+		}
+
+		const char next = (i + 1 < result.size()) ? result[i + 1] : '\0';
+		const double advance = GetCharacterAdvance(character, next, kerning, linespacing).x;
+
+		if (character == ' ')
+		{
+			lastSpace = i;
+			lineWidth += wordWidth + advance;  // commit the finished word plus the space
+			wordWidth = 0.0;
+		}
+		else
+		{
+			wordWidth += advance;
+			if (lineWidth + wordWidth > maxAdvance && lastSpace != std::string::npos)
+			{
+				// Break at the last space: it becomes the line separator and the word in progress
+				// starts the next (still-uncommitted) line. A word with no preceding space overflows.
+				result[lastSpace] = '\n';
+				lineWidth = 0.0;
+				lastSpace = std::string::npos;
+			}
+		}
+	}
+
+	return result;
+}
+
 double pg::Font::GetFsScale() const
 {
 	const auto& metrics = m_Data->m_FontGeometry.getMetrics();

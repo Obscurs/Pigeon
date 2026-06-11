@@ -9,6 +9,7 @@
 #include "Pigeon/ECS/World.h"
 #include "Pigeon/Renderer/DrawUIQuadInFrameEvent.h"
 #include "Pigeon/Renderer/DrawUIStringInFrameEvent.h"
+#include "Pigeon/Renderer/Font.h"
 #include "Pigeon/Renderer/Texture.h"
 #include "Pigeon/Renderer/UICameraSingletonComponent.h"
 #include "Platform/Testing/TestingTexture.h"
@@ -463,6 +464,104 @@ namespace CatchTestsetFail
 	{
 		CHECK(pg::ui::GetUICameraOrthoBottomTop(1080.f, true)  == glm::vec2(-1080.f, 0.f));
 		CHECK(pg::ui::GetUICameraOrthoBottomTop(1080.f, false) == glm::vec2(1080.f, 0.f));
+	}
+
+	// ---------------------------------------------------------------------------
+	// Fixed-size body text: a TextComponent with m_FixedFontSize renders at exactly
+	// that em height (the transform scale), bypassing the auto-fit-to-rect path, and
+	// forwards the typewriter reveal count onto the draw event. A non-loadable font is
+	// used on purpose so the test stays independent of MSDF atlas state; the render
+	// bridge only needs a non-null Font entry in the map.
+	// ---------------------------------------------------------------------------
+	TEST_CASE("UI.UIRenderSystem::FixedFontSizeUsesExactScaleAndForwardsReveal")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ui::UIRenderSystem>());
+
+		pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+
+		// Frame 1: the system creates the canvas config + UI camera itself.
+		world.Update(pg::Timestep(0));
+
+		pg::ecs::Entity engEnt = registry.create();
+		registry.emplace<pg::EngineConfigSingletonComponent>(engEnt);
+
+		const pg::UUID fontID = pg::UUID::Generate();
+		pg::ecs::Entity resEnt = registry.create();
+		pg::ResourceMapSingletonComponent& resources = registry.emplace<pg::ResourceMapSingletonComponent>(resEnt);
+		pg::TextureData textureData;
+		resources.m_FontMap[fontID] = std::make_shared<pg::Font>("Assets/UT/Fonts/__missing_for_test__.ttf", textureData);
+
+		pg::ecs::Entity uiEnt = registry.create();
+		pg::ui::BaseComponent& base = registry.emplace<pg::ui::BaseComponent>(uiEnt);
+		base.m_Enabled = true;
+		base.m_Size = { 400.f, 100.f };
+		base.m_UUID = pg::UUID::Generate();
+
+		pg::ui::TextComponent& text = registry.emplace<pg::ui::TextComponent>(uiEnt);
+		text.m_FontID = fontID;
+		text.m_Text = "hello";
+		text.m_FixedFontSize = 24.f;
+		text.m_VisibleChars = 3;
+
+		world.UpdateRetainingEvents(pg::Timestep(0));
+
+		auto view = registry.view<pg::DrawUIStringInFrameEvent>();
+		REQUIRE(view.size() == 1);
+		const pg::DrawUIStringInFrameEvent& event = view.get<pg::DrawUIStringInFrameEvent>(view.front());
+		// Exact fixed size, not auto-fit to the rect.
+		CHECK(event.m_Transform[0][0] == Approx(24.f));
+		CHECK(event.m_Transform[1][1] == Approx(24.f));
+		CHECK(event.m_VisibleChars == 3);
+		// No wrap requested -> string forwarded unchanged.
+		CHECK(event.m_String == "hello");
+	}
+
+	// ---------------------------------------------------------------------------
+	// Word wrap: a fixed-size wrapping text element in a narrow rect emits a string
+	// with soft line breaks (the engine wrapped it to the rect width). Uses a real
+	// font because wrapping depends on glyph advances (full-suite run required).
+	// ---------------------------------------------------------------------------
+	TEST_CASE("UI.UIRenderSystem::WordWrapEmitsWrappedString")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ui::UIRenderSystem>());
+
+		pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+
+		world.Update(pg::Timestep(0));
+
+		pg::ecs::Entity engEnt = registry.create();
+		registry.emplace<pg::EngineConfigSingletonComponent>(engEnt);
+
+		const pg::UUID fontID = pg::UUID::Generate();
+		pg::ecs::Entity resEnt = registry.create();
+		pg::ResourceMapSingletonComponent& resources = registry.emplace<pg::ResourceMapSingletonComponent>(resEnt);
+		pg::TextureData textureData;
+		resources.m_FontMap[fontID] = std::make_shared<pg::Font>("Assets/UT/Fonts/OpenSans-Regular.ttf", textureData);
+
+		pg::ecs::Entity uiEnt = registry.create();
+		pg::ui::BaseComponent& base = registry.emplace<pg::ui::BaseComponent>(uiEnt);
+		base.m_Enabled = true;
+		base.m_Size = { 150.f, 400.f };  // narrow box forces wrapping
+		base.m_UUID = pg::UUID::Generate();
+
+		pg::ui::TextComponent& text = registry.emplace<pg::ui::TextComponent>(uiEnt);
+		text.m_FontID = fontID;
+		text.m_Text = "the quick brown fox jumps over the lazy dog";
+		text.m_FixedFontSize = 32.f;
+		text.m_WordWrap = true;
+		text.m_Kerning = 0.f;
+		text.m_Spacing = 0.f;
+
+		world.UpdateRetainingEvents(pg::Timestep(0));
+
+		auto view = registry.view<pg::DrawUIStringInFrameEvent>();
+		REQUIRE(view.size() == 1);
+		const pg::DrawUIStringInFrameEvent& event = view.get<pg::DrawUIStringInFrameEvent>(view.front());
+		// The emitted string is the wrapped form (same length, some spaces -> newlines).
+		CHECK(event.m_String.size() == text.m_Text.size());
+		CHECK(event.m_String.find('\n') != std::string::npos);
 	}
 
 	// ---------------------------------------------------------------------------

@@ -26,6 +26,12 @@ UI quads sample the per-event UV sub-rect (so nine-slice cells map to their text
 draws use the full texture or the sprite's coords. Consecutive draws that share a texture are merged
 into one indexed draw call; a texture change flushes the current batch.
 
+Strings emit one glyph quad per drawable character, advancing the pen by each glyph's metrics. A UI
+string event carries a typewriter reveal count (m_VisibleChars): -1 draws every character, while N
+draws only glyphs whose source index is < N (spaces and newlines still consume an index). The pen
+layout is unaffected by the cutoff — it is computed from the full string by UIRenderSystem — so
+revealing more characters never reflows the ones already shown. World text always draws in full.
+
 ## Input Components
 | Component | Access |
 |---|---|

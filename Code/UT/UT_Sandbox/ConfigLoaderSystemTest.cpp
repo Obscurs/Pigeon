@@ -73,6 +73,7 @@ namespace CatchTestsetFail
 		CHECK(!cfg.m_StatusTextID.IsNull());
 		CHECK(!cfg.m_CloseButtonID.IsNull());
 		CHECK(!cfg.m_CloseTargetID.IsNull());
+		CHECK(!cfg.m_DialogueTextID.IsNull());
 		CHECK(!cfg.m_ButtonImageID.IsNull());
 		CHECK(!cfg.m_ButtonHoverImageID.IsNull());
 		CHECK(!cfg.m_ButtonPressedImageID.IsNull());

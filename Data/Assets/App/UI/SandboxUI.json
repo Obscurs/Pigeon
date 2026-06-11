@@ -71,7 +71,18 @@
       "anchoredPosition": [170, -130],
       "size": [520, 340],
       "uuid": "d1000000-0000-4000-8000-000000000001",
-      "ui": { "image": { "id": "e3afff59-1ee8-4396-b9ed-b093dd521f91", "border": [128, 128, 128, 128] } }
+      "ui": { "image": { "id": "e3afff59-1ee8-4396-b9ed-b093dd521f91", "border": [128, 128, 128, 128] } },
+      "children": [
+        {
+          "anchorMin": [0.5, 0.5],
+          "anchorMax": [0.5, 0.5],
+          "pivot": [0.5, 0.5],
+          "anchoredPosition": [0, 0],
+          "size": [456, 280],
+          "uuid": "d4000000-0000-4000-8000-000000000001",
+          "ui": { "text": { "string": "", "colR": 1, "colG": 1, "colB": 1, "colA": 1, "kerning": 0.1, "spacing": 0.1, "align_h": "left", "align_v": "top", "fontSize": 30, "wrap": true, "visibleChars": 0 } }
+        }
+      ]
     },
 
     {

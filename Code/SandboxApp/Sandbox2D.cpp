@@ -5,6 +5,7 @@
 #include "Sandbox/CameraControlSystem.h"
 #include "Sandbox/ConfigLoaderSystem.h"
 #include "Sandbox/DebugPanelSystem.h"
+#include "Sandbox/DialogueDemoSystem.h"
 #include "Sandbox/InputReadoutSystem.h"
 #include "Sandbox/LifetimeSystem.h"
 #include "Sandbox/QuadAnimationSystem.h"
@@ -55,6 +56,7 @@ pg::Application& pg::CreateApplication()
 	world.RegisterSystem(std::make_unique<sbx::UICloseSystem>());
 	world.RegisterSystem(std::make_unique<sbx::UIScrollSystem>());
 	world.RegisterSystem(std::make_unique<sbx::UIStatusSystem>());
+	world.RegisterSystem(std::make_unique<sbx::DialogueDemoSystem>());
 	world.RegisterSystem(std::make_unique<sbx::DebugPanelSystem>());
 	world.RegisterSystem(std::make_unique<sbx::WindowDebugPanelSystem>());
 	world.RegisterSystem(std::make_unique<sbx::SaveDataDebugPanelSystem>());

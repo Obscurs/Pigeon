@@ -93,6 +93,19 @@ namespace pg::ui
 		// Glyph-block alignment within the element's rect, independent of the rect's own anchors.
 		EHAlignType m_HAlign{ EHAlignType::eCenter };
 		EVAlignType m_VAlign{ EVAlignType::eCenter };
+
+		// Body-text sizing for prose (dialogue, descriptions). m_FixedFontSize is the em height in
+		// logical-canvas units: 0 keeps the legacy "auto-fit the whole string to the rect" behaviour
+		// (suited to labels), while a positive value renders at that exact size regardless of string
+		// length. m_WordWrap (fixed-size only) inserts soft line breaks at word boundaries so the glyph
+		// block stays within the rect width instead of overflowing or shrinking.
+		float m_FixedFontSize{ 0.f };
+		bool m_WordWrap{ false };
+
+		// Typewriter reveal: -1 shows the whole string; N reveals only the first N source characters
+		// (spaces and newlines count as positions). The app advances it over time; the layout is always
+		// computed on the full string so revealed glyphs never reflow.
+		int m_VisibleChars{ -1 };
 	};
 
 	struct ImageComponent
@@ -203,6 +216,19 @@ namespace pg::ui
 		UIUpdateImageUUIDOneFrameComponent(const UIUpdateImageUUIDOneFrameComponent&) = default;
 
 		pg::UUID m_UUID{};
+	};
+
+	// Runtime typewriter driver: advances the visible-character count on the element's TextComponent so
+	// the app can drive the reveal each frame. When m_Text is non-empty it also replaces the element's
+	// text, so a new dialogue line and its reveal arrive in one command (the styling stays as authored).
+	// m_VisibleChars = -1 reveals all.
+	struct UIUpdateTextRevealOneFrameComponent
+	{
+		UIUpdateTextRevealOneFrameComponent() = default;
+		UIUpdateTextRevealOneFrameComponent(const UIUpdateTextRevealOneFrameComponent&) = default;
+
+		std::string m_Text{};
+		int m_VisibleChars{ -1 };
 	};
 
 	struct UIUpdateTextOneFrameComponent

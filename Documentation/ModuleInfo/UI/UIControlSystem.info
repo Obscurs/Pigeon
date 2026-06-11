@@ -19,6 +19,7 @@ if absent, returns immediately without processing anything.
 | UIUpdateUUIDOneFrameComponent | read / write |
 | UIUpdateImageUUIDOneFrameComponent | read / write |
 | UIUpdateTextOneFrameComponent | read / write |
+| UIUpdateTextRevealOneFrameComponent | read / write |
 | LoadLayoutEvent | read |
 | UIDestroyOneFrameComponent | read |
 
@@ -27,6 +28,6 @@ if absent, returns immediately without processing anything.
 |---|---|---|
 | BaseComponent | write / add (deferred) | Modified in-place by mutation commands; created in bulk when loading JSON layouts |
 | ImageComponent | write / add (deferred) | Modified in-place; created when a JSON node has a ui.image entry |
-| TextComponent | write / add (deferred) | Modified in-place; created when a JSON node has a ui.text entry |
+| TextComponent | write / add (deferred) | Modified in-place; created when a JSON node has a ui.text entry. Body-text fields parse from the ui.text JSON: `fontSize` (fixed em height; 0 = auto-fit), `wrap` (word-wrap bool), `visibleChars` (typewriter reveal count). UIUpdateTextRevealOneFrameComponent advances m_VisibleChars (the per-frame typewriter driver) and, when its m_Text is non-empty, also swaps the text (a new dialogue line + its reveal in one command) |
 | LayoutContainerComponent | add (deferred) | Created when a JSON node declares a layout (vertical/horizontal stack or grid) |
 | UIClipComponent | add (deferred) | Created when a JSON node declares a clip (scissor-masked sub-tree + scroll offset) |

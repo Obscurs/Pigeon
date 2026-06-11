@@ -247,6 +247,78 @@ namespace CatchTestsetFail
 	}
 
 	// ---------------------------------------------------------------------------
+	// Happy path: the body-text fields (fixed font size, word wrap, reveal count) parse
+	// from the layout JSON onto the TextComponent.
+	// ---------------------------------------------------------------------------
+	TEST_CASE("UI.UIControlSystem::ParsesBodyTextFields")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ui::UIControlSystem>());
+
+		LoadLayout(world, "UTControlText.json");
+		pg::ecs::Entity ent = FindBaseByUUID(kTextUUID);
+		REQUIRE(pg::World::GetRegistryDirect().valid(ent));
+		REQUIRE(pg::World::GetRegistryDirect().any_of<pg::ui::TextComponent>(ent));
+
+		const pg::ui::TextComponent& text =
+			pg::World::GetRegistryDirect().get<pg::ui::TextComponent>(ent);
+		CHECK(FLOAT_EQ(text.m_FixedFontSize, 28.0f));
+		CHECK(text.m_WordWrap == true);
+		CHECK(text.m_VisibleChars == 5);
+	}
+
+	// ---------------------------------------------------------------------------
+	// Happy path: UIUpdateTextRevealOneFrameComponent advances only the reveal count
+	// on the TextComponent (the typewriter driver), leaving the text itself unchanged.
+	// ---------------------------------------------------------------------------
+	TEST_CASE("UI.UIControlSystem::UpdateTextRevealApplied")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ui::UIControlSystem>());
+
+		LoadLayout(world, "UTControlText.json");
+		pg::ecs::Entity ent = FindBaseByUUID(kTextUUID);
+		REQUIRE(pg::World::GetRegistryDirect().valid(ent));
+		REQUIRE(pg::World::GetRegistryDirect().any_of<pg::ui::TextComponent>(ent));
+
+		pg::World::GetRegistryDirect().emplace<pg::ui::UIUpdateTextRevealOneFrameComponent>(ent).m_VisibleChars = 9;
+
+		world.Update(pg::Timestep(0));
+
+		const pg::ui::TextComponent& text =
+			pg::World::GetRegistryDirect().get<pg::ui::TextComponent>(ent);
+		CHECK(text.m_VisibleChars == 9);
+		CHECK(text.m_Text == "sample text");
+	}
+
+	// ---------------------------------------------------------------------------
+	// Happy path: a reveal command carrying a non-empty text swaps the dialogue line
+	// (and advances the reveal), so a new line and its reveal arrive in one command.
+	// ---------------------------------------------------------------------------
+	TEST_CASE("UI.UIControlSystem::UpdateTextRevealSwapsTextWhenProvided")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ui::UIControlSystem>());
+
+		LoadLayout(world, "UTControlText.json");
+		pg::ecs::Entity ent = FindBaseByUUID(kTextUUID);
+		REQUIRE(pg::World::GetRegistryDirect().valid(ent));
+		REQUIRE(pg::World::GetRegistryDirect().any_of<pg::ui::TextComponent>(ent));
+
+		pg::ui::UIUpdateTextRevealOneFrameComponent& upd =
+			pg::World::GetRegistryDirect().emplace<pg::ui::UIUpdateTextRevealOneFrameComponent>(ent);
+		upd.m_Text = "new dialogue line";
+		upd.m_VisibleChars = 4;
+
+		world.Update(pg::Timestep(0));
+
+		const pg::ui::TextComponent& text =
+			pg::World::GetRegistryDirect().get<pg::ui::TextComponent>(ent);
+		CHECK(text.m_Text == "new dialogue line");
+		CHECK(text.m_VisibleChars == 4);
+	}
+
+	// ---------------------------------------------------------------------------
 	// Happy path: UIDestroyOneFrameComponent destroys entity and its children
 	// ---------------------------------------------------------------------------
 	TEST_CASE("UI.UIControlSystem::DestroyEntityAndChildren")
@@ -383,6 +455,7 @@ namespace CatchTestsetFail
 		CHECK(decl.readSet.count(std::type_index(typeid(pg::ui::UIUpdateUUIDOneFrameComponent))) > 0);
 		CHECK(decl.readSet.count(std::type_index(typeid(pg::ui::UIUpdateImageUUIDOneFrameComponent))) > 0);
 		CHECK(decl.readSet.count(std::type_index(typeid(pg::ui::UIUpdateTextOneFrameComponent))) > 0);
+		CHECK(decl.readSet.count(std::type_index(typeid(pg::ui::UIUpdateTextRevealOneFrameComponent))) > 0);
 		CHECK(decl.readSet.count(std::type_index(typeid(pg::ui::UIUpdateClipOffsetOneFrameComponent))) > 0);
 		CHECK(decl.readSet.count(std::type_index(typeid(pg::ui::LoadLayoutEvent))) > 0);
 		CHECK(decl.readSet.count(std::type_index(typeid(pg::ui::UIDestroyOneFrameComponent))) > 0);

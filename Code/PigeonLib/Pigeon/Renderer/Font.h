@@ -36,6 +36,14 @@ namespace pg
 		glm::mat4 GetCharacterTransform(const glm::vec4& charQuad, const glm::mat4& stringTransform) const;
 		glm::vec2 GetStringBounds(std::string string, float kerning, float linespacing) const;
 
+		// Greedy word-wrap for fixed-size body text. Returns a copy of the string with select spaces
+		// converted to newlines so each line fits within maxWidth (logical-canvas units) when rendered at
+		// fixedFontSize. The result has the same length as the input (only spaces become '\n'), so a
+		// reveal index into the source maps unchanged onto the wrapped output. Existing newlines are kept;
+		// a single word wider than maxWidth overflows rather than breaking mid-word. maxWidth <= 0 (or a
+		// non-positive font size) returns the input unchanged.
+		std::string WrapString(const std::string& string, float fixedFontSize, float kerning, float linespacing, float maxWidth) const;
+
 	private:
 		double GetFsScale() const;
 		MSDFData* m_Data;

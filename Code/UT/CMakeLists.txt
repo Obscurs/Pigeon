@@ -17,6 +17,7 @@ set(SRC_SANDBOX_SYSTEMS
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/CameraControlSystem.cpp"
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/ConfigLoaderSystem.cpp"
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/DebugPanelSystem.cpp"
+    "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/DialogueDemoSystem.cpp"
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/InputReadoutSystem.cpp"
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/LifetimeSystem.cpp"
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/QuadAnimationSystem.cpp"

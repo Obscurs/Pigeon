@@ -30,6 +30,7 @@ pg::CreateApplication()  [Sandbox2D.cpp]
         sbx::UIButtonSystem            release            -> UIUpdateEnable (toggle panel)
         sbx::UICloseSystem             release            -> UIDestroy (dismiss element)
         sbx::UIStatusSystem            spawn count        -> UIUpdateText (status label)
+        sbx::DialogueDemoSystem        ImGui "Dialogue" panel; typewriter text -> UIUpdateTextReveal (dialogue label)
         sbx::DebugPanelSystem          ImGui panel; owns DebugControlsSingletonComponent
         sbx::AudioDemoSystem           S/M/P keys -> Play/Stop/Pause/Resume audio requests; owns AudioDemoState
         sbx::AudioDebugPanelSystem     ImGui "Audio" panel; volume sliders -> SetAudioVolumeRequest
@@ -88,7 +89,9 @@ UI (engine UIControlSystem + UIEventSystem + UIRenderSystem)
   ├── sbx::UIButtonVisualSystem  hover/click -> UIUpdateImageUUIDOneFrameComponent (button image)
   ├── sbx::UIButtonSystem        release on toggle button -> UIUpdateEnableOneFrameComponent (panel)
   ├── sbx::UICloseSystem         release on close button  -> UIDestroyOneFrameComponent (target)
-  └── sbx::UIStatusSystem        SpawnerSingletonComponent count -> UIUpdateTextOneFrameComponent
+  ├── sbx::UIStatusSystem        SpawnerSingletonComponent count -> UIUpdateTextOneFrameComponent
+  └── sbx::DialogueDemoSystem    ImGui-edited line, revealed over time -> UIUpdateTextRevealOneFrameComponent
+                                 (fixed-size word-wrapped dialogue label; re-reveals when the text is edited)
         └── engine UIControlSystem applies the UIUpdate*/UIDestroy components to BaseComponent /
             ImageComponent / TextComponent; UIRenderSystem then emits DrawUIQuad/DrawUIString events
 

@@ -1,0 +1,25 @@
+# DialogueDemoSystem  (sbx)
+
+## Purpose
+Drives the typewriter dialogue demo. Returns early until SandboxConfigSingletonComponent is present,
+then lazily creates DialogueDemoSingletonComponent (seeded with a default line and reveal speed). Each
+ready frame it renders an ImGui "Dialogue" panel — a multi-line text field, a chars/sec slider, and a
+Replay button — guarded so it is skipped in the test build (no ImGui context). Independent of ImGui,
+it detects when the edited line changed (restarting the reveal from the first character), advances the
+reveal by chars/sec × frame time (clamped to the line length), finds the fixed-size word-wrapped
+dialogue text element by UUID, and emits a UIUpdateTextRevealOneFrameComponent carrying the current
+line and visible-character count. The engine UIControlSystem applies it, so the line types itself out
+in the nine-slice panel and replays whenever the text is edited.
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| SandboxConfigSingletonComponent | read | Dialogue text element id; guard |
+| BaseComponent | read | Locates the dialogue text element by UUID |
+| DialogueDemoSingletonComponent | write | Edited line, last-applied line (change detection), reveal progress + speed |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| DialogueDemoSingletonComponent | write / add (deferred) | Created once with the default line; mutated each frame |
+| UIUpdateTextRevealOneFrameComponent | add (oneframe) | Emitted on the dialogue element each frame: current text + visible-character count |

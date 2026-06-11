@@ -11,6 +11,7 @@
 #include "Pigeon/Renderer/DrawStringInFrameEvent.h"
 #include "Pigeon/Renderer/DrawUIQuadInFrameEvent.h"
 #include "Pigeon/Renderer/DrawUIStringInFrameEvent.h"
+#include "Pigeon/Renderer/Font.h"
 #include "Pigeon/Renderer/OrthographicCameraComponent.h"
 #include "Pigeon/Renderer/Renderer2DSystem.h"
 #include "Pigeon/Renderer/RendererDataSingletonComponent.h"
@@ -49,6 +50,34 @@ namespace
 		pg::EngineConfigSingletonComponent& config = registry.emplace<pg::EngineConfigSingletonComponent>(cfgEnt);
 		config.m_DefaultQuadShaderID = quadShaderID;
 		config.m_DefaultTextShaderID = textShaderID;
+	}
+
+	// Loads a real font (so glyphs are drawable) and registers both it and its atlas texture in the
+	// already-seeded resource map, returning the font id to reference from a draw-string event. Uses a
+	// real MSDF atlas, so it depends on global render state and must run as part of the full UT suite.
+	pg::UUID SeedRealFont()
+	{
+		pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+		auto resourcesView = registry.view<pg::ResourceMapSingletonComponent>();
+		pg::ResourceMapSingletonComponent& resources = resourcesView.get<pg::ResourceMapSingletonComponent>(resourcesView.front());
+
+		const pg::UUID fontID = pg::UUID::Generate();
+		pg::TextureData textureData;
+		pg::S_Ptr<pg::Font> font = std::make_shared<pg::Font>("Assets/UT/Fonts/OpenSans-Regular.ttf", textureData);
+		resources.m_FontMap[fontID] = font;
+		resources.m_TextureMap[font->GetFontID()] = pg::MappedTexture{ textureData.m_Texture, pg::EMappedTextureType::eText };
+		return fontID;
+	}
+
+	// Total vertices submitted to the GPU this frame across all batched submissions.
+	unsigned int TotalSubmittedVertices()
+	{
+		unsigned int total = 0;
+		for (const pg::TestingHelper::VertexBufferSetVerticesData& submission : pg::TestingHelper::GetInstance().m_VertexBufferSetVertices)
+		{
+			total += submission.m_Count;
+		}
+		return total;
 	}
 } // namespace
 
@@ -165,6 +194,69 @@ namespace CatchTestsetFail
 
 		auto view = pg::World::GetRegistryDirect().view<pg::RendererDataSingletonComponent>();
 		CHECK(view.size() == 1);
+	}
+
+	// ---------------------------------------------------------------------------
+	// Typewriter reveal: a UI string event with m_VisibleChars = N draws only the
+	// first N source characters. "AB" of "ABCDE" -> two glyph quads (8 vertices),
+	// proving later characters are withheld.
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Renderer.Renderer2DSystem::UIStringRevealLimitsDrawnGlyphs")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::Renderer2DSystem>());
+		SeedValidRenderState();
+		const pg::UUID fontID = SeedRealFont();
+
+		pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+
+		pg::ecs::Entity uiCamEnt = registry.create();
+		registry.emplace<pg::UICameraSingletonComponent>(uiCamEnt);
+
+		pg::ecs::Entity strEnt = registry.create();
+		pg::DrawUIStringInFrameEvent strEvent;
+		strEvent.m_FontID = fontID;
+		strEvent.m_String = "ABCDE";
+		strEvent.m_Transform = glm::scale(glm::mat4(1.f), glm::vec3(32.f, 32.f, 1.f));
+		strEvent.m_Color = glm::vec4(1.f);
+		strEvent.m_VisibleChars = 2;
+		registry.emplace<pg::DrawUIStringInFrameEvent>(strEnt, strEvent);
+
+		world.Update(pg::Timestep(0));
+
+		// Two drawable glyphs -> 2 quads -> 8 vertices.
+		CHECK(TotalSubmittedVertices() == 8);
+	}
+
+	// ---------------------------------------------------------------------------
+	// Typewriter reveal: m_VisibleChars = -1 draws the whole string. "ABCDE" -> five
+	// glyph quads (20 vertices).
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Renderer.Renderer2DSystem::UIStringRevealNegativeDrawsAll")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::Renderer2DSystem>());
+		SeedValidRenderState();
+		const pg::UUID fontID = SeedRealFont();
+
+		pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+
+		pg::ecs::Entity uiCamEnt = registry.create();
+		registry.emplace<pg::UICameraSingletonComponent>(uiCamEnt);
+
+		pg::ecs::Entity strEnt = registry.create();
+		pg::DrawUIStringInFrameEvent strEvent;
+		strEvent.m_FontID = fontID;
+		strEvent.m_String = "ABCDE";
+		strEvent.m_Transform = glm::scale(glm::mat4(1.f), glm::vec3(32.f, 32.f, 1.f));
+		strEvent.m_Color = glm::vec4(1.f);
+		strEvent.m_VisibleChars = -1;
+		registry.emplace<pg::DrawUIStringInFrameEvent>(strEnt, strEvent);
+
+		world.Update(pg::Timestep(0));
+
+		// Five drawable glyphs -> 5 quads -> 20 vertices.
+		CHECK(TotalSubmittedVertices() == 20);
 	}
 
 	// ---------------------------------------------------------------------------

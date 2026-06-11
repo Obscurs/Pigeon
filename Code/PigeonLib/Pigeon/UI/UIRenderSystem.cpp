@@ -277,12 +277,23 @@ void pg::ui::UIRenderSystem::Update(const pg::Timestep& ts)
 			const pg::ui::TextComponent& textComponent = viewText.get<pg::ui::TextComponent>(ent);
 			const pg::UUID fontID = textComponent.m_FontID.IsNull() ? engineConfigComponent.m_DefaultFontID : textComponent.m_FontID;
 			PG_CORE_EXCEPT(resourcesComponent.m_FontMap.find(fontID) != resourcesComponent.m_FontMap.end(), "could not find font for ui text");
-			const unsigned int numLines = GetStringNumLines(textComponent.m_Text, resourcesComponent.m_FontMap.at(fontID));
-			const glm::vec2 stringBounds = GetStringBounds(textComponent.m_Text, textComponent.m_Kerning, textComponent.m_Spacing, resourcesComponent.m_FontMap.at(fontID));
+			const pg::S_Ptr<pg::Font> font = resourcesComponent.m_FontMap.at(fontID);
 
 			const glm::vec4 rect = pg::ui::GetElementRect(accessor, baseComponent, renderComponent);
 			const int depth = pg::ui::GetElementDepth(accessor, baseComponent);
-			const float fontSize = GetFontSizeForBox(glm::vec2(rect.z, rect.w), stringBounds, numLines);
+
+			// Fixed-size body text renders at its declared em height (and may word-wrap to the rect width);
+			// otherwise the legacy path auto-fits the whole string to the rect (suited to labels).
+			const bool fixedSize = textComponent.m_FixedFontSize > 0.f;
+			std::string renderString = textComponent.m_Text;
+			if (fixedSize && textComponent.m_WordWrap)
+			{
+				renderString = font->WrapString(textComponent.m_Text, textComponent.m_FixedFontSize, textComponent.m_Kerning, textComponent.m_Spacing, rect.z);
+			}
+
+			const unsigned int numLines = GetStringNumLines(renderString, font);
+			const glm::vec2 stringBounds = GetStringBounds(renderString, textComponent.m_Kerning, textComponent.m_Spacing, font);
+			const float fontSize = fixedSize ? textComponent.m_FixedFontSize : GetFontSizeForBox(glm::vec2(rect.z, rect.w), stringBounds, numLines);
 
 			// Position the rendered glyph block within the element rect per the text's own alignment.
 			const glm::vec2 renderedSize(stringBounds.x * fontSize, stringBounds.y * fontSize * numLines);
@@ -292,11 +303,12 @@ void pg::ui::UIRenderSystem::Update(const pg::Timestep& ts)
 
 			pg::DrawUIStringInFrameEvent stringEvent;
 			stringEvent.m_Transform = transform;
-			stringEvent.m_String = textComponent.m_Text;
+			stringEvent.m_String = renderString;
 			stringEvent.m_FontID = fontID;
 			stringEvent.m_Color = textComponent.m_Color;
 			stringEvent.m_Kerning = textComponent.m_Kerning;
 			stringEvent.m_Linespacing = textComponent.m_Spacing;
+			stringEvent.m_VisibleChars = textComponent.m_VisibleChars;
 			stringEvent.m_ClipRect = ComputeClipRectPixels(accessor, baseComponent, renderComponent);
 			accessor.EmplaceInframeEvent<pg::DrawUIStringInFrameEvent>(std::move(stringEvent));
 		}

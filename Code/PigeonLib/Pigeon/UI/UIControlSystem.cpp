@@ -118,6 +118,21 @@ namespace
 			else if (alignStr == "bottom") component.m_VAlign = pg::ui::EVAlignType::eBottom;
 			else if (alignStr == "center") component.m_VAlign = pg::ui::EVAlignType::eCenter;
 		}
+		if (jsonObject.contains("fontSize"))
+		{
+			PG_CORE_EXCEPT(jsonObject["fontSize"].is_number(), "unable to parse json, fontSize is not a number");
+			component.m_FixedFontSize = jsonObject["fontSize"].get<float>();
+		}
+		if (jsonObject.contains("wrap"))
+		{
+			PG_CORE_EXCEPT(jsonObject["wrap"].is_boolean(), "unable to parse json, wrap is not a boolean");
+			component.m_WordWrap = jsonObject["wrap"].get<bool>();
+		}
+		if (jsonObject.contains("visibleChars"))
+		{
+			PG_CORE_EXCEPT(jsonObject["visibleChars"].is_number_integer(), "unable to parse json, visibleChars is not an integer");
+			component.m_VisibleChars = jsonObject["visibleChars"].get<int>();
+		}
 		accessor.EmplaceDeferred<pg::ui::TextComponent>(ent, std::move(component));
 	}
 
@@ -273,6 +288,7 @@ pg::SystemAccessDecl pg::ui::UIControlSystem::DeclareAccess() const
 		std::type_index(typeid(pg::ui::UIUpdateUUIDOneFrameComponent)),
 		std::type_index(typeid(pg::ui::UIUpdateImageUUIDOneFrameComponent)),
 		std::type_index(typeid(pg::ui::UIUpdateTextOneFrameComponent)),
+		std::type_index(typeid(pg::ui::UIUpdateTextRevealOneFrameComponent)),
 		std::type_index(typeid(pg::ui::UIUpdateClipOffsetOneFrameComponent)),
 		std::type_index(typeid(pg::ui::LoadLayoutEvent)),
 		std::type_index(typeid(pg::ui::UIDestroyOneFrameComponent)),
@@ -376,6 +392,19 @@ void pg::ui::UIControlSystem::Update(const pg::Timestep& ts)
 		textComponent.m_Kerning = updateComponent.m_Kerning;
 		textComponent.m_Spacing = updateComponent.m_Spacing;
 		textComponent.m_Text = updateComponent.m_Text;
+	}
+
+	auto viewTextReveal = accessor.View<pg::ui::TextComponent, const pg::ui::UIUpdateTextRevealOneFrameComponent>();
+	for (auto ent : viewTextReveal)
+	{
+		pg::ui::TextComponent& textComponent = viewTextReveal.get<pg::ui::TextComponent>(ent);
+		const pg::ui::UIUpdateTextRevealOneFrameComponent& updateComponent = viewTextReveal.get<const pg::ui::UIUpdateTextRevealOneFrameComponent>(ent);
+		// A non-empty text swaps in a new dialogue line; an empty one advances the reveal only.
+		if (!updateComponent.m_Text.empty())
+		{
+			textComponent.m_Text = updateComponent.m_Text;
+		}
+		textComponent.m_VisibleChars = updateComponent.m_VisibleChars;
 	}
 
 	auto viewLoad = accessor.View<const pg::ui::LoadLayoutEvent>();

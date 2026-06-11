@@ -64,6 +64,7 @@ void sbx::ConfigLoaderSystem::Update(const pg::Timestep& ts)
 	component.m_CloseButtonID = ParseRequiredUUID(jsonObject, "closeButton");
 	component.m_CloseTargetID = ParseRequiredUUID(jsonObject, "closeTarget");
 	component.m_ScrollPanelID = ParseRequiredUUID(jsonObject, "scrollPanel");
+	component.m_DialogueTextID = ParseRequiredUUID(jsonObject, "dialogueText");
 	component.m_ButtonImageID = ParseRequiredUUID(jsonObject, "buttonImage");
 	component.m_ButtonHoverImageID = ParseRequiredUUID(jsonObject, "buttonHoverImage");
 	component.m_ButtonPressedImageID = ParseRequiredUUID(jsonObject, "buttonPressedImage");

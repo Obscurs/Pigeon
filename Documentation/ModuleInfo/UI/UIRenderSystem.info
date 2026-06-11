@@ -7,9 +7,13 @@ root element's parent is the logical canvas): from its own anchor-rect, or, when
 layout container, from the container's layout (stack or grid). Image entities become a
 DrawUIQuadInFrameEvent filling their rect — or, when the image declares a nine-slice border, nine
 sub-quads (corners at the texture-pixel border size, edges/center stretched, each with its own UV
-sub-rect). Text entities become a DrawUIStringInFrameEvent whose font
-is scaled to fit the rect and whose glyph block is positioned within the rect per the text's own
-alignment. Each draw event also carries the element's effective clip rect (the intersection of
+sub-rect). Text entities become a DrawUIStringInFrameEvent whose glyph block is positioned within the rect per
+the text's own alignment. Sizing has two modes: when TextComponent.m_FixedFontSize is 0 (labels) the
+font is auto-fit so the whole string fills the rect; when it is positive (body/dialogue text) the font
+renders at that exact em height, and if m_WordWrap is set the string is wrapped to the rect width via
+Font::WrapString before measuring and emitting (so prose stays a consistent size and stays inside the
+box instead of shrinking). The text's m_VisibleChars is forwarded onto the draw event to drive the
+typewriter reveal; the layout is always computed on the full string so revealed glyphs never reflow. Each draw event also carries the element's effective clip rect (the intersection of
 ancestor UIClip rects) converted to window pixels for the renderer's scissor. The nesting depth is
 encoded as the Z component of the transform, providing draw-layer ordering (children render over
 parents).

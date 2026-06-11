@@ -227,7 +227,7 @@ namespace
 		items.push_back(item);
 	}
 
-	void AppendString(std::vector<DrawItem>& items, const pg::ResourceMapSingletonComponent& resourcesComponent, const glm::mat4& transform, const std::string& string, pg::S_Ptr<pg::Font> font, const glm::vec4& color, float kerning, float linespacing, float sortKey, const glm::vec4& clipRect)
+	void AppendString(std::vector<DrawItem>& items, const pg::ResourceMapSingletonComponent& resourcesComponent, const glm::mat4& transform, const std::string& string, pg::S_Ptr<pg::Font> font, const glm::vec4& color, float kerning, float linespacing, float sortKey, const glm::vec4& clipRect, int visibleChars)
 	{
 		const pg::Texture2D& fontAtlas = GetTexture(resourcesComponent, font->GetFontID());
 
@@ -239,6 +239,11 @@ namespace
 
 		for (size_t i = 0; i < string.size(); i++)
 		{
+			// Typewriter reveal: stop once we reach the first hidden source character. The layout was
+			// produced for the full string, so the glyphs drawn here keep their final positions.
+			if (visibleChars >= 0 && static_cast<int>(i) >= visibleChars)
+				break;
+
 			char character = string[i];
 
 			if (font->IsCharacterDrawable(character))
@@ -309,7 +314,7 @@ namespace
 		for (auto ent : viewDrawString)
 		{
 			const pg::DrawStringInFrameEvent& event = viewDrawString.get<const pg::DrawStringInFrameEvent>(ent);
-			AppendString(worldItems, resourcesComponent, event.m_Transform, event.m_String, event.m_Font, event.m_Color, event.m_Kerning, event.m_Linespacing, event.m_SortKey, glm::vec4(0.f));
+			AppendString(worldItems, resourcesComponent, event.m_Transform, event.m_String, event.m_Font, event.m_Color, event.m_Kerning, event.m_Linespacing, event.m_SortKey, glm::vec4(0.f), -1);
 		}
 
 		// UI elements keep their nesting level packed into the transform z; it is used purely to order
@@ -328,7 +333,7 @@ namespace
 		{
 			const pg::DrawUIStringInFrameEvent& event = viewDrawUIString.get<const pg::DrawUIStringInFrameEvent>(ent);
 			PG_CORE_EXCEPT(resourcesComponent.m_FontMap.find(event.m_FontID) != resourcesComponent.m_FontMap.end(), "Could not find font");
-			AppendString(uiItems, resourcesComponent, event.m_Transform, event.m_String, resourcesComponent.m_FontMap.at(event.m_FontID), event.m_Color, event.m_Kerning, event.m_Linespacing, event.m_Transform[3][2], event.m_ClipRect);
+			AppendString(uiItems, resourcesComponent, event.m_Transform, event.m_String, resourcesComponent.m_FontMap.at(event.m_FontID), event.m_Color, event.m_Kerning, event.m_Linespacing, event.m_Transform[3][2], event.m_ClipRect, event.m_VisibleChars);
 		}
 
 		std::stable_sort(worldItems.begin(), worldItems.end(),
