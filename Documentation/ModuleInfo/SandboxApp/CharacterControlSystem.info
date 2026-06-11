@@ -1,0 +1,24 @@
+# CharacterControlSystem  (sbx)
+
+## Purpose
+Translates held arrow keys into the showcase character's movement and facing animation. Returns early
+until InputStateSingletonComponent exists. For each entity tagged CharacterTagComponent it forms a
+movement direction from the held arrow keys; while moving it reads the character's current
+PositionComponent and emits a CharacterTransformRequestOneFrameComponent setting the new world position
+(move speed scaled by the frame delta), and emits a SetSpriteAnimationRequestOneFrameComponent selecting
+the animation row for the facing direction with playback on. While idle it emits only a
+SetSpriteAnimationRequestOneFrameComponent with playback off and no row change, so the character rests on
+its idle frame still facing its last direction. Sole adder of both request types.
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| InputStateSingletonComponent | read | Held arrow keys; guard (returns early if absent) |
+| CharacterTagComponent | read | Marks the arrow-key-controlled character entity |
+| PositionComponent | read | The character's current world position (movement origin) |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| CharacterTransformRequestOneFrameComponent | add (oneframe) | New world position; emitted only on a frame with movement |
+| SetSpriteAnimationRequestOneFrameComponent | add (oneframe) | Engine request: facing row (when moving) + playback flag; applied by the engine SpriteAnimationSystem |

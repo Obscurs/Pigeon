@@ -87,8 +87,15 @@ file(GLOB RENDERER
     "Pigeon/Renderer/RendererAPI.cpp"
     "Pigeon/Renderer/RendererDataSingletonComponent.h"
     "Pigeon/Renderer/SetCameraRequestOneFrameComponent.h"
+    "Pigeon/Renderer/SetSpriteAnimationRequestOneFrameComponent.h"
     "Pigeon/Renderer/Shader.cpp"
     "Pigeon/Renderer/Sprite.cpp"
+    "Pigeon/Renderer/SpriteAnimationComponent.h"
+    "Pigeon/Renderer/SpriteAnimationSystem.cpp"
+    "Pigeon/Renderer/SpriteComponent.h"
+    "Pigeon/Renderer/SpriteRenderSystem.cpp"
+    "Pigeon/Renderer/SpriteSheet.cpp"
+    "Pigeon/Renderer/SpriteSheet.h"
     "Pigeon/Renderer/Texture.cpp"
 )
 

@@ -5,7 +5,8 @@
 SandboxApp is a showcase that exercises every PigeonLib capability through small,
 single-responsibility ECS systems that communicate only via components and events. The engine
 systems (CameraSystem, ConfigLoaderSystem, InputSystem, Renderer2DSystem, ResourceManagerSystem,
-UIControlSystem, UIEventSystem, UIRenderSystem) are registered by `Application::Init`. The sandbox
+SpriteAnimationSystem, SpriteRenderSystem, UIControlSystem, UIEventSystem, UIRenderSystem) are
+registered by `Application::Init`. The sandbox
 registers only the systems below; execution order is derived automatically from each system's
 `DeclareAccess()`, so registration order is irrelevant.
 
@@ -17,14 +18,18 @@ pg::CreateApplication()  [Sandbox2D.cpp]
   └── World::RegisterSystem(...) for:
         sbx::ConfigLoaderSystem        Assets/App/Config.json -> SandboxConfigSingletonComponent
         sbx::TransformResolveSystem    app transform requests -> ResolvedTransformRequest (engine type)
-        sbx::SceneSetupSystem          camera + sprite + labels + transform requests + LoadLayoutEvent (once)
+        sbx::SceneSetupSystem          camera + sprite + animated character + labels + transform requests + LoadLayoutEvent (once)
         sbx::CameraControlSystem       held WASD + scroll + camera -> SetCameraRequest (engine type)
+        sbx::CharacterControlSystem    held arrows -> CharacterTransformRequest (move) + SetSpriteAnimationRequest (facing/play)
         sbx::QuadSpawnSystem           seeds demo quads (+ spawn transform requests); spawns on SPACE
         sbx::QuadAnimationSystem       SpinComponent + time -> QuadComponent colour + AnimationTransformRequest
         sbx::LifetimeSystem            counts down LifetimeComponent; deferred-destroys expired
         sbx::QuadRenderSystem          QuadComponent + WorldTransform  -> DrawQuadInFrameEvent
-        sbx::SpriteRenderSystem        SpriteComponent + WorldTransform -> DrawSpriteInFrameEvent
         sbx::TextRenderSystem          LabelComponent + WorldTransform  -> DrawStringInFrameEvent
+
+      Engine sprite systems (registered by Application::Init) consume the data the sandbox sets:
+        pg::SpriteAnimationSystem      SetSpriteAnimationRequest + time -> SpriteComponent UVs (via pg::SpriteSheet)
+        pg::SpriteRenderSystem         SpriteComponent + WorldTransform -> DrawSpriteInFrameEvent
         sbx::InputReadoutSystem        InputState         -> readout LabelComponent text
         sbx::UIButtonVisualSystem      hover/click        -> UIUpdateImageUUID (button image)
         sbx::UIButtonSystem            release            -> UIUpdateEnable (toggle panel)
@@ -49,9 +54,11 @@ Frame 1
     state singletons; every other sandbox system guards on missing inputs and no-ops
 
 Frame 2
-  sbx::SceneSetupSystem  both config + resources present -> creates the scene camera, the demo
-                         sprite, the title/instructions/input-readout labels, emits LoadLayoutEvent,
-                         and creates SceneReadySingletonComponent (its run-once guard)
+  sbx::SceneSetupSystem  both config + resources present -> creates the scene camera, the static demo
+                         sprite, the arrow-key animated character (sprite + 8x8 SpriteAnimationComponent +
+                         CharacterTagComponent, starting idle), the title/instructions/input-readout
+                         labels, emits LoadLayoutEvent, and creates SceneReadySingletonComponent (its
+                         run-once guard)
   sbx::QuadSpawnSystem   config present, spawner absent -> seeds the persistent demo quads and
                          creates SpawnerSingletonComponent
 
@@ -66,12 +73,15 @@ Frame 3+  (steady state)
 Input (engine InputSystem -> InputStateSingletonComponent)
   ├── sbx::CameraControlSystem    held WASD + scroll + camera zoom/pos -> SetCameraRequest (engine type)
   │      └── engine CameraSystem  applies zoom + pans (CameraTransformRequest); resize aspect (viewport)
+  ├── sbx::CharacterControlSystem held arrows + character pos -> CharacterTransformRequest (move) +
+  │                               SetSpriteAnimationRequest (facing row + play/stop)
   ├── sbx::QuadSpawnSystem        SPACE -> QuadComponent + SpinComponent + LifetimeComponent
   └── sbx::InputReadoutSystem     mouse/keys/scroll -> readout LabelComponent text
 
 Transforms (ADR 0003, two-tier resolve)
   app movers emit per-mover requests:
     SpinComponent --(sbx::QuadAnimationSystem)--> AnimationTransformRequest (position + rotation)
+    held arrows --(sbx::CharacterControlSystem)--> CharacterTransformRequest (character position)
     sbx::QuadSpawnSystem / sbx::SceneSetupSystem --> spawn / scene transform requests (initial P/R/S/Bounds)
   sbx::TransformResolveSystem aggregates all app requests --> one pg::ResolvedTransformRequest per entity
         └── engine TransformResolveSystem (+ camera pan request) writes Position/Rotation/Scale/LocalBounds
@@ -79,7 +89,8 @@ Transforms (ADR 0003, two-tier resolve)
 
 World-space rendering
   QuadComponent   + WorldTransform --(sbx::QuadRenderSystem)--> DrawQuadInFrameEvent
-  SpriteComponent + WorldTransform --(sbx::SpriteRenderSystem)--> DrawSpriteInFrameEvent
+  SetSpriteAnimationRequest + time --(engine pg::SpriteAnimationSystem)--> SpriteComponent sub-texture (sprite-sheet frame, via pg::SpriteSheet)
+  SpriteComponent + WorldTransform --(engine pg::SpriteRenderSystem)--> DrawSpriteInFrameEvent
   LabelComponent  + WorldTransform --(sbx::TextRenderSystem, via ResourceMap font)--> DrawStringInFrameEvent
         └── engine Renderer2DSystem Y-sorts world draws (lower Y behind), draws UI on top, into GPU draw calls
   LifetimeComponent --(sbx::LifetimeSystem)--> deferred entity destroy when expired

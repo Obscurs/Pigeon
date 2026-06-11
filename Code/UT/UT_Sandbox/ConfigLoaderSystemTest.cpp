@@ -67,6 +67,7 @@ namespace CatchTestsetFail
 		CHECK(!cfg.m_BoldFontID.IsNull());
 		CHECK(!cfg.m_SpriteTextureID.IsNull());
 		CHECK(!cfg.m_TexturedQuadTextureID.IsNull());
+		CHECK(!cfg.m_CharacterTextureID.IsNull());
 		CHECK(!cfg.m_MainLayoutID.IsNull());
 		CHECK(!cfg.m_ToggleButtonID.IsNull());
 		CHECK(!cfg.m_TogglePanelID.IsNull());

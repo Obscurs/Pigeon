@@ -3,10 +3,12 @@
 ## Purpose
 One-shot scene builder. Returns early until both SandboxConfigSingletonComponent and
 ResourceMapSingletonComponent are present. On the first ready frame it creates the
-scene camera, the demo sprite, and the world-space labels (a title, an instructions label, and a
-tagged input-readout label), emitting a SceneTransformRequestOneFrameComponent to seed each one's
-world transform (position-only for the camera). It also emits a LoadLayoutEvent to load the UI layout
-and creates SceneReadySingletonComponent as its run-once guard.
+scene camera, the static demo sprite, the arrow-key-controlled animated character (a SpriteComponent +
+an 8x8 SpriteAnimationComponent + a CharacterTagComponent, starting idle), and the world-space labels (a
+title, an instructions label, and a tagged input-readout label), emitting a
+SceneTransformRequestOneFrameComponent to seed each one's world transform (position-only for the
+camera). It also emits a LoadLayoutEvent to load the UI layout and creates SceneReadySingletonComponent
+as its run-once guard.
 
 ## Input Components
 | Component | Access | Notes |
@@ -19,7 +21,9 @@ and creates SceneReadySingletonComponent as its run-once guard.
 | Component | Access | Notes |
 |---|---|---|
 | OrthographicCameraComponent | add (deferred) | Scene camera; the app CameraControlSystem drives it via the engine CameraSystem |
-| SpriteComponent | add (deferred) | The demo sub-texture sprite |
+| SpriteComponent | add (deferred) | Engine component; the static demo sprite and the animated character's sprite |
+| SpriteAnimationComponent | add (deferred) | Engine component; the character's 8x8 sprite-sheet animation state (starts idle), driven by the engine SpriteAnimationSystem |
+| CharacterTagComponent | add (deferred) | Marks the character for CharacterControlSystem |
 | LabelComponent | add (deferred) | Title, instructions and the input-readout label |
 | SceneTransformRequestOneFrameComponent | add (oneframe) | Seeds the world transform for the camera, sprite and labels |
 | InputReadoutTagComponent | add (deferred) | Marks the readout label for InputReadoutSystem |

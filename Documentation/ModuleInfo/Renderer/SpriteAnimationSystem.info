@@ -1,0 +1,24 @@
+# SpriteAnimationSystem
+
+## Purpose
+Engine sprite-sheet frame stepper. Sole writer of SpriteAnimationComponent and the modifying writer of
+SpriteComponent's sub-texture. For every entity carrying both a SpriteAnimationComponent and a
+SpriteComponent it first applies any SetSpriteAnimationRequestOneFrameComponent present on that entity
+(switching the active animation row when requested and toggling playback). When playing, it advances the
+animation timer by the frame delta and steps the active row's current column forward, wrapping at the
+configured frame count; when paused it resets to the idle frame. It then writes the active sheet cell's
+normalised UV rectangle into the SpriteComponent. No-ops when no animated sprites exist. Registered by
+the engine in Application::Init.
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| SetSpriteAnimationRequestOneFrameComponent | read | Optional per-entity row switch + playback toggle (emitted by the app) |
+| SpriteAnimationComponent | write | Playback state read for parameters and advanced in place |
+| SpriteComponent | write | Sub-texture UV rectangle rewritten each frame |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| SpriteAnimationComponent | write | m_Elapsed + m_Column advanced (or reset to the idle frame when paused), m_Row/m_Playing applied from the request |
+| SpriteComponent | write | m_TexCoordsRect set to the active cell's UV rectangle from the SpriteSheet |

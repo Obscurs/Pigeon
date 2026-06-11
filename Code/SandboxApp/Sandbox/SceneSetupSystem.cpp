@@ -3,14 +3,17 @@
 #include "Pigeon/Core/ResourceMapSingletonComponent.h"
 #include "Pigeon/ECS/World.h"
 #include "Pigeon/Renderer/OrthographicCameraComponent.h"
+#include "Pigeon/Renderer/SpriteAnimationComponent.h"
+#include "Pigeon/Renderer/SpriteComponent.h"
+#include "Pigeon/Renderer/SpriteSheet.h"
 #include "Pigeon/Transform/TransformRequestData.h"
 #include "Pigeon/UI/UIComponents.h"
+#include "Sandbox/CharacterTagComponent.h"
 #include "Sandbox/InputReadoutTagComponent.h"
 #include "Sandbox/LabelComponent.h"
 #include "Sandbox/SandboxConfigSingletonComponent.h"
 #include "Sandbox/SceneReadySingletonComponent.h"
 #include "Sandbox/SceneTransformRequestOneFrameComponent.h"
-#include "Sandbox/SpriteComponent.h"
 
 #include <glm/gtc/quaternion.hpp>
 
@@ -53,13 +56,40 @@ namespace
 	void CreateSprite(pg::CheckedRegistryAccessor& accessor, const sbx::SandboxConfigSingletonComponent& config)
 	{
 		pg::ecs::Entity ent = accessor.Create();
-		sbx::SpriteComponent sprite;
+		pg::SpriteComponent sprite;
 		// sampleSprite.png is a 9x5 grid of walk-cycle frames; show the top-left frame. The
 		// renderer treats these coordinates as raw UVs, so they must be normalised to [0,1].
 		sprite.m_TexCoordsRect = glm::vec4(0.f, 0.f, 1.f / 9.f, 1.f / 5.f);
 		sprite.m_TextureID = config.m_SpriteTextureID;
-		accessor.EmplaceDeferred<sbx::SpriteComponent>(ent, std::move(sprite));
+		accessor.EmplaceDeferred<pg::SpriteComponent>(ent, std::move(sprite));
 		EmitSceneTransform(accessor, ent, glm::vec3(-1.5f, -0.9f, 0.f), glm::vec3(0.6f, 0.6f, 1.f));
+	}
+
+	// The arrow-key-controlled animated character. Uses Checkerboard.png as an 8x8 sprite sheet: each row
+	// is a facing direction, each column a frame. CharacterControlSystem drives its row + movement and
+	// SpriteAnimationSystem steps its frames; it starts idle, facing "down" (row 0), until the first input.
+	void CreateCharacter(pg::CheckedRegistryAccessor& accessor, const sbx::SandboxConfigSingletonComponent& config)
+	{
+		pg::ecs::Entity ent = accessor.Create();
+
+		pg::SpriteComponent sprite;
+		sprite.m_TextureID = config.m_CharacterTextureID;
+		// Start on the top-left cell; SpriteAnimationSystem overwrites this every frame. Raw UVs, [0,1].
+		sprite.m_TexCoordsRect = glm::vec4(0.f, 0.f, 1.f / 8.f, 1.f / 8.f);
+		accessor.EmplaceDeferred<pg::SpriteComponent>(ent, std::move(sprite));
+
+		pg::SpriteAnimationComponent animation;
+		animation.m_Sheet = pg::SpriteSheet(8, 8);
+		animation.m_FrameCount = 8;
+		animation.m_FrameDuration = 0.12f;
+		animation.m_Row = 0;
+		animation.m_Column = 0;
+		animation.m_Playing = false;
+		accessor.EmplaceDeferred<pg::SpriteAnimationComponent>(ent, std::move(animation));
+
+		accessor.EmplaceDeferred<sbx::CharacterTagComponent>(ent);
+
+		EmitSceneTransform(accessor, ent, glm::vec3(0.8f, 0.f, 0.f), glm::vec3(0.6f, 0.6f, 1.f));
 	}
 
 	pg::ecs::Entity CreateLabel(pg::CheckedRegistryAccessor& accessor, const glm::vec3& position, const glm::vec3& scale, const std::string& text, const pg::UUID& fontID, const glm::vec4& color)
@@ -87,7 +117,9 @@ pg::SystemAccessDecl sbx::SceneSetupSystem::DeclareAccess() const
 	};
 	decl.addSet = {
 		std::type_index(typeid(pg::OrthographicCameraComponent)),
-		std::type_index(typeid(sbx::SpriteComponent)),
+		std::type_index(typeid(pg::SpriteComponent)),
+		std::type_index(typeid(pg::SpriteAnimationComponent)),
+		std::type_index(typeid(sbx::CharacterTagComponent)),
 		std::type_index(typeid(sbx::LabelComponent)),
 		std::type_index(typeid(sbx::SceneTransformRequestOneFrameComponent)),
 		std::type_index(typeid(sbx::InputReadoutTagComponent)),
@@ -115,11 +147,12 @@ void sbx::SceneSetupSystem::Update(const pg::Timestep& ts)
 
 	CreateCamera(accessor);
 	CreateSprite(accessor, config);
+	CreateCharacter(accessor, config);
 
 	CreateLabel(accessor, glm::vec3(-1.7f, 1.5f, 0.f), glm::vec3(0.4f, 0.4f, 1.f),
 		"Pigeon Engine Showcase", config.m_BoldFontID, glm::vec4(1.f, 0.9f, 0.2f, 1.f));
 	CreateLabel(accessor, glm::vec3(-1.7f, 1.1f, 0.f), glm::vec3(0.18f, 0.18f, 1.f),
-		"WASD pan   scroll zoom   SPACE spawn", config.m_DefaultFontID, glm::vec4(0.9f, 0.9f, 0.9f, 1.f));
+		"WASD pan  scroll zoom  SPACE spawn  arrows move", config.m_DefaultFontID, glm::vec4(0.9f, 0.9f, 0.9f, 1.f));
 
 	pg::ecs::Entity readout = CreateLabel(accessor, glm::vec3(-1.7f, -1.4f, 0.f), glm::vec3(0.16f, 0.16f, 1.f),
 		"", config.m_DefaultFontID, glm::vec4(0.6f, 0.9f, 1.f, 1.f));

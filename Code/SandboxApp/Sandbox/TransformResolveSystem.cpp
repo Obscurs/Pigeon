@@ -4,6 +4,7 @@
 #include "Pigeon/Transform/ResolvedTransformRequestOneFrameComponent.h"
 #include "Pigeon/Transform/TransformRequestData.h"
 #include "Sandbox/AnimationTransformRequestOneFrameComponent.h"
+#include "Sandbox/CharacterTransformRequestOneFrameComponent.h"
 #include "Sandbox/QuadSpawnTransformRequestOneFrameComponent.h"
 #include "Sandbox/SceneTransformRequestOneFrameComponent.h"
 
@@ -74,6 +75,7 @@ pg::SystemAccessDecl sbx::TransformResolveSystem::DeclareAccess() const
 		std::type_index(typeid(sbx::SceneTransformRequestOneFrameComponent)),
 		std::type_index(typeid(sbx::QuadSpawnTransformRequestOneFrameComponent)),
 		std::type_index(typeid(sbx::AnimationTransformRequestOneFrameComponent)),
+		std::type_index(typeid(sbx::CharacterTransformRequestOneFrameComponent)),
 	};
 	decl.addSet = {
 		std::type_index(typeid(pg::ResolvedTransformRequestOneFrameComponent)),
@@ -89,6 +91,7 @@ void sbx::TransformResolveSystem::Update(const pg::Timestep& ts)
 	Gather<sbx::SceneTransformRequestOneFrameComponent>(accessor, requests);
 	Gather<sbx::QuadSpawnTransformRequestOneFrameComponent>(accessor, requests);
 	Gather<sbx::AnimationTransformRequestOneFrameComponent>(accessor, requests);
+	Gather<sbx::CharacterTransformRequestOneFrameComponent>(accessor, requests);
 
 	for (const EntityRequest& request : requests)
 	{

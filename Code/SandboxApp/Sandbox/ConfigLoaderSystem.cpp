@@ -57,6 +57,7 @@ void sbx::ConfigLoaderSystem::Update(const pg::Timestep& ts)
 	component.m_BoldFontID = ParseRequiredUUID(jsonObject, "boldFont");
 	component.m_SpriteTextureID = ParseRequiredUUID(jsonObject, "spriteTexture");
 	component.m_TexturedQuadTextureID = ParseRequiredUUID(jsonObject, "texturedQuadTexture");
+	component.m_CharacterTextureID = ParseRequiredUUID(jsonObject, "characterTexture");
 	component.m_MainLayoutID = ParseRequiredUUID(jsonObject, "mainLayoutId");
 	component.m_ToggleButtonID = ParseRequiredUUID(jsonObject, "toggleButton");
 	component.m_TogglePanelID = ParseRequiredUUID(jsonObject, "togglePanel");

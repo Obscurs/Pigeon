@@ -3,12 +3,13 @@
 
 #include <glm/glm.hpp>
 
-namespace sbx
+namespace pg
 {
 	// Visual data for a world-space sub-texture sprite. Placement comes from the transform components;
 	// SpriteRenderSystem reads the resolved WorldTransform. m_TexCoordsRect selects a rectangular region
 	// of the texture in normalised UV space (x,y = min corner, z,w = max corner, each in [0,1]); the
-	// renderer uses these values as raw UVs.
+	// renderer uses these values as raw UVs. For an animated sprite, SpriteAnimationSystem rewrites
+	// m_TexCoordsRect each frame; a static sprite sets it once at creation and keeps it.
 	struct SpriteComponent
 	{
 		SpriteComponent() = default;

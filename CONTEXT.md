@@ -67,6 +67,19 @@
 | Resource Manifest | The per-project JSON file (`Assets/<project>/ResourcesManifest.json`) that declares every asset to load, grouped by category array (`textures`, `fonts`, `shaders`, `ui`, `sounds`, `json`). Each entry is an `{id, path}` pair; the path is resolved under the category's folder (`Assets/<project>/<Folder>/<path>`). |
 | JSON Asset | A loadable JSON data asset, declared in the `json` array of a resource manifest and loaded from the project's `JSON` folder (`Assets/<project>/JSON/<path>`). Parsed at load time and held live in the resource map's `m_JSONMap` (UUID → parsed `nlohmann::json`). The engine and app declare these the same way as any other resource; the parsed content is the value other systems read. |
 
+## Sprites & Animation
+
+| Term | Meaning |
+|---|---|
+| Sprite | A world-space quad textured with a rectangular region (sub-texture) of a single texture, placed by the Transform components. The sub-texture is selected by a UV rectangle; a full-texture sprite simply uses the whole [0,1] rectangle. |
+| Sprite Sheet | A uniform grid that subdivides one texture into `columns × rows` equal Cells (`pg::SpriteSheet`). It maps a Cell to its normalized UV rectangle, with the top-left Cell at column 0 / row 0. Pixel-agnostic — Cells are fractions of the texture, so the same sheet works at any texture resolution. The reusable engine primitive underpinning Sprite Animation. |
+| Cell / Frame | One grid square of a Sprite Sheet, addressed by `(column, row)`. In an animation a single row is one clip and each column within it is a successive Frame. |
+| Animation Row | One row of a Sprite Sheet treated as a single animation clip; its columns are the clip's frames played in order. Different rows hold different animations (e.g. one row per facing direction). |
+| Sprite Animation | Advancing a Sprite's sub-texture through the Frames of an Animation Row over time: a frame is shown for a fixed Frame Duration, then the active column steps to the next Frame, wrapping at the end of the row. Playing can be paused (the Sprite freezes on its idle Frame). Engine-owned: the engine holds the playback state (`SpriteAnimationComponent`) and steps it (`SpriteAnimationSystem`); the App only authors the configuration (sheet, Frame Duration/speed, starting row) and changes the active animation at runtime via a Set Sprite Animation Request. |
+| Set Sprite Animation Request | An engine-typed one-frame request (`SetSpriteAnimationRequestOneFrameComponent`) carrying an optional target Animation Row and a playing flag. The App emits it; the engine `SpriteAnimationSystem` applies it. Like the camera/audio/window requests, it must be an engine (`pg`) type so the engine system can read it. |
+| Frame Duration | How long (seconds) each Frame of a Sprite Animation is displayed before advancing to the next; the inverse of the animation's frames-per-second. The App sets it as the animation's speed. |
+| Character (showcase) | The arrow-key-controlled demo entity in SandboxApp. Held arrow keys drive its Transform movement and select the Animation Row matching its facing direction; releasing the keys stops playback so it rests on an idle Frame facing its last direction. |
+
 ## UI
 
 | Term | Meaning |

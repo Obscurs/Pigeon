@@ -18,6 +18,7 @@ namespace sbx
 		// Textures (world-space draws).
 		pg::UUID m_SpriteTextureID;       // sub-texture sprite demo
 		pg::UUID m_TexturedQuadTextureID; // textured quad demo
+		pg::UUID m_CharacterTextureID;    // animated character spritesheet (arrow-key demo)
 
 		// UI layout to load on startup.
 		pg::UUID m_MainLayoutID;

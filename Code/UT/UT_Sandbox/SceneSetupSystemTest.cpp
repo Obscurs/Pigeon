@@ -6,13 +6,16 @@
 #include "Pigeon/ECS/System.h"
 #include "Pigeon/ECS/World.h"
 #include "Pigeon/Renderer/OrthographicCameraComponent.h"
+#include "Pigeon/Renderer/SpriteAnimationComponent.h"
+#include "Pigeon/Renderer/SpriteComponent.h"
+#include "Pigeon/Renderer/SpriteSheet.h"
 #include "Pigeon/UI/UIComponents.h"
+#include "Sandbox/CharacterTagComponent.h"
 #include "Sandbox/InputReadoutTagComponent.h"
 #include "Sandbox/LabelComponent.h"
 #include "Sandbox/SandboxConfigSingletonComponent.h"
 #include "Sandbox/SceneReadySingletonComponent.h"
 #include "Sandbox/SceneSetupSystem.h"
-#include "Sandbox/SpriteComponent.h"
 
 namespace
 {
@@ -21,6 +24,7 @@ namespace
 		pg::ecs::Entity cfgEnt = registry.create();
 		sbx::SandboxConfigSingletonComponent& cfg = registry.emplace<sbx::SandboxConfigSingletonComponent>(cfgEnt);
 		cfg.m_MainLayoutID = pg::UUID::Generate();
+		cfg.m_CharacterTextureID = pg::UUID::Generate();
 	}
 
 	void SeedResourceMap(pg::ecs::Registry& registry)
@@ -81,11 +85,49 @@ namespace CatchTestsetFail
 		const pg::OrthographicCameraComponent& camera = cameraView.get<pg::OrthographicCameraComponent>(cameraView.front());
 		CHECK(std::fabs(camera.m_AspectRatio - 1280.f / 720.f) < 1e-4f);
 
-		CHECK(pg::World::GetRegistryDirect().view<sbx::SpriteComponent>().size() == 1);
+		// Two sprites: the static demo sprite and the animated character.
+		CHECK(pg::World::GetRegistryDirect().view<pg::SpriteComponent>().size() == 2);
 		CHECK(pg::World::GetRegistryDirect().view<sbx::LabelComponent>().size() == 3);
 		CHECK(pg::World::GetRegistryDirect().view<sbx::InputReadoutTagComponent>().size() == 1);
 		CHECK(pg::World::GetRegistryDirect().view<sbx::SceneReadySingletonComponent>().size() == 1);
 		CHECK(pg::World::GetRegistryDirect().view<pg::ui::LoadLayoutEvent>().size() == 1);
+	}
+
+	// ---------------------------------------------------------------------------
+	// The animated character is created: one tagged entity with a sprite using the
+	// configured character texture, plus an 8x8 sprite-sheet animation that starts
+	// idle.
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Sandbox.SceneSetupSystem::CreatesAnimatedCharacter")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<sbx::SceneSetupSystem>());
+
+		SeedConfig(pg::World::GetRegistryDirect());
+		SeedResourceMap(pg::World::GetRegistryDirect());
+
+		world.Update(pg::Timestep(0));
+
+		pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+		const sbx::SandboxConfigSingletonComponent& cfg = registry.view<sbx::SandboxConfigSingletonComponent>().get<sbx::SandboxConfigSingletonComponent>(registry.view<sbx::SandboxConfigSingletonComponent>().front());
+
+		CHECK(registry.view<sbx::CharacterTagComponent>().size() == 1);
+		CHECK(registry.view<pg::SpriteAnimationComponent>().size() == 1);
+
+		auto characterView = registry.view<sbx::CharacterTagComponent, pg::SpriteComponent, pg::SpriteAnimationComponent>();
+		int characterCount = 0;
+		for (pg::ecs::Entity ent : characterView)
+		{
+			++characterCount;
+			const pg::SpriteComponent& sprite = characterView.get<pg::SpriteComponent>(ent);
+			const pg::SpriteAnimationComponent& animation = characterView.get<pg::SpriteAnimationComponent>(ent);
+			CHECK(sprite.m_TextureID == cfg.m_CharacterTextureID);
+			CHECK(animation.m_Sheet.GetColumns() == 8);
+			CHECK(animation.m_Sheet.GetRows() == 8);
+			CHECK(animation.m_FrameCount == 8);
+			CHECK(animation.m_Playing == false);
+		}
+		CHECK(characterCount == 1);
 	}
 
 	// ---------------------------------------------------------------------------
@@ -120,7 +162,9 @@ namespace CatchTestsetFail
 		CHECK(decl.readSet.count(std::type_index(typeid(sbx::SceneReadySingletonComponent))) > 0);
 
 		CHECK(decl.addSet.count(std::type_index(typeid(pg::OrthographicCameraComponent))) > 0);
-		CHECK(decl.addSet.count(std::type_index(typeid(sbx::SpriteComponent))) > 0);
+		CHECK(decl.addSet.count(std::type_index(typeid(pg::SpriteComponent))) > 0);
+		CHECK(decl.addSet.count(std::type_index(typeid(pg::SpriteAnimationComponent))) > 0);
+		CHECK(decl.addSet.count(std::type_index(typeid(sbx::CharacterTagComponent))) > 0);
 		CHECK(decl.addSet.count(std::type_index(typeid(sbx::LabelComponent))) > 0);
 		CHECK(decl.addSet.count(std::type_index(typeid(sbx::InputReadoutTagComponent))) > 0);
 		CHECK(decl.addSet.count(std::type_index(typeid(pg::ui::LoadLayoutEvent))) > 0);

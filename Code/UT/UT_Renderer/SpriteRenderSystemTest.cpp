@@ -1,13 +1,12 @@
-#pragma once
 #include <catch2/catch.hpp>
 #include "Utils/TestApp.h"
 
 #include "Pigeon/ECS/System.h"
 #include "Pigeon/ECS/World.h"
 #include "Pigeon/Renderer/DrawSpriteInFrameEvent.h"
+#include "Pigeon/Renderer/SpriteComponent.h"
+#include "Pigeon/Renderer/SpriteRenderSystem.h"
 #include "Pigeon/Transform/WorldTransformComponent.h"
-#include "Sandbox/SpriteComponent.h"
-#include "Sandbox/SpriteRenderSystem.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -17,13 +16,13 @@ namespace CatchTestsetFail
 	// Happy path: a sprite with a resolved world transform emits one sprite draw
 	// event carrying the world matrix, sort key, UVs, and texture (origin is zero).
 	// ---------------------------------------------------------------------------
-	TEST_CASE("Sandbox.SpriteRenderSystem::EmitsMatchingSpriteEvent")
+	TEST_CASE("Renderer.SpriteRenderSystem::EmitsMatchingSpriteEvent")
 	{
 		pg::World& world = pg::World::Create();
-		world.RegisterSystem(std::make_unique<sbx::SpriteRenderSystem>());
+		world.RegisterSystem(std::make_unique<pg::SpriteRenderSystem>());
 
 		pg::ecs::Entity ent = pg::World::GetRegistryDirect().create();
-		sbx::SpriteComponent& sprite = pg::World::GetRegistryDirect().emplace<sbx::SpriteComponent>(ent);
+		pg::SpriteComponent& sprite = pg::World::GetRegistryDirect().emplace<pg::SpriteComponent>(ent);
 		sprite.m_TexCoordsRect = { 16.f, 16.f, 48.f, 48.f };
 		sprite.m_TextureID = pg::UUID::Generate();
 		pg::WorldTransformComponent& worldTransform = pg::World::GetRegistryDirect().emplace<pg::WorldTransformComponent>(ent);
@@ -46,13 +45,13 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	// Guard: a sprite without a resolved world transform yet emits no event.
 	// ---------------------------------------------------------------------------
-	TEST_CASE("Sandbox.SpriteRenderSystem::NoWorldTransformNoEvent")
+	TEST_CASE("Renderer.SpriteRenderSystem::NoWorldTransformNoEvent")
 	{
 		pg::World& world = pg::World::Create();
-		world.RegisterSystem(std::make_unique<sbx::SpriteRenderSystem>());
+		world.RegisterSystem(std::make_unique<pg::SpriteRenderSystem>());
 
 		pg::ecs::Entity ent = pg::World::GetRegistryDirect().create();
-		pg::World::GetRegistryDirect().emplace<sbx::SpriteComponent>(ent);
+		pg::World::GetRegistryDirect().emplace<pg::SpriteComponent>(ent);
 
 		world.UpdateRetainingEvents(pg::Timestep(0));
 
@@ -62,10 +61,10 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	// Guard: no sprites -> no draw events.
 	// ---------------------------------------------------------------------------
-	TEST_CASE("Sandbox.SpriteRenderSystem::NoSpritesNoEvents")
+	TEST_CASE("Renderer.SpriteRenderSystem::NoSpritesNoEvents")
 	{
 		pg::World& world = pg::World::Create();
-		world.RegisterSystem(std::make_unique<sbx::SpriteRenderSystem>());
+		world.RegisterSystem(std::make_unique<pg::SpriteRenderSystem>());
 
 		world.UpdateRetainingEvents(pg::Timestep(0));
 
@@ -75,16 +74,16 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	// Edge case: one draw event per sprite with a world transform.
 	// ---------------------------------------------------------------------------
-	TEST_CASE("Sandbox.SpriteRenderSystem::EmitsOneEventPerSprite")
+	TEST_CASE("Renderer.SpriteRenderSystem::EmitsOneEventPerSprite")
 	{
 		pg::World& world = pg::World::Create();
-		world.RegisterSystem(std::make_unique<sbx::SpriteRenderSystem>());
+		world.RegisterSystem(std::make_unique<pg::SpriteRenderSystem>());
 
 		pg::ecs::Entity a = pg::World::GetRegistryDirect().create();
-		pg::World::GetRegistryDirect().emplace<sbx::SpriteComponent>(a);
+		pg::World::GetRegistryDirect().emplace<pg::SpriteComponent>(a);
 		pg::World::GetRegistryDirect().emplace<pg::WorldTransformComponent>(a);
 		pg::ecs::Entity b = pg::World::GetRegistryDirect().create();
-		pg::World::GetRegistryDirect().emplace<sbx::SpriteComponent>(b);
+		pg::World::GetRegistryDirect().emplace<pg::SpriteComponent>(b);
 		pg::World::GetRegistryDirect().emplace<pg::WorldTransformComponent>(b);
 
 		world.UpdateRetainingEvents(pg::Timestep(0));
@@ -95,12 +94,12 @@ namespace CatchTestsetFail
 	// ---------------------------------------------------------------------------
 	// DeclareAccess: verify declared sets match the system's actual access.
 	// ---------------------------------------------------------------------------
-	TEST_CASE("Sandbox.SpriteRenderSystem::DeclareAccessIsCorrect")
+	TEST_CASE("Renderer.SpriteRenderSystem::DeclareAccessIsCorrect")
 	{
-		sbx::SpriteRenderSystem sys;
+		pg::SpriteRenderSystem sys;
 		pg::SystemAccessDecl decl = sys.DeclareAccess();
 
-		CHECK(decl.readSet.count(std::type_index(typeid(sbx::SpriteComponent))) > 0);
+		CHECK(decl.readSet.count(std::type_index(typeid(pg::SpriteComponent))) > 0);
 		CHECK(decl.readSet.count(std::type_index(typeid(pg::WorldTransformComponent))) > 0);
 		CHECK(decl.inframeAddSet.count(std::type_index(typeid(pg::DrawSpriteInFrameEvent))) > 0);
 	}

@@ -3,6 +3,7 @@
 	"boldFont": "1f701e90-545e-4e74-87f4-00bcc293cf4c",
 	"spriteTexture": "34b58f09-e65f-44cf-b640-344c728bc2ea",
 	"texturedQuadTexture": "e3afff59-1ee8-4396-b9ed-b093dd521f91",
+	"characterTexture": "e3afff59-1ee8-4396-b9ed-b093dd521f91",
 	"mainLayoutId": "e48eb073-fcb1-44eb-a3b0-eb2f186a5831",
 	"toggleButton": "a1000000-0000-4000-8000-000000000001",
 	"togglePanel": "a1000000-0000-4000-8000-000000000002",

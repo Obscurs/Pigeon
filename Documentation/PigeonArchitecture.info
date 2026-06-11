@@ -16,6 +16,8 @@ main()  [EntryPoint.h]
                     ├── RegisterSystem(InputSystem)
                     ├── RegisterSystem(ResourceManagerSystem)
                     ├── RegisterSystem(SaveDataSystem)
+                    ├── RegisterSystem(SpriteAnimationSystem)
+                    ├── RegisterSystem(SpriteRenderSystem)
                     ├── RegisterSystem(TransformComposeSystem)
                     ├── RegisterSystem(TransformResolveSystem)
                     ├── RegisterSystem(UIControlSystem)
@@ -103,6 +105,9 @@ Transform
 Renderer
   ├── CameraSystem         SetCameraRequest (from app) + ResizeEvent + PositionComponent
   │                          →  OrthographicCameraComponent (zoom/projection) + CameraTransformRequest (pan)
+  ├── SpriteAnimationSystem  SetSpriteAnimationRequest (from app) + SpriteAnimationComponent (app-authored sheet/row/speed) + time
+  │                            →  SpriteComponent sub-texture (advances the sprite-sheet frame; via pg::SpriteSheet)
+  ├── SpriteRenderSystem     SpriteComponent + WorldTransformComponent  →  DrawSpriteInFrameEvent (consumed by Renderer2DSystem)
   └── Renderer2DSystem
         reads:  OrthographicCameraComponent (gameplay cam), UICameraSingletonComponent (screen-space UI cam),
                 EngineConfigSingletonComponent, ResourceMapSingletonComponent, Draw*InFrameEvent
@@ -134,6 +139,7 @@ UI  (canvas authored against a reference resolution; scaled to the window per AD
 | `Code/PigeonLib/Pigeon/ECS/CheckedRegistryAccessor.h` | Accessor API — View, Get, EmplaceDeferred, EmplaceInframe, EmplaceEvent |
 | `Code/PigeonLib/Pigeon/ECS/System.h` | Base System class and SystemAccessDecl struct |
 | `Code/PigeonLib/Pigeon/Transform/` | Transform components (Position/Rotation/Scale/LocalBounds/WorldTransform), the resolve + compose systems, and the request types (ADR 0003) |
+| `Code/PigeonLib/Pigeon/Renderer/Sprite*.{h,cpp}` | World-space sprites: SpriteComponent (texture + UV sub-rect), SpriteSheet value type (grid→UV), SpriteAnimationSystem (advances the sprite-sheet frame from SetSpriteAnimationRequest), SpriteRenderSystem (emits DrawSpriteInFrameEvent). Engine owns the logic; the app sets the data + emits the request |
 | `Code/PigeonLib/Pigeon/Core/WindowConfigSystem.*` | Window resolution/mode: seeds + owns WindowConfigSingletonComponent, applies to the live Window, persists savedata Config.json (ADR 0004) |
 | `Code/PigeonLib/Pigeon/Core/SaveDataSystem.*` | Save-data resource: loads <savedataPath>/SaveSlots/<uuid>.json into SaveDataSingletonComponent at startup; applies + persists SetSaveDataRequest slot updates from the app |
 | `Code/PigeonLib/Pigeon/Core/FileUtils.*` | Shared text-file read/write/exists helpers used by the config loader and writer |

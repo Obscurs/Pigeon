@@ -2,7 +2,7 @@
 
 #include "Pigeon/ECS/System.h"
 
-namespace sbx
+namespace pg
 {
 	class SpriteRenderSystem : public pg::System
 	{

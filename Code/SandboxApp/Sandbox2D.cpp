@@ -3,6 +3,7 @@
 #include "Sandbox/AudioDebugPanelSystem.h"
 #include "Sandbox/AudioDemoSystem.h"
 #include "Sandbox/CameraControlSystem.h"
+#include "Sandbox/CharacterControlSystem.h"
 #include "Sandbox/ConfigLoaderSystem.h"
 #include "Sandbox/DebugPanelSystem.h"
 #include "Sandbox/DialogueDemoSystem.h"
@@ -13,7 +14,6 @@
 #include "Sandbox/QuadSpawnSystem.h"
 #include "Sandbox/SaveDataDebugPanelSystem.h"
 #include "Sandbox/SceneSetupSystem.h"
-#include "Sandbox/SpriteRenderSystem.h"
 #include "Sandbox/TextRenderSystem.h"
 #include "Sandbox/TransformResolveSystem.h"
 #include "Sandbox/UIButtonSystem.h"
@@ -41,6 +41,7 @@ pg::Application& pg::CreateApplication()
 	world.RegisterSystem(std::make_unique<sbx::AudioDemoSystem>());
 	world.RegisterSystem(std::make_unique<sbx::AudioDebugPanelSystem>());
 	world.RegisterSystem(std::make_unique<sbx::CameraControlSystem>());
+	world.RegisterSystem(std::make_unique<sbx::CharacterControlSystem>());
 	world.RegisterSystem(std::make_unique<sbx::ConfigLoaderSystem>());
 	world.RegisterSystem(std::make_unique<sbx::TransformResolveSystem>());
 	world.RegisterSystem(std::make_unique<sbx::SceneSetupSystem>());
@@ -48,7 +49,6 @@ pg::Application& pg::CreateApplication()
 	world.RegisterSystem(std::make_unique<sbx::QuadAnimationSystem>());
 	world.RegisterSystem(std::make_unique<sbx::LifetimeSystem>());
 	world.RegisterSystem(std::make_unique<sbx::QuadRenderSystem>());
-	world.RegisterSystem(std::make_unique<sbx::SpriteRenderSystem>());
 	world.RegisterSystem(std::make_unique<sbx::TextRenderSystem>());
 	world.RegisterSystem(std::make_unique<sbx::InputReadoutSystem>());
 	world.RegisterSystem(std::make_unique<sbx::UIButtonVisualSystem>());
