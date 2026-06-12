@@ -78,6 +78,7 @@ namespace CatchTestsetFail
 		CHECK(!cfg.m_ButtonImageID.IsNull());
 		CHECK(!cfg.m_ButtonHoverImageID.IsNull());
 		CHECK(!cfg.m_ButtonPressedImageID.IsNull());
+		CHECK(!cfg.m_MonkeyModelID.IsNull());
 	}
 
 	// ---------------------------------------------------------------------------

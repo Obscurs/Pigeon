@@ -40,5 +40,8 @@ namespace sbx
 		// Audio clips for the sound demo.
 		pg::UUID m_SampleSoundID; // one-shot sound effect
 		pg::UUID m_SampleMusicID; // looping music track
+
+		// 3D model for the (forthcoming) 3D scene demo.
+		pg::UUID m_MonkeyModelID;
 	};
 }

@@ -10,6 +10,7 @@ This file is the active work plan. All agents read it before starting. Update it
 | 1 | The already existing systems are not covered by unit tests write and run them | DONE |
 | 2 | Review changes from task 1 | DONE |
 | 3 | Transform management — see "Transform feature" below | DONE |
+| 4 | 3D model resource (.obj) — engine loads `pg::Model` into the resource map; app declares + requests it via `pg::ModelComponent` (foundation for 3D scenes) | DONE |
 
 ## Transform feature
 

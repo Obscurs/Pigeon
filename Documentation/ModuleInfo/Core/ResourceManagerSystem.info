@@ -2,7 +2,7 @@
 
 ## Purpose
 One-shot initialization system. On the first frame, loads all textures, fonts, shaders, UI
-layouts, sound clips, and JSON assets from `Assets/Engine/ResourcesManifest.json` and
+layouts, sound clips, JSON assets, and 3D models from `Assets/Engine/ResourcesManifest.json` and
 `Assets/App/ResourcesManifest.json`, then creates ResourceMapSingletonComponent containing the fully
 populated asset maps. No-op on all subsequent frames (presence check guards early exit).
 
@@ -14,4 +14,4 @@ populated asset maps. No-op on all subsequent frames (presence check guards earl
 ## Output Components
 | Component | Access | Notes |
 |---|---|---|
-| ResourceMapSingletonComponent | add (deferred) | Created once; holds texture, shader, font, UI layout, sound clip, and parsed JSON asset maps keyed by UUID |
+| ResourceMapSingletonComponent | add (deferred) | Created once; holds texture, shader, font, UI layout, sound clip, parsed JSON asset, and 3D model maps keyed by UUID |

@@ -2,6 +2,7 @@
 
 #include "Pigeon/Core/ResourceMapSingletonComponent.h"
 #include "Pigeon/ECS/World.h"
+#include "Pigeon/Renderer/ModelComponent.h"
 #include "Pigeon/Renderer/OrthographicCameraComponent.h"
 #include "Pigeon/Renderer/SpriteAnimationComponent.h"
 #include "Pigeon/Renderer/SpriteComponent.h"
@@ -93,6 +94,18 @@ namespace
 		EmitSceneTransform(accessor, ent, glm::vec3(0.8f, -0.6f, 0.f), glm::vec3(0.6f, 0.6f, 1.f));
 	}
 
+	// Authors a 3D model entity by referencing the loaded model resource through its UUID, the same
+	// way CreateSprite references a texture. The forthcoming 3D render pass resolves the model from
+	// the resource map; for now this stands up the data path for 3D scenes.
+	void CreateModel(pg::CheckedRegistryAccessor& accessor, const sbx::SandboxConfigSingletonComponent& config)
+	{
+		pg::ecs::Entity ent = accessor.Create();
+		pg::ModelComponent model;
+		model.m_ModelID = config.m_MonkeyModelID;
+		accessor.EmplaceDeferred<pg::ModelComponent>(ent, std::move(model));
+		EmitSceneTransform(accessor, ent, glm::vec3(1.6f, 0.3f, 0.f), glm::vec3(0.6f, 0.6f, 0.6f));
+	}
+
 	pg::ecs::Entity CreateLabel(pg::CheckedRegistryAccessor& accessor, const glm::vec3& position, const glm::vec3& scale, const std::string& text, const pg::UUID& fontID, const glm::vec4& color)
 	{
 		pg::ecs::Entity ent = accessor.Create();
@@ -120,6 +133,7 @@ pg::SystemAccessDecl sbx::SceneSetupSystem::DeclareAccess() const
 		std::type_index(typeid(pg::OrthographicCameraComponent)),
 		std::type_index(typeid(pg::SpriteComponent)),
 		std::type_index(typeid(pg::SpriteAnimationComponent)),
+		std::type_index(typeid(pg::ModelComponent)),
 		std::type_index(typeid(sbx::CharacterTagComponent)),
 		std::type_index(typeid(sbx::LabelComponent)),
 		std::type_index(typeid(sbx::SceneTransformRequestOneFrameComponent)),
@@ -149,6 +163,7 @@ void sbx::SceneSetupSystem::Update(const pg::Timestep& ts)
 	CreateCamera(accessor);
 	CreateSprite(accessor, config);
 	CreateCharacter(accessor, config);
+	CreateModel(accessor, config);
 
 	// Labels are positioned at their anchor (top-left of the text block); world is Y-up, so the
 	// near-top rows sit at positive Y and the bottom readout at negative Y.

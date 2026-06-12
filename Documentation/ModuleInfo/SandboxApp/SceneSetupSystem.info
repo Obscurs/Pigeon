@@ -4,8 +4,9 @@
 One-shot scene builder. Returns early until both SandboxConfigSingletonComponent and
 ResourceMapSingletonComponent are present. On the first ready frame it creates the
 scene camera, the static demo sprite, the arrow-key-controlled animated character (a SpriteComponent +
-an 8x8 SpriteAnimationComponent + a CharacterTagComponent, starting idle), and the world-space labels (a
-title, an instructions label, and a tagged input-readout label), emitting a
+an 8x8 SpriteAnimationComponent + a CharacterTagComponent, starting idle), a 3D model entity (a
+ModelComponent referencing the configured model resource by UUID, for the forthcoming 3D scene), and
+the world-space labels (a title, an instructions label, and a tagged input-readout label), emitting a
 SceneTransformRequestOneFrameComponent to seed each one's world transform (position-only for the
 camera). It also emits a LoadLayoutEvent to load the UI layout and creates SceneReadySingletonComponent
 as its run-once guard.
@@ -13,7 +14,7 @@ as its run-once guard.
 ## Input Components
 | Component | Access | Notes |
 |---|---|---|
-| SandboxConfigSingletonComponent | read | Font/texture/layout ids for the scene; guard (returns early if absent) |
+| SandboxConfigSingletonComponent | read | Font/texture/model/layout ids for the scene; guard (returns early if absent) |
 | ResourceMapSingletonComponent | read | Guard only: ensures the layout load will resolve |
 | SceneReadySingletonComponent | read | Run-once guard |
 
@@ -23,6 +24,7 @@ as its run-once guard.
 | OrthographicCameraComponent | add (deferred) | Scene camera; the app CameraControlSystem drives it via the engine CameraSystem |
 | SpriteComponent | add (deferred) | Engine component; the static demo sprite and the animated character's sprite |
 | SpriteAnimationComponent | add (deferred) | Engine component; the character's 8x8 sprite-sheet animation state (starts idle), driven by the engine SpriteAnimationSystem |
+| ModelComponent | add (deferred) | Engine component; references the configured 3D model resource by UUID, placed by its world transform for the forthcoming 3D render pass |
 | CharacterTagComponent | add (deferred) | Marks the character for CharacterControlSystem |
 | LabelComponent | add (deferred) | Title, instructions and the input-readout label |
 | SceneTransformRequestOneFrameComponent | add (oneframe) | Seeds the world transform for the camera, sprite and labels |

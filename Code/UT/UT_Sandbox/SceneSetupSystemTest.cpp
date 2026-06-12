@@ -5,6 +5,7 @@
 #include "Pigeon/Core/ResourceMapSingletonComponent.h"
 #include "Pigeon/ECS/System.h"
 #include "Pigeon/ECS/World.h"
+#include "Pigeon/Renderer/ModelComponent.h"
 #include "Pigeon/Renderer/OrthographicCameraComponent.h"
 #include "Pigeon/Renderer/SpriteAnimationComponent.h"
 #include "Pigeon/Renderer/SpriteComponent.h"
@@ -25,6 +26,7 @@ namespace
 		sbx::SandboxConfigSingletonComponent& cfg = registry.emplace<sbx::SandboxConfigSingletonComponent>(cfgEnt);
 		cfg.m_MainLayoutID = pg::UUID::Generate();
 		cfg.m_CharacterTextureID = pg::UUID::Generate();
+		cfg.m_MonkeyModelID = pg::UUID::Generate();
 	}
 
 	void SeedResourceMap(pg::ecs::Registry& registry)
@@ -131,6 +133,29 @@ namespace CatchTestsetFail
 	}
 
 	// ---------------------------------------------------------------------------
+	// A 3D model entity is created referencing the configured model resource by
+	// UUID, ready for the forthcoming 3D render pass.
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Sandbox.SceneSetupSystem::CreatesModelEntity")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<sbx::SceneSetupSystem>());
+
+		SeedConfig(pg::World::GetRegistryDirect());
+		SeedResourceMap(pg::World::GetRegistryDirect());
+
+		world.Update(pg::Timestep(0));
+
+		pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+		const sbx::SandboxConfigSingletonComponent& cfg = registry.view<sbx::SandboxConfigSingletonComponent>().get<sbx::SandboxConfigSingletonComponent>(registry.view<sbx::SandboxConfigSingletonComponent>().front());
+
+		auto modelView = registry.view<pg::ModelComponent>();
+		REQUIRE(modelView.size() == 1);
+		const pg::ModelComponent& model = modelView.get<pg::ModelComponent>(modelView.front());
+		CHECK(model.m_ModelID == cfg.m_MonkeyModelID);
+	}
+
+	// ---------------------------------------------------------------------------
 	// Edge case: the system runs only once (no duplicate scene on a second frame).
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Sandbox.SceneSetupSystem::RunsOnlyOnce")
@@ -164,6 +189,7 @@ namespace CatchTestsetFail
 		CHECK(decl.addSet.count(std::type_index(typeid(pg::OrthographicCameraComponent))) > 0);
 		CHECK(decl.addSet.count(std::type_index(typeid(pg::SpriteComponent))) > 0);
 		CHECK(decl.addSet.count(std::type_index(typeid(pg::SpriteAnimationComponent))) > 0);
+		CHECK(decl.addSet.count(std::type_index(typeid(pg::ModelComponent))) > 0);
 		CHECK(decl.addSet.count(std::type_index(typeid(sbx::CharacterTagComponent))) > 0);
 		CHECK(decl.addSet.count(std::type_index(typeid(sbx::LabelComponent))) > 0);
 		CHECK(decl.addSet.count(std::type_index(typeid(sbx::InputReadoutTagComponent))) > 0);

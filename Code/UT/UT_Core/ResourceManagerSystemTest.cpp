@@ -142,6 +142,34 @@ namespace CatchTestsetFail
 	}
 
 	// ---------------------------------------------------------------------------
+	// Happy path: loaded resource map has the 3D model declared in the manifest,
+	// keyed by its UUID and holding parsed triangle geometry.
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Core.ResourceManagerSystem::LoadedMapHasModel")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ResourceManagerSystem>());
+
+		world.Update(pg::Timestep(0));
+
+		auto view = pg::World::GetRegistryDirect().view<pg::ResourceMapSingletonComponent>();
+		REQUIRE(view.size() == 1);
+
+		const pg::ResourceMapSingletonComponent& map =
+			view.get<pg::ResourceMapSingletonComponent>(view.front());
+
+		REQUIRE(!map.m_ModelMap.empty());
+
+		std::unordered_map<pg::UUID, pg::S_Ptr<pg::Model>>::const_iterator it =
+			map.m_ModelMap.find(pg::UUID("e5000000-0000-4000-8000-000000000001"));
+		REQUIRE(it != map.m_ModelMap.end());
+		REQUIRE(it->second != nullptr);
+		// The test quad is one face -> four vertices, fan-triangulated into six indices.
+		CHECK(it->second->GetVertices().size() == 4);
+		CHECK(it->second->GetIndices().size() == 6);
+	}
+
+	// ---------------------------------------------------------------------------
 	// DeclareAccess: verify declared sets match the system's actual access
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Core.ResourceManagerSystem::DeclareAccessIsCorrect")

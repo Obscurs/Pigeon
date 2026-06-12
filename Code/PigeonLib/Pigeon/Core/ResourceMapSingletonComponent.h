@@ -5,6 +5,7 @@
 #include "Pigeon/Core/Core.h"
 #include "Pigeon/Core/UUID.h"
 #include "Pigeon/Renderer/Font.h"
+#include "Pigeon/Renderer/Model.h"
 #include "Pigeon/Renderer/Shader.h"
 #include "Pigeon/Renderer/Texture.h"
 
@@ -27,6 +28,7 @@ namespace pg
 		std::unordered_map<pg::UUID, std::string> m_UILayoutMap;
 		std::unordered_map<pg::UUID, pg::S_Ptr<pg::SoundClip>> m_SoundMap;
 		std::unordered_map<pg::UUID, nlohmann::json> m_JSONMap;
+		std::unordered_map<pg::UUID, pg::S_Ptr<pg::Model>> m_ModelMap;
 
 		pg::UUID m_DefaultTexture = pg::UUID::Generate();
 	};

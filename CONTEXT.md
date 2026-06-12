@@ -64,9 +64,11 @@
 
 | Term | Meaning |
 |---|---|
-| Resource Map | The single live store of all loaded assets (`ResourceMapSingletonComponent`): textures, shaders, fonts, UI layouts, sound clips, and JSON assets, each keyed by UUID. Loaded once at startup by `ResourceManagerSystem` from the engine and app resource manifests. |
-| Resource Manifest | The per-project JSON file (`Assets/<project>/ResourcesManifest.json`) that declares every asset to load, grouped by category array (`textures`, `fonts`, `shaders`, `ui`, `sounds`, `json`). Each entry is an `{id, path}` pair; the path is resolved under the category's folder (`Assets/<project>/<Folder>/<path>`). |
+| Resource Map | The single live store of all loaded assets (`ResourceMapSingletonComponent`): textures, shaders, fonts, UI layouts, sound clips, JSON assets, and 3D models, each keyed by UUID. Loaded once at startup by `ResourceManagerSystem` from the engine and app resource manifests. |
+| Resource Manifest | The per-project JSON file (`Assets/<project>/ResourcesManifest.json`) that declares every asset to load, grouped by category array (`textures`, `fonts`, `shaders`, `ui`, `sounds`, `json`, `models`). Each entry is an `{id, path}` pair; the path is resolved under the category's folder (`Assets/<project>/<Folder>/<path>`). |
 | JSON Asset | A loadable JSON data asset, declared in the `json` array of a resource manifest and loaded from the project's `JSON` folder (`Assets/<project>/JSON/<path>`). Parsed at load time and held live in the resource map's `m_JSONMap` (UUID → parsed `nlohmann::json`). The engine and app declare these the same way as any other resource; the parsed content is the value other systems read. |
+| 3D Model | A loadable 3D mesh resource (`pg::Model`), declared in the `models` array of a resource manifest and loaded from the project's `Models` folder (`Assets/<project>/Models/<path>`). Parsed at load time from a Wavefront `.obj` into CPU-side triangle geometry — an interleaved `pg::ModelVertex` list (position/normal/texcoord) plus a triangle index list, with polygon faces fan-triangulated and identical `v/vt/vn` corners deduplicated into shared vertices. Held live in the resource map's `m_ModelMap` (UUID → `pg::Model`); a future 3D render pass uploads these buffers to the GPU. |
+| Model Component | An entity's reference to a loaded 3D Model by UUID (`pg::ModelComponent`), placing it in a world-space scene via the Transform components exactly as a Sprite references a texture. Authored by the app; the forthcoming 3D render pass resolves `m_ModelID` against the resource map's model map to draw the geometry. |
 
 ## Sprites & Animation
 

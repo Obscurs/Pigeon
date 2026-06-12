@@ -136,5 +136,5 @@ Save Data (engine SaveDataSystem)
 | `Code/SandboxApp/Sandbox/*System.cpp` | One focused system per file (see Documentation/ModuleInfo/SandboxApp) |
 | `Code/SandboxApp/Sandbox/*Component.h` | Pure-data components and state singletons |
 | `Code/SandboxApp/Sandbox/UIElementHelpers.*` | Shared sandbox helpers: find a UI element by UUID; UI event predicates |
-| `Data/Assets/App/Config.json` | UUID references for fonts, textures, the UI layout, and targeted UI elements |
+| `Data/Assets/App/Config.json` | UUID references for fonts, textures, the 3D model, the UI layout, and targeted UI elements |
 | `Data/Assets/App/UI/SandboxUI.json` | Root UI layout: toggle button + a dismissible panel (status text, note, close button) |

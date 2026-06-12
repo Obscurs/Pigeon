@@ -69,6 +69,11 @@ namespace
 		component.m_JSONMap[resource.m_UUID] = ReadJSONFileToString(resource.m_Path);
 	}
 
+	void LoadModelFromResource(pg::ResourceMapSingletonComponent& component, const ParsedResource& resource)
+	{
+		component.m_ModelMap[resource.m_UUID] = pg::Model::Create(resource.m_Path);
+	}
+
 	void LoadResourcesFromPath(pg::ResourceMapSingletonComponent& component, const std::string& filePath, const std::string& prefix)
 	{
 		json jsonObject = ReadJSONFileToString(filePath);
@@ -119,6 +124,14 @@ namespace
 			for (json child : jsonObject["json"])
 			{
 				LoadJSONFromResource(component, GetParsedResourceFromJsonItem(child, prefix, "JSON"));
+			}
+		}
+		if (jsonObject.contains("models"))
+		{
+			PG_CORE_EXCEPT(jsonObject["models"].is_array(), "could not parse models from resource manifest");
+			for (json child : jsonObject["models"])
+			{
+				LoadModelFromResource(component, GetParsedResourceFromJsonItem(child, prefix, "Models"));
 			}
 		}
 	}
