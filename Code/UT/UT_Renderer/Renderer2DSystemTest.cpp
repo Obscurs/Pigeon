@@ -282,9 +282,10 @@ namespace CatchTestsetFail
 	}
 
 	// ---------------------------------------------------------------------------
-	// World draws are ordered by sort key: lower sort key is written (drawn) first.
+	// World draws are Y-sorted for a Y-up world: the higher sort key (further up /
+	// further back) is written (drawn) first, so lower-Y geometry draws in front.
 	// Two quads sharing the default texture batch into a single submission, so the
-	// first vertices in the buffer belong to the lower-sort-key quad.
+	// first vertices in the buffer belong to the higher-sort-key quad.
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Renderer.Renderer2DSystem::OrdersWorldDrawsBySortKey")
 	{
@@ -294,18 +295,18 @@ namespace CatchTestsetFail
 
 		pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
 
-		// Quad A: high sort key, placed at x = 5. Emitted first.
+		// Quad A: low sort key, placed at x = 5. Emitted first.
 		pg::ecs::Entity entA = registry.create();
 		pg::DrawQuadInFrameEvent a;
 		a.m_Transform = glm::translate(glm::mat4(1.f), glm::vec3(5.f, 0.f, 0.f));
-		a.m_SortKey = 5.f;
+		a.m_SortKey = 1.f;
 		registry.emplace<pg::DrawQuadInFrameEvent>(entA, a);
 
-		// Quad B: low sort key, placed at x = 1. Emitted second but must draw first.
+		// Quad B: high sort key, placed at x = 1. Emitted second but must draw first.
 		pg::ecs::Entity entB = registry.create();
 		pg::DrawQuadInFrameEvent b;
 		b.m_Transform = glm::translate(glm::mat4(1.f), glm::vec3(1.f, 0.f, 0.f));
-		b.m_SortKey = 1.f;
+		b.m_SortKey = 5.f;
 		registry.emplace<pg::DrawQuadInFrameEvent>(entB, b);
 
 		world.Update(pg::Timestep(0));
@@ -313,7 +314,7 @@ namespace CatchTestsetFail
 		// Same texture -> a single batched submission of two quads (8 vertices).
 		REQUIRE(pg::TestingHelper::GetInstance().m_VertexBufferSetVertices.size() == 1);
 		CHECK(pg::TestingHelper::GetInstance().m_VertexBufferSetVertices[0].m_Count == 8);
-		// First vertex written belongs to the lower-sort-key quad (x = 1).
+		// First vertex written belongs to the higher-sort-key quad (x = 1).
 		CHECK(pg::TestingHelper::GetInstance().m_Vertices[pg::ATRIB_POS_X_INDEX] == Approx(1.f));
 	}
 

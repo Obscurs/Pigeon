@@ -31,12 +31,17 @@ namespace
 	static const float s_SquareVerticesEmpty[pg::VERTEX_ATRIB_COUNT * pg::QUAD_VERTEX_COUNT * pg::BATCH_MAX_COUNT];
 	static const uint32_t s_SuareIndicesEmpty[pg::QUAD_INDEX_COUNT * pg::BATCH_MAX_COUNT];
 
+	// World space is Y-up: +Y is up on screen, matching the gameplay/transform convention. DirectX
+	// samples textures with V increasing downward, so a world (Y-up) quad would sample its texture
+	// upside down; world draws compensate by flipping the V texture coordinate (see QuadData's
+	// flipTexV). The position is never negated here — the camera projections map world/UI space to
+	// the screen directly.
 	struct VertexData
 	{
 		VertexData(const glm::vec4& pos, const glm::vec4& color, int textureId, const glm::vec2& texCoords)
 		{
 			m_Data[pg::ATRIB_POS_X_INDEX] = pos.x;
-			m_Data[pg::ATRIB_POS_Y_INDEX] = pos.y * (pg::Texture2D::FlipY() ? -1.f : 1.f);
+			m_Data[pg::ATRIB_POS_Y_INDEX] = pos.y;
 			m_Data[pg::ATRIB_POS_Z_INDEX] = pos.z;
 			m_Data[pg::ATRIB_COL_R_INDEX] = color.r;
 			m_Data[pg::ATRIB_COL_G_INDEX] = color.g;
@@ -53,7 +58,9 @@ namespace
 	};
 	struct QuadData
 	{
-		QuadData(const glm::mat4& transform, const glm::vec4& color, unsigned int offsetIndices, int textureId, const glm::vec4& texCoordsRect, const glm::vec3& origin)
+		// flipTexV swaps the rect's top/bottom V so a Y-up world quad samples its texture upright on
+		// DirectX (V-down). World draws pass it; UI draws (y-down canvas) do not.
+		QuadData(const glm::mat4& transform, const glm::vec4& color, unsigned int offsetIndices, int textureId, const glm::vec4& texCoordsRect, const glm::vec3& origin, bool flipTexV)
 		{
 			const glm::mat4 translateToOrigin = glm::translate(glm::mat4(1.0f), -origin);
 			const glm::mat4 translateBack = glm::translate(glm::mat4(1.0f), origin);
@@ -64,10 +71,13 @@ namespace
 			const glm::vec4 posV3 = combinedTransform * glm::vec4(1, 1, 0, 1);
 			const glm::vec4 posV4 = combinedTransform * glm::vec4(1, 0, 0, 1);
 
-			memcpy(m_SquareVertices, VertexData(posV1, color, textureId, glm::vec2(texCoordsRect.x, texCoordsRect.y)).m_Data, pg::VERTEX_ATRIB_COUNT * sizeof(float));
-			memcpy(&m_SquareVertices[pg::VERTEX_ATRIB_COUNT], VertexData(posV2, color, textureId, glm::vec2(texCoordsRect.x, texCoordsRect.w)).m_Data, pg::VERTEX_ATRIB_COUNT * sizeof(float));
-			memcpy(&m_SquareVertices[pg::VERTEX_ATRIB_COUNT*2], VertexData(posV3, color, textureId, glm::vec2(texCoordsRect.z, texCoordsRect.w)).m_Data, pg::VERTEX_ATRIB_COUNT * sizeof(float));
-			memcpy(&m_SquareVertices[pg::VERTEX_ATRIB_COUNT*3], VertexData(posV4, color, textureId, glm::vec2(texCoordsRect.z, texCoordsRect.y)).m_Data, pg::VERTEX_ATRIB_COUNT * sizeof(float));
+			const float vBottom = flipTexV ? texCoordsRect.w : texCoordsRect.y;
+			const float vTop = flipTexV ? texCoordsRect.y : texCoordsRect.w;
+
+			memcpy(m_SquareVertices, VertexData(posV1, color, textureId, glm::vec2(texCoordsRect.x, vBottom)).m_Data, pg::VERTEX_ATRIB_COUNT * sizeof(float));
+			memcpy(&m_SquareVertices[pg::VERTEX_ATRIB_COUNT], VertexData(posV2, color, textureId, glm::vec2(texCoordsRect.x, vTop)).m_Data, pg::VERTEX_ATRIB_COUNT * sizeof(float));
+			memcpy(&m_SquareVertices[pg::VERTEX_ATRIB_COUNT*2], VertexData(posV3, color, textureId, glm::vec2(texCoordsRect.z, vTop)).m_Data, pg::VERTEX_ATRIB_COUNT * sizeof(float));
+			memcpy(&m_SquareVertices[pg::VERTEX_ATRIB_COUNT*3], VertexData(posV4, color, textureId, glm::vec2(texCoordsRect.z, vBottom)).m_Data, pg::VERTEX_ATRIB_COUNT * sizeof(float));
 
 			m_SquareIndices[0] = s_SuareIndices[0] + offsetIndices;
 			m_SquareIndices[1] = s_SuareIndices[1] + offsetIndices;
@@ -208,7 +218,7 @@ namespace
 
 	// Builds a quad's transformed vertices and appends it as a draw item. The translation z is dropped:
 	// this is a 2D renderer, depth never affects geometry — world draw order comes from m_SortKey.
-	void AppendQuad(std::vector<DrawItem>& items, const pg::ResourceMapSingletonComponent& resourcesComponent, const glm::mat4& transform, const glm::vec4& color, const pg::UUID& textureID, const glm::vec4& texCoordsRect, const glm::vec3& origin, float sortKey, const glm::vec4& clipRect)
+	void AppendQuad(std::vector<DrawItem>& items, const pg::ResourceMapSingletonComponent& resourcesComponent, const glm::mat4& transform, const glm::vec4& color, const pg::UUID& textureID, const glm::vec4& texCoordsRect, const glm::vec3& origin, float sortKey, const glm::vec4& clipRect, bool flipTexV)
 	{
 		if (resourcesComponent.m_TextureMap.find(textureID) == resourcesComponent.m_TextureMap.end())
 		{
@@ -217,7 +227,7 @@ namespace
 		}
 		glm::mat4 flatTransform = transform;
 		flatTransform[3][2] = 0.f;
-		QuadData quad(flatTransform, color, 0, 0, texCoordsRect, origin);
+		QuadData quad(flatTransform, color, 0, 0, texCoordsRect, origin, flipTexV);
 
 		DrawItem item;
 		memcpy(item.m_Vertices, quad.m_SquareVertices, pg::VERTEX_ATRIB_COUNT * pg::QUAD_VERTEX_COUNT * sizeof(float));
@@ -227,12 +237,29 @@ namespace
 		items.push_back(item);
 	}
 
-	void AppendString(std::vector<DrawItem>& items, const pg::ResourceMapSingletonComponent& resourcesComponent, const glm::mat4& transform, const std::string& string, pg::S_Ptr<pg::Font> font, const glm::vec4& color, float kerning, float linespacing, float sortKey, const glm::vec4& clipRect, int visibleChars)
+	// Reflects a transform about the horizontal line through its own anchor (translation), i.e.
+	// flips the Y of everything the transform places while leaving the anchor point fixed.
+	glm::mat4 ReflectAboutAnchorY(const glm::mat4& transform)
+	{
+		const glm::vec3 anchor(transform[3]);
+		const glm::mat4 flipY = glm::scale(glm::mat4(1.0f), glm::vec3(1.f, -1.f, 1.f));
+		return glm::translate(glm::mat4(1.0f), anchor) * flipY * glm::translate(glm::mat4(1.0f), -anchor) * transform;
+	}
+
+	// reflectAnchorY handles world (Y-up) text: the font lays glyphs out top-to-bottom in a y-down
+	// local space, so a world string is reflected about its anchor to read top-to-bottom on a Y-up
+	// screen. This keeps glyph textures upright without a per-glyph V flip. UI text (y-down canvas)
+	// passes false and is laid out directly.
+	void AppendString(std::vector<DrawItem>& items, const pg::ResourceMapSingletonComponent& resourcesComponent, const glm::mat4& transform, const std::string& string, pg::S_Ptr<pg::Font> font, const glm::vec4& color, float kerning, float linespacing, float sortKey, const glm::vec4& clipRect, int visibleChars, bool reflectAnchorY)
 	{
 		const pg::Texture2D& fontAtlas = GetTexture(resourcesComponent, font->GetFontID());
 
 		glm::mat4 flatTransform = transform;
 		flatTransform[3][2] = 0.f;
+		if (reflectAnchorY)
+		{
+			flatTransform = ReflectAboutAnchorY(flatTransform);
+		}
 
 		glm::dvec2 charOffset{ 0.0, 0.0 };
 		const glm::vec3 originSprite(0.f, 0.0f, 0.f);
@@ -252,7 +279,9 @@ namespace
 				const glm::vec4 charQuad = font->GetCharacterVertexQuad(character, charOffset);
 				const glm::mat4 charTransform = font->GetCharacterTransform(charQuad, flatTransform);
 
-				AppendQuad(items, resourcesComponent, charTransform, color, font->GetFontID(), texCoords, originSprite, sortKey, clipRect);
+				// Glyphs are positioned by flatTransform (already reflected for world text); their
+				// textures are not V-flipped — the reflection keeps them upright.
+				AppendQuad(items, resourcesComponent, charTransform, color, font->GetFontID(), texCoords, originSprite, sortKey, clipRect, false);
 			}
 
 			if (font->IsCharacterNewLine(character))
@@ -299,7 +328,8 @@ namespace
 			const pg::DrawQuadInFrameEvent& event = viewDrawQuad.get<const pg::DrawQuadInFrameEvent>(ent);
 			const pg::UUID textureID = event.m_TextureID.IsNull() ? resourcesComponent.m_DefaultTexture : event.m_TextureID;
 			const glm::vec4 color = event.m_TextureID.IsNull() ? glm::vec4(event.m_Color, 1.f) : glm::vec4(1.f);
-			AppendQuad(worldItems, resourcesComponent, event.m_Transform, color, textureID, glm::vec4(0.f, 0.f, 1.f, 1.f), event.m_Origin, event.m_SortKey, glm::vec4(0.f));
+			// World draws are Y-up: flip the texture V so they sample upright on DirectX (V-down).
+			AppendQuad(worldItems, resourcesComponent, event.m_Transform, color, textureID, glm::vec4(0.f, 0.f, 1.f, 1.f), event.m_Origin, event.m_SortKey, glm::vec4(0.f), pg::Texture2D::FlipY());
 		}
 
 		auto viewDrawSprite = accessor.View<const pg::DrawSpriteInFrameEvent>();
@@ -307,14 +337,15 @@ namespace
 		{
 			const pg::DrawSpriteInFrameEvent& event = viewDrawSprite.get<const pg::DrawSpriteInFrameEvent>(ent);
 			const pg::Sprite& sprite = event.m_Sprite;
-			AppendQuad(worldItems, resourcesComponent, sprite.GetTransform(), glm::vec4(1.f), sprite.GetTextureID(), sprite.GetTexCoordsRect(), sprite.GetOrigin(), event.m_SortKey, glm::vec4(0.f));
+			AppendQuad(worldItems, resourcesComponent, sprite.GetTransform(), glm::vec4(1.f), sprite.GetTextureID(), sprite.GetTexCoordsRect(), sprite.GetOrigin(), event.m_SortKey, glm::vec4(0.f), pg::Texture2D::FlipY());
 		}
 
 		auto viewDrawString = accessor.View<const pg::DrawStringInFrameEvent>();
 		for (auto ent : viewDrawString)
 		{
 			const pg::DrawStringInFrameEvent& event = viewDrawString.get<const pg::DrawStringInFrameEvent>(ent);
-			AppendString(worldItems, resourcesComponent, event.m_Transform, event.m_String, event.m_Font, event.m_Color, event.m_Kerning, event.m_Linespacing, event.m_SortKey, glm::vec4(0.f), -1);
+			// World text is reflected about its anchor so it reads top-to-bottom on the Y-up screen.
+			AppendString(worldItems, resourcesComponent, event.m_Transform, event.m_String, event.m_Font, event.m_Color, event.m_Kerning, event.m_Linespacing, event.m_SortKey, glm::vec4(0.f), -1, pg::Texture2D::FlipY());
 		}
 
 		// UI elements keep their nesting level packed into the transform z; it is used purely to order
@@ -325,7 +356,8 @@ namespace
 			const pg::DrawUIQuadInFrameEvent& event = viewDrawUIQuad.get<const pg::DrawUIQuadInFrameEvent>(ent);
 			const pg::UUID textureID = event.m_TextureID.IsNull() ? resourcesComponent.m_DefaultTexture : event.m_TextureID;
 			const glm::vec4 color = event.m_TextureID.IsNull() ? glm::vec4(event.m_Color, 1.f) : glm::vec4(1.f);
-			AppendQuad(uiItems, resourcesComponent, event.m_Transform, color, textureID, event.m_TexCoords, event.m_Origin, event.m_Transform[3][2], event.m_ClipRect);
+			// UI is authored in a y-down canvas placed by the inverted UI camera; no texture V flip.
+			AppendQuad(uiItems, resourcesComponent, event.m_Transform, color, textureID, event.m_TexCoords, event.m_Origin, event.m_Transform[3][2], event.m_ClipRect, false);
 		}
 
 		auto viewDrawUIString = accessor.View<const pg::DrawUIStringInFrameEvent>();
@@ -333,11 +365,14 @@ namespace
 		{
 			const pg::DrawUIStringInFrameEvent& event = viewDrawUIString.get<const pg::DrawUIStringInFrameEvent>(ent);
 			PG_CORE_EXCEPT(resourcesComponent.m_FontMap.find(event.m_FontID) != resourcesComponent.m_FontMap.end(), "Could not find font");
-			AppendString(uiItems, resourcesComponent, event.m_Transform, event.m_String, resourcesComponent.m_FontMap.at(event.m_FontID), event.m_Color, event.m_Kerning, event.m_Linespacing, event.m_Transform[3][2], event.m_ClipRect, event.m_VisibleChars);
+			AppendString(uiItems, resourcesComponent, event.m_Transform, event.m_String, resourcesComponent.m_FontMap.at(event.m_FontID), event.m_Color, event.m_Kerning, event.m_Linespacing, event.m_Transform[3][2], event.m_ClipRect, event.m_VisibleChars, false);
 		}
 
+		// World draws are Y-sorted for a Y-up world: higher Y (further back) draws first, so lower-Y
+		// geometry (closer to the camera bottom) draws in front. UI keeps ascending order: its sort key
+		// is the packed nesting depth, where a higher level must draw on top.
 		std::stable_sort(worldItems.begin(), worldItems.end(),
-			[](const DrawItem& lhs, const DrawItem& rhs) { return lhs.m_SortKey < rhs.m_SortKey; });
+			[](const DrawItem& lhs, const DrawItem& rhs) { return lhs.m_SortKey > rhs.m_SortKey; });
 		std::stable_sort(uiItems.begin(), uiItems.end(),
 			[](const DrawItem& lhs, const DrawItem& rhs) { return lhs.m_SortKey < rhs.m_SortKey; });
 	}

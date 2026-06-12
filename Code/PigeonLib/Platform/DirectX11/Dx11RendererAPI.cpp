@@ -45,15 +45,17 @@ void pg::Dx11RendererAPI::Init()
     context->GetPd3dDeviceContext()->OMSetBlendState(pBlendState, blendFactor, 0xffffffff);
     context->GetPd3dDeviceContext()->OMSetDepthStencilState(pDepthStencilState, 0);
 
-    // Rasterizer with scissor enabled so the UI pass can mask clipped sub-trees; otherwise it matches the
-    // device-default raster (solid fill, back-face cull). The scissor rect is set to the full window each
-    // frame in Begin() and narrowed per clipped UI draw via SetScissor().
+    // Rasterizer with scissor enabled so the UI pass can mask clipped sub-trees. Culling is disabled
+    // (CULL_NONE): this is a 2D renderer with two cameras whose projections wind triangles oppositely
+    // (the world camera is Y-up, the UI camera uses an inverted ortho), so triangle winding must never
+    // decide visibility. The scissor rect is set to the full window each frame in Begin() and narrowed
+    // per clipped UI draw via SetScissor().
     {
         ID3D11RasterizerState* pRasterizerState = nullptr;
         D3D11_RASTERIZER_DESC desc;
         ZeroMemory(&desc, sizeof(desc));
         desc.FillMode = D3D11_FILL_SOLID;
-        desc.CullMode = D3D11_CULL_BACK;
+        desc.CullMode = D3D11_CULL_NONE;
         desc.FrontCounterClockwise = FALSE;
         desc.DepthClipEnable = TRUE;
         desc.ScissorEnable = TRUE;

@@ -9,18 +9,32 @@ On the first frame, allocates dynamic GPU vertex and index buffers and resolves 
 from ResourceMapSingletonComponent. Lazy-initializes by deferring RendererDataSingletonComponent
 on the first frame and returning; rendering begins from the second frame.
 
+## Y-up world & the texture flip
+World space is **Y-up**: +Y is up on screen, matching the gameplay/transform convention. Vertex
+positions are never negated; the camera projections map world/UI space to the screen directly.
+DirectX samples textures with V increasing downward, so a Y-up world quad would sample its texture
+upside down — **world draws compensate by flipping the V texture coordinate** (QuadData's flipTexV,
+gated on Texture2D::FlipY(); true on DirectX11, false on the Testing backend). UI draws never flip V:
+the UI canvas is y-down and is placed by the UICameraSingletonComponent's inverted ortho.
+
+World **text** is reflected about its own anchor (AppendString's reflectAnchorY, gated on
+Texture2D::FlipY()): the font lays glyphs out top-to-bottom in a y-down local space, so reflecting a
+world string about its anchor makes it read top-to-bottom on the Y-up screen while keeping glyph
+textures upright — no per-glyph V flip needed. UI text is laid out directly (no reflection).
+
 Draws happen in two passes within a single cleared frame (ADR 0005):
 - **World pass** — quads, sprites, and text are sorted by their render sort key (the world-space Y of
-  each entity's local bottom edge, supplied on the draw event; lower keys draw behind) and drawn
-  through the gameplay OrthographicCameraComponent (which pans/zooms with input).
+  each entity's local bottom edge, supplied on the draw event). For the Y-up world the order is
+  **descending**: higher Y (further back) draws first, so lower-Y geometry (nearer the camera bottom)
+  draws in front. Drawn through the gameplay OrthographicCameraComponent (which pans/zooms with input).
 - **UI pass** — UI quads and text are drawn after the world so UI is always on top, through the
-  screen-space UICameraSingletonComponent rather than the gameplay camera, ordered by the nesting
-  level packed in the UI transform's Z. The view-projection is swapped to the UI camera by re-uploading
-  the shared device-level constant buffer (no second clear, which would wipe the world pass). The UI
-  pass is skipped while the UI camera is absent (the first frame before UIRenderSystem creates it).
-  Each UI draw carries a window-pixel clip rect; a clip change flushes the current batch and narrows
-  the scissor (RendererAPI SetScissor), masking clipped sub-trees. The world pass runs with the
-  full-window scissor set each frame in Begin().
+  screen-space UICameraSingletonComponent rather than the gameplay camera, ordered (ascending) by the
+  nesting level packed in the UI transform's Z. The view-projection is swapped to the UI camera by
+  re-uploading the shared device-level constant buffer (no second clear, which would wipe the world
+  pass). The UI pass is skipped while the UI camera is absent (the first frame before UIRenderSystem
+  creates it). Each UI draw carries a window-pixel clip rect; a clip change flushes the current batch
+  and narrows the scissor (RendererAPI SetScissor), masking clipped sub-trees. The world pass runs with
+  the full-window scissor set each frame in Begin().
 
 UI quads sample the per-event UV sub-rect (so nine-slice cells map to their texture region); world
 draws use the full texture or the sprite's coords. Consecutive draws that share a texture are merged

@@ -19,10 +19,11 @@ namespace pg::ui
 	// Nesting depth (0 = direct child of the canvas), used to order the UI draw pass (children over parents).
 	int GetElementDepth(pg::CheckedRegistryAccessor& accessor, const pg::ui::BaseComponent& baseComponent);
 
-	// The UI camera's vertical orthographic bounds {bottom, top} for a logical-canvas height, accounting for
-	// the renderer's Y-flip (true on DirectX11) so canvas y=0 maps to the TOP of the screen. top is always 0;
-	// bottom is -height when the renderer flips Y, +height otherwise.
-	glm::vec2 GetUICameraOrthoBottomTop(float height, bool flipY);
+	// The UI camera's vertical orthographic bounds {bottom, top} for a logical-canvas height. The UI canvas
+	// is y-down (y=0 at the top); the camera uses an inverted ortho so canvas y=0 maps to the TOP of the
+	// screen and y=height to the bottom: returns {bottom, top} = {height, 0}. Backend independent — world
+	// space is Y-up via the camera projections, not a renderer vertex negation.
+	glm::vec2 GetUICameraOrthoBottomTop(float height);
 
 	// The element's effective clip rect in logical-canvas units: the intersection of all ancestor clip
 	// regions (elements carrying a UIClipComponent), or the full logical canvas when there is no ancestor

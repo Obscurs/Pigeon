@@ -45,7 +45,8 @@ namespace
 		{
 			const float orbitAngle = spin.m_Elapsed * spin.m_OrbitSpeed;
 			position.x += std::cos(orbitAngle) * spin.m_OrbitRadius;
-			position.y += std::sin(orbitAngle) * spin.m_OrbitRadius;
+			// World is Y-up; negate so the orbit keeps its on-screen direction.
+			position.y -= std::sin(orbitAngle) * spin.m_OrbitRadius;
 		}
 		return position;
 	}
@@ -56,7 +57,8 @@ namespace
 		{
 			return glm::quat(1.f, 0.f, 0.f, 0.f);
 		}
-		return glm::angleAxis(spin.m_Elapsed * spin.m_RotationSpeed, glm::vec3(0.f, 0.f, 1.f));
+		// World is Y-up; negate the angle so the on-screen spin direction is unchanged.
+		return glm::angleAxis(-spin.m_Elapsed * spin.m_RotationSpeed, glm::vec3(0.f, 0.f, 1.f));
 	}
 }
 

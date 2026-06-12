@@ -62,7 +62,8 @@ namespace
 		sprite.m_TexCoordsRect = glm::vec4(0.f, 0.f, 1.f / 9.f, 1.f / 5.f);
 		sprite.m_TextureID = config.m_SpriteTextureID;
 		accessor.EmplaceDeferred<pg::SpriteComponent>(ent, std::move(sprite));
-		EmitSceneTransform(accessor, ent, glm::vec3(-1.5f, -0.9f, 0.f), glm::vec3(0.6f, 0.6f, 1.f));
+		// World is Y-up: a quad/sprite grows up from its position (its bottom-left corner).
+		EmitSceneTransform(accessor, ent, glm::vec3(-1.5f, 0.3f, 0.f), glm::vec3(0.6f, 0.6f, 1.f));
 	}
 
 	// The arrow-key-controlled animated character. Uses Checkerboard.png as an 8x8 sprite sheet: each row
@@ -89,7 +90,7 @@ namespace
 
 		accessor.EmplaceDeferred<sbx::CharacterTagComponent>(ent);
 
-		EmitSceneTransform(accessor, ent, glm::vec3(0.8f, 0.f, 0.f), glm::vec3(0.6f, 0.6f, 1.f));
+		EmitSceneTransform(accessor, ent, glm::vec3(0.8f, -0.6f, 0.f), glm::vec3(0.6f, 0.6f, 1.f));
 	}
 
 	pg::ecs::Entity CreateLabel(pg::CheckedRegistryAccessor& accessor, const glm::vec3& position, const glm::vec3& scale, const std::string& text, const pg::UUID& fontID, const glm::vec4& color)
@@ -149,12 +150,14 @@ void sbx::SceneSetupSystem::Update(const pg::Timestep& ts)
 	CreateSprite(accessor, config);
 	CreateCharacter(accessor, config);
 
-	CreateLabel(accessor, glm::vec3(-1.7f, 1.5f, 0.f), glm::vec3(0.4f, 0.4f, 1.f),
+	// Labels are positioned at their anchor (top-left of the text block); world is Y-up, so the
+	// near-top rows sit at positive Y and the bottom readout at negative Y.
+	CreateLabel(accessor, glm::vec3(-1.7f, -1.5f, 0.f), glm::vec3(0.4f, 0.4f, 1.f),
 		"Pigeon Engine Showcase", config.m_BoldFontID, glm::vec4(1.f, 0.9f, 0.2f, 1.f));
-	CreateLabel(accessor, glm::vec3(-1.7f, 1.1f, 0.f), glm::vec3(0.18f, 0.18f, 1.f),
+	CreateLabel(accessor, glm::vec3(-1.7f, -1.1f, 0.f), glm::vec3(0.18f, 0.18f, 1.f),
 		"WASD pan  scroll zoom  SPACE spawn  arrows move", config.m_DefaultFontID, glm::vec4(0.9f, 0.9f, 0.9f, 1.f));
 
-	pg::ecs::Entity readout = CreateLabel(accessor, glm::vec3(-1.7f, -1.4f, 0.f), glm::vec3(0.16f, 0.16f, 1.f),
+	pg::ecs::Entity readout = CreateLabel(accessor, glm::vec3(-1.7f, 1.4f, 0.f), glm::vec3(0.16f, 0.16f, 1.f),
 		"", config.m_DefaultFontID, glm::vec4(0.6f, 0.9f, 1.f, 1.f));
 	accessor.EmplaceDeferred<sbx::InputReadoutTagComponent>(readout);
 

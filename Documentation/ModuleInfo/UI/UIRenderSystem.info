@@ -33,9 +33,10 @@ refreshes the live UI canvas before laying out elements:
   the window/reference width and height ratios), and the logical canvas (window size in reference
   units = window / scale) that layout and hit-testing both resolve against.
 - Points UICameraSingletonComponent's orthographic projection at the logical canvas (y-down,
-  top-left origin), keeping the renderer's UI pass independent of the gameplay camera. The camera's
-  vertical bounds account for the renderer's Y-flip (true on DirectX11) so canvas y=0 maps to the top
-  of the screen on both flip conventions.
+  top-left origin), keeping the renderer's UI pass independent of the gameplay camera. The camera uses
+  an inverted vertical ortho (bottom = canvas height, top = 0) so the y-down canvas renders y=0 at the
+  top of the screen. This is backend-independent: world space is Y-up via the camera projections, not a
+  renderer vertex negation, so the UI camera no longer depends on the backend's flip.
 
 ## Input Components
 | Component | Access |

@@ -7,7 +7,6 @@
 #include "Pigeon/Renderer/DrawUIQuadInFrameEvent.h"
 #include "Pigeon/Renderer/DrawUIStringInFrameEvent.h"
 #include "Pigeon/Renderer/Font.h"
-#include "Pigeon/Renderer/Texture.h"
 #include "Pigeon/Renderer/UICameraSingletonComponent.h"
 #include "Pigeon/UI/UIComponents.h"
 #include "Pigeon/UI/UIHelpers.h"
@@ -65,8 +64,8 @@ namespace
 		{
 			pg::UICameraSingletonComponent& uiCam =
 				viewUICam.get<pg::UICameraSingletonComponent>(viewUICam.front());
-			// Account for the renderer's Y-flip (true on DirectX11) so canvas y=0 renders at the top.
-			const glm::vec2 verticalBounds = pg::ui::GetUICameraOrthoBottomTop(cfg.m_Height, pg::Texture2D::FlipY());
+			// Inverted ortho (bottom = height, top = 0) so the y-down canvas renders y=0 at the top.
+			const glm::vec2 verticalBounds = pg::ui::GetUICameraOrthoBottomTop(cfg.m_Height);
 			uiCam.m_Camera.SetProjection(0.f, cfg.m_Width, verticalBounds.x, verticalBounds.y);
 		}
 	}

@@ -93,8 +93,9 @@ namespace CatchTestsetFail
 		world.Update(pg::Timestep(1000)); // elapsed = 1 -> angle 1 rad
 
 		const pg::TransformRequestData& data = pg::World::GetRegistryDirect().get<sbx::AnimationTransformRequestOneFrameComponent>(ent).m_Data;
+		// World is Y-up: the orbit's Y is negated so it keeps its on-screen direction.
 		CHECK(std::fabs(data.m_Position.x - std::cos(1.f)) < 1e-3f);
-		CHECK(std::fabs(data.m_Position.y - std::sin(1.f)) < 1e-3f);
+		CHECK(std::fabs(data.m_Position.y + std::sin(1.f)) < 1e-3f);
 	}
 
 	// ---------------------------------------------------------------------------

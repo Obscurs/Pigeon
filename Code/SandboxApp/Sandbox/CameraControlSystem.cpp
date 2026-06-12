@@ -78,6 +78,7 @@ void sbx::CameraControlSystem::Update(const pg::Timestep& ts)
 		position = accessor.Get<const pg::PositionComponent>(cameraEnt).m_Position;
 	}
 	position.x += panX * zoom * ts.AsSeconds();
+	// World is Y-up: W pans the camera up (toward higher world Y), S pans it down.
 	position.y += panY * zoom * ts.AsSeconds();
 
 	pg::SetCameraRequestOneFrameComponent request;

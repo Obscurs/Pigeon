@@ -129,7 +129,8 @@ namespace CatchTestsetFail
 	}
 
 	// ---------------------------------------------------------------------------
-	// Happy path: W held -> request pans +Y
+	// Happy path: W held -> pans the view up. World is Y-up, so W increases the
+	// camera's world Y.
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Sandbox.CameraControlSystem::HeldWKeyPansUp")
 	{
@@ -150,7 +151,8 @@ namespace CatchTestsetFail
 	}
 
 	// ---------------------------------------------------------------------------
-	// Happy path: S held -> request pans -Y
+	// Happy path: S held -> pans the view down. World is Y-up, so S decreases the
+	// camera's world Y.
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Sandbox.CameraControlSystem::HeldSKeyPansDown")
 	{

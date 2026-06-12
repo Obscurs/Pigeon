@@ -70,9 +70,10 @@ namespace
 
 	void SeedScene(pg::CheckedRegistryAccessor& accessor, const sbx::SandboxConfigSingletonComponent& config)
 	{
+		// World is Y-up: a quad grows up from its anchor (its bottom-left corner).
 		// Flat colour quad, slowly rotating, left of centre.
 		QuadSpec flat;
-		flat.m_Anchor = { -1.4f, 0.f, 0.f };
+		flat.m_Anchor = { -1.4f, -0.5f, 0.f };
 		flat.m_Scale = { 0.5f, 0.5f, 1.f };
 		flat.m_BaseColor = { 0.2f, 0.85f, 0.35f };
 		flat.m_RotationSpeed = 1.0f;
@@ -80,7 +81,7 @@ namespace
 
 		// Textured quad at centre.
 		QuadSpec textured;
-		textured.m_Anchor = { 0.f, 0.f, 0.f };
+		textured.m_Anchor = { 0.f, -0.6f, 0.f };
 		textured.m_Scale = { 0.6f, 0.6f, 1.f };
 		textured.m_TextureID = config.m_TexturedQuadTextureID;
 		textured.m_RotationSpeed = 0.4f;
@@ -88,22 +89,22 @@ namespace
 
 		// Orbiting, colour-cycling quad.
 		QuadSpec orbiter;
-		orbiter.m_Anchor = { 0.f, 0.f, 0.f };
+		orbiter.m_Anchor = { 0.f, -0.2f, 0.f };
 		orbiter.m_Scale = { 0.2f, 0.2f, 1.f };
 		orbiter.m_OrbitRadius = 1.1f;
 		orbiter.m_OrbitSpeed = 1.5f;
 		orbiter.m_ColorCycleSpeed = 1.0f;
 		CreateQuad(accessor, orbiter);
 
-		// Two overlapping quads; the lower one (smaller Y) draws behind the higher one.
+		// Two overlapping quads; the higher one (larger Y, further back) draws behind the lower one.
 		QuadSpec behindQuad;
-		behindQuad.m_Anchor = { 1.3f, -0.1f, 0.f };
+		behindQuad.m_Anchor = { 1.3f, -0.4f, 0.f };
 		behindQuad.m_Scale = { 0.5f, 0.5f, 1.f };
 		behindQuad.m_BaseColor = { 0.9f, 0.25f, 0.25f };
 		CreateQuad(accessor, behindQuad);
 
 		QuadSpec frontQuad;
-		frontQuad.m_Anchor = { 1.5f, 0.1f, 0.f };
+		frontQuad.m_Anchor = { 1.5f, -0.6f, 0.f };
 		frontQuad.m_Scale = { 0.5f, 0.5f, 1.f };
 		frontQuad.m_BaseColor = { 0.25f, 0.4f, 0.95f };
 		CreateQuad(accessor, frontQuad);
@@ -166,7 +167,7 @@ void sbx::QuadSpawnSystem::Update(const pg::Timestep& ts)
 	if (WasKeyJustPressed(input, pg::PG_KEY_SPACE))
 	{
 		QuadSpec spawned;
-		spawned.m_Anchor = { 0.f, -0.6f, 0.f };
+		spawned.m_Anchor = { 0.f, 0.45f, 0.f };
 		spawned.m_Scale = { 0.15f, 0.15f, 1.f };
 		spawned.m_RotationSpeed = 3.0f;
 		spawned.m_ColorCycleSpeed = 2.0f;

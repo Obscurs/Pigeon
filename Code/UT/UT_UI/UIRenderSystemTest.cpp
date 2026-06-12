@@ -456,14 +456,15 @@ namespace CatchTestsetFail
 	}
 
 	// ---------------------------------------------------------------------------
-	// The UI camera's vertical bounds account for the renderer Y-flip so canvas y=0
-	// renders at the top of the screen on both flip conventions. On DirectX11
-	// (flip = true) the bottom must be negative; without the flip the y-down bounds apply.
+	// The UI canvas is y-down (y=0 at the top). The UI camera uses an inverted
+	// ortho (bottom = height, top = 0) so canvas y=0 renders at the top of the
+	// screen. This is backend-independent: the world Y-flip no longer lives in a
+	// vertex negation, so the UI camera does not depend on it.
 	// ---------------------------------------------------------------------------
-	TEST_CASE("UI.UIRenderSystem::UICameraVerticalBoundsAccountForYFlip")
+	TEST_CASE("UI.UIRenderSystem::UICameraVerticalBoundsAreInvertedOrtho")
 	{
-		CHECK(pg::ui::GetUICameraOrthoBottomTop(1080.f, true)  == glm::vec2(-1080.f, 0.f));
-		CHECK(pg::ui::GetUICameraOrthoBottomTop(1080.f, false) == glm::vec2(1080.f, 0.f));
+		CHECK(pg::ui::GetUICameraOrthoBottomTop(1080.f) == glm::vec2(1080.f, 0.f));
+		CHECK(pg::ui::GetUICameraOrthoBottomTop(720.f)  == glm::vec2(720.f, 0.f));
 	}
 
 	// ---------------------------------------------------------------------------

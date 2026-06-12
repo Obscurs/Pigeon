@@ -125,11 +125,12 @@ glm::vec4 pg::ui::GetElementClipRect(pg::CheckedRegistryAccessor& accessor, cons
 	return clip;
 }
 
-glm::vec2 pg::ui::GetUICameraOrthoBottomTop(float height, bool flipY)
+glm::vec2 pg::ui::GetUICameraOrthoBottomTop(float height)
 {
-	// The renderer negates vertex Y when flipY is set; pairing that with bottom=-height keeps canvas y=0 at
-	// the top of the screen and y=height at the bottom. Without the flip the plain y-down bounds apply.
-	return glm::vec2(flipY ? -height : height, 0.f);
+	// The UI canvas is y-down: pairing bottom=height with top=0 gives an inverted ortho that keeps canvas
+	// y=0 at the top of the screen and y=height at the bottom, on every backend. The world Y-flip lives in
+	// the camera projections now, not in a vertex negation, so this no longer depends on the renderer.
+	return glm::vec2(height, 0.f);
 }
 
 int pg::ui::GetElementDepth(pg::CheckedRegistryAccessor& accessor, const pg::ui::BaseComponent& baseComponent)

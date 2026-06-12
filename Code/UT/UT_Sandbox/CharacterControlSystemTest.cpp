@@ -139,8 +139,8 @@ namespace CatchTestsetFail
 	}
 
 	// ---------------------------------------------------------------------------
-	// Up arrow: moves up on screen (world +Y renders downward, so world Y decreases)
-	// and faces the up row.
+	// Up arrow: moves up on screen. World space is Y-up, so moving up increases
+	// world Y, and faces the up row.
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Sandbox.CharacterControlSystem::UpArrowMovesAndFacesUp")
 	{
@@ -153,13 +153,14 @@ namespace CatchTestsetFail
 		world.Update(pg::Timestep(1000));
 
 		const sbx::CharacterTransformRequestOneFrameComponent& move = pg::World::GetRegistryDirect().get<sbx::CharacterTransformRequestOneFrameComponent>(ent);
-		CHECK(FLOAT_EQ(move.m_Data.m_Position.y, -1.5f));
+		CHECK(FLOAT_EQ(move.m_Data.m_Position.y, 1.5f));
 		const pg::SetSpriteAnimationRequestOneFrameComponent& anim = pg::World::GetRegistryDirect().get<pg::SetSpriteAnimationRequestOneFrameComponent>(ent);
 		CHECK(anim.m_Row == ROW_UP);
 	}
 
 	// ---------------------------------------------------------------------------
-	// Down arrow: moves down on screen (world Y increases) and faces the down row.
+	// Down arrow: moves down on screen. World space is Y-up, so world Y decreases,
+	// and faces the down row.
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Sandbox.CharacterControlSystem::DownArrowMovesAndFacesDown")
 	{
@@ -172,7 +173,7 @@ namespace CatchTestsetFail
 		world.Update(pg::Timestep(1000));
 
 		const sbx::CharacterTransformRequestOneFrameComponent& move = pg::World::GetRegistryDirect().get<sbx::CharacterTransformRequestOneFrameComponent>(ent);
-		CHECK(FLOAT_EQ(move.m_Data.m_Position.y, 1.5f));
+		CHECK(FLOAT_EQ(move.m_Data.m_Position.y, -1.5f));
 		const pg::SetSpriteAnimationRequestOneFrameComponent& anim = pg::World::GetRegistryDirect().get<pg::SetSpriteAnimationRequestOneFrameComponent>(ent);
 		CHECK(anim.m_Row == ROW_DOWN);
 	}
@@ -196,7 +197,7 @@ namespace CatchTestsetFail
 		const float expected = 1.5f / std::sqrt(2.f);
 		const sbx::CharacterTransformRequestOneFrameComponent& move = pg::World::GetRegistryDirect().get<sbx::CharacterTransformRequestOneFrameComponent>(ent);
 		CHECK(move.m_Data.m_Position.x == Approx(expected));
-		CHECK(move.m_Data.m_Position.y == Approx(-expected)); // up intent -> negative world Y
+		CHECK(move.m_Data.m_Position.y == Approx(expected)); // up intent -> positive world Y (Y-up)
 		const pg::SetSpriteAnimationRequestOneFrameComponent& anim = pg::World::GetRegistryDirect().get<pg::SetSpriteAnimationRequestOneFrameComponent>(ent);
 		CHECK(anim.m_Row == ROW_RIGHT);
 	}
