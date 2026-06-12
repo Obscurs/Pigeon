@@ -170,6 +170,39 @@ namespace CatchTestsetFail
 	}
 
 	// ---------------------------------------------------------------------------
+	// Happy path: the engine render target declared in the manifest is created and
+	// its colour buffer is registered in the texture map under the same UUID, so 2D
+	// draws can sample the 3D image as a texture.
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Core.ResourceManagerSystem::LoadedMapHasRenderTarget")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ResourceManagerSystem>());
+
+		world.Update(pg::Timestep(0));
+
+		auto view = pg::World::GetRegistryDirect().view<pg::ResourceMapSingletonComponent>();
+		REQUIRE(view.size() == 1);
+
+		const pg::ResourceMapSingletonComponent& map =
+			view.get<pg::ResourceMapSingletonComponent>(view.front());
+
+		const pg::UUID renderTargetID("c3000000-0000-4000-8000-000000000002");
+
+		std::unordered_map<pg::UUID, pg::S_Ptr<pg::RenderTarget>>::const_iterator rt =
+			map.m_RenderTargetMap.find(renderTargetID);
+		REQUIRE(rt != map.m_RenderTargetMap.end());
+		REQUIRE(rt->second != nullptr);
+		CHECK(rt->second->GetColorTexture() != nullptr);
+
+		// The same UUID resolves to the render target's colour buffer in the texture map.
+		std::unordered_map<pg::UUID, pg::MappedTexture>::const_iterator tex =
+			map.m_TextureMap.find(renderTargetID);
+		REQUIRE(tex != map.m_TextureMap.end());
+		CHECK(tex->second.m_Texture != nullptr);
+	}
+
+	// ---------------------------------------------------------------------------
 	// DeclareAccess: verify declared sets match the system's actual access
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Core.ResourceManagerSystem::DeclareAccessIsCorrect")

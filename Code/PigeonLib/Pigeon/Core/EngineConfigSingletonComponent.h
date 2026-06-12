@@ -15,6 +15,10 @@ namespace pg
 		pg::UUID m_DefaultTextShaderID;
 		pg::UUID m_DefaultFontID;
 
+		// 3D pass: the flat-unlit model shader and the offscreen render target the 3D scene draws into.
+		pg::UUID m_Model3DShaderID;
+		pg::UUID m_Render3DTargetID;
+
 		// Audio mix levels read from Config.json; default to full volume when the keys are absent.
 		float m_MasterVolume = 1.0f;
 		float m_SoundVolume = 1.0f;

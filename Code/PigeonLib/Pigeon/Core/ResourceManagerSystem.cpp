@@ -74,6 +74,24 @@ namespace
 		component.m_ModelMap[resource.m_UUID] = pg::Model::Create(resource.m_Path);
 	}
 
+	// Render targets are pathless: an {id, width, height} entry. The created target is stored in the
+	// render-target map and its colour buffer is registered in the texture map under the same UUID, so
+	// the 2D pass can sample the rendered image like any other texture.
+	void LoadRenderTargetFromResource(pg::ResourceMapSingletonComponent& component, const json& jsonObject)
+	{
+		PG_CORE_EXCEPT(jsonObject.contains("id") && jsonObject["id"].is_string(), "could not parse id from render target manifest entry");
+		PG_CORE_EXCEPT(jsonObject.contains("width") && jsonObject["width"].is_number_unsigned(), "could not parse width from render target manifest entry");
+		PG_CORE_EXCEPT(jsonObject.contains("height") && jsonObject["height"].is_number_unsigned(), "could not parse height from render target manifest entry");
+
+		const pg::UUID uuid(jsonObject["id"].get<std::string>());
+		const unsigned int width = jsonObject["width"].get<unsigned int>();
+		const unsigned int height = jsonObject["height"].get<unsigned int>();
+
+		pg::S_Ptr<pg::RenderTarget> renderTarget = pg::RenderTarget::Create(width, height);
+		component.m_RenderTargetMap[uuid] = renderTarget;
+		component.m_TextureMap[uuid] = pg::MappedTexture{ renderTarget->GetColorTexture(), pg::EMappedTextureType::eQuad };
+	}
+
 	void LoadResourcesFromPath(pg::ResourceMapSingletonComponent& component, const std::string& filePath, const std::string& prefix)
 	{
 		json jsonObject = ReadJSONFileToString(filePath);
@@ -132,6 +150,14 @@ namespace
 			for (json child : jsonObject["models"])
 			{
 				LoadModelFromResource(component, GetParsedResourceFromJsonItem(child, prefix, "Models"));
+			}
+		}
+		if (jsonObject.contains("renderTargets"))
+		{
+			PG_CORE_EXCEPT(jsonObject["renderTargets"].is_array(), "could not parse renderTargets from resource manifest");
+			for (json child : jsonObject["renderTargets"])
+			{
+				LoadRenderTargetFromResource(component, child);
 			}
 		}
 	}

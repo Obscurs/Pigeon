@@ -6,6 +6,7 @@
 #include "Pigeon/Core/UUID.h"
 #include "Pigeon/Renderer/Font.h"
 #include "Pigeon/Renderer/Model.h"
+#include "Pigeon/Renderer/RenderTarget.h"
 #include "Pigeon/Renderer/Shader.h"
 #include "Pigeon/Renderer/Texture.h"
 
@@ -29,6 +30,10 @@ namespace pg
 		std::unordered_map<pg::UUID, pg::S_Ptr<pg::SoundClip>> m_SoundMap;
 		std::unordered_map<pg::UUID, nlohmann::json> m_JSONMap;
 		std::unordered_map<pg::UUID, pg::S_Ptr<pg::Model>> m_ModelMap;
+
+		// Offscreen render targets keyed by UUID. Each target's colour buffer is also registered in
+		// m_TextureMap under the same UUID, so 2D draws can sample the rendered image as a texture.
+		std::unordered_map<pg::UUID, pg::S_Ptr<pg::RenderTarget>> m_RenderTargetMap;
 
 		pg::UUID m_DefaultTexture = pg::UUID::Generate();
 	};

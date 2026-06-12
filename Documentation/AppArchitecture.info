@@ -18,7 +18,8 @@ pg::CreateApplication()  [Sandbox2D.cpp]
   └── World::RegisterSystem(...) for:
         sbx::ConfigLoaderSystem        Assets/App/Config.json -> SandboxConfigSingletonComponent
         sbx::TransformResolveSystem    app transform requests -> ResolvedTransformRequest (engine type)
-        sbx::SceneSetupSystem          camera + sprite + animated character + labels + transform requests + LoadLayoutEvent (once)
+        sbx::SceneSetupSystem          2D camera + sprite + animated character + labels + 3D camera + spinning model + 3D-output display sprite + transform requests + LoadLayoutEvent (once)
+        sbx::ModelSpinSystem           ModelSpinComponent + time -> ModelSpinTransformRequest (spins the 3D model about Y)
         sbx::CameraControlSystem       held WASD + scroll + camera -> SetCameraRequest (engine type)
         sbx::CharacterControlSystem    held arrows -> CharacterTransformRequest (move) + SetSpriteAnimationRequest (facing/play)
         sbx::QuadSpawnSystem           seeds demo quads (+ spawn transform requests); spawns on SPACE
@@ -94,6 +95,16 @@ World-space rendering
   LabelComponent  + WorldTransform --(sbx::TextRenderSystem, via ResourceMap font)--> DrawStringInFrameEvent
         └── engine Renderer2DSystem Y-sorts world draws (lower Y behind), draws UI on top, into GPU draw calls
   LifetimeComponent --(sbx::LifetimeSystem)--> deferred entity destroy when expired
+
+3D rendering (ADR 0007; engine Renderer3DSystem)
+  SceneSetupSystem authors a PerspectiveCameraComponent (looking at the origin), a model entity
+    (ModelComponent + ModelSpinComponent, no Quad/Sprite so it is 3D-only), and a 2D display sprite
+    textured with the 3D render target.
+  ModelSpinComponent + time --(sbx::ModelSpinSystem)--> ModelSpinTransformRequest (Y-axis spin)
+        └── aggregated by sbx::TransformResolveSystem -> resolved request -> Position/Rotation -> WorldTransform
+  ModelComponent + WorldTransform + PerspectiveCameraComponent --(engine Renderer3DSystem)--> the model is
+    drawn (depth-tested, flat unlit) into the offscreen render target before the 2D pass; its colour
+    buffer is registered as a texture, which the display SpriteComponent samples in the 2D world pass.
 
 UI (engine UIControlSystem + UIEventSystem + UIRenderSystem)
   UIEventSystem hit-tests the mouse -> UIOnClick / UIOnHover / UIOnRelease one-frame components

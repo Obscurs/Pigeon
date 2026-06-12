@@ -5,6 +5,7 @@
 #include "Pigeon/Transform/TransformRequestData.h"
 #include "Sandbox/AnimationTransformRequestOneFrameComponent.h"
 #include "Sandbox/CharacterTransformRequestOneFrameComponent.h"
+#include "Sandbox/ModelSpinTransformRequestOneFrameComponent.h"
 #include "Sandbox/QuadSpawnTransformRequestOneFrameComponent.h"
 #include "Sandbox/SceneTransformRequestOneFrameComponent.h"
 
@@ -76,6 +77,7 @@ pg::SystemAccessDecl sbx::TransformResolveSystem::DeclareAccess() const
 		std::type_index(typeid(sbx::QuadSpawnTransformRequestOneFrameComponent)),
 		std::type_index(typeid(sbx::AnimationTransformRequestOneFrameComponent)),
 		std::type_index(typeid(sbx::CharacterTransformRequestOneFrameComponent)),
+		std::type_index(typeid(sbx::ModelSpinTransformRequestOneFrameComponent)),
 	};
 	decl.addSet = {
 		std::type_index(typeid(pg::ResolvedTransformRequestOneFrameComponent)),
@@ -92,6 +94,9 @@ void sbx::TransformResolveSystem::Update(const pg::Timestep& ts)
 	Gather<sbx::QuadSpawnTransformRequestOneFrameComponent>(accessor, requests);
 	Gather<sbx::AnimationTransformRequestOneFrameComponent>(accessor, requests);
 	Gather<sbx::CharacterTransformRequestOneFrameComponent>(accessor, requests);
+	// Gathered after the scene request so the per-frame spin position/rotation win over the static
+	// initial transform on the frame both arrive.
+	Gather<sbx::ModelSpinTransformRequestOneFrameComponent>(accessor, requests);
 
 	for (const EntityRequest& request : requests)
 	{

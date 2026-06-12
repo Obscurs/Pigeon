@@ -22,6 +22,9 @@ namespace pg
 
 		Dx11Texture2D(const std::string& path);
 		Dx11Texture2D(unsigned int width, unsigned int height, unsigned int channels, const unsigned char* data);
+		// Wraps an already-created shader resource view (e.g. a render target's colour buffer) as a
+		// sampleable texture; creates only the sampler. Used by Dx11RenderTarget.
+		Dx11Texture2D(const ComPtr<ID3D11ShaderResourceView>& textureView, unsigned int width, unsigned int height);
 
 		virtual ~Dx11Texture2D() = default;
 

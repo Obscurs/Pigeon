@@ -52,10 +52,20 @@ void pg::TestingRendererAPI::End()
 
 void pg::TestingRendererAPI::Clear()
 {
-	
+
+}
+
+void pg::TestingRendererAPI::BeginRenderTarget(RenderTarget& target, const glm::vec4& clearColor)
+{
+
+}
+
+void pg::TestingRendererAPI::EndRenderTarget()
+{
+
 }
 
 void pg::TestingRendererAPI::DrawIndexed(unsigned int count)
 {
-	
+
 }

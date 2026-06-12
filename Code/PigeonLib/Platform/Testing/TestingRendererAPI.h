@@ -16,6 +16,9 @@ namespace pg
 		virtual void End() override;
 		virtual void Clear() override;
 
+		virtual void BeginRenderTarget(RenderTarget& target, const glm::vec4& clearColor) override;
+		virtual void EndRenderTarget() override;
+
 		virtual void DrawIndexed(unsigned int count) override;
 	};
 }

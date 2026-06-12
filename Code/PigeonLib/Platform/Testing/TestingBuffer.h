@@ -16,6 +16,12 @@ namespace pg
 
 		virtual void SetVertices(const float* vertices, unsigned int count, unsigned int countOffset) override;
 		virtual void AppendVertices(const float* vertices, unsigned int count, unsigned int countOffset) override;
+
+	private:
+		// Stride in floats (the byte stride passed to the ctor / sizeof(float)). The 2D batches use 10,
+		// the 3D model buffer uses 8 (position+normal+texcoord); recording must honour the real stride so
+		// it never over-reads the source vertices.
+		unsigned int m_StrideFloats = 0;
 	};
 
 	class TestingIndexBuffer : public IndexBuffer

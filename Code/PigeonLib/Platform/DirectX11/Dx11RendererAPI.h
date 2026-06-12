@@ -14,6 +14,11 @@ namespace pg
 			pg::U_Ptr<ID3D11RenderTargetView, pg::ReleaseDeleter> m_MainRenderTargetView = nullptr;
 			pg::U_Ptr<ID3D11RasterizerState, pg::ReleaseDeleter> m_RasterizerState = nullptr;
 
+			// The 2D passes run with depth disabled; the offscreen 3D pass swaps to the enabled state and
+			// EndRenderTarget restores the disabled one.
+			pg::U_Ptr<ID3D11DepthStencilState, pg::ReleaseDeleter> m_DepthDisabledState = nullptr;
+			pg::U_Ptr<ID3D11DepthStencilState, pg::ReleaseDeleter> m_DepthEnabledState = nullptr;
+
 			float m_ClearColor[4] = { 1.f, 1.f, 1.f, 1.f };
 			bool m_Initialized = false;
 		};
@@ -29,6 +34,9 @@ namespace pg
 		virtual void Begin() override;
 		virtual void End() override;
 		virtual void Clear() override;
+
+		virtual void BeginRenderTarget(RenderTarget& target, const glm::vec4& clearColor) override;
+		virtual void EndRenderTarget() override;
 
 		virtual void DrawIndexed(unsigned int count) override;
 

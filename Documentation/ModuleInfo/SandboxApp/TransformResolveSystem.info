@@ -14,6 +14,7 @@ channel) and emits one resolved request. Sole adder of ResolvedTransformRequestO
 | QuadSpawnTransformRequestOneFrameComponent | read |
 | AnimationTransformRequestOneFrameComponent | read |
 | CharacterTransformRequestOneFrameComponent | read |
+| ModelSpinTransformRequestOneFrameComponent | read |
 
 ## Output Components
 | Component | Access | Notes |

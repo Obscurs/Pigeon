@@ -8,6 +8,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 pg::TestingVertexBuffer::TestingVertexBuffer(const float* vertices, uint32_t size, uint32_t stride)
+	: m_StrideFloats(stride / sizeof(float))
 {
 	pg::TestingHelper::GetInstance().m_VertexBuffer.push_back(this);
 }
@@ -28,8 +29,8 @@ void pg::TestingVertexBuffer::SetVertices(const float* vertices, unsigned int co
 	data.m_Count = count;
 	data.m_CountOffset = countOffset;
 	data.m_Buffer = this;
-	BYTE* destData = reinterpret_cast<BYTE*>(pg::TestingHelper::GetInstance().m_Vertices) + countOffset * 10 * sizeof(float);
-	memcpy(destData, vertices, count * 10 * sizeof(float));
+	BYTE* destData = reinterpret_cast<BYTE*>(pg::TestingHelper::GetInstance().m_Vertices) + countOffset * m_StrideFloats * sizeof(float);
+	memcpy(destData, vertices, count * m_StrideFloats * sizeof(float));
 	pg::TestingHelper::GetInstance().m_VertexBufferSetVertices.push_back(data);
 }
 
@@ -39,8 +40,8 @@ void pg::TestingVertexBuffer::AppendVertices(const float* vertices, unsigned int
 	data.m_Count = count;
 	data.m_CountOffset = countOffset;
 	data.m_Buffer = this;
-	BYTE* destData = reinterpret_cast<BYTE*>(pg::TestingHelper::GetInstance().m_Vertices) + countOffset * 10 * sizeof(float);
-	memcpy(destData, vertices, count * 10 * sizeof(float));
+	BYTE* destData = reinterpret_cast<BYTE*>(pg::TestingHelper::GetInstance().m_Vertices) + countOffset * m_StrideFloats * sizeof(float);
+	memcpy(destData, vertices, count * m_StrideFloats * sizeof(float));
 	pg::TestingHelper::GetInstance().m_VertexBufferAppendVertices.push_back(data);
 }
 

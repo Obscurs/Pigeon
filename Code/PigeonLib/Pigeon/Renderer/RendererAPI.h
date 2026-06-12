@@ -2,8 +2,10 @@
 
 #include <glm/glm.hpp>
 
-namespace pg 
+namespace pg
 {
+	class RenderTarget;
+
 	class RendererAPI
 	{
 	public:
@@ -24,6 +26,12 @@ namespace pg
 		virtual void Begin() = 0;
 		virtual void End() = 0;
 		virtual void Clear() = 0;
+
+		// Binds the offscreen render target (colour + depth), sizes the viewport to it, enables depth
+		// testing, and clears it. Subsequent DrawIndexed calls draw into the target until EndRenderTarget
+		// restores the window back buffer and the 2D no-depth state.
+		virtual void BeginRenderTarget(RenderTarget& target, const glm::vec4& clearColor) = 0;
+		virtual void EndRenderTarget() = 0;
 
 		virtual void DrawIndexed(unsigned int count) = 0;
 

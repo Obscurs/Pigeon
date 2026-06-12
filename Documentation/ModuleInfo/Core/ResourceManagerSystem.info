@@ -2,9 +2,13 @@
 
 ## Purpose
 One-shot initialization system. On the first frame, loads all textures, fonts, shaders, UI
-layouts, sound clips, JSON assets, and 3D models from `Assets/Engine/ResourcesManifest.json` and
-`Assets/App/ResourcesManifest.json`, then creates ResourceMapSingletonComponent containing the fully
+layouts, sound clips, JSON assets, 3D models, and render targets from `Assets/Engine/ResourcesManifest.json`
+and `Assets/App/ResourcesManifest.json`, then creates ResourceMapSingletonComponent containing the fully
 populated asset maps. No-op on all subsequent frames (presence check guards early exit).
+
+Render targets are pathless manifest entries (`{id, width, height}`): the created offscreen target is
+stored in the render-target map and its colour buffer is registered in the texture map under the same
+UUID, so 2D draws can sample the 3D pass's output as an ordinary texture (ADR 0007).
 
 ## Input Components
 | Component | Access | Notes |
@@ -14,4 +18,4 @@ populated asset maps. No-op on all subsequent frames (presence check guards earl
 ## Output Components
 | Component | Access | Notes |
 |---|---|---|
-| ResourceMapSingletonComponent | add (deferred) | Created once; holds texture, shader, font, UI layout, sound clip, parsed JSON asset, and 3D model maps keyed by UUID |
+| ResourceMapSingletonComponent | add (deferred) | Created once; holds texture, shader, font, UI layout, sound clip, parsed JSON asset, 3D model, and render-target maps keyed by UUID |

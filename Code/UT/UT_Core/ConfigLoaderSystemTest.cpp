@@ -83,6 +83,27 @@ namespace CatchTestsetFail
 	}
 
 	// ---------------------------------------------------------------------------
+	// Happy path: loaded config exposes the 3D pass resource IDs (model shader +
+	// offscreen render target) populated from the engine config.
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Core.ConfigLoaderSystem::LoadedConfigHas3DResourceIDs")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ConfigLoaderSystem>());
+
+		world.Update(pg::Timestep(0));
+
+		auto view = pg::World::GetRegistryDirect().view<pg::EngineConfigSingletonComponent>();
+		REQUIRE(view.size() == 1);
+
+		const pg::EngineConfigSingletonComponent& cfg =
+			view.get<pg::EngineConfigSingletonComponent>(view.front());
+
+		CHECK(!cfg.m_Model3DShaderID.IsNull());
+		CHECK(!cfg.m_Render3DTargetID.IsNull());
+	}
+
+	// ---------------------------------------------------------------------------
 	// Happy path: loaded config exposes the audio volumes within the valid [0,1] range
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Core.ConfigLoaderSystem::LoadedConfigHasAudioVolumes")

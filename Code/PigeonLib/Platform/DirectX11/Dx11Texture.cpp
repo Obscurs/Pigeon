@@ -50,6 +50,28 @@ pg::Dx11Texture2D::Dx11Texture2D(unsigned int width, unsigned int height, unsign
 	CreateTextue(width, height, channels, data);
 }
 
+pg::Dx11Texture2D::Dx11Texture2D(const ComPtr<ID3D11ShaderResourceView>& textureView, unsigned int width, unsigned int height)
+{
+	m_Data.m_Width = width;
+	m_Data.m_Height = height;
+	m_DxData.m_TextureView = textureView;
+
+	auto context = static_cast<pg::Dx11Context*>(pg::Application::Get().GetWindow().GetGraphicsContext());
+	ID3D11Device* device = context->GetPd3dDevice();
+
+	D3D11_SAMPLER_DESC sampDesc;
+	ZeroMemory(&sampDesc, sizeof(sampDesc));
+	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sampDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+	sampDesc.MinLOD = 0;
+	sampDesc.MaxLOD = 0;
+
+	device->CreateSamplerState(&sampDesc, &m_DxData.m_SamplerState);
+}
+
 void pg::Dx11Texture2D::CreateTextue(unsigned int width, unsigned int height, unsigned int channels, const unsigned char* data)
 {
 	PG_CORE_ASSERT(channels == 3 || channels == 4, "Unsupported image format!");

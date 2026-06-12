@@ -108,9 +108,15 @@ Renderer
   ├── SpriteAnimationSystem  SetSpriteAnimationRequest (from app) + SpriteAnimationComponent (app-authored sheet/row/speed) + time
   │                            →  SpriteComponent sub-texture (advances the sprite-sheet frame; via pg::SpriteSheet)
   ├── SpriteRenderSystem     SpriteComponent + WorldTransformComponent  →  DrawSpriteInFrameEvent (consumed by Renderer2DSystem)
+  ├── Renderer3DSystem     PerspectiveCameraComponent (3D cam) + ModelComponent + WorldTransformComponent
+  │                          + ResourceMapSingletonComponent (model/render-target/shader) + EngineConfigSingletonComponent
+  │                          → Renderer3DDataSingletonComponent → draws models (depth-tested, flat unlit) into the
+  │                            offscreen render target, whose colour buffer is a texture the 2D pass samples (ADR 0007).
+  │                            Runs strictly before Renderer2DSystem (which reads its data singleton to order the passes).
   └── Renderer2DSystem
         reads:  OrthographicCameraComponent (gameplay cam), UICameraSingletonComponent (screen-space UI cam),
-                EngineConfigSingletonComponent, ResourceMapSingletonComponent, Draw*InFrameEvent
+                EngineConfigSingletonComponent, ResourceMapSingletonComponent, Draw*InFrameEvent,
+                Renderer3DDataSingletonComponent (ordering-only, see ADR 0007)
         writes: RendererDataSingletonComponent → GPU draw calls; world pass (Y-sorted, gameplay cam),
                 then UI pass (UI cam, always on top)
                                 ▲
@@ -141,6 +147,9 @@ UI  (canvas authored against a reference resolution; scaled to the window per AD
 | `Code/PigeonLib/Pigeon/Transform/` | Transform components (Position/Rotation/Scale/LocalBounds/WorldTransform), the resolve + compose systems, and the request types (ADR 0003) |
 | `Code/PigeonLib/Pigeon/Renderer/Sprite*.{h,cpp}` | World-space sprites: SpriteComponent (texture + UV sub-rect), SpriteSheet value type (grid→UV), SpriteAnimationSystem (advances the sprite-sheet frame from SetSpriteAnimationRequest), SpriteRenderSystem (emits DrawSpriteInFrameEvent). Engine owns the logic; the app sets the data + emits the request |
 | `Code/PigeonLib/Pigeon/Renderer/Model.{h,cpp}` | 3D model resource: parses a Wavefront .obj into CPU-side triangle geometry (ModelVertex list + index list); loaded by ResourceManagerSystem into ResourceMapSingletonComponent::m_ModelMap. ModelComponent.h references a loaded model by UUID for world-space 3D scene authoring |
+| `Code/PigeonLib/Pigeon/Renderer/Renderer3DSystem.*` | 3D render pass: draws ModelComponent entities (perspective-projected, depth-tested, flat unlit) into an offscreen render target before the 2D pass; owns Renderer3DDataSingletonComponent (GPU buffers + model shader). The render target's colour buffer is a texture the 2D pass samples (ADR 0007) |
+| `Code/PigeonLib/Pigeon/Renderer/PerspectiveCamera.{h,cpp}` | The 3D camera value type (perspective projection + look-at view, left-handed, zero-to-one depth); carried by PerspectiveCameraComponent, authored by the app like the 2D OrthographicCamera |
+| `Code/PigeonLib/Pigeon/Renderer/RenderTarget.h` | Abstract offscreen draw surface (colour texture + depth buffer); `RenderTarget::Create` selects the DirectX11 backend (`Platform/DirectX11/Dx11RenderTarget`) for real builds and a no-op mock (`Platform/Testing/TestingRenderTarget`) for tests. Bound via RenderCommand::Begin/EndRenderTarget |
 | `Code/PigeonLib/Pigeon/Core/WindowConfigSystem.*` | Window resolution/mode: seeds + owns WindowConfigSingletonComponent, applies to the live Window, persists savedata Config.json (ADR 0004) |
 | `Code/PigeonLib/Pigeon/Core/SaveDataSystem.*` | Save-data resource: loads <savedataPath>/SaveSlots/<uuid>.json into SaveDataSingletonComponent at startup; applies + persists SetSaveDataRequest slot updates from the app |
 | `Code/PigeonLib/Pigeon/Core/FileUtils.*` | Shared text-file read/write/exists helpers used by the config loader and writer |

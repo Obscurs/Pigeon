@@ -27,6 +27,14 @@ namespace
 		{
 			component.m_DefaultFontID = pg::UUID(jsonObject["defaultFont"].get<std::string>());
 		}
+		if (jsonObject.contains("model3DShader") && jsonObject["model3DShader"].is_string())
+		{
+			component.m_Model3DShaderID = pg::UUID(jsonObject["model3DShader"].get<std::string>());
+		}
+		if (jsonObject.contains("render3DTarget") && jsonObject["render3DTarget"].is_string())
+		{
+			component.m_Render3DTargetID = pg::UUID(jsonObject["render3DTarget"].get<std::string>());
+		}
 		if (jsonObject.contains("masterVolume") && jsonObject["masterVolume"].is_number())
 		{
 			component.m_MasterVolume = jsonObject["masterVolume"].get<float>();

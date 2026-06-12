@@ -13,6 +13,7 @@
 #include "Pigeon/Renderer/MSDFData.h"
 #include "Pigeon/Renderer/OrthographicCameraComponent.h"
 #include "Pigeon/Renderer/RenderCommand.h"
+#include "Pigeon/Renderer/Renderer3DDataSingletonComponent.h"
 #include "Pigeon/Renderer/RendererDataSingletonComponent.h"
 #include "Pigeon/Renderer/Texture.h"
 #include "Pigeon/Renderer/UICameraSingletonComponent.h"
@@ -431,6 +432,9 @@ pg::SystemAccessDecl pg::Renderer2DSystem::DeclareAccess() const
 		std::type_index(typeid(pg::DrawStringInFrameEvent)),
 		std::type_index(typeid(pg::DrawUIQuadInFrameEvent)),
 		std::type_index(typeid(pg::DrawUIStringInFrameEvent)),
+		// Ordering-only dependency: forces the 3D pass (which writes this) to run first, so the 2D pass
+		// samples the current frame's offscreen image and rebinds the window back buffer last (ADR 0007).
+		std::type_index(typeid(pg::Renderer3DDataSingletonComponent)),
 	};
 	return decl;
 }

@@ -1,0 +1,34 @@
+# Renderer3DSystem
+
+## Purpose
+Draws all 3D models into an offscreen render target each frame, before the 2D pass (ADR 0007). Reads
+the engine config for the 3D shader + render-target UUIDs and resolves both — plus each model — from
+the resource map. Returns early (no-op) when the engine config, resource map, perspective camera, or
+the configured render target / shader are absent.
+
+On the first valid frame it allocates a dynamic GPU vertex/index buffer pair and resolves the model
+shader into Renderer3DDataSingletonComponent (deferred), then returns; drawing begins the next frame.
+On later frames it binds the render target (clearing its colour + depth and enabling depth testing),
+binds the shader and buffers, and for every entity with a ModelComponent + WorldTransformComponent
+uploads the model's geometry and the combined view-projection × world matrix, then issues an indexed
+draw. The render target's colour buffer is registered in the texture map (by ResourceManagerSystem)
+under the same UUID, so the 2D pass samples the result as an ordinary texture.
+
+The pass runs strictly before Renderer2DSystem: that system declares a read of
+Renderer3DDataSingletonComponent purely to order the two passes, so the 2D pass samples the current
+frame's 3D image and the window back buffer is rebound last.
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| EngineConfigSingletonComponent | read | 3D shader + render-target UUIDs |
+| ResourceMapSingletonComponent | read | Model map, render-target map, shader map |
+| PerspectiveCameraComponent | read | 3D view-projection; system no-ops if absent |
+| ModelComponent | read | References a loaded model by UUID |
+| WorldTransformComponent | read | World placement of each model |
+| Renderer3DDataSingletonComponent | write | GPU buffers + resolved shader |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| Renderer3DDataSingletonComponent | write / add (deferred) | Holds the GPU vertex/index buffers and the resolved model shader; created on the first valid frame |

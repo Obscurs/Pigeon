@@ -2,11 +2,13 @@
 #include <catch2/catch.hpp>
 #include "Utils/TestApp.h"
 
+#include "Pigeon/Core/EngineConfigSingletonComponent.h"
 #include "Pigeon/Core/ResourceMapSingletonComponent.h"
 #include "Pigeon/ECS/System.h"
 #include "Pigeon/ECS/World.h"
 #include "Pigeon/Renderer/ModelComponent.h"
 #include "Pigeon/Renderer/OrthographicCameraComponent.h"
+#include "Pigeon/Renderer/PerspectiveCameraComponent.h"
 #include "Pigeon/Renderer/SpriteAnimationComponent.h"
 #include "Pigeon/Renderer/SpriteComponent.h"
 #include "Pigeon/Renderer/SpriteSheet.h"
@@ -14,6 +16,7 @@
 #include "Sandbox/CharacterTagComponent.h"
 #include "Sandbox/InputReadoutTagComponent.h"
 #include "Sandbox/LabelComponent.h"
+#include "Sandbox/ModelSpinComponent.h"
 #include "Sandbox/SandboxConfigSingletonComponent.h"
 #include "Sandbox/SceneReadySingletonComponent.h"
 #include "Sandbox/SceneSetupSystem.h"
@@ -27,6 +30,13 @@ namespace
 		cfg.m_MainLayoutID = pg::UUID::Generate();
 		cfg.m_CharacterTextureID = pg::UUID::Generate();
 		cfg.m_MonkeyModelID = pg::UUID::Generate();
+	}
+
+	void SeedEngineConfig(pg::ecs::Registry& registry)
+	{
+		pg::ecs::Entity cfgEnt = registry.create();
+		pg::EngineConfigSingletonComponent& cfg = registry.emplace<pg::EngineConfigSingletonComponent>(cfgEnt);
+		cfg.m_Render3DTargetID = pg::UUID::Generate();
 	}
 
 	void SeedResourceMap(pg::ecs::Registry& registry)
@@ -63,6 +73,7 @@ namespace CatchTestsetFail
 		world.RegisterSystem(std::make_unique<sbx::SceneSetupSystem>());
 
 		SeedConfig(pg::World::GetRegistryDirect());
+		SeedEngineConfig(pg::World::GetRegistryDirect());
 
 		world.Update(pg::Timestep(0));
 
@@ -70,9 +81,9 @@ namespace CatchTestsetFail
 	}
 
 	// ---------------------------------------------------------------------------
-	// Happy path: with config and resource map present, the scene is built.
+	// Guard: without the engine config (render target id) the system does nothing.
 	// ---------------------------------------------------------------------------
-	TEST_CASE("Sandbox.SceneSetupSystem::BuildsSceneWhenReady")
+	TEST_CASE("Sandbox.SceneSetupSystem::NoOpWithoutEngineConfig")
 	{
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<sbx::SceneSetupSystem>());
@@ -82,13 +93,33 @@ namespace CatchTestsetFail
 
 		world.Update(pg::Timestep(0));
 
+		CHECK(pg::World::GetRegistryDirect().view<sbx::SceneReadySingletonComponent>().size() == 0);
+	}
+
+	// ---------------------------------------------------------------------------
+	// Happy path: with config, engine config, and resource map present, the scene
+	// is built.
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Sandbox.SceneSetupSystem::BuildsSceneWhenReady")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<sbx::SceneSetupSystem>());
+
+		SeedConfig(pg::World::GetRegistryDirect());
+		SeedEngineConfig(pg::World::GetRegistryDirect());
+		SeedResourceMap(pg::World::GetRegistryDirect());
+
+		world.Update(pg::Timestep(0));
+
 		auto cameraView = pg::World::GetRegistryDirect().view<pg::OrthographicCameraComponent>();
 		REQUIRE(cameraView.size() == 1);
 		const pg::OrthographicCameraComponent& camera = cameraView.get<pg::OrthographicCameraComponent>(cameraView.front());
 		CHECK(std::fabs(camera.m_AspectRatio - 1280.f / 720.f) < 1e-4f);
 
-		// Two sprites: the static demo sprite and the animated character.
-		CHECK(pg::World::GetRegistryDirect().view<pg::SpriteComponent>().size() == 2);
+		// Three sprites: the static demo sprite, the animated character, and the 3D display sprite.
+		CHECK(pg::World::GetRegistryDirect().view<pg::SpriteComponent>().size() == 3);
+		// One 3D camera looking at the spinning model.
+		CHECK(pg::World::GetRegistryDirect().view<pg::PerspectiveCameraComponent>().size() == 1);
 		CHECK(pg::World::GetRegistryDirect().view<sbx::LabelComponent>().size() == 3);
 		CHECK(pg::World::GetRegistryDirect().view<sbx::InputReadoutTagComponent>().size() == 1);
 		CHECK(pg::World::GetRegistryDirect().view<sbx::SceneReadySingletonComponent>().size() == 1);
@@ -106,6 +137,7 @@ namespace CatchTestsetFail
 		world.RegisterSystem(std::make_unique<sbx::SceneSetupSystem>());
 
 		SeedConfig(pg::World::GetRegistryDirect());
+		SeedEngineConfig(pg::World::GetRegistryDirect());
 		SeedResourceMap(pg::World::GetRegistryDirect());
 
 		world.Update(pg::Timestep(0));
@@ -134,14 +166,16 @@ namespace CatchTestsetFail
 
 	// ---------------------------------------------------------------------------
 	// A 3D model entity is created referencing the configured model resource by
-	// UUID, ready for the forthcoming 3D render pass.
+	// UUID and carrying a spin so the 3D pass renders a rotating model. It is not a
+	// 2D object: it has no Sprite next to its Model.
 	// ---------------------------------------------------------------------------
-	TEST_CASE("Sandbox.SceneSetupSystem::CreatesModelEntity")
+	TEST_CASE("Sandbox.SceneSetupSystem::CreatesSpinningModelEntity")
 	{
 		pg::World& world = pg::World::Create();
 		world.RegisterSystem(std::make_unique<sbx::SceneSetupSystem>());
 
 		SeedConfig(pg::World::GetRegistryDirect());
+		SeedEngineConfig(pg::World::GetRegistryDirect());
 		SeedResourceMap(pg::World::GetRegistryDirect());
 
 		world.Update(pg::Timestep(0));
@@ -151,8 +185,14 @@ namespace CatchTestsetFail
 
 		auto modelView = registry.view<pg::ModelComponent>();
 		REQUIRE(modelView.size() == 1);
-		const pg::ModelComponent& model = modelView.get<pg::ModelComponent>(modelView.front());
+		const pg::ecs::Entity modelEnt = modelView.front();
+		const pg::ModelComponent& model = modelView.get<pg::ModelComponent>(modelEnt);
 		CHECK(model.m_ModelID == cfg.m_MonkeyModelID);
+
+		// The model spins and lives only in the 3D scene (no Sprite on the same entity).
+		CHECK(registry.all_of<sbx::ModelSpinComponent>(modelEnt));
+		CHECK_FALSE(registry.all_of<pg::SpriteComponent>(modelEnt));
+		CHECK(registry.view<sbx::ModelSpinComponent>().size() == 1);
 	}
 
 	// ---------------------------------------------------------------------------
@@ -164,12 +204,14 @@ namespace CatchTestsetFail
 		world.RegisterSystem(std::make_unique<sbx::SceneSetupSystem>());
 
 		SeedConfig(pg::World::GetRegistryDirect());
+		SeedEngineConfig(pg::World::GetRegistryDirect());
 		SeedResourceMap(pg::World::GetRegistryDirect());
 
 		world.Update(pg::Timestep(0));
 		world.Update(pg::Timestep(0));
 
 		CHECK(pg::World::GetRegistryDirect().view<pg::OrthographicCameraComponent>().size() == 1);
+		CHECK(pg::World::GetRegistryDirect().view<pg::PerspectiveCameraComponent>().size() == 1);
 		CHECK(pg::World::GetRegistryDirect().view<sbx::LabelComponent>().size() == 3);
 		CHECK(pg::World::GetRegistryDirect().view<sbx::SceneReadySingletonComponent>().size() == 1);
 	}
@@ -183,13 +225,16 @@ namespace CatchTestsetFail
 		pg::SystemAccessDecl decl = sys.DeclareAccess();
 
 		CHECK(decl.readSet.count(std::type_index(typeid(sbx::SandboxConfigSingletonComponent))) > 0);
+		CHECK(decl.readSet.count(std::type_index(typeid(pg::EngineConfigSingletonComponent))) > 0);
 		CHECK(decl.readSet.count(std::type_index(typeid(pg::ResourceMapSingletonComponent))) > 0);
 		CHECK(decl.readSet.count(std::type_index(typeid(sbx::SceneReadySingletonComponent))) > 0);
 
 		CHECK(decl.addSet.count(std::type_index(typeid(pg::OrthographicCameraComponent))) > 0);
+		CHECK(decl.addSet.count(std::type_index(typeid(pg::PerspectiveCameraComponent))) > 0);
 		CHECK(decl.addSet.count(std::type_index(typeid(pg::SpriteComponent))) > 0);
 		CHECK(decl.addSet.count(std::type_index(typeid(pg::SpriteAnimationComponent))) > 0);
 		CHECK(decl.addSet.count(std::type_index(typeid(pg::ModelComponent))) > 0);
+		CHECK(decl.addSet.count(std::type_index(typeid(sbx::ModelSpinComponent))) > 0);
 		CHECK(decl.addSet.count(std::type_index(typeid(sbx::CharacterTagComponent))) > 0);
 		CHECK(decl.addSet.count(std::type_index(typeid(sbx::LabelComponent))) > 0);
 		CHECK(decl.addSet.count(std::type_index(typeid(sbx::InputReadoutTagComponent))) > 0);

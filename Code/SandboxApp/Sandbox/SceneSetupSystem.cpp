@@ -1,9 +1,11 @@
 #include "Sandbox/SceneSetupSystem.h"
 
+#include "Pigeon/Core/EngineConfigSingletonComponent.h"
 #include "Pigeon/Core/ResourceMapSingletonComponent.h"
 #include "Pigeon/ECS/World.h"
 #include "Pigeon/Renderer/ModelComponent.h"
 #include "Pigeon/Renderer/OrthographicCameraComponent.h"
+#include "Pigeon/Renderer/PerspectiveCameraComponent.h"
 #include "Pigeon/Renderer/SpriteAnimationComponent.h"
 #include "Pigeon/Renderer/SpriteComponent.h"
 #include "Pigeon/Renderer/SpriteSheet.h"
@@ -12,11 +14,13 @@
 #include "Sandbox/CharacterTagComponent.h"
 #include "Sandbox/InputReadoutTagComponent.h"
 #include "Sandbox/LabelComponent.h"
+#include "Sandbox/ModelSpinComponent.h"
 #include "Sandbox/SandboxConfigSingletonComponent.h"
 #include "Sandbox/SceneReadySingletonComponent.h"
 #include "Sandbox/SceneTransformRequestOneFrameComponent.h"
 
 #include <glm/gtc/quaternion.hpp>
+#include <glm/trigonometric.hpp>
 
 namespace
 {
@@ -94,16 +98,51 @@ namespace
 		EmitSceneTransform(accessor, ent, glm::vec3(0.8f, -0.6f, 0.f), glm::vec3(0.6f, 0.6f, 1.f));
 	}
 
-	// Authors a 3D model entity by referencing the loaded model resource through its UUID, the same
-	// way CreateSprite references a texture. The forthcoming 3D render pass resolves the model from
-	// the resource map; for now this stands up the data path for 3D scenes.
+	// The 3D camera: a fixed perspective view looking at the world origin where the model spins. Its
+	// aspect is 1 to match the square offscreen render target. Authored once by the app exactly as the
+	// 2D camera is; Renderer3DSystem reads it.
+	void Create3DCamera(pg::CheckedRegistryAccessor& accessor)
+	{
+		pg::ecs::Entity ent = accessor.Create();
+		pg::PerspectiveCameraComponent camera;
+		camera.m_Camera.SetProjection(glm::radians(45.f), 1.f, 0.1f, 100.f);
+		camera.m_Camera.SetView(glm::vec3(0.f, 0.6f, -3.5f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f));
+		accessor.EmplaceDeferred<pg::PerspectiveCameraComponent>(ent, std::move(camera));
+	}
+
+	// The 3D model entity: references the loaded model by UUID and carries a spin so ModelSpinSystem
+	// rotates it about the world Y axis. It lives only in the 3D scene (no Quad/Sprite component), so the
+	// 2D renderer never touches it. The initial transform places it at the 3D origin; the spin drives
+	// rotation thereafter.
 	void CreateModel(pg::CheckedRegistryAccessor& accessor, const sbx::SandboxConfigSingletonComponent& config)
 	{
 		pg::ecs::Entity ent = accessor.Create();
+
 		pg::ModelComponent model;
 		model.m_ModelID = config.m_MonkeyModelID;
 		accessor.EmplaceDeferred<pg::ModelComponent>(ent, std::move(model));
-		EmitSceneTransform(accessor, ent, glm::vec3(1.6f, 0.3f, 0.f), glm::vec3(0.6f, 0.6f, 0.6f));
+
+		sbx::ModelSpinComponent spin;
+		spin.m_Anchor = glm::vec3(0.f, 0.f, 0.f);
+		spin.m_RotationSpeed = 0.9f;
+		accessor.EmplaceDeferred<sbx::ModelSpinComponent>(ent, std::move(spin));
+
+		EmitSceneTransform(accessor, ent, glm::vec3(0.f, 0.f, 0.f), glm::vec3(1.f, 1.f, 1.f));
+	}
+
+	// The display quad: a world-space sprite textured with the 3D pass's offscreen render target, placed
+	// at the centre of the 2D world. It samples the 3D image as an ordinary texture by referencing the
+	// render target's UUID (engine config), the same way any sprite references a texture.
+	void CreateDisplaySprite(pg::CheckedRegistryAccessor& accessor, const pg::EngineConfigSingletonComponent& engineConfig)
+	{
+		pg::ecs::Entity ent = accessor.Create();
+		pg::SpriteComponent sprite;
+		sprite.m_TextureID = engineConfig.m_Render3DTargetID;
+		sprite.m_TexCoordsRect = glm::vec4(0.f, 0.f, 1.f, 1.f);
+		accessor.EmplaceDeferred<pg::SpriteComponent>(ent, std::move(sprite));
+		// World is Y-up: a sprite grows up from its bottom-left corner, so offset by half its size to
+		// centre the quad on the world origin.
+		EmitSceneTransform(accessor, ent, glm::vec3(-0.6f, -0.6f, 0.f), glm::vec3(1.2f, 1.2f, 1.f));
 	}
 
 	pg::ecs::Entity CreateLabel(pg::CheckedRegistryAccessor& accessor, const glm::vec3& position, const glm::vec3& scale, const std::string& text, const pg::UUID& fontID, const glm::vec4& color)
@@ -126,14 +165,17 @@ pg::SystemAccessDecl sbx::SceneSetupSystem::DeclareAccess() const
 	pg::SystemAccessDecl decl;
 	decl.readSet = {
 		std::type_index(typeid(sbx::SandboxConfigSingletonComponent)),
+		std::type_index(typeid(pg::EngineConfigSingletonComponent)),
 		std::type_index(typeid(pg::ResourceMapSingletonComponent)),
 		std::type_index(typeid(sbx::SceneReadySingletonComponent)),
 	};
 	decl.addSet = {
 		std::type_index(typeid(pg::OrthographicCameraComponent)),
+		std::type_index(typeid(pg::PerspectiveCameraComponent)),
 		std::type_index(typeid(pg::SpriteComponent)),
 		std::type_index(typeid(pg::SpriteAnimationComponent)),
 		std::type_index(typeid(pg::ModelComponent)),
+		std::type_index(typeid(sbx::ModelSpinComponent)),
 		std::type_index(typeid(sbx::CharacterTagComponent)),
 		std::type_index(typeid(sbx::LabelComponent)),
 		std::type_index(typeid(sbx::SceneTransformRequestOneFrameComponent)),
@@ -149,8 +191,9 @@ void sbx::SceneSetupSystem::Update(const pg::Timestep& ts)
 	pg::CheckedRegistryAccessor accessor = pg::World::GetRegistry();
 
 	auto configView = accessor.View<const sbx::SandboxConfigSingletonComponent>();
+	auto engineConfigView = accessor.View<const pg::EngineConfigSingletonComponent>();
 	auto resourcesView = accessor.View<const pg::ResourceMapSingletonComponent>();
-	if (configView.empty() || resourcesView.empty())
+	if (configView.empty() || engineConfigView.empty() || resourcesView.empty())
 	{
 		return;
 	}
@@ -159,11 +202,14 @@ void sbx::SceneSetupSystem::Update(const pg::Timestep& ts)
 		return;
 	}
 	const sbx::SandboxConfigSingletonComponent& config = configView.get<const sbx::SandboxConfigSingletonComponent>(configView.front());
+	const pg::EngineConfigSingletonComponent& engineConfig = engineConfigView.get<const pg::EngineConfigSingletonComponent>(engineConfigView.front());
 
 	CreateCamera(accessor);
 	CreateSprite(accessor, config);
 	CreateCharacter(accessor, config);
+	Create3DCamera(accessor);
 	CreateModel(accessor, config);
+	CreateDisplaySprite(accessor, engineConfig);
 
 	// Labels are positioned at their anchor (top-left of the text block); world is Y-up, so the
 	// near-top rows sit at positive Y and the bottom readout at negative Y.

@@ -14,6 +14,7 @@
 #include "Pigeon/Renderer/Font.h"
 #include "Pigeon/Renderer/OrthographicCameraComponent.h"
 #include "Pigeon/Renderer/Renderer2DSystem.h"
+#include "Pigeon/Renderer/Renderer3DDataSingletonComponent.h"
 #include "Pigeon/Renderer/RendererDataSingletonComponent.h"
 #include "Pigeon/Renderer/Shader.h"
 #include "Pigeon/Renderer/UICameraSingletonComponent.h"
@@ -279,6 +280,9 @@ namespace CatchTestsetFail
 
 		CHECK(decl.addSet.count(std::type_index(typeid(pg::RendererDataSingletonComponent))) > 0);
 		CHECK(decl.writeSet.count(std::type_index(typeid(pg::RendererDataSingletonComponent))) > 0);
+
+		// Ordering-only read: the 3D pass writes this, so declaring it forces 3D before 2D.
+		CHECK(decl.readSet.count(std::type_index(typeid(pg::Renderer3DDataSingletonComponent))) > 0);
 	}
 
 	// ---------------------------------------------------------------------------

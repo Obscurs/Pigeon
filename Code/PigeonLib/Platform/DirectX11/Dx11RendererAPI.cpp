@@ -3,13 +3,13 @@
 
 #include "Pigeon/Core/Application.h"
 #include "Platform/DirectX11/Dx11Context.h"
+#include "Platform/DirectX11/Dx11RenderTarget.h"
 
 void pg::Dx11RendererAPI::Init()
 {
     auto context = static_cast<pg::Dx11Context*>(pg::Application::Get().GetWindow().GetGraphicsContext());
 
     ID3D11BlendState* pBlendState;
-    ID3D11DepthStencilState* pDepthStencilState;
     // Create the blending setup
     {
         D3D11_BLEND_DESC desc;
@@ -26,7 +26,8 @@ void pg::Dx11RendererAPI::Init()
         context->GetPd3dDevice()->CreateBlendState(&desc, &pBlendState);
     }
 
-    // Create depth-stencil State
+    // Depth disabled: the 2D passes draw everything at the same depth and rely on submission order, so
+    // depth must never reject a draw. The offscreen 3D pass swaps to the enabled state below.
     {
         D3D11_DEPTH_STENCIL_DESC desc;
         ZeroMemory(&desc, sizeof(desc));
@@ -37,13 +38,31 @@ void pg::Dx11RendererAPI::Init()
         desc.FrontFace.StencilFailOp = desc.FrontFace.StencilDepthFailOp = desc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
         desc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
         desc.BackFace = desc.FrontFace;
-        context->GetPd3dDevice()->CreateDepthStencilState(&desc, &pDepthStencilState);
+        ID3D11DepthStencilState* depthDisabled = nullptr;
+        context->GetPd3dDevice()->CreateDepthStencilState(&desc, &depthDisabled);
+        m_Data.m_DepthDisabledState.reset(depthDisabled);
+    }
+
+    // Depth enabled (LESS): the offscreen 3D pass depth-tests so nearer faces occlude farther ones.
+    {
+        D3D11_DEPTH_STENCIL_DESC desc;
+        ZeroMemory(&desc, sizeof(desc));
+        desc.DepthEnable = true;
+        desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+        desc.DepthFunc = D3D11_COMPARISON_LESS;
+        desc.StencilEnable = false;
+        desc.FrontFace.StencilFailOp = desc.FrontFace.StencilDepthFailOp = desc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+        desc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+        desc.BackFace = desc.FrontFace;
+        ID3D11DepthStencilState* depthEnabled = nullptr;
+        context->GetPd3dDevice()->CreateDepthStencilState(&desc, &depthEnabled);
+        m_Data.m_DepthEnabledState.reset(depthEnabled);
     }
 
     // Setup blend state
     const float blendFactor[4] = {0.f, 0.f, 0.f, 0.f};
     context->GetPd3dDeviceContext()->OMSetBlendState(pBlendState, blendFactor, 0xffffffff);
-    context->GetPd3dDeviceContext()->OMSetDepthStencilState(pDepthStencilState, 0);
+    context->GetPd3dDeviceContext()->OMSetDepthStencilState(m_Data.m_DepthDisabledState.get(), 0);
 
     // Rasterizer with scissor enabled so the UI pass can mask clipped sub-trees. Culling is disabled
     // (CULL_NONE): this is a 2D renderer with two cameras whose projections wind triangles oppositely
@@ -157,6 +176,62 @@ void pg::Dx11RendererAPI::Clear()
 	PG_CORE_ASSERT(m_Data.m_Initialized, "Renderer not initialized");
 	auto context = static_cast<pg::Dx11Context*>(pg::Application::Get().GetWindow().GetGraphicsContext());
 	context->GetPd3dDeviceContext()->ClearRenderTargetView(m_Data.m_MainRenderTargetView.get(), m_Data.m_ClearColor);
+}
+
+void pg::Dx11RendererAPI::BeginRenderTarget(RenderTarget& target, const glm::vec4& clearColor)
+{
+	PG_CORE_ASSERT(m_Data.m_Initialized, "Renderer not initialized");
+	auto context = static_cast<pg::Dx11Context*>(pg::Application::Get().GetWindow().GetGraphicsContext());
+	pg::Dx11RenderTarget& dxTarget = static_cast<pg::Dx11RenderTarget&>(target);
+	ID3D11DeviceContext* deviceContext = context->GetPd3dDeviceContext();
+
+	ID3D11RenderTargetView* renderTargetView = dxTarget.GetRenderTargetView();
+	deviceContext->OMSetRenderTargets(1, &renderTargetView, dxTarget.GetDepthStencilView());
+	deviceContext->OMSetDepthStencilState(m_Data.m_DepthEnabledState.get(), 0);
+
+	D3D11_VIEWPORT viewport;
+	ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
+	viewport.TopLeftX = 0;
+	viewport.TopLeftY = 0;
+	viewport.Width = static_cast<float>(dxTarget.GetWidth());
+	viewport.Height = static_cast<float>(dxTarget.GetHeight());
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+	deviceContext->RSSetViewports(1, &viewport);
+
+	deviceContext->RSSetState(m_Data.m_RasterizerState.get());
+	D3D11_RECT scissor;
+	scissor.left = 0;
+	scissor.top = 0;
+	scissor.right = static_cast<LONG>(dxTarget.GetWidth());
+	scissor.bottom = static_cast<LONG>(dxTarget.GetHeight());
+	deviceContext->RSSetScissorRects(1, &scissor);
+
+	const float clear[4] = { clearColor.r, clearColor.g, clearColor.b, clearColor.a };
+	deviceContext->ClearRenderTargetView(renderTargetView, clear);
+	deviceContext->ClearDepthStencilView(dxTarget.GetDepthStencilView(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+}
+
+void pg::Dx11RendererAPI::EndRenderTarget()
+{
+	PG_CORE_ASSERT(m_Data.m_Initialized, "Renderer not initialized");
+	auto context = static_cast<pg::Dx11Context*>(pg::Application::Get().GetWindow().GetGraphicsContext());
+	ID3D11DeviceContext* deviceContext = context->GetPd3dDeviceContext();
+
+	// Restore the window back buffer and the 2D no-depth state. The 2D pass's Begin() also resets these,
+	// but restoring here keeps device state sane for anything that draws before it.
+	deviceContext->OMSetRenderTargets(1, pg::U_PtrToPtr<ID3D11RenderTargetView, pg::ReleaseDeleter>(m_Data.m_MainRenderTargetView), nullptr);
+	deviceContext->OMSetDepthStencilState(m_Data.m_DepthDisabledState.get(), 0);
+
+	D3D11_VIEWPORT viewport;
+	ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
+	viewport.TopLeftX = 0;
+	viewport.TopLeftY = 0;
+	viewport.Width = static_cast<float>(context->GetWidth());
+	viewport.Height = static_cast<float>(context->GetHeight());
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+	deviceContext->RSSetViewports(1, &viewport);
 }
 
 void pg::Dx11RendererAPI::DrawIndexed(unsigned int count)

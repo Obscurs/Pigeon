@@ -1,33 +1,39 @@
 # SceneSetupSystem  (sbx)
 
 ## Purpose
-One-shot scene builder. Returns early until both SandboxConfigSingletonComponent and
-ResourceMapSingletonComponent are present. On the first ready frame it creates the
-scene camera, the static demo sprite, the arrow-key-controlled animated character (a SpriteComponent +
-an 8x8 SpriteAnimationComponent + a CharacterTagComponent, starting idle), a 3D model entity (a
-ModelComponent referencing the configured model resource by UUID, for the forthcoming 3D scene), and
-the world-space labels (a title, an instructions label, and a tagged input-readout label), emitting a
-SceneTransformRequestOneFrameComponent to seed each one's world transform (position-only for the
-camera). It also emits a LoadLayoutEvent to load the UI layout and creates SceneReadySingletonComponent
-as its run-once guard.
+One-shot scene builder. Returns early until SandboxConfigSingletonComponent,
+EngineConfigSingletonComponent, and ResourceMapSingletonComponent are all present. On the first ready
+frame it creates the 2D scene (the orthographic scene camera, the static demo sprite, the
+arrow-key-controlled animated character — a SpriteComponent + an 8x8 SpriteAnimationComponent + a
+CharacterTagComponent, starting idle — and the world-space labels) and the 3D demo scene: a
+PerspectiveCameraComponent looking at the world origin, a spinning model entity (a ModelComponent
+referencing the configured model by UUID + a ModelSpinComponent so ModelSpinSystem rotates it about Y;
+it carries no Quad/Sprite, so it lives only in the 3D scene), and a display sprite — a SpriteComponent
+textured with the 3D render target (its UUID from the engine config), placed at the centre of the 2D
+world to show the 3D image. Each entity's world transform is seeded with a
+SceneTransformRequestOneFrameComponent (position-only for the camera). It also emits a LoadLayoutEvent
+to load the UI layout and creates SceneReadySingletonComponent as its run-once guard.
 
 ## Input Components
 | Component | Access | Notes |
 |---|---|---|
 | SandboxConfigSingletonComponent | read | Font/texture/model/layout ids for the scene; guard (returns early if absent) |
+| EngineConfigSingletonComponent | read | 3D render-target UUID (the display sprite's texture); guard (returns early if absent) |
 | ResourceMapSingletonComponent | read | Guard only: ensures the layout load will resolve |
 | SceneReadySingletonComponent | read | Run-once guard |
 
 ## Output Components
 | Component | Access | Notes |
 |---|---|---|
-| OrthographicCameraComponent | add (deferred) | Scene camera; the app CameraControlSystem drives it via the engine CameraSystem |
-| SpriteComponent | add (deferred) | Engine component; the static demo sprite and the animated character's sprite |
+| OrthographicCameraComponent | add (deferred) | 2D scene camera; the app CameraControlSystem drives it via the engine CameraSystem |
+| PerspectiveCameraComponent | add (deferred) | Engine component; the 3D camera looking at the spinning model, read by the engine Renderer3DSystem |
+| SpriteComponent | add (deferred) | Engine component; the static demo sprite, the animated character's sprite, and the 3D-render-target display sprite |
 | SpriteAnimationComponent | add (deferred) | Engine component; the character's 8x8 sprite-sheet animation state (starts idle), driven by the engine SpriteAnimationSystem |
-| ModelComponent | add (deferred) | Engine component; references the configured 3D model resource by UUID, placed by its world transform for the forthcoming 3D render pass |
+| ModelComponent | add (deferred) | Engine component; references the configured 3D model resource by UUID, drawn by the engine Renderer3DSystem |
+| ModelSpinComponent | add (deferred) | Spin parameters for the 3D model, driven by ModelSpinSystem |
 | CharacterTagComponent | add (deferred) | Marks the character for CharacterControlSystem |
 | LabelComponent | add (deferred) | Title, instructions and the input-readout label |
-| SceneTransformRequestOneFrameComponent | add (oneframe) | Seeds the world transform for the camera, sprite and labels |
+| SceneTransformRequestOneFrameComponent | add (oneframe) | Seeds the world transform for the cameras, sprites, model and labels |
 | InputReadoutTagComponent | add (deferred) | Marks the readout label for InputReadoutSystem |
 | LoadLayoutEvent | add (deferred) | Emitted once to load the UI layout |
 | SceneReadySingletonComponent | add (deferred) | Run-once guard |

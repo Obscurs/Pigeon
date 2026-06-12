@@ -58,6 +58,7 @@ revealing more characters never reflows the ones already shown. World text alway
 | DrawStringInFrameEvent | read |
 | DrawUIQuadInFrameEvent | read |
 | DrawUIStringInFrameEvent | read |
+| Renderer3DDataSingletonComponent | read | Ordering-only: forces the 3D pass to run first (ADR 0007); not consumed in Update |
 | RendererDataSingletonComponent | write |
 
 ## Output Components

@@ -7,6 +7,7 @@
 #include "Pigeon/Transform/ResolvedTransformRequestOneFrameComponent.h"
 #include "Sandbox/AnimationTransformRequestOneFrameComponent.h"
 #include "Sandbox/CharacterTransformRequestOneFrameComponent.h"
+#include "Sandbox/ModelSpinTransformRequestOneFrameComponent.h"
 #include "Sandbox/QuadSpawnTransformRequestOneFrameComponent.h"
 #include "Sandbox/SceneTransformRequestOneFrameComponent.h"
 #include "Sandbox/TransformResolveSystem.h"
@@ -121,7 +122,30 @@ namespace CatchTestsetFail
 	}
 
 	// ---------------------------------------------------------------------------
-	// DeclareAccess: reads the four app request types, adds the resolved request.
+	// The 3D model spin request is aggregated like the other app requests.
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Sandbox.TransformResolveSystem::AggregatesModelSpinRequest")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<sbx::TransformResolveSystem>());
+
+		pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+		pg::ecs::Entity ent = registry.create();
+		sbx::ModelSpinTransformRequestOneFrameComponent request;
+		request.m_Data.m_SetRotation = true;
+		request.m_Data.m_Rotation = glm::quat(0.7071f, 0.f, 0.7071f, 0.f);
+		registry.emplace<sbx::ModelSpinTransformRequestOneFrameComponent>(ent, request);
+
+		world.Update(pg::Timestep(0));
+
+		REQUIRE(registry.all_of<pg::ResolvedTransformRequestOneFrameComponent>(ent));
+		const pg::TransformRequestData& data = registry.get<pg::ResolvedTransformRequestOneFrameComponent>(ent).m_Data;
+		CHECK(data.m_SetRotation);
+		CHECK(data.m_Rotation.y == Approx(0.7071f));
+	}
+
+	// ---------------------------------------------------------------------------
+	// DeclareAccess: reads the five app request types, adds the resolved request.
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Sandbox.TransformResolveSystem::DeclareAccessIsCorrect")
 	{
@@ -132,6 +156,7 @@ namespace CatchTestsetFail
 		CHECK(decl.readSet.count(std::type_index(typeid(sbx::QuadSpawnTransformRequestOneFrameComponent))) > 0);
 		CHECK(decl.readSet.count(std::type_index(typeid(sbx::AnimationTransformRequestOneFrameComponent))) > 0);
 		CHECK(decl.readSet.count(std::type_index(typeid(sbx::CharacterTransformRequestOneFrameComponent))) > 0);
+		CHECK(decl.readSet.count(std::type_index(typeid(sbx::ModelSpinTransformRequestOneFrameComponent))) > 0);
 		CHECK(decl.addSet.count(std::type_index(typeid(pg::ResolvedTransformRequestOneFrameComponent))) > 0);
 	}
 

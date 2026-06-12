@@ -1,0 +1,18 @@
+# ModelSpinSystem
+
+## Purpose
+Spins each 3D model entity about the world Y axis over time. Each frame it advances every
+ModelSpinComponent's accumulated time by the frame delta and emits a ModelSpinTransformRequest
+carrying the resulting rotation quaternion (and the entity's fixed anchor position), which the
+SandboxApp TransformResolveSystem aggregates into the canonical resolved transform request. A model
+with zero spin speed holds its initial orientation.
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| ModelSpinComponent | write | Per-model spin speed + accumulated time; the elapsed time is advanced in place |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| ModelSpinTransformRequestOneFrameComponent | add (oneframe) | Position + Y-axis rotation request; aggregated by the SandboxApp TransformResolveSystem |

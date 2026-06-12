@@ -21,6 +21,7 @@ set(SRC_SANDBOX_SYSTEMS
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/DialogueDemoSystem.cpp"
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/InputReadoutSystem.cpp"
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/LifetimeSystem.cpp"
+    "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/ModelSpinSystem.cpp"
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/QuadAnimationSystem.cpp"
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/QuadRenderSystem.cpp"
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/QuadSpawnSystem.cpp"

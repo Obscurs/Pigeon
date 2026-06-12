@@ -46,6 +46,16 @@ namespace pg
 			s_RendererAPI->Clear();
 		}
 
+		inline static void BeginRenderTarget(RenderTarget& target, const glm::vec4& clearColor)
+		{
+			s_RendererAPI->BeginRenderTarget(target, clearColor);
+		}
+
+		inline static void EndRenderTarget()
+		{
+			s_RendererAPI->EndRenderTarget();
+		}
+
 		inline static void DrawIndexed(unsigned int count)
 		{
 			s_RendererAPI->DrawIndexed(count);

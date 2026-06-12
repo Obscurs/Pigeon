@@ -9,6 +9,7 @@
 #include "Sandbox/DialogueDemoSystem.h"
 #include "Sandbox/InputReadoutSystem.h"
 #include "Sandbox/LifetimeSystem.h"
+#include "Sandbox/ModelSpinSystem.h"
 #include "Sandbox/QuadAnimationSystem.h"
 #include "Sandbox/QuadRenderSystem.h"
 #include "Sandbox/QuadSpawnSystem.h"
@@ -48,6 +49,7 @@ pg::Application& pg::CreateApplication()
 	world.RegisterSystem(std::make_unique<sbx::QuadSpawnSystem>());
 	world.RegisterSystem(std::make_unique<sbx::QuadAnimationSystem>());
 	world.RegisterSystem(std::make_unique<sbx::LifetimeSystem>());
+	world.RegisterSystem(std::make_unique<sbx::ModelSpinSystem>());
 	world.RegisterSystem(std::make_unique<sbx::QuadRenderSystem>());
 	world.RegisterSystem(std::make_unique<sbx::TextRenderSystem>());
 	world.RegisterSystem(std::make_unique<sbx::InputReadoutSystem>());

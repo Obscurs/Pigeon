@@ -2,7 +2,9 @@
 
 ## Purpose
 One-shot initialization system. On the first frame, reads `Assets/Engine/Config.json` and creates
-EngineConfigSingletonComponent with the UUIDs of the default quad shader, text shader, and font, plus
+EngineConfigSingletonComponent with the UUIDs of the default quad shader, text shader, and font, the 3D
+pass resource IDs (`model3DShader`, `render3DTarget` — optional keys naming the flat-unlit model shader
+and the offscreen render target the 3D scene draws into), plus
 the master/sound/music audio volumes and the default window resolution + display mode (`windowWidth`,
 `windowHeight`, `windowMode` — optional keys; default to `1280x720` windowed when absent). It also
 reads the UI canvas parameters (`uiReferenceWidth`, `uiReferenceHeight`, `uiMatchFactor` — optional;
@@ -30,4 +32,4 @@ survive without editing the shipped engine config.
 ## Output Components
 | Component | Access | Notes |
 |---|---|---|
-| EngineConfigSingletonComponent | add (deferred) | Created once from Config.json; contains default shader and font UUIDs, master/sound/music volumes, default window resolution + mode, UI reference resolution + match factor, and the savedata path |
+| EngineConfigSingletonComponent | add (deferred) | Created once from Config.json; contains default shader and font UUIDs, the 3D model shader + render target UUIDs, master/sound/music volumes, default window resolution + mode, UI reference resolution + match factor, and the savedata path |
