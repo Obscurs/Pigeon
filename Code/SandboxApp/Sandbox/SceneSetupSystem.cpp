@@ -12,6 +12,7 @@
 #include "Pigeon/Transform/TransformRequestData.h"
 #include "Pigeon/UI/UIComponents.h"
 #include "Sandbox/CharacterTagComponent.h"
+#include "Sandbox/ImageGenDemoIds.h"
 #include "Sandbox/InputReadoutTagComponent.h"
 #include "Sandbox/LabelComponent.h"
 #include "Sandbox/ModelSpinComponent.h"
@@ -145,6 +146,20 @@ namespace
 		EmitSceneTransform(accessor, ent, glm::vec3(-0.6f, -0.6f, 0.f), glm::vec3(1.2f, 1.2f, 1.f));
 	}
 
+	// The text-to-image display quad: a world-space sprite bound to the generated-texture UUID. Until a
+	// generation completes that UUID is unregistered (the renderer falls back to the default texture);
+	// once ImageGenDemoSystem's request finishes, ResourceManagerSystem registers the result under the
+	// same UUID and it appears here. Press G to generate.
+	void CreateGeneratedImageSprite(pg::CheckedRegistryAccessor& accessor)
+	{
+		pg::ecs::Entity ent = accessor.Create();
+		pg::SpriteComponent sprite;
+		sprite.m_TextureID = sbx::k_GeneratedTextureID;
+		sprite.m_TexCoordsRect = glm::vec4(0.f, 0.f, 1.f, 1.f);
+		accessor.EmplaceDeferred<pg::SpriteComponent>(ent, std::move(sprite));
+		EmitSceneTransform(accessor, ent, glm::vec3(1.6f, 0.3f, 0.f), glm::vec3(1.0f, 1.0f, 1.f));
+	}
+
 	pg::ecs::Entity CreateLabel(pg::CheckedRegistryAccessor& accessor, const glm::vec3& position, const glm::vec3& scale, const std::string& text, const pg::UUID& fontID, const glm::vec4& color)
 	{
 		pg::ecs::Entity ent = accessor.Create();
@@ -210,6 +225,7 @@ void sbx::SceneSetupSystem::Update(const pg::Timestep& ts)
 	Create3DCamera(accessor);
 	CreateModel(accessor, config);
 	CreateDisplaySprite(accessor, engineConfig);
+	CreateGeneratedImageSprite(accessor);
 
 	// Labels are positioned at their anchor (top-left of the text block); world is Y-up, so the
 	// near-top rows sit at positive Y and the bottom readout at negative Y.

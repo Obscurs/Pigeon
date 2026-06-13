@@ -67,6 +67,37 @@ endif()
 
 FetchContent_MakeAvailable(glm spdlog Catch2 msdf-atlas-gen nlohmann_json)
 
+# Text-to-image (stable-diffusion.cpp) is opt-in: OFF by default so the Testing/UT build and a plain
+# build stay CUDA-free, fast, and green (the real backend is inert, tests use TestingDiffusionBackend).
+# Configure with -DPG_ENABLE_DIFFUSION=ON to fetch + build the CUDA runtime and activate generation.
+# NOTE: building stable-diffusion.cpp with CUDA is heavy and requires the CUDA Toolkit; validate on
+# the target machine. Pin GIT_TAG to a known-good commit for reproducibility before shipping.
+option(PG_ENABLE_DIFFUSION "Build the stable-diffusion.cpp (CUDA) text-to-image backend" ON)
+if(PG_ENABLE_DIFFUSION)
+  set(GGML_CUDA ON CACHE BOOL "" FORCE)
+  set(SD_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+  set(SD_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+  # stable-diffusion.cpp (and the diffusion backend TU) exceed MSVC's default COFF section limit.
+  # Restrict to C++ TUs: passing /bigobj to nvcc makes it treat the flag as a second input file.
+  add_compile_options("$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:MSVC>>:/bigobj>")
+  FetchContent_Declare(
+    stable_diffusion_cpp
+    GIT_REPOSITORY https://github.com/leejet/stable-diffusion.cpp
+    GIT_TAG        master
+  )
+  FetchContent_MakeAvailable(stable_diffusion_cpp)
+
+  # stable-diffusion.cpp sizes the ControlNet compute graph at 1536 nodes, which fits SD1.5 but
+  # overflows an SDXL ControlNet (deep transformer stacks) -> GGML_ASSERT(n_nodes < size). Bump it to
+  # the UNet's budget. Patched at configure so it survives a fresh fetch; idempotent (no-op once done).
+  set(_sd_control_hpp "${stable_diffusion_cpp_SOURCE_DIR}/src/model/diffusion/control.hpp")
+  if(EXISTS "${_sd_control_hpp}")
+    file(READ "${_sd_control_hpp}" _sd_control_src)
+    string(REPLACE "#define CONTROL_NET_GRAPH_SIZE 1536" "#define CONTROL_NET_GRAPH_SIZE 102400" _sd_control_src "${_sd_control_src}")
+    file(WRITE "${_sd_control_hpp}" "${_sd_control_src}")
+  endif()
+endif()
+
 set(MSDFGEN_INCLUDE_DIRS 
     "${msdf-atlas-gen_SOURCE_DIR}/msdf-atlas-gen"
     "${msdf-atlas-gen_SOURCE_DIR}/msdfgen"

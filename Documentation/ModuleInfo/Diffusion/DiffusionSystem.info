@@ -1,0 +1,25 @@
+# DiffusionSystem
+
+## Purpose
+Drives in-engine text-to-image generation (ADR 0008). Returns early until the engine config and
+resource map exist. Lazily creates the diffusion backend + job singletons (deferred), then loads the
+resident checkpoint (+ optional ControlNet) once from the resource map's model paths. Each frame it
+reaps a finished Diffusion Job — emitting a RegisterGeneratedTextureRequest carrying the result — and,
+while idle and the backend is loaded, assembles one GenerateImageRequest into backend job parameters
+(resolving Generation Config defaults, LoRA UUIDs to paths, and the OpenPose Control Hint by rasterizing
+the referenced skeleton) and launches a single generation on a background worker thread so the frame
+loop never blocks. Only one job runs at a time.
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| GenerateImageRequestOneFrameComponent | read | App-emitted request: prompt, overrides, LoRA refs, optional OpenPose ControlNet, target UUID |
+| ResourceMapSingletonComponent | read | Resident checkpoint/ControlNet paths, LoRA paths, OpenPose skeletons |
+| EngineConfigSingletonComponent | read | Generation Config defaults for unset request fields |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| DiffusionBackendSingletonComponent | write / add (deferred) | Created once (holds the platform backend); m_LoadAttempted guards the one-time checkpoint load |
+| DiffusionJobSingletonComponent | write / add (deferred) | Holds the single active/just-finished job (worker thread + atomic state + result) |
+| RegisterGeneratedTextureRequestOneFrameComponent | add (oneframe) | Emitted when a job completes; drained by ResourceManagerSystem |

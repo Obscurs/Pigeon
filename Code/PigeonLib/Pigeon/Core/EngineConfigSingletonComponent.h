@@ -36,6 +36,16 @@ namespace pg
 		float m_UIReferenceHeight = 1080.f;
 		float m_UIMatchFactor = 0.5f;
 
+		// Text-to-image generation defaults, overridable per Generate Image Request. Read from
+		// Config.json; absent keys keep these defaults. The sampler is a backend-parsed name (kept a
+		// plain string so Core carries no dependency on the Diffusion module's sampler enum).
+		int m_DiffusionSteps = 20;
+		float m_DiffusionCfgScale = 7.0f;
+		std::string m_DiffusionSampler = "euler_a";
+		unsigned int m_DiffusionWidth = 512;
+		unsigned int m_DiffusionHeight = 512;
+		int m_DiffusionClipSkip = 1;
+
 		// Directory holding the savedata override Config.json (the savedataPath key), recorded so the
 		// runtime knows where to persist changes. Empty when no savedata path is configured.
 		std::string m_SavedataPath;

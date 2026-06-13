@@ -7,6 +7,7 @@
 #include "Sandbox/ConfigLoaderSystem.h"
 #include "Sandbox/DebugPanelSystem.h"
 #include "Sandbox/DialogueDemoSystem.h"
+#include "Sandbox/ImageGenDemoSystem.h"
 #include "Sandbox/InputReadoutSystem.h"
 #include "Sandbox/LifetimeSystem.h"
 #include "Sandbox/ModelSpinSystem.h"
@@ -59,6 +60,7 @@ pg::Application& pg::CreateApplication()
 	world.RegisterSystem(std::make_unique<sbx::UIScrollSystem>());
 	world.RegisterSystem(std::make_unique<sbx::UIStatusSystem>());
 	world.RegisterSystem(std::make_unique<sbx::DialogueDemoSystem>());
+	world.RegisterSystem(std::make_unique<sbx::ImageGenDemoSystem>());
 	world.RegisterSystem(std::make_unique<sbx::DebugPanelSystem>());
 	world.RegisterSystem(std::make_unique<sbx::WindowDebugPanelSystem>());
 	world.RegisterSystem(std::make_unique<sbx::SaveDataDebugPanelSystem>());

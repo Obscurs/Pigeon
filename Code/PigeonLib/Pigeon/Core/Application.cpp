@@ -19,6 +19,7 @@
 #include "Pigeon/Core/WindowCloseEventComponent.h"
 #include "Pigeon/Core/WindowConfigSystem.h"
 #include "Pigeon/Core/WindowResizeEventComponent.h"
+#include "Pigeon/Diffusion/DiffusionSystem.h"
 #include "Pigeon/ECS/World.h"
 #include "Pigeon/Events/ApplicationEvent.h"
 #include "Pigeon/ImGui/ImGuiLayer.h"
@@ -167,6 +168,7 @@ void pg::Application::Init()
 	world.RegisterSystem(std::move(std::make_unique<pg::AudioVolumeSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pg::CameraSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pg::ConfigLoaderSystem>()));
+	world.RegisterSystem(std::move(std::make_unique<pg::DiffusionSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pg::InputSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pg::Renderer2DSystem>()));
 	world.RegisterSystem(std::move(std::make_unique<pg::Renderer3DSystem>()));

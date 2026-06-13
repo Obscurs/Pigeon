@@ -64,6 +64,23 @@ file(GLOB PGCORE
     "Pigeon/Core/WindowResizeEventComponent.h"
 )
 
+file(GLOB PGDIFFUSION
+    "Pigeon/Diffusion/DiffusionBackend.cpp"
+    "Pigeon/Diffusion/DiffusionBackend.h"
+    "Pigeon/Diffusion/DiffusionBackendSingletonComponent.h"
+    "Pigeon/Diffusion/DiffusionJob.h"
+    "Pigeon/Diffusion/DiffusionJobSingletonComponent.h"
+    "Pigeon/Diffusion/DiffusionSystem.cpp"
+    "Pigeon/Diffusion/DiffusionSystem.h"
+    "Pigeon/Diffusion/GenerateImageRequestOneFrameComponent.h"
+    "Pigeon/Diffusion/Image.h"
+    "Pigeon/Diffusion/OpenPoseHint.cpp"
+    "Pigeon/Diffusion/OpenPoseHint.h"
+    "Pigeon/Diffusion/OpenPoseSkeleton.cpp"
+    "Pigeon/Diffusion/OpenPoseSkeleton.h"
+    "Pigeon/Diffusion/RegisterGeneratedTextureRequestOneFrameComponent.h"
+)
+
 file(GLOB PGIMGUI
     "Pigeon/ImGui/ImGuiLayer.cpp"
 )
@@ -163,9 +180,16 @@ file(GLOB PLATFORM_MINIAUDIO
     "Platform/Miniaudio/MiniaudioAudioDevice.h"
 )
 
+file(GLOB PLATFORM_SD
+    "Platform/StableDiffusion/StableDiffusionCppBackend.cpp"
+    "Platform/StableDiffusion/StableDiffusionCppBackend.h"
+)
+
 file(GLOB PLATFORM_TESTING
     "Platform/Testing/TestingBuffer.cpp"
     "Platform/Testing/TestingContext.cpp"
+    "Platform/Testing/TestingDiffusionBackend.cpp"
+    "Platform/Testing/TestingDiffusionBackend.h"
     "Platform/Testing/TestingHelper.cpp"
     "Platform/Testing/TestingInput.cpp"
     "Platform/Testing/TestingRenderTarget.cpp"
@@ -198,6 +222,7 @@ file(GLOB_RECURSE SRC
 source_group("" FILES ${ROOT})
 source_group("Pigeon\\Audio" FILES ${PGAUDIO})
 source_group("Pigeon\\Core" FILES ${PGCORE})
+source_group("Pigeon\\Diffusion" FILES ${PGDIFFUSION})
 source_group("Pigeon\\ImGui" FILES ${PGIMGUI})
 source_group("Pigeon\\Renderer" FILES ${RENDERER})
 source_group("Pigeon\\UI" FILES ${UI})
@@ -205,6 +230,7 @@ source_group("Pigeon\\Transform" FILES ${TRANSFORM})
 source_group("Platform\\Testing" FILES ${PLATFORM_TESTING})
 source_group("Platform\\DirectX11" FILES ${PLATFORM_DX})
 source_group("Platform\\Miniaudio" FILES ${PLATFORM_MINIAUDIO})
+source_group("Platform\\StableDiffusion" FILES ${PLATFORM_SD})
 source_group("Pigeon\\ECS" FILES ${ECS_WORLD})
 source_group("Pigeon\\ECS\\Systems" FILES ${ECS_SYSTEMS})
 source_group("Pigeon\\ECS\\Components" FILES ${ECS_COMPONENTS})
@@ -253,10 +279,18 @@ target_link_libraries (
     nlohmann_json
 )
 
-target_include_directories(PigeonLib PUBLIC 
+target_include_directories(PigeonLib PUBLIC
     ${ENTT_INCLUDE_DIRS}
     ${MSDFGEN_INCLUDE_DIRS}
 )
+
+# Activate the real stable-diffusion.cpp backend only when the opt-in is enabled; otherwise the
+# StableDiffusionCppBackend compiles to an inert no-op (see Platform/StableDiffusion) and tests use the
+# Testing mock.
+if(PG_ENABLE_DIFFUSION)
+    target_link_libraries(PigeonLib stable-diffusion)
+    target_compile_definitions(PigeonLib PRIVATE PG_STABLE_DIFFUSION_ENABLED)
+endif()
 
 # Properties->General->Output Directory
 set_target_properties(PigeonLib PROPERTIES

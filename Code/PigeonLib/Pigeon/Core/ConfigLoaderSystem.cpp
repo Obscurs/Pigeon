@@ -71,6 +71,30 @@ namespace
 		{
 			component.m_UIMatchFactor = jsonObject["uiMatchFactor"].get<float>();
 		}
+		if (jsonObject.contains("diffusionSteps") && jsonObject["diffusionSteps"].is_number_integer())
+		{
+			component.m_DiffusionSteps = jsonObject["diffusionSteps"].get<int>();
+		}
+		if (jsonObject.contains("diffusionCfgScale") && jsonObject["diffusionCfgScale"].is_number())
+		{
+			component.m_DiffusionCfgScale = jsonObject["diffusionCfgScale"].get<float>();
+		}
+		if (jsonObject.contains("diffusionSampler") && jsonObject["diffusionSampler"].is_string())
+		{
+			component.m_DiffusionSampler = jsonObject["diffusionSampler"].get<std::string>();
+		}
+		if (jsonObject.contains("diffusionWidth") && jsonObject["diffusionWidth"].is_number_unsigned())
+		{
+			component.m_DiffusionWidth = jsonObject["diffusionWidth"].get<unsigned int>();
+		}
+		if (jsonObject.contains("diffusionHeight") && jsonObject["diffusionHeight"].is_number_unsigned())
+		{
+			component.m_DiffusionHeight = jsonObject["diffusionHeight"].get<unsigned int>();
+		}
+		if (jsonObject.contains("diffusionClipSkip") && jsonObject["diffusionClipSkip"].is_number_integer())
+		{
+			component.m_DiffusionClipSkip = jsonObject["diffusionClipSkip"].get<int>();
+		}
 	}
 }
 

@@ -5,6 +5,7 @@
 #include "Pigeon/Audio/SoundClip.h"
 #include "Pigeon/Core/ResourceManagerSystem.h"
 #include "Pigeon/Core/ResourceMapSingletonComponent.h"
+#include "Pigeon/Diffusion/RegisterGeneratedTextureRequestOneFrameComponent.h"
 #include "Pigeon/ECS/System.h"
 #include "Pigeon/ECS/World.h"
 
@@ -203,6 +204,100 @@ namespace CatchTestsetFail
 	}
 
 	// ---------------------------------------------------------------------------
+	// Happy path: the diffusion model assets declared in the manifest are recorded
+	// as resolved paths (checkpoint / LoRA / ControlNet are loaded by the backend,
+	// not the engine, so the map only holds their paths).
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Core.ResourceManagerSystem::LoadedMapHasDiffusionModelPaths")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ResourceManagerSystem>());
+
+		world.Update(pg::Timestep(0));
+
+		auto view = pg::World::GetRegistryDirect().view<pg::ResourceMapSingletonComponent>();
+		REQUIRE(view.size() == 1);
+
+		const pg::ResourceMapSingletonComponent& map =
+			view.get<pg::ResourceMapSingletonComponent>(view.front());
+
+		std::unordered_map<pg::UUID, std::string>::const_iterator checkpoint =
+			map.m_CheckpointMap.find(pg::UUID("f6000000-0000-4000-8000-000000000001"));
+		REQUIRE(checkpoint != map.m_CheckpointMap.end());
+		CHECK(checkpoint->second.find("dummy_checkpoint.safetensors") != std::string::npos);
+
+		std::unordered_map<pg::UUID, std::string>::const_iterator lora =
+			map.m_LoraMap.find(pg::UUID("f6000000-0000-4000-8000-000000000002"));
+		REQUIRE(lora != map.m_LoraMap.end());
+		CHECK(lora->second.find("dummy_lora.safetensors") != std::string::npos);
+
+		std::unordered_map<pg::UUID, std::string>::const_iterator controlNet =
+			map.m_ControlNetMap.find(pg::UUID("f6000000-0000-4000-8000-000000000003"));
+		REQUIRE(controlNet != map.m_ControlNetMap.end());
+		CHECK(controlNet->second.find("dummy_control.safetensors") != std::string::npos);
+	}
+
+	// ---------------------------------------------------------------------------
+	// Happy path: the OpenPose skeleton declared in the manifest is parsed into the
+	// skeleton map, keyed by UUID, with its canvas size populated.
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Core.ResourceManagerSystem::LoadedMapHasOpenPoseSkeleton")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ResourceManagerSystem>());
+
+		world.Update(pg::Timestep(0));
+
+		auto view = pg::World::GetRegistryDirect().view<pg::ResourceMapSingletonComponent>();
+		REQUIRE(view.size() == 1);
+
+		const pg::ResourceMapSingletonComponent& map =
+			view.get<pg::ResourceMapSingletonComponent>(view.front());
+
+		std::unordered_map<pg::UUID, pg::S_Ptr<pg::OpenPoseSkeleton>>::const_iterator skeleton =
+			map.m_OpenPoseSkeletonMap.find(pg::UUID("f6000000-0000-4000-8000-000000000004"));
+		REQUIRE(skeleton != map.m_OpenPoseSkeletonMap.end());
+		REQUIRE(skeleton->second != nullptr);
+		CHECK(skeleton->second->GetCanvasWidth() == Approx(512.0f));
+		CHECK(skeleton->second->GetKeypoints()[static_cast<size_t>(pg::EOpenPoseJoint::Nose)].m_Confidence == Approx(1.0f));
+	}
+
+	// ---------------------------------------------------------------------------
+	// Generated-texture registration: a RegisterGeneratedTextureRequest is drained
+	// into the texture map under its caller-assigned UUID (a generated image becomes
+	// an ordinary texture).
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Core.ResourceManagerSystem::RegistersGeneratedTexture")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ResourceManagerSystem>());
+
+		// Frame 1 creates the resource map (deferred); frame 2 makes it visible.
+		world.Update(pg::Timestep(0));
+		world.Update(pg::Timestep(0));
+
+		const pg::UUID generatedID("f7000000-0000-4000-8000-000000000001");
+		pg::RegisterGeneratedTextureRequestOneFrameComponent registration;
+		registration.m_TextureID = generatedID;
+		registration.m_Image.m_Width = 4;
+		registration.m_Image.m_Height = 4;
+		registration.m_Image.m_Pixels.assign(static_cast<size_t>(4) * 4 * 3, 200);
+		pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+		registry.emplace<pg::RegisterGeneratedTextureRequestOneFrameComponent>(registry.create(), registration);
+
+		world.Update(pg::Timestep(0));
+
+		auto view = pg::World::GetRegistryDirect().view<pg::ResourceMapSingletonComponent>();
+		REQUIRE(view.size() == 1);
+		const pg::ResourceMapSingletonComponent& map =
+			view.get<pg::ResourceMapSingletonComponent>(view.front());
+
+		std::unordered_map<pg::UUID, pg::MappedTexture>::const_iterator tex = map.m_TextureMap.find(generatedID);
+		REQUIRE(tex != map.m_TextureMap.end());
+		CHECK(tex->second.m_Texture != nullptr);
+	}
+
+	// ---------------------------------------------------------------------------
 	// DeclareAccess: verify declared sets match the system's actual access
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Core.ResourceManagerSystem::DeclareAccessIsCorrect")
@@ -211,6 +306,8 @@ namespace CatchTestsetFail
 		pg::SystemAccessDecl decl = sys.DeclareAccess();
 
 		CHECK(decl.readSet.count(std::type_index(typeid(pg::ResourceMapSingletonComponent))) > 0);
+		CHECK(decl.readSet.count(std::type_index(typeid(pg::RegisterGeneratedTextureRequestOneFrameComponent))) > 0);
+		CHECK(decl.writeSet.count(std::type_index(typeid(pg::ResourceMapSingletonComponent))) > 0);
 		CHECK(decl.addSet.count(std::type_index(typeid(pg::ResourceMapSingletonComponent))) > 0);
 	}
 

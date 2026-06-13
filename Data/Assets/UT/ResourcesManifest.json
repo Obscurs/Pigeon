@@ -25,5 +25,17 @@
 	],
 	"models": [
 		{"id": "e5000000-0000-4000-8000-000000000001", "path" : "quad.obj"}
+	],
+	"checkpoints": [
+		{"id": "f6000000-0000-4000-8000-000000000001", "path" : "dummy_checkpoint.safetensors"}
+	],
+	"loras": [
+		{"id": "f6000000-0000-4000-8000-000000000002", "path" : "dummy_lora.safetensors"}
+	],
+	"controlNets": [
+		{"id": "f6000000-0000-4000-8000-000000000003", "path" : "dummy_control.safetensors"}
+	],
+	"openPoseSkeletons": [
+		{"id": "f6000000-0000-4000-8000-000000000004", "path" : "standing_test.json"}
 	]
 }

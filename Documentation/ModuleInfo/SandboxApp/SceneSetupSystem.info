@@ -10,9 +10,13 @@ PerspectiveCameraComponent looking at the world origin, a spinning model entity 
 referencing the configured model by UUID + a ModelSpinComponent so ModelSpinSystem rotates it about Y;
 it carries no Quad/Sprite, so it lives only in the 3D scene), and a display sprite — a SpriteComponent
 textured with the 3D render target (its UUID from the engine config), placed at the centre of the 2D
-world to show the 3D image. Each entity's world transform is seeded with a
-SceneTransformRequestOneFrameComponent (position-only for the camera). It also emits a LoadLayoutEvent
-to load the UI layout and creates SceneReadySingletonComponent as its run-once guard.
+world to show the 3D image. It also creates a text-to-image display sprite bound to the
+generated-texture UUID (`k_GeneratedTextureID`): until ImageGenDemoSystem's request completes that UUID
+is unregistered and the renderer falls back to the default texture; once generation finishes,
+ResourceManagerSystem registers the result under the same UUID and it appears here. Each entity's world
+transform is seeded with a SceneTransformRequestOneFrameComponent (position-only for the camera). It
+also emits a LoadLayoutEvent to load the UI layout and creates SceneReadySingletonComponent as its
+run-once guard.
 
 ## Input Components
 | Component | Access | Notes |
@@ -27,7 +31,7 @@ to load the UI layout and creates SceneReadySingletonComponent as its run-once g
 |---|---|---|
 | OrthographicCameraComponent | add (deferred) | 2D scene camera; the app CameraControlSystem drives it via the engine CameraSystem |
 | PerspectiveCameraComponent | add (deferred) | Engine component; the 3D camera looking at the spinning model, read by the engine Renderer3DSystem |
-| SpriteComponent | add (deferred) | Engine component; the static demo sprite, the animated character's sprite, and the 3D-render-target display sprite |
+| SpriteComponent | add (deferred) | Engine component; the static demo sprite, the animated character's sprite, the 3D-render-target display sprite, and the text-to-image generated-image display sprite |
 | SpriteAnimationComponent | add (deferred) | Engine component; the character's 8x8 sprite-sheet animation state (starts idle), driven by the engine SpriteAnimationSystem |
 | ModelComponent | add (deferred) | Engine component; references the configured 3D model resource by UUID, drawn by the engine Renderer3DSystem |
 | ModelSpinComponent | add (deferred) | Spin parameters for the 3D model, driven by ModelSpinSystem |

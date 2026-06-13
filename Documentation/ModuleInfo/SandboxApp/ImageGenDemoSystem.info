@@ -1,0 +1,20 @@
+# ImageGenDemoSystem
+
+## Purpose
+SandboxApp text-to-image demo. Returns early until the input state exists, then lazily creates its
+state singleton. While idle (no request issued yet), when the G key is pressed it emits a single
+GenerateImageRequest for the resident checkpoint with a LoRA (`k_DiffusionLoraID`, weight 0.8) and an
+OpenPose ControlNet hint (the loaded `k_DiffusionSkeletonID`), targeting `k_GeneratedTextureID` — the
+UUID SceneSetupSystem's display sprite samples. Issues one request per session (generation is
+expensive), latched by the state singleton's `m_Requested` flag.
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| InputStateSingletonComponent | read | G keypress triggers the request |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| ImageGenDemoStateSingletonComponent | write / add (deferred) | Created once; `m_Requested` latches the single per-session request |
+| GenerateImageRequestOneFrameComponent | add (oneframe) | The text-to-image request (engine-typed), read by the engine DiffusionSystem |

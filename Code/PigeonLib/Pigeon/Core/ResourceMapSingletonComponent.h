@@ -4,6 +4,7 @@
 #include "Pigeon/Audio/SoundClip.h"
 #include "Pigeon/Core/Core.h"
 #include "Pigeon/Core/UUID.h"
+#include "Pigeon/Diffusion/OpenPoseSkeleton.h"
 #include "Pigeon/Renderer/Font.h"
 #include "Pigeon/Renderer/Model.h"
 #include "Pigeon/Renderer/RenderTarget.h"
@@ -34,6 +35,15 @@ namespace pg
 		// Offscreen render targets keyed by UUID. Each target's colour buffer is also registered in
 		// m_TextureMap under the same UUID, so 2D draws can sample the rendered image as a texture.
 		std::unordered_map<pg::UUID, pg::S_Ptr<pg::RenderTarget>> m_RenderTargetMap;
+
+		// Text-to-image model assets. Checkpoints/LoRAs/ControlNets are resolved file paths the
+		// diffusion backend loads itself (the engine does not parse the weights); OpenPose skeletons are
+		// parsed pose resources the engine rasterizes into ControlNet hints.
+		std::unordered_map<pg::UUID, std::string> m_CheckpointMap;
+		std::unordered_map<pg::UUID, std::string> m_LoraMap;
+		std::unordered_map<pg::UUID, std::string> m_ControlNetMap;
+		std::unordered_map<pg::UUID, std::string> m_VaeMap;
+		std::unordered_map<pg::UUID, pg::S_Ptr<pg::OpenPoseSkeleton>> m_OpenPoseSkeletonMap;
 
 		pg::UUID m_DefaultTexture = pg::UUID::Generate();
 	};

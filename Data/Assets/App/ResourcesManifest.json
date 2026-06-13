@@ -25,5 +25,17 @@
 	],
 	"models": [
 		{"id": "b2000000-0000-4000-8000-000000000004", "path" : "monkey.obj"}
+	],
+	"checkpoints": [
+		{"id": "d8000000-0000-4000-8000-000000000001", "path" : "cyberillustrious_v40_CHECKPOINT.safetensors"}
+	],
+	"loras": [
+		{"id": "d8000000-0000-4000-8000-000000000002", "path" : "lin_LORA.safetensors"}
+	],
+	"controlNets": [
+		{"id": "d8000000-0000-4000-8000-000000000003", "path" : "OpenPoseXL2_sdcpp.safetensors"}
+	],
+	"openPoseSkeletons": [
+		{"id": "d8000000-0000-4000-8000-000000000004", "path" : "standing_10.json"}
 	]
 }

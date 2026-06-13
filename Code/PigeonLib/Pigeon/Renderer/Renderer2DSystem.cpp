@@ -221,10 +221,13 @@ namespace
 	// this is a 2D renderer, depth never affects geometry — world draw order comes from m_SortKey.
 	void AppendQuad(std::vector<DrawItem>& items, const pg::ResourceMapSingletonComponent& resourcesComponent, const glm::mat4& transform, const glm::vec4& color, const pg::UUID& textureID, const glm::vec4& texCoordsRect, const glm::vec3& origin, float sortKey, const glm::vec4& clipRect, bool flipTexV)
 	{
-		if (resourcesComponent.m_TextureMap.find(textureID) == resourcesComponent.m_TextureMap.end())
+		// A non-null UUID can legitimately be absent until it is registered at runtime (e.g. a Generated
+		// Texture before its diffusion job completes, ADR 0008); fall back to the default texture
+		// meanwhile so the quad still draws instead of asserting.
+		pg::UUID resolvedTextureID = textureID;
+		if (resourcesComponent.m_TextureMap.find(resolvedTextureID) == resourcesComponent.m_TextureMap.end())
 		{
-			PG_CORE_ASSERT(false, "Texture {0} not found in renderer2d batch map", textureID.ToString());
-			return;
+			resolvedTextureID = resourcesComponent.m_DefaultTexture;
 		}
 		glm::mat4 flatTransform = transform;
 		flatTransform[3][2] = 0.f;
@@ -232,7 +235,7 @@ namespace
 
 		DrawItem item;
 		memcpy(item.m_Vertices, quad.m_SquareVertices, pg::VERTEX_ATRIB_COUNT * pg::QUAD_VERTEX_COUNT * sizeof(float));
-		item.m_TextureID = textureID;
+		item.m_TextureID = resolvedTextureID;
 		item.m_SortKey = sortKey;
 		item.m_ClipRect = clipRect;
 		items.push_back(item);

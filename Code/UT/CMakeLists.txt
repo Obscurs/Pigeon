@@ -5,6 +5,7 @@ file(GLOB SRC_MAIN
 
 file(GLOB SRC_TESTS_AUDIO "UT_Audio/*.cpp")
 file(GLOB SRC_TESTS_CORE "UT_Core/*.cpp")
+file(GLOB SRC_TESTS_DIFFUSION "UT_Diffusion/*.cpp")
 file(GLOB SRC_TESTS_INTERFACE "UT_Interface/*.cpp")
 file(GLOB SRC_TESTS_UI "UT_UI/*.cpp")
 file(GLOB SRC_TESTS_RENDERER "UT_Renderer/*.cpp")
@@ -19,6 +20,7 @@ set(SRC_SANDBOX_SYSTEMS
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/ConfigLoaderSystem.cpp"
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/DebugPanelSystem.cpp"
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/DialogueDemoSystem.cpp"
+    "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/ImageGenDemoSystem.cpp"
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/InputReadoutSystem.cpp"
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/LifetimeSystem.cpp"
     "${PROJECT_SOURCE_DIR}/Code/SandboxApp/Sandbox/ModelSpinSystem.cpp"
@@ -42,6 +44,7 @@ source_group("" FILES ${SRC_MAIN})
 
 source_group("Tests/Audio" FILES ${SRC_TESTS_AUDIO})
 source_group("Tests/Core" FILES ${SRC_TESTS_CORE})
+source_group("Tests/Diffusion" FILES ${SRC_TESTS_DIFFUSION})
 source_group("Tests/Interface" FILES ${SRC_TESTS_INTERFACE})
 source_group("Tests/UI" FILES ${SRC_TESTS_UI})
 source_group("Tests/Renderer" FILES ${SRC_TESTS_RENDERER})
@@ -65,6 +68,7 @@ add_executable (UT
     ${SRC_MAIN}
     ${SRC_TESTS_AUDIO}
     ${SRC_TESTS_CORE}
+    ${SRC_TESTS_DIFFUSION}
     ${SRC_TESTS_INTERFACE}
     ${SRC_TESTS_UI}
     ${SRC_TESTS_RENDERER}

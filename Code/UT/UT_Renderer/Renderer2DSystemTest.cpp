@@ -180,6 +180,32 @@ namespace CatchTestsetFail
 	}
 
 	// ---------------------------------------------------------------------------
+	// Edge: a quad referencing a non-null but UNREGISTERED texture (e.g. a Generated
+	// Texture before its job completes, ADR 0008) falls back to the default texture
+	// and still draws, rather than asserting or being skipped.
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Renderer.Renderer2DSystem::UnregisteredTextureFallsBackToDefault")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::Renderer2DSystem>());
+
+		SeedValidRenderState();
+
+		pg::ecs::Entity drawEnt = pg::World::GetRegistryDirect().create();
+		pg::DrawQuadInFrameEvent drawEvent;
+		drawEvent.m_Transform = glm::mat4(1.f);
+		// A valid, non-null UUID that is not present in the texture map.
+		drawEvent.m_TextureID = pg::UUID::Generate();
+		pg::World::GetRegistryDirect().emplace<pg::DrawQuadInFrameEvent>(drawEnt, drawEvent);
+
+		world.Update(pg::Timestep(0));
+
+		// The quad was drawn this frame (vertices submitted) instead of asserting on the missing
+		// texture or being skipped.
+		CHECK(TotalSubmittedVertices() > 0);
+	}
+
+	// ---------------------------------------------------------------------------
 	// Edge: renderer data already exists -> system reuses it (write path), it does
 	// not create a duplicate singleton.
 	// ---------------------------------------------------------------------------

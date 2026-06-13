@@ -9,7 +9,11 @@ the master/sound/music audio volumes and the default window resolution + display
 `windowHeight`, `windowMode` — optional keys; default to `1280x720` windowed when absent). It also
 reads the UI canvas parameters (`uiReferenceWidth`, `uiReferenceHeight`, `uiMatchFactor` — optional;
 default to `1920x1080` reference with a `0.5` match factor when absent), which seed the live UI canvas
-in `UIRenderSystem` (ADR 0005). No-op on all subsequent frames (presence check guards early exit).
+in `UIRenderSystem` (ADR 0005). It also reads the text-to-image Generation Config defaults
+(`diffusionSteps`, `diffusionCfgScale`, `diffusionSampler`, `diffusionWidth`, `diffusionHeight`,
+`diffusionClipSkip` — optional keys that fall back to built-in defaults), which a Generate Image
+Request overrides per-call (ADR 0008). No-op on all subsequent frames (presence check guards early
+exit).
 File reads go through the shared `pg::FileUtils` helpers (also used by `WindowConfigSystem` when it
 persists changes).
 
@@ -32,4 +36,4 @@ survive without editing the shipped engine config.
 ## Output Components
 | Component | Access | Notes |
 |---|---|---|
-| EngineConfigSingletonComponent | add (deferred) | Created once from Config.json; contains default shader and font UUIDs, the 3D model shader + render target UUIDs, master/sound/music volumes, default window resolution + mode, UI reference resolution + match factor, and the savedata path |
+| EngineConfigSingletonComponent | add (deferred) | Created once from Config.json; contains default shader and font UUIDs, the 3D model shader + render target UUIDs, master/sound/music volumes, default window resolution + mode, UI reference resolution + match factor, the text-to-image Generation Config defaults, and the savedata path |

@@ -173,6 +173,57 @@ namespace CatchTestsetFail
 	}
 
 	// ---------------------------------------------------------------------------
+	// Happy path: loaded config exposes sensible text-to-image generation defaults
+	// (positive steps/resolution, a non-empty sampler name, clip skip >= 1).
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Core.ConfigLoaderSystem::LoadedConfigHasDiffusionDefaults")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ConfigLoaderSystem>());
+
+		world.Update(pg::Timestep(0));
+
+		auto view = pg::World::GetRegistryDirect().view<pg::EngineConfigSingletonComponent>();
+		REQUIRE(view.size() == 1);
+
+		const pg::EngineConfigSingletonComponent& cfg =
+			view.get<pg::EngineConfigSingletonComponent>(view.front());
+
+		CHECK(cfg.m_DiffusionSteps > 0);
+		CHECK(cfg.m_DiffusionCfgScale > 0.f);
+		CHECK(cfg.m_DiffusionWidth > 0);
+		CHECK(cfg.m_DiffusionHeight > 0);
+		CHECK(!cfg.m_DiffusionSampler.empty());
+		CHECK(cfg.m_DiffusionClipSkip >= 1);
+	}
+
+	// ---------------------------------------------------------------------------
+	// The generation defaults are seeded from Config.json (not hardcoded): the
+	// loaded steps + sampler match the engine config fixture.
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Core.ConfigLoaderSystem::DiffusionDefaultsSeededFromConfigFile")
+	{
+		const json engineJson = LoadJsonFixture("Assets/Engine/Config.json");
+		REQUIRE(engineJson.contains("diffusionSteps"));
+		REQUIRE(engineJson.contains("diffusionSampler"));
+		const int expectedSteps = engineJson["diffusionSteps"].get<int>();
+		const std::string expectedSampler = engineJson["diffusionSampler"].get<std::string>();
+
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ConfigLoaderSystem>());
+
+		world.Update(pg::Timestep(0));
+
+		auto view = pg::World::GetRegistryDirect().view<pg::EngineConfigSingletonComponent>();
+		REQUIRE(view.size() == 1);
+		const pg::EngineConfigSingletonComponent& cfg =
+			view.get<pg::EngineConfigSingletonComponent>(view.front());
+
+		CHECK(cfg.m_DiffusionSteps == expectedSteps);
+		CHECK(cfg.m_DiffusionSampler == expectedSampler);
+	}
+
+	// ---------------------------------------------------------------------------
 	// Savedata override: the savedata window width wins over the engine config
 	// value, mirroring the audio-volume override semantics.
 	// ---------------------------------------------------------------------------

@@ -37,6 +37,7 @@ pg::CreateApplication()  [Sandbox2D.cpp]
         sbx::UICloseSystem             release            -> UIDestroy (dismiss element)
         sbx::UIStatusSystem            spawn count        -> UIUpdateText (status label)
         sbx::DialogueDemoSystem        ImGui "Dialogue" panel; typewriter text -> UIUpdateTextReveal (dialogue label)
+        sbx::ImageGenDemoSystem        G key -> one GenerateImageRequest (checkpoint + LoRA + OpenPose ControlNet) into the generated-texture UUID; owns ImageGenDemoState
         sbx::DebugPanelSystem          ImGui panel; owns DebugControlsSingletonComponent
         sbx::AudioDemoSystem           S/M/P keys -> Play/Stop/Pause/Resume audio requests; owns AudioDemoState
         sbx::AudioDebugPanelSystem     ImGui "Audio" panel; volume sliders -> SetAudioVolumeRequest

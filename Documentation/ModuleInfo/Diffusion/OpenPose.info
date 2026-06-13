@@ -1,0 +1,24 @@
+# OpenPose (infrastructure)
+
+The engine-owned OpenPose pose resource and the canonical hint rasterizer. Not an ECS system — used by
+DiffusionSystem to build a ControlNet Control Hint, and loaded by ResourceManagerSystem (ADR 0008).
+
+## OpenPoseSkeleton
+A pregenerated pose resource: the COCO-18 (OpenPose BODY_18) keypoints of a single fixed pose plus the
+canvas they were authored against. Holds only joint positions + per-joint confidence — not an image.
+Loaded from the OpenPose JSON export format (`Create`/`CreateFromJsonString`): a top-level array whose
+first element carries `people[].pose_keypoints_2d` (flat `[x, y, confidence]` triples in COCO-18 order)
+and `canvas_width`/`canvas_height`. Missing keypoints stay at confidence 0; malformed JSON yields null.
+
+## RasterizeOpenPoseHint
+Renders the canonical OpenPose skeleton into an RGB `pg::Image`: a black background with each of the 17
+BODY-18 limbs drawn as a coloured stick and each of the 18 joints as a coloured disc, using the standard
+OpenPose palette keyed to the COCO-18 joint order. Joints with confidence <= 0 are skipped, as is any
+limb touching one. Keypoints are supplied in the output image's pixel space. Limb sticks are solid (a
+faithful-enough approximation of OpenPose's alpha-blended polygons for ControlNet conditioning).
+
+## TransformKeypoints / MakeCanvasToImageTransform
+`MakeCanvasToImageTransform` builds the glm::mat3 mapping a skeleton's canvas-space keypoints onto an
+output image of a given pixel size; `TransformKeypoints` applies any homogeneous 2D transform (the
+canvas mapping composed with the request's Skeleton Transform) to every keypoint before rasterization.
+The engine owns the OpenPose convention; it never detects pose from a photo.

@@ -10,5 +10,11 @@
 	"windowWidth": 1280,
 	"windowHeight": 720,
 	"windowMode": "windowed",
+	"diffusionSteps": 30,
+	"diffusionCfgScale": 5.0,
+	"diffusionSampler": "euler_a",
+	"diffusionWidth": 768,
+	"diffusionHeight": 768,
+	"diffusionClipSkip": 2,
 	"savedataPath": "../SaveData"
 }
