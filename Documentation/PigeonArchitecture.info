@@ -19,6 +19,7 @@ main()  [EntryPoint.h]
                     ├── RegisterSystem(SaveDataSystem)
                     ├── RegisterSystem(SpriteAnimationSystem)
                     ├── RegisterSystem(SpriteRenderSystem)
+                    ├── RegisterSystem(TextGenSystem)
                     ├── RegisterSystem(TransformComposeSystem)
                     ├── RegisterSystem(TransformResolveSystem)
                     ├── RegisterSystem(UIControlSystem)
@@ -109,6 +110,15 @@ Diffusion  (in-engine text-to-image; opt-in CUDA backend, ADR 0008)
                               Generated Texture into m_TextureMap (the OpenPose hint is rasterized in-engine
                               from the referenced skeleton). Cross-frame, deferred — no ordering cycle.
 
+TextGen  (in-engine text generation; opt-in CPU llama.cpp backend, ADR 0009)
+  └── TextGenSystem        GenerateTextRequest (from app) + ResourceMapSingletonComponent (GGUF model
+                             paths) + EngineConfigSingletonComponent (Text Generation Config defaults)
+                           →  TextGenBackendSingletonComponent (platform backend; llama.cpp real /
+                              Testing mock) + TextGenJobSingletonComponent (one background-worker job)
+                           →  TextGenResultSingletonComponent (target UUID → completion). Unlike the
+                              Diffusion result, text is not a renderer resource, so TextGenSystem is the
+                              sole writer of the result store and publishes directly (no resource-map hop).
+
 Transform
   ├── TransformResolveSystem  ResolvedTransformRequest (from app) + CameraTransformRequest
   │                           →  PositionComponent, RotationComponent, ScaleComponent, LocalBoundsComponent
@@ -169,4 +179,6 @@ UI  (canvas authored against a reference resolution; scaled to the window per AD
 | `Code/PigeonLib/Pigeon/Core/Window.h` | Abstract window — `ApplyWindowConfig(width, height, mode)` resizes / switches windowed↔borderless-fullscreen |
 | `Code/PigeonLib/Pigeon/Diffusion/` | Text-to-image module (ADR 0008): OpenPoseSkeleton resource + OpenPoseHint rasterizer, DiffusionBackend abstraction + DiffusionJobParams/Image, DiffusionSystem (worker-thread job runner), GenerateImageRequest/RegisterGeneratedTextureRequest components (see Documentation/ModuleInfo/Diffusion) |
 | `Code/PigeonLib/Platform/StableDiffusion/StableDiffusionCppBackend.cpp` | Real stable-diffusion.cpp (CUDA) backend, active only under `-DPG_ENABLE_DIFFUSION=ON`; inert otherwise. Testing build uses Platform/Testing/TestingDiffusionBackend |
+| `Code/PigeonLib/Pigeon/TextGen/` | In-engine text-generation module (ADR 0009): TextGenBackend abstraction + TextGenParams, TextGenSystem (worker-thread job runner), the GenerateTextRequest component, and the backend/job/result singletons (see Documentation/ModuleInfo/TextGen) |
+| `Code/PigeonLib/Platform/Llama/LlamaCppBackend.cpp` | Real llama.cpp (CPU) text-generation backend, active only under `-DPG_ENABLE_TEXTGEN=ON`; inert otherwise. Testing build uses Platform/Testing/TestingTextGenBackend |
 | `Code/SandboxApp/Sandbox2D.cpp` | Entry point — CreateApplication() + client system registration |

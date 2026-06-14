@@ -4,6 +4,12 @@ project(PigeonEngine)
 
 include(FetchContent)
 
+# Link every dependency statically into the engine/app. llama.cpp's CMake defaults BUILD_SHARED_LIBS ON
+# and (added as a subdirectory) leaks that into the global cache, which would make ggml, spdlog, glm, etc.
+# build as scattered DLLs the exe can't find at runtime. Forcing it OFF up front keeps the original
+# self-contained, all-static layout (only the CUDA runtime, cudart/cublas from the toolkit, stays dynamic).
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+
 FetchContent_Declare(
   glm
   GIT_REPOSITORY https://github.com/g-truc/glm
@@ -67,12 +73,22 @@ endif()
 
 FetchContent_MakeAvailable(glm spdlog Catch2 msdf-atlas-gen nlohmann_json)
 
-# Text-to-image (stable-diffusion.cpp) is opt-in: OFF by default so the Testing/UT build and a plain
-# build stay CUDA-free, fast, and green (the real backend is inert, tests use TestingDiffusionBackend).
-# Configure with -DPG_ENABLE_DIFFUSION=ON to fetch + build the CUDA runtime and activate generation.
-# NOTE: building stable-diffusion.cpp with CUDA is heavy and requires the CUDA Toolkit; validate on
-# the target machine. Pin GIT_TAG to a known-good commit for reproducibility before shipping.
+# In-engine AI runtimes: stable-diffusion.cpp (text-to-image, CUDA) and llama.cpp (text generation, CPU).
+# Both opt-in. They each vendor ggml under the same `ggml` target and need INCOMPATIBLE ggml revisions, so
+# they cannot share one ggml: a shared ggml compiles but crashes sd.cpp's model manager at generate time
+# ("model manager tensor ... is not registered"). They are therefore ISOLATED — sd.cpp builds in-tree with
+# its own ggml (below), and llama.cpp builds in a separate ExternalProject with its own ggml. The Testing/UT
+# build leaves both OFF (the real backends are inert; tests use the Testing mocks).
+# NOTE: both GIT_TAGs are pinned to verified-good commits — the ggml/sd.cpp/llama.cpp C APIs all evolve.
+# Bump deliberately and re-check StableDiffusionCppBackend.cpp / LlamaCppBackend.cpp when you do.
 option(PG_ENABLE_DIFFUSION "Build the stable-diffusion.cpp (CUDA) text-to-image backend" ON)
+option(PG_ENABLE_TEXTGEN "Build the llama.cpp (CPU) text-generation backend" ON)
+
+# Text-to-image (stable-diffusion.cpp, CUDA), built in-tree with its OWN ggml (GGML_CUDA only scopes this
+# ggml; llama's isolated ggml is unaffected). Pinned to #1650 (2026-06-13) — the bundled SDXL checkpoint +
+# LoRA + OpenPose ControlNet assets load and GENERATE against this commit (verified). Newer commits drop
+# the vae_decode_only / keep_vae_on_cpu fields the backend uses; the #1638 loader rejects this ControlNet's
+# proj-weight shape. Heavy CUDA build; requires the CUDA Toolkit.
 if(PG_ENABLE_DIFFUSION)
   set(GGML_CUDA ON CACHE BOOL "" FORCE)
   set(SD_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
@@ -83,7 +99,7 @@ if(PG_ENABLE_DIFFUSION)
   FetchContent_Declare(
     stable_diffusion_cpp
     GIT_REPOSITORY https://github.com/leejet/stable-diffusion.cpp
-    GIT_TAG        master
+    GIT_TAG        276025e054555166ec419413c6748ca79986ee93
   )
   FetchContent_MakeAvailable(stable_diffusion_cpp)
 
@@ -98,7 +114,50 @@ if(PG_ENABLE_DIFFUSION)
   endif()
 endif()
 
-set(MSDFGEN_INCLUDE_DIRS 
+# Text generation (llama.cpp, CPU), built in an ISOLATED ExternalProject so its ggml never collides with
+# sd.cpp's. Static, CUDA-off, OpenMP-off (avoids a vcomp link dependency when linked by path; llama still
+# threads via n_threads). Installed to a prefix; PigeonLib links the static libs by path (see
+# Code/PigeonLib/CMakeLists.txt). The LLM runs on the CPU at runtime via n_gpu_layers = 0 (ADR 0009).
+if(PG_ENABLE_TEXTGEN)
+  include(ExternalProject)
+  # The PigeonLib TU that includes <llama.h> exceeds MSVC's default COFF section limit.
+  add_compile_options("$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:MSVC>>:/bigobj>")
+  set(PG_LLAMA_INSTALL "${CMAKE_BINARY_DIR}/llama-isolated")
+  set(PG_LLAMA_INCLUDE_DIR "${PG_LLAMA_INSTALL}/include" CACHE INTERNAL "isolated llama.cpp include dir")
+  # Static libs llama installs, ordered dependents-before-dependencies for the linker.
+  set(PG_LLAMA_LIBS
+    "${PG_LLAMA_INSTALL}/lib/llama${CMAKE_STATIC_LIBRARY_SUFFIX}"
+    "${PG_LLAMA_INSTALL}/lib/ggml${CMAKE_STATIC_LIBRARY_SUFFIX}"
+    "${PG_LLAMA_INSTALL}/lib/ggml-cpu${CMAKE_STATIC_LIBRARY_SUFFIX}"
+    "${PG_LLAMA_INSTALL}/lib/ggml-base${CMAKE_STATIC_LIBRARY_SUFFIX}"
+    CACHE INTERNAL "isolated llama.cpp static libs")
+  ExternalProject_Add(llama_isolated
+    GIT_REPOSITORY https://github.com/ggml-org/llama.cpp
+    GIT_TAG        6e14286edaa60a223292c8a996506905b2f66f66
+    CMAKE_ARGS
+      -DCMAKE_INSTALL_PREFIX=${PG_LLAMA_INSTALL}
+      -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+      -DBUILD_SHARED_LIBS=OFF
+      -DGGML_CUDA=OFF
+      -DGGML_OPENMP=OFF
+      -DLLAMA_BUILD_TESTS=OFF
+      -DLLAMA_BUILD_EXAMPLES=OFF
+      -DLLAMA_BUILD_SERVER=OFF
+      -DLLAMA_BUILD_TOOLS=OFF
+      -DLLAMA_CURL=OFF
+      # Built standalone here, so LLAMA_STANDALONE defaults these ON — but we only need the core library.
+      # The app/common/UI targets pull in a generated build-info.h and a web UI we do not build.
+      -DLLAMA_BUILD_APP=OFF
+      -DLLAMA_BUILD_COMMON=OFF
+      -DLLAMA_BUILD_HTML=OFF
+      -DLLAMA_BUILD_UI=OFF
+    BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config Release
+    INSTALL_COMMAND ${CMAKE_COMMAND} --install <BINARY_DIR> --config Release
+    BUILD_BYPRODUCTS ${PG_LLAMA_LIBS}
+  )
+endif()
+
+set(MSDFGEN_INCLUDE_DIRS
     "${msdf-atlas-gen_SOURCE_DIR}/msdf-atlas-gen"
     "${msdf-atlas-gen_SOURCE_DIR}/msdfgen"
     "${msdf-atlas-gen_SOURCE_DIR}/msdfgen/include"

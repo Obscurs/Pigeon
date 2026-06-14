@@ -48,6 +48,10 @@ namespace pg
 		// img2img init images, decoded to CPU RGB at load (the diffusion backend needs pixels, not a GPU texture).
 		std::unordered_map<pg::UUID, pg::Image> m_InputImageMap;
 
+		// Text-generation GGUF models. Like checkpoints, these are resolved file paths the inference
+		// backend (llama.cpp) loads itself; the engine does not parse the weights.
+		std::unordered_map<pg::UUID, std::string> m_LanguageModelMap;
+
 		pg::UUID m_DefaultTexture = pg::UUID::Generate();
 	};
 }

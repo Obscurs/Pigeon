@@ -82,6 +82,18 @@ file(GLOB PGDIFFUSION
     "Pigeon/Diffusion/RegisterGeneratedTextureRequestOneFrameComponent.h"
 )
 
+file(GLOB PGTEXTGEN
+    "Pigeon/TextGen/GenerateTextRequestOneFrameComponent.h"
+    "Pigeon/TextGen/TextGenBackend.cpp"
+    "Pigeon/TextGen/TextGenBackend.h"
+    "Pigeon/TextGen/TextGenBackendSingletonComponent.h"
+    "Pigeon/TextGen/TextGenJob.h"
+    "Pigeon/TextGen/TextGenJobSingletonComponent.h"
+    "Pigeon/TextGen/TextGenResultSingletonComponent.h"
+    "Pigeon/TextGen/TextGenSystem.cpp"
+    "Pigeon/TextGen/TextGenSystem.h"
+)
+
 file(GLOB PGIMGUI
     "Pigeon/ImGui/ImGuiLayer.cpp"
 )
@@ -186,6 +198,11 @@ file(GLOB PLATFORM_SD
     "Platform/StableDiffusion/StableDiffusionCppBackend.h"
 )
 
+file(GLOB PLATFORM_LLAMA
+    "Platform/Llama/LlamaCppBackend.cpp"
+    "Platform/Llama/LlamaCppBackend.h"
+)
+
 file(GLOB PLATFORM_TESTING
     "Platform/Testing/TestingBuffer.cpp"
     "Platform/Testing/TestingContext.cpp"
@@ -196,6 +213,8 @@ file(GLOB PLATFORM_TESTING
     "Platform/Testing/TestingRenderTarget.cpp"
     "Platform/Testing/TestingRendererAPI.cpp"
     "Platform/Testing/TestingShader.cpp"
+    "Platform/Testing/TestingTextGenBackend.cpp"
+    "Platform/Testing/TestingTextGenBackend.h"
     "Platform/Testing/TestingTexture.cpp"
     "Platform/Testing/TestingWindow.cpp"
 )
@@ -224,6 +243,7 @@ source_group("" FILES ${ROOT})
 source_group("Pigeon\\Audio" FILES ${PGAUDIO})
 source_group("Pigeon\\Core" FILES ${PGCORE})
 source_group("Pigeon\\Diffusion" FILES ${PGDIFFUSION})
+source_group("Pigeon\\TextGen" FILES ${PGTEXTGEN})
 source_group("Pigeon\\ImGui" FILES ${PGIMGUI})
 source_group("Pigeon\\Renderer" FILES ${RENDERER})
 source_group("Pigeon\\UI" FILES ${UI})
@@ -232,6 +252,7 @@ source_group("Platform\\Testing" FILES ${PLATFORM_TESTING})
 source_group("Platform\\DirectX11" FILES ${PLATFORM_DX})
 source_group("Platform\\Miniaudio" FILES ${PLATFORM_MINIAUDIO})
 source_group("Platform\\StableDiffusion" FILES ${PLATFORM_SD})
+source_group("Platform\\Llama" FILES ${PLATFORM_LLAMA})
 source_group("Pigeon\\ECS" FILES ${ECS_WORLD})
 source_group("Pigeon\\ECS\\Systems" FILES ${ECS_SYSTEMS})
 source_group("Pigeon\\ECS\\Components" FILES ${ECS_COMPONENTS})
@@ -291,6 +312,17 @@ target_include_directories(PigeonLib PUBLIC
 if(PG_ENABLE_DIFFUSION)
     target_link_libraries(PigeonLib stable-diffusion)
     target_compile_definitions(PigeonLib PRIVATE PG_STABLE_DIFFUSION_ENABLED)
+endif()
+
+# Activate the real llama.cpp backend only when the opt-in is enabled; otherwise LlamaCppBackend
+# compiles to an inert no-op (see Platform/Llama) and tests use the Testing mock (ADR 0009). llama.cpp is
+# built in an isolated ExternalProject (root CMakeLists) so its ggml does not collide with sd.cpp's; link
+# its installed static libs by path and depend on the external build so it finishes first.
+if(PG_ENABLE_TEXTGEN)
+    add_dependencies(PigeonLib llama_isolated)
+    target_include_directories(PigeonLib PRIVATE ${PG_LLAMA_INCLUDE_DIR})
+    target_link_libraries(PigeonLib ${PG_LLAMA_LIBS})
+    target_compile_definitions(PigeonLib PRIVATE PG_LLAMA_ENABLED)
 endif()
 
 # Properties->General->Output Directory

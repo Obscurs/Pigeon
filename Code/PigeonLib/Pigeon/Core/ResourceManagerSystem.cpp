@@ -97,6 +97,13 @@ namespace
 		component.m_VaeMap[resource.m_UUID] = resource.m_Path;
 	}
 
+	// GGUF language models are loaded by the inference backend (llama.cpp), not the engine, so the
+	// resource map only records their resolved file paths.
+	void LoadLanguageModelFromResource(pg::ResourceMapSingletonComponent& component, const ParsedResource& resource)
+	{
+		component.m_LanguageModelMap[resource.m_UUID] = resource.m_Path;
+	}
+
 	// Input images for img2img are decoded to CPU RGB pixels (the diffusion backend consumes pixels).
 	void LoadInputImageFromResource(pg::ResourceMapSingletonComponent& component, const ParsedResource& resource)
 	{
@@ -256,6 +263,14 @@ namespace
 			for (json child : jsonObject["vae"])
 			{
 				LoadVaeFromResource(component, GetParsedResourceFromJsonItem(child, prefix, "ImageGeneration"));
+			}
+		}
+		if (jsonObject.contains("languageModels"))
+		{
+			PG_CORE_EXCEPT(jsonObject["languageModels"].is_array(), "could not parse languageModels from resource manifest");
+			for (json child : jsonObject["languageModels"])
+			{
+				LoadLanguageModelFromResource(component, GetParsedResourceFromJsonItem(child, prefix, "TextGeneration"));
 			}
 		}
 		if (jsonObject.contains("inputImages"))

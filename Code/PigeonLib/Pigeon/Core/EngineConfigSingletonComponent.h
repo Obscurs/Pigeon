@@ -46,6 +46,12 @@ namespace pg
 		unsigned int m_DiffusionHeight = 512;
 		int m_DiffusionClipSkip = 1;
 
+		// Text-generation defaults, overridable per Generate Text Request. Read from Config.json; absent
+		// keys keep these defaults. Prompt/system prompt/seed are always per-request.
+		int m_TextGenMaxTokens = 256;
+		float m_TextGenTemperature = 0.8f;
+		float m_TextGenTopP = 0.95f;
+
 		// Directory holding the savedata override Config.json (the savedataPath key), recorded so the
 		// runtime knows where to persist changes. Empty when no savedata path is configured.
 		std::string m_SavedataPath;

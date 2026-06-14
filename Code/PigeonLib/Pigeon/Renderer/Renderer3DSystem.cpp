@@ -45,6 +45,9 @@ namespace
 
 		const glm::mat4 viewProjection = camera.GetViewProjectionMatrix();
 
+		// Lambert light source sits at the camera position; constant per frame, so upload once.
+		rendererData.m_ModelShader->UploadUniformFloat3("u_LightPos", camera.GetPosition());
+
 		auto view = accessor.View<const pg::ModelComponent, const pg::WorldTransformComponent>();
 		for (pg::ecs::Entity ent : view)
 		{
@@ -70,6 +73,8 @@ namespace
 			// transform into the view-projection here and upload it per model.
 			const glm::mat4 modelViewProjection = viewProjection * worldTransform.m_Matrix;
 			rendererData.m_ModelShader->UploadUniformMat4("u_ViewProjection", modelViewProjection);
+			// The world matrix on its own, for transforming positions/normals into world space for lighting.
+			rendererData.m_ModelShader->UploadUniformMat4("u_Transform", worldTransform.m_Matrix);
 
 			rendererData.m_VertexBuffer->SetVertices(reinterpret_cast<const float*>(model.GetVertices().data()), static_cast<unsigned int>(model.GetVertices().size()), 0);
 			rendererData.m_IndexBuffer->SetIndices(model.GetIndices().data(), static_cast<unsigned int>(model.GetIndices().size()), 0);

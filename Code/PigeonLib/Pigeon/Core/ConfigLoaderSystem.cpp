@@ -95,6 +95,18 @@ namespace
 		{
 			component.m_DiffusionClipSkip = jsonObject["diffusionClipSkip"].get<int>();
 		}
+		if (jsonObject.contains("textGenMaxTokens") && jsonObject["textGenMaxTokens"].is_number_integer())
+		{
+			component.m_TextGenMaxTokens = jsonObject["textGenMaxTokens"].get<int>();
+		}
+		if (jsonObject.contains("textGenTemperature") && jsonObject["textGenTemperature"].is_number())
+		{
+			component.m_TextGenTemperature = jsonObject["textGenTemperature"].get<float>();
+		}
+		if (jsonObject.contains("textGenTopP") && jsonObject["textGenTopP"].is_number())
+		{
+			component.m_TextGenTopP = jsonObject["textGenTopP"].get<float>();
+		}
 	}
 }
 

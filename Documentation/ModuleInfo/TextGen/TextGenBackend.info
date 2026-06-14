@@ -1,0 +1,40 @@
+# TextGenBackend (infrastructure)
+
+Platform abstraction for the LLM inference runtime, plus the supporting value/component types. Not an
+ECS system — driven by TextGenSystem (ADR 0009).
+
+## TextGenBackend
+Abstract interface: `LoadModel(modelPath)` loads the session-resident GGUF model once, `IsLoaded()`
+reports readiness, `Generate(params)` runs one prompt→completion loop synchronously (on a worker thread)
+and returns the text (empty on failure). `Create()` selects the concrete backend by the renderer-API
+switch, mirroring AudioDevice / DiffusionBackend:
+- **LlamaCppBackend** (DirectX11 builds) — wraps llama.cpp on the **CPU** (n_gpu_layers = 0) so it never
+  contends for VRAM with the renderer / diffusion backend. Compiled active only when PigeonLib is built
+  with `-DPG_ENABLE_TEXTGEN=ON` (defines `PG_LLAMA_ENABLED`); otherwise it is an inert no-op so a plain
+  build links without the heavy runtime. Applies the GGUF's own chat template (system + user message).
+- **TestingTextGenBackend** (Testing builds) — deterministic mock: records the loaded path and the last
+  job params, returns a fixed completion echoing the prompt (`"[mock] " + prompt`). Lets tests exercise
+  the full request → generate → publish path with no llama.cpp, model files, or real inference.
+
+## TextGenParams
+The fully-resolved inputs of one generation handed to the backend: prompt, optional system prompt, max
+tokens, temperature, top-p, and seed. Carries no ECS or resource-map knowledge.
+
+## TextGenBackendSingletonComponent
+Holds the session backend (`m_Backend`) and `m_LoadAttempted` (guards the one-time resident load).
+
+## TextGenJob / TextGenJobSingletonComponent
+TextGenJob is the in-flight (or just-finished) generation: an atomic state (pending/running/done/failed),
+the target text UUID, the result string, and the worker thread (joined on destruction).
+TextGenJobSingletonComponent owns the single active job via shared_ptr (null when idle); only one
+generation runs at a time.
+
+## TextGenResultSingletonComponent
+The live store of finished completions (target UUID → string), written solely by TextGenSystem. The app
+reads it by the target UUID to display the Generated Text. Text is not routed through the resource map
+the way a Generated Texture is, because it is not a renderer resource.
+
+## GenerateTextRequestOneFrameComponent
+App-emitted (engine-typed) request: target text UUID (caller-assigned, like an audio Voice Handle),
+prompt, optional system prompt, seed, and optional Text Generation Config overrides (max tokens,
+temperature, top-p). Unset (≤ 0) config fields fall back to the engine defaults.

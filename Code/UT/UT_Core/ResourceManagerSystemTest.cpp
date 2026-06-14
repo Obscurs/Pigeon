@@ -263,6 +263,31 @@ namespace CatchTestsetFail
 	}
 
 	// ---------------------------------------------------------------------------
+	// Happy path: the GGUF language model declared in the manifest is recorded as a
+	// resolved path (the inference backend loads the weights, not the engine, so the
+	// map only holds the path).
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Core.ResourceManagerSystem::LoadedMapHasLanguageModelPath")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ResourceManagerSystem>());
+
+		world.Update(pg::Timestep(0));
+
+		auto view = pg::World::GetRegistryDirect().view<pg::ResourceMapSingletonComponent>();
+		REQUIRE(view.size() == 1);
+
+		const pg::ResourceMapSingletonComponent& map =
+			view.get<pg::ResourceMapSingletonComponent>(view.front());
+
+		std::unordered_map<pg::UUID, std::string>::const_iterator model =
+			map.m_LanguageModelMap.find(pg::UUID("f6000000-0000-4000-8000-000000000005"));
+		REQUIRE(model != map.m_LanguageModelMap.end());
+		CHECK(model->second.find("dummy_model.gguf") != std::string::npos);
+		CHECK(model->second.find("TextGeneration") != std::string::npos);
+	}
+
+	// ---------------------------------------------------------------------------
 	// Generated-texture registration: a RegisterGeneratedTextureRequest is drained
 	// into the texture map under its caller-assigned UUID (a generated image becomes
 	// an ordinary texture).

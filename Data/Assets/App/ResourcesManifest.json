@@ -40,5 +40,8 @@
 	],
 	"inputImages": [
 		{"id": "d8000000-0000-4000-8000-000000000006", "path" : "livingRoom.jpg"}
+	],
+	"languageModels": [
+		{"id": "d8000000-0000-4000-8000-000000000007", "path" : "L3-Dark-Planet-8B-max-D_AU-Q8_0.gguf"}
 	]
 }

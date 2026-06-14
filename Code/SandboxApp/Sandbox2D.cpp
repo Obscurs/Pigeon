@@ -16,6 +16,7 @@
 #include "Sandbox/QuadSpawnSystem.h"
 #include "Sandbox/SaveDataDebugPanelSystem.h"
 #include "Sandbox/SceneSetupSystem.h"
+#include "Sandbox/TextGenDemoSystem.h"
 #include "Sandbox/TextRenderSystem.h"
 #include "Sandbox/TransformResolveSystem.h"
 #include "Sandbox/UIButtonSystem.h"
@@ -61,6 +62,7 @@ pg::Application& pg::CreateApplication()
 	world.RegisterSystem(std::make_unique<sbx::UIStatusSystem>());
 	world.RegisterSystem(std::make_unique<sbx::DialogueDemoSystem>());
 	world.RegisterSystem(std::make_unique<sbx::ImageGenDemoSystem>());
+	world.RegisterSystem(std::make_unique<sbx::TextGenDemoSystem>());
 	world.RegisterSystem(std::make_unique<sbx::DebugPanelSystem>());
 	world.RegisterSystem(std::make_unique<sbx::WindowDebugPanelSystem>());
 	world.RegisterSystem(std::make_unique<sbx::SaveDataDebugPanelSystem>());

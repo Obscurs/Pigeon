@@ -224,6 +224,52 @@ namespace CatchTestsetFail
 	}
 
 	// ---------------------------------------------------------------------------
+	// Happy path: loaded config exposes sensible text-generation defaults
+	// (positive max tokens, temperature and top-p in (0, 1]).
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Core.ConfigLoaderSystem::LoadedConfigHasTextGenDefaults")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ConfigLoaderSystem>());
+
+		world.Update(pg::Timestep(0));
+
+		auto view = pg::World::GetRegistryDirect().view<pg::EngineConfigSingletonComponent>();
+		REQUIRE(view.size() == 1);
+
+		const pg::EngineConfigSingletonComponent& cfg =
+			view.get<pg::EngineConfigSingletonComponent>(view.front());
+
+		CHECK(cfg.m_TextGenMaxTokens > 0);
+		CHECK(cfg.m_TextGenTemperature > 0.f);
+		CHECK(cfg.m_TextGenTopP > 0.f);
+		CHECK(cfg.m_TextGenTopP <= 1.f);
+	}
+
+	// ---------------------------------------------------------------------------
+	// The text-generation defaults are seeded from Config.json (not hardcoded):
+	// the loaded max tokens matches the engine config fixture.
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Core.ConfigLoaderSystem::TextGenDefaultsSeededFromConfigFile")
+	{
+		const json engineJson = LoadJsonFixture("Assets/Engine/Config.json");
+		REQUIRE(engineJson.contains("textGenMaxTokens"));
+		const int expectedMaxTokens = engineJson["textGenMaxTokens"].get<int>();
+
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ConfigLoaderSystem>());
+
+		world.Update(pg::Timestep(0));
+
+		auto view = pg::World::GetRegistryDirect().view<pg::EngineConfigSingletonComponent>();
+		REQUIRE(view.size() == 1);
+		const pg::EngineConfigSingletonComponent& cfg =
+			view.get<pg::EngineConfigSingletonComponent>(view.front());
+
+		CHECK(cfg.m_TextGenMaxTokens == expectedMaxTokens);
+	}
+
+	// ---------------------------------------------------------------------------
 	// Savedata override: the savedata window width wins over the engine config
 	// value, mirroring the audio-volume override semantics.
 	// ---------------------------------------------------------------------------

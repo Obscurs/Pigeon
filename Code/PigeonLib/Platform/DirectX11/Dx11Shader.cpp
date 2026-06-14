@@ -70,6 +70,10 @@ namespace
 		{
 			return 2;
 		}
+		else if (name == "u_LightPos")
+		{
+			return 2;
+		}
 		else
 		{
 			PG_CORE_ASSERT(false, "uniform not defined");

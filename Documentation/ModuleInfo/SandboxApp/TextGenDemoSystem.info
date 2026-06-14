@@ -1,0 +1,23 @@
+# TextGenDemoSystem
+
+## Purpose
+SandboxApp text-generation demo panel (ImGui). Returns early until the engine TextGen singletons exist
+(created lazily by TextGenSystem), then lazily creates its editable state singleton. Each frame it draws
+an ImGui window with a prompt box, temperature + max-tokens controls, and a **Generate** button. Pressing
+Generate (only when no job is running) emits a single GenerateTextRequest carrying the prompt + config,
+targeting `k_TextGenTargetID`. While a job runs the button is disabled and a busy note is shown; the
+latest completion (read from TextGenResultSingletonComponent by the target UUID) is displayed below.
+Every ImGui call is guarded so the headless test build (no ImGui context) is a no-op, like the other
+debug panels.
+
+## Input Components
+| Component | Access | Notes |
+|---|---|---|
+| TextGenJobSingletonComponent | read | Busy state — disables the button while a generation runs |
+| TextGenResultSingletonComponent | read | The generated text to display, looked up by `k_TextGenTargetID` |
+
+## Output Components
+| Component | Access | Notes |
+|---|---|---|
+| TextGenDemoStateSingletonComponent | write / add (deferred) | Created once; holds the editable prompt buffer + temperature + max tokens |
+| GenerateTextRequestOneFrameComponent | add (oneframe) | The text-generation request (engine-typed), read by the engine TextGenSystem |

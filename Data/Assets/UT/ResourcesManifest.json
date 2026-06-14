@@ -37,5 +37,8 @@
 	],
 	"openPoseSkeletons": [
 		{"id": "f6000000-0000-4000-8000-000000000004", "path" : "standing_test.json"}
+	],
+	"languageModels": [
+		{"id": "f6000000-0000-4000-8000-000000000005", "path" : "dummy_model.gguf"}
 	]
 }

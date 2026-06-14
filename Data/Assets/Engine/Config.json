@@ -16,5 +16,8 @@
 	"diffusionWidth": 768,
 	"diffusionHeight": 768,
 	"diffusionClipSkip": 2,
+	"textGenMaxTokens": 256,
+	"textGenTemperature": 0.8,
+	"textGenTopP": 0.95,
 	"savedataPath": "../SaveData"
 }
