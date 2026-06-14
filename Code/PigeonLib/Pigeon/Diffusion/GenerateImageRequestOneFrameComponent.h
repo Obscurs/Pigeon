@@ -37,11 +37,32 @@ namespace pg
 
 		std::vector<GenerateImageLoraRef> m_Loras;
 
+		// Optional img2img: an input image (resource UUID) the generation starts from, keeping its
+		// structure while regenerating. m_DenoiseStrength controls how much is rewritten (0 = unchanged,
+		// 1 = ignored / pure text2img). Null ID => pure text2img.
+		pg::UUID m_InputImageID;
+		float m_DenoiseStrength = 0.75f;
+
 		// Optional single OpenPose ControlNet conditioning: the skeleton resource to rasterize, the
 		// strength, and a 2D placement transform applied to its keypoints in the output image's space
 		// (identity maps the skeleton's canvas straight onto the output). Null skeleton => no ControlNet.
 		pg::UUID m_ControlSkeletonID;
 		float m_ControlStrength = 1.f;
 		glm::mat3 m_ControlTransform = glm::mat3(1.f);
+
+		// Inpainting: with an Input Image + ControlNet skeleton, confine regeneration to the skeleton's
+		// region (a mask built from its bounds) so the rest of the input photo is preserved. Lets a
+		// posed character be painted into a faithful background. Ignored without both an input image and
+		// a skeleton.
+		bool m_MaskFromSkeleton = false;
+
+		// Optional chroma-key composite: generate the subject on a flat key colour (via the prompt),
+		// then key that colour out and composite over this background image (resolved like an Input
+		// Image). The key colour is auto-detected from the generated image's corners (the background for
+		// an isolated subject), so it matches whatever flat colour the model produced. The threshold is
+		// the keying tolerance. Keeps the background pixel-exact instead of regenerating it. Null ID =>
+		// no composite.
+		pg::UUID m_BackgroundImageID;
+		float m_ChromaKeyThreshold = 0.35f;
 	};
 }

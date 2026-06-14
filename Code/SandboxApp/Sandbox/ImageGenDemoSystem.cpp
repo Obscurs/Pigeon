@@ -44,10 +44,15 @@ void sbx::ImageGenDemoSystem::Update(const pg::Timestep& ts)
 	request.m_TargetTextureID = sbx::k_GeneratedTextureID;
 	// "Lin" is the LoRA's trigger word; the LoRA itself is applied below by UUID (resolved to its file
 	// path and passed to the backend natively), so the prompt only needs to invoke the character.
-	request.m_Prompt = "lin, a girl standing on a beach, detailed, masterpiece, best quality";
-	request.m_NegativePrompt = "blurry, lowres, deformed, bad anatomy";
+	request.m_Prompt = "lin, full body, standing, wearing pajamas, isolated on a solid chroma key green background, masterpiece, best quality";
+	request.m_NegativePrompt = "blurry, lowres, deformed, bad anatomy, shadow, multiple people";
 	request.m_Loras.push_back(pg::GenerateImageLoraRef{ sbx::k_DiffusionLoraID, 1.0f });
 	request.m_ControlSkeletonID = sbx::k_DiffusionSkeletonID;
 	request.m_ControlStrength = 1.0f;
+	// Generate ONLY the character (txt2img + pose + LoRA) on a flat green background, then key the green
+	// out and composite over the real living-room photo. The background stays pixel-exact (the original
+	// photo) and the character brings no room with it — no regenerated-background overlap.
+	request.m_BackgroundImageID = sbx::k_LivingRoomImageID;
+	request.m_ChromaKeyThreshold = 0.5f;
 	accessor.EmplaceOneframe<pg::GenerateImageRequestOneFrameComponent>(accessor.Create(), std::move(request));
 }

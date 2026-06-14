@@ -96,6 +96,9 @@ bool pg::StableDiffusionCppBackend::LoadCheckpoint(const std::string& checkpoint
 	sd_ctx_params_t params;
 	sd_ctx_params_init(&params);
 	params.model_path = m_CheckpointPath.c_str();
+	// Build the VAE encoder too (sd.cpp defaults to decode-only); img2img must encode the init image
+	// into a latent, which asserts without the encoder.
+	params.vae_decode_only = false;
 	if (!m_ControlNetPath.empty())
 	{
 		params.control_net_path = m_ControlNetPath.c_str();
@@ -168,6 +171,25 @@ pg::Image pg::StableDiffusionCppBackend::Generate(const pg::DiffusionJobParams& 
 	{
 		gen.init_image = MakeImageView(params.m_InitImage);
 		gen.strength = params.m_DenoiseStrength;
+	}
+
+	// Inpainting mask: sd.cpp expects a single-channel mask (white = regenerate). Collapse our RGB mask
+	// to one channel; the buffer must outlive the generate_image call.
+	std::vector<uint8_t> maskData;
+	if (params.m_HasMask && !params.m_Mask.m_Pixels.empty())
+	{
+		const size_t pixelCount = static_cast<size_t>(params.m_Mask.m_Width) * params.m_Mask.m_Height;
+		maskData.resize(pixelCount);
+		for (size_t i = 0; i < pixelCount; ++i)
+		{
+			maskData[i] = params.m_Mask.m_Pixels[i * 3];
+		}
+		sd_image_t mask{};
+		mask.width = params.m_Mask.m_Width;
+		mask.height = params.m_Mask.m_Height;
+		mask.channel = 1;
+		mask.data = maskData.data();
+		gen.mask_image = mask;
 	}
 
 	sd_image_t* results = generate_image(static_cast<sd_ctx_t*>(m_Context), &gen);

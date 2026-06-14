@@ -4,6 +4,7 @@
 #include "Pigeon/Audio/SoundClip.h"
 #include "Pigeon/Core/Core.h"
 #include "Pigeon/Core/UUID.h"
+#include "Pigeon/Diffusion/Image.h"
 #include "Pigeon/Diffusion/OpenPoseSkeleton.h"
 #include "Pigeon/Renderer/Font.h"
 #include "Pigeon/Renderer/Model.h"
@@ -44,6 +45,8 @@ namespace pg
 		std::unordered_map<pg::UUID, std::string> m_ControlNetMap;
 		std::unordered_map<pg::UUID, std::string> m_VaeMap;
 		std::unordered_map<pg::UUID, pg::S_Ptr<pg::OpenPoseSkeleton>> m_OpenPoseSkeletonMap;
+		// img2img init images, decoded to CPU RGB at load (the diffusion backend needs pixels, not a GPU texture).
+		std::unordered_map<pg::UUID, pg::Image> m_InputImageMap;
 
 		pg::UUID m_DefaultTexture = pg::UUID::Generate();
 	};

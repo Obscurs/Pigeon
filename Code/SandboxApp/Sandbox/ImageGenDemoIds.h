@@ -11,5 +11,6 @@ namespace sbx
 	inline const pg::UUID k_DiffusionLoraID("d8000000-0000-4000-8000-000000000002");
 	inline const pg::UUID k_DiffusionControlNetID("d8000000-0000-4000-8000-000000000003");
 	inline const pg::UUID k_DiffusionSkeletonID("d8000000-0000-4000-8000-000000000004");
+	inline const pg::UUID k_LivingRoomImageID("d8000000-0000-4000-8000-000000000006");
 	inline const pg::UUID k_GeneratedTextureID("d8000000-0000-4000-8000-0000000000ff");
 }

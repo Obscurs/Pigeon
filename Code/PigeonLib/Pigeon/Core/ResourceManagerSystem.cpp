@@ -97,6 +97,12 @@ namespace
 		component.m_VaeMap[resource.m_UUID] = resource.m_Path;
 	}
 
+	// Input images for img2img are decoded to CPU RGB pixels (the diffusion backend consumes pixels).
+	void LoadInputImageFromResource(pg::ResourceMapSingletonComponent& component, const ParsedResource& resource)
+	{
+		component.m_InputImageMap[resource.m_UUID] = pg::LoadImageFromFile(resource.m_Path);
+	}
+
 	void LoadOpenPoseSkeletonFromResource(pg::ResourceMapSingletonComponent& component, const ParsedResource& resource)
 	{
 		component.m_OpenPoseSkeletonMap[resource.m_UUID] = pg::OpenPoseSkeleton::Create(resource.m_Path);
@@ -250,6 +256,15 @@ namespace
 			for (json child : jsonObject["vae"])
 			{
 				LoadVaeFromResource(component, GetParsedResourceFromJsonItem(child, prefix, "ImageGeneration"));
+			}
+		}
+		if (jsonObject.contains("inputImages"))
+		{
+			PG_CORE_EXCEPT(jsonObject["inputImages"].is_array(), "could not parse inputImages from resource manifest");
+			for (json child : jsonObject["inputImages"])
+			{
+				// img2img inputs are ordinary photos and live alongside the app's other textures.
+				LoadInputImageFromResource(component, GetParsedResourceFromJsonItem(child, prefix, "Textures"));
 			}
 		}
 	}

@@ -122,6 +122,85 @@ pg::HintImage pg::RasterizeOpenPoseHint(const std::array<pg::OpenPoseKeypoint, p
 	return image;
 }
 
+pg::Image pg::RasterizeSkeletonMask(const std::array<pg::OpenPoseKeypoint, pg::OpenPoseSkeleton::k_JointCount>& keypoints, uint32_t width, uint32_t height)
+{
+	// Size the strokes from the skeleton's extent so the silhouette roughly fills a human body.
+	bool any = false;
+	float minX = 0.f;
+	float minY = 0.f;
+	float maxX = 0.f;
+	float maxY = 0.f;
+	for (const pg::OpenPoseKeypoint& kp : keypoints)
+	{
+		if (kp.m_Confidence <= 0.f)
+		{
+			continue;
+		}
+		if (!any)
+		{
+			minX = maxX = kp.m_Position.x;
+			minY = maxY = kp.m_Position.y;
+			any = true;
+		}
+		else
+		{
+			minX = std::min(minX, kp.m_Position.x);
+			minY = std::min(minY, kp.m_Position.y);
+			maxX = std::max(maxX, kp.m_Position.x);
+			maxY = std::max(maxY, kp.m_Position.y);
+		}
+	}
+	if (!any)
+	{
+		return pg::Image{};
+	}
+
+	const float spanX = maxX - minX;
+	const float spanY = maxY - minY;
+	const float diagonal = std::sqrt(spanX * spanX + spanY * spanY);
+	const float limbHalfWidth = std::max(static_cast<float>(std::min(width, height)) * 0.05f, diagonal * 0.09f);
+
+	pg::Image mask;
+	mask.m_Width = width;
+	mask.m_Height = height;
+	mask.m_Pixels.assign(static_cast<size_t>(width) * height * 3, 0);
+
+	const glm::ivec3 white(255, 255, 255);
+	for (const std::pair<int, int>& limb : k_LimbSeq)
+	{
+		const pg::OpenPoseKeypoint& a = keypoints[limb.first];
+		const pg::OpenPoseKeypoint& b = keypoints[limb.second];
+		if (a.m_Confidence > 0.f && b.m_Confidence > 0.f)
+		{
+			DrawStick(mask, a.m_Position, b.m_Position, limbHalfWidth, white);
+		}
+	}
+	for (const pg::OpenPoseKeypoint& kp : keypoints)
+	{
+		if (kp.m_Confidence > 0.f)
+		{
+			DrawDisc(mask, kp.m_Position, limbHalfWidth, white);
+		}
+	}
+
+	// A wider torso block (neck to mid-hip) and a head disc, so the body fills more than thin limbs.
+	const pg::OpenPoseKeypoint& neck = keypoints[static_cast<size_t>(pg::EOpenPoseJoint::Neck)];
+	const pg::OpenPoseKeypoint& rHip = keypoints[static_cast<size_t>(pg::EOpenPoseJoint::RHip)];
+	const pg::OpenPoseKeypoint& lHip = keypoints[static_cast<size_t>(pg::EOpenPoseJoint::LHip)];
+	if (neck.m_Confidence > 0.f && rHip.m_Confidence > 0.f && lHip.m_Confidence > 0.f)
+	{
+		const glm::vec2 midHip = (rHip.m_Position + lHip.m_Position) * 0.5f;
+		DrawStick(mask, neck.m_Position, midHip, limbHalfWidth * 1.8f, white);
+	}
+	const pg::OpenPoseKeypoint& nose = keypoints[static_cast<size_t>(pg::EOpenPoseJoint::Nose)];
+	if (nose.m_Confidence > 0.f)
+	{
+		DrawDisc(mask, nose.m_Position, limbHalfWidth * 1.5f, white);
+	}
+
+	return mask;
+}
+
 std::array<pg::OpenPoseKeypoint, pg::OpenPoseSkeleton::k_JointCount> pg::TransformKeypoints(const std::array<pg::OpenPoseKeypoint, pg::OpenPoseSkeleton::k_JointCount>& keypoints, const glm::mat3& transform)
 {
 	std::array<pg::OpenPoseKeypoint, pg::OpenPoseSkeleton::k_JointCount> result = keypoints;

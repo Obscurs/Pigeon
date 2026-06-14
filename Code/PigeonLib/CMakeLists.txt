@@ -73,6 +73,7 @@ file(GLOB PGDIFFUSION
     "Pigeon/Diffusion/DiffusionSystem.cpp"
     "Pigeon/Diffusion/DiffusionSystem.h"
     "Pigeon/Diffusion/GenerateImageRequestOneFrameComponent.h"
+    "Pigeon/Diffusion/Image.cpp"
     "Pigeon/Diffusion/Image.h"
     "Pigeon/Diffusion/OpenPoseHint.cpp"
     "Pigeon/Diffusion/OpenPoseHint.h"

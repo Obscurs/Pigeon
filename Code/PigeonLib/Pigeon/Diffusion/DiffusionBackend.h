@@ -43,6 +43,11 @@ namespace pg
 		bool m_HasControlHint = false;
 		pg::Image m_ControlHint;
 		float m_ControlStrength = 1.f;
+
+		// Optional inpainting mask (white = regenerate, black = keep), paired with the init image to
+		// confine regeneration to a region while preserving the rest of the photo.
+		bool m_HasMask = false;
+		pg::Image m_Mask;
 	};
 
 	// Platform-abstracted text-to-image inference runtime. The concrete backend (stable-diffusion.cpp

@@ -22,6 +22,7 @@ namespace
 	const pg::UUID k_CheckpointID("aaaaaaaa-0000-4000-8000-000000000002");
 	const pg::UUID k_LoraID("aaaaaaaa-0000-4000-8000-000000000003");
 	const pg::UUID k_SkeletonID("aaaaaaaa-0000-4000-8000-000000000004");
+	const pg::UUID k_InputImageID("aaaaaaaa-0000-4000-8000-000000000005");
 
 	// Seeds the singletons DiffusionSystem only reads (added by ConfigLoader / ResourceManager in
 	// production), with a small generation size and a checkpoint path so the backend loads.
@@ -42,6 +43,12 @@ namespace
 		resources.m_LoraMap[k_LoraID] = "Assets/App/ImageGeneration/lora.safetensors";
 		resources.m_OpenPoseSkeletonMap[k_SkeletonID] = pg::OpenPoseSkeleton::CreateFromJsonString(
 			"[{\"people\": [{\"pose_keypoints_2d\": [256.0, 100.0, 1.0, 256.0, 180.0, 1.0]}], \"canvas_width\": 512, \"canvas_height\": 512}]");
+		// A small input image (8x8) the img2img test references; the system resizes it to the gen size.
+		pg::Image input;
+		input.m_Width = 8;
+		input.m_Height = 8;
+		input.m_Pixels.assign(static_cast<size_t>(8) * 8 * 3, 64);
+		resources.m_InputImageMap[k_InputImageID] = input;
 		registry.emplace<pg::ResourceMapSingletonComponent>(registry.create(), resources);
 	}
 
@@ -224,4 +231,113 @@ TEST_CASE("Diffusion.DiffusionSystem::AssemblesParamsFromRequestDefaultsAndResou
 	CHECK(params.m_HasControlHint);
 	CHECK(params.m_ControlHint.m_Width == 64);
 	CHECK(params.m_ControlHint.m_Pixels.size() == static_cast<size_t>(64) * 64 * 3);
+}
+
+TEST_CASE("Diffusion.DiffusionSystem::Img2ImgResizesInitImageToGenerationSize")
+{
+	pg::World& world = pg::World::Create();
+	world.RegisterSystem(std::make_unique<pg::DiffusionSystem>());
+	SeedConfigAndResources(true);
+
+	pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+	pg::GenerateImageRequestOneFrameComponent request;
+	request.m_TargetTextureID = k_TargetTexture;
+	request.m_Prompt = "a living room";
+	request.m_InputImageID = k_InputImageID; // 8x8 seeded; generation size is 64x64
+	request.m_DenoiseStrength = 0.6f;
+	const pg::ecs::Entity requestEntity = registry.create();
+	registry.emplace<pg::GenerateImageRequestOneFrameComponent>(requestEntity, request);
+
+	world.Update(pg::Timestep(0));
+	world.Update(pg::Timestep(0));
+	registry.destroy(requestEntity);
+	REQUIRE(WaitForActiveJobDone(2000));
+
+	pg::DiffusionBackendSingletonComponent* backend = GetBackend();
+	REQUIRE(backend != nullptr);
+	pg::TestingDiffusionBackend* mock = dynamic_cast<pg::TestingDiffusionBackend*>(backend->m_Backend.get());
+	REQUIRE(mock != nullptr);
+
+	const pg::DiffusionJobParams& params = mock->GetLastParams();
+	CHECK(params.m_HasInitImage);
+	CHECK(params.m_InitImage.m_Width == 64);
+	CHECK(params.m_InitImage.m_Height == 64);
+	CHECK(params.m_InitImage.m_Pixels.size() == static_cast<size_t>(64) * 64 * 3);
+	CHECK(params.m_DenoiseStrength == Approx(0.6f));
+}
+
+TEST_CASE("Diffusion.DiffusionSystem::MaskFromSkeletonBuildsInpaintMask")
+{
+	pg::World& world = pg::World::Create();
+	world.RegisterSystem(std::make_unique<pg::DiffusionSystem>());
+	SeedConfigAndResources(true);
+
+	pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+	pg::GenerateImageRequestOneFrameComponent request;
+	request.m_TargetTextureID = k_TargetTexture;
+	request.m_Prompt = "lin in a living room";
+	request.m_InputImageID = k_InputImageID;
+	request.m_ControlSkeletonID = k_SkeletonID;
+	request.m_MaskFromSkeleton = true;
+	const pg::ecs::Entity requestEntity = registry.create();
+	registry.emplace<pg::GenerateImageRequestOneFrameComponent>(requestEntity, request);
+
+	world.Update(pg::Timestep(0));
+	world.Update(pg::Timestep(0));
+	registry.destroy(requestEntity);
+	REQUIRE(WaitForActiveJobDone(2000));
+
+	pg::DiffusionBackendSingletonComponent* backend = GetBackend();
+	REQUIRE(backend != nullptr);
+	pg::TestingDiffusionBackend* mock = dynamic_cast<pg::TestingDiffusionBackend*>(backend->m_Backend.get());
+	REQUIRE(mock != nullptr);
+
+	const pg::DiffusionJobParams& params = mock->GetLastParams();
+	REQUIRE(params.m_HasMask);
+	CHECK(params.m_Mask.m_Width == 64);
+	CHECK(params.m_Mask.m_Height == 64);
+	// The mask has a regenerate (white) region over the skeleton's location.
+	bool anyWhite = false;
+	for (uint8_t channel : params.m_Mask.m_Pixels)
+	{
+		if (channel == 255)
+		{
+			anyWhite = true;
+			break;
+		}
+	}
+	CHECK(anyWhite);
+}
+
+TEST_CASE("Diffusion.DiffusionSystem::ChromaCompositeReplacesKeyedPixelsWithBackground")
+{
+	pg::World& world = pg::World::Create();
+	world.RegisterSystem(std::make_unique<pg::DiffusionSystem>());
+	SeedConfigAndResources(true);
+
+	pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+	pg::GenerateImageRequestOneFrameComponent request;
+	request.m_TargetTextureID = k_TargetTexture;
+	request.m_Prompt = "lin on green";
+	request.m_BackgroundImageID = k_InputImageID; // seeded 8x8, value 64, resized to the 64x64 gen size
+	// The Testing backend outputs a solid mid-grey (128), so the auto-detected corner key is 128 and the
+	// whole (uniform) foreground is keyed out to the background — proving the composite step ran.
+	request.m_ChromaKeyThreshold = 0.6f;
+	const pg::ecs::Entity requestEntity = registry.create();
+	registry.emplace<pg::GenerateImageRequestOneFrameComponent>(requestEntity, request);
+
+	world.Update(pg::Timestep(0));
+	world.Update(pg::Timestep(0));
+	registry.destroy(requestEntity);
+	REQUIRE(WaitForActiveJobDone(2000));
+
+	world.UpdateRetainingEvents(pg::Timestep(0));
+
+	auto view = pg::World::GetRegistryDirect().view<pg::RegisterGeneratedTextureRequestOneFrameComponent>();
+	REQUIRE(view.size() == 1);
+	const pg::RegisterGeneratedTextureRequestOneFrameComponent& registration =
+		view.get<pg::RegisterGeneratedTextureRequestOneFrameComponent>(view.front());
+	REQUIRE(!registration.m_Image.m_Pixels.empty());
+	// The keyed-out grey foreground is replaced by the background (value 64).
+	CHECK(static_cast<int>(registration.m_Image.m_Pixels[0]) == 64);
 }

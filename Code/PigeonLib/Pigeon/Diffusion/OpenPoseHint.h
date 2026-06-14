@@ -21,6 +21,12 @@ namespace pg
 	// map a skeleton's canvas-space keypoints there first.
 	HintImage RasterizeOpenPoseHint(const std::array<OpenPoseKeypoint, OpenPoseSkeleton::k_JointCount>& keypoints, uint32_t width, uint32_t height);
 
+	// Rasterizes a filled white-on-black silhouette of the skeleton (thick limbs + joints, a wider
+	// torso, and a head disc) in the output image's pixel space. Used as an img2img inpainting mask so
+	// only the character's body region is regenerated, leaving the surrounding photo untouched. Returns
+	// an empty image when no keypoint is valid.
+	Image RasterizeSkeletonMask(const std::array<OpenPoseKeypoint, OpenPoseSkeleton::k_JointCount>& keypoints, uint32_t width, uint32_t height);
+
 	// Applies a homogeneous 2D transform (glm::mat3 acting on vec3(x, y, 1)) to every keypoint
 	// position; confidence is carried through unchanged.
 	std::array<OpenPoseKeypoint, OpenPoseSkeleton::k_JointCount> TransformKeypoints(const std::array<OpenPoseKeypoint, OpenPoseSkeleton::k_JointCount>& keypoints, const glm::mat3& transform);
