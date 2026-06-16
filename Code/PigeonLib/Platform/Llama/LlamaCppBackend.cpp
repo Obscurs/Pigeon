@@ -78,7 +78,7 @@ pg::LlamaCppBackend::~LlamaCppBackend()
 	}
 }
 
-bool pg::LlamaCppBackend::LoadModel(const std::string& modelPath)
+bool pg::LlamaCppBackend::LoadModel(const std::string& modelPath, int gpuLayers)
 {
 	m_ModelPath = modelPath;
 	if (modelPath.empty())
@@ -89,10 +89,11 @@ bool pg::LlamaCppBackend::LoadModel(const std::string& modelPath)
 	llama_log_set(LlamaLogCallback, nullptr);
 	llama_backend_init();
 
-	// CPU-only (n_gpu_layers = 0) so the LLM never contends for VRAM with the renderer / diffusion
-	// backend on a single GPU (ADR 0009).
+	// Offload gpuLayers transformer layers to the GPU (ADR 0010): the default (999) offloads all layers
+	// for full-GPU inference, 0 keeps it CPU-only. The app sizes the model so the offloaded weights
+	// co-reside in VRAM with the renderer and the resident diffusion checkpoint.
 	llama_model_params modelParams = llama_model_default_params();
-	modelParams.n_gpu_layers = 0;
+	modelParams.n_gpu_layers = gpuLayers;
 
 	llama_model* model = llama_model_load_from_file(m_ModelPath.c_str(), modelParams);
 	if (model == nullptr)
@@ -115,7 +116,7 @@ bool pg::LlamaCppBackend::LoadModel(const std::string& modelPath)
 
 	m_Model = model;
 	m_Context = context;
-	PG_CORE_INFO("Llama: loaded model '{0}' (CPU)", modelPath);
+	PG_CORE_INFO("Llama: loaded model '{0}' ({1} GPU layers)", modelPath, gpuLayers);
 	return true;
 }
 
@@ -191,8 +192,9 @@ std::string pg::LlamaCppBackend::Generate(const pg::TextGenParams& params)
 
 pg::LlamaCppBackend::~LlamaCppBackend() = default;
 
-bool pg::LlamaCppBackend::LoadModel(const std::string& modelPath)
+bool pg::LlamaCppBackend::LoadModel(const std::string& modelPath, int gpuLayers)
 {
+	(void)gpuLayers;
 	m_ModelPath = modelPath;
 	return IsLoaded();
 }

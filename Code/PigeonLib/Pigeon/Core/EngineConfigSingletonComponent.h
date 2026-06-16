@@ -52,6 +52,11 @@ namespace pg
 		float m_TextGenTemperature = 0.8f;
 		float m_TextGenTopP = 0.95f;
 
+		// How many of the language model's transformer layers to offload to the GPU at load time
+		// (ADR 0010). A session/load-time setting (not per-request): 999 = all layers (the default,
+		// GPU), 0 = CPU-only. Read from Config.json; absent key keeps this default.
+		int m_TextGenGpuLayers = 999;
+
 		// Directory holding the savedata override Config.json (the savedataPath key), recorded so the
 		// runtime knows where to persist changes. Empty when no savedata path is configured.
 		std::string m_SavedataPath;

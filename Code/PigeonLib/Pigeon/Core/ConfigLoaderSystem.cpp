@@ -107,6 +107,10 @@ namespace
 		{
 			component.m_TextGenTopP = jsonObject["textGenTopP"].get<float>();
 		}
+		if (jsonObject.contains("textGenGpuLayers") && jsonObject["textGenGpuLayers"].is_number_integer())
+		{
+			component.m_TextGenGpuLayers = jsonObject["textGenGpuLayers"].get<int>();
+		}
 	}
 }
 

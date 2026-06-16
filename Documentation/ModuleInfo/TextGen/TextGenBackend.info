@@ -1,20 +1,25 @@
 # TextGenBackend (infrastructure)
 
 Platform abstraction for the LLM inference runtime, plus the supporting value/component types. Not an
-ECS system — driven by TextGenSystem (ADR 0009).
+ECS system — driven by TextGenSystem (ADR 0009, 0010).
 
 ## TextGenBackend
-Abstract interface: `LoadModel(modelPath)` loads the session-resident GGUF model once, `IsLoaded()`
-reports readiness, `Generate(params)` runs one prompt→completion loop synchronously (on a worker thread)
-and returns the text (empty on failure). `Create()` selects the concrete backend by the renderer-API
-switch, mirroring AudioDevice / DiffusionBackend:
-- **LlamaCppBackend** (DirectX11 builds) — wraps llama.cpp on the **CPU** (n_gpu_layers = 0) so it never
-  contends for VRAM with the renderer / diffusion backend. Compiled active only when PigeonLib is built
-  with `-DPG_ENABLE_TEXTGEN=ON` (defines `PG_LLAMA_ENABLED`); otherwise it is an inert no-op so a plain
-  build links without the heavy runtime. Applies the GGUF's own chat template (system + user message).
-- **TestingTextGenBackend** (Testing builds) — deterministic mock: records the loaded path and the last
-  job params, returns a fixed completion echoing the prompt (`"[mock] " + prompt`). Lets tests exercise
-  the full request → generate → publish path with no llama.cpp, model files, or real inference.
+Abstract interface: `LoadModel(modelPath, gpuLayers)` loads the session-resident GGUF model once
+(offloading `gpuLayers` transformer layers to the GPU), `IsLoaded()` reports readiness,
+`Generate(params)` runs one prompt→completion loop synchronously (on a worker thread) and returns the
+text (empty on failure). `Create()` selects the concrete backend by the renderer-API switch, mirroring
+AudioDevice / DiffusionBackend:
+- **LlamaCppBackend** (DirectX11 builds) — wraps llama.cpp on the **GPU** (CUDA): it offloads the
+  configured number of transformer layers (`n_gpu_layers`, from the Text Gen GPU Layers config; default
+  999 = all) so generation runs at GPU speed, sharing VRAM with the renderer / diffusion backend
+  (ADR 0010). Setting the config to 0 keeps it CPU-only (the pre-ADR-0010 behaviour). Compiled active
+  only when PigeonLib is built with `-DPG_ENABLE_TEXTGEN=ON` (which builds llama.cpp's isolated ggml with
+  `GGML_CUDA=ON` and defines `PG_LLAMA_ENABLED`); otherwise it is an inert no-op so a plain build links
+  without the heavy runtime. Applies the GGUF's own chat template (system + user message).
+- **TestingTextGenBackend** (Testing builds) — deterministic mock: records the loaded path + GPU-layer
+  count and the last job params, returns a fixed completion echoing the prompt (`"[mock] " + prompt`).
+  Lets tests exercise the full request → generate → publish path (and the config → LoadModel GPU-offload
+  plumbing) with no llama.cpp, model files, or real inference.
 
 ## TextGenParams
 The fully-resolved inputs of one generation handed to the backend: prompt, optional system prompt, max

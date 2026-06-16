@@ -244,6 +244,31 @@ namespace CatchTestsetFail
 		CHECK(cfg.m_TextGenTemperature > 0.f);
 		CHECK(cfg.m_TextGenTopP > 0.f);
 		CHECK(cfg.m_TextGenTopP <= 1.f);
+		// GPU offload depth (ADR 0010): >= 0 is valid (0 = CPU, larger = offload that many layers).
+		CHECK(cfg.m_TextGenGpuLayers >= 0);
+	}
+
+	// ---------------------------------------------------------------------------
+	// The GPU offload depth is seeded from Config.json (not hardcoded): the loaded
+	// textGenGpuLayers matches the engine config fixture (ADR 0010).
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Core.ConfigLoaderSystem::TextGenGpuLayersSeededFromConfigFile")
+	{
+		const json engineJson = LoadJsonFixture("Assets/Engine/Config.json");
+		REQUIRE(engineJson.contains("textGenGpuLayers"));
+		const int expectedGpuLayers = engineJson["textGenGpuLayers"].get<int>();
+
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ConfigLoaderSystem>());
+
+		world.Update(pg::Timestep(0));
+
+		auto view = pg::World::GetRegistryDirect().view<pg::EngineConfigSingletonComponent>();
+		REQUIRE(view.size() == 1);
+		const pg::EngineConfigSingletonComponent& cfg =
+			view.get<pg::EngineConfigSingletonComponent>(view.front());
+
+		CHECK(cfg.m_TextGenGpuLayers == expectedGpuLayers);
 	}
 
 	// ---------------------------------------------------------------------------

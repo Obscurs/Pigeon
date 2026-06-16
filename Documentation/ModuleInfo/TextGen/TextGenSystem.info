@@ -1,9 +1,10 @@
 # TextGenSystem
 
 ## Purpose
-Drives in-engine text generation (ADR 0009). Returns early until the engine config and resource map
+Drives in-engine text generation (ADR 0009, 0010). Returns early until the engine config and resource map
 exist. Lazily creates the text-gen backend + job + result singletons (deferred), then loads the
-resident GGUF language model once from the resource map's language-model paths. Each frame it reaps a
+resident GGUF language model once from the resource map's language-model paths, offloading the engine
+config's Text Gen GPU Layers count to the GPU (ADR 0010; default all layers, 0 = CPU). Each frame it reaps a
 finished Text Gen Job — writing the completion string into the TextGenResultSingletonComponent under the
 caller-assigned target UUID — and, while idle and the backend is loaded, assembles one GenerateTextRequest
 into backend job parameters (resolving Text Generation Config defaults) and launches a single generation
@@ -19,7 +20,7 @@ TextGenSystem is itself the sole writer of the result store and publishes the co
 |---|---|---|
 | GenerateTextRequestOneFrameComponent | read | App-emitted request: prompt, optional system prompt, config overrides, seed, target UUID |
 | ResourceMapSingletonComponent | read | Resident GGUF language-model paths (`m_LanguageModelMap`) |
-| EngineConfigSingletonComponent | read | Text Generation Config defaults for unset request fields |
+| EngineConfigSingletonComponent | read | Text Generation Config defaults for unset request fields; Text Gen GPU Layers (offload count) passed to LoadModel |
 
 ## Output Components
 | Component | Access | Notes |

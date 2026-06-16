@@ -30,8 +30,9 @@ namespace pg
 		virtual ~TextGenBackend() = default;
 
 		// Loads the resident GGUF model once at startup; returns true on success. The loaded model stays
-		// resident for the session.
-		virtual bool LoadModel(const std::string& modelPath) = 0;
+		// resident for the session. gpuLayers is how many transformer layers to offload to the GPU
+		// (ADR 0010): 0 = CPU-only, a large value (e.g. 999) = all layers.
+		virtual bool LoadModel(const std::string& modelPath, int gpuLayers) = 0;
 		virtual bool IsLoaded() const = 0;
 
 		// Runs one prompt->completion synchronously (invoked on a background worker thread). Returns an

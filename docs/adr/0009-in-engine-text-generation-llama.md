@@ -1,6 +1,7 @@
 # ADR 0009 — In-engine text generation (llama.cpp)
 
-**Status:** Accepted
+**Status:** Accepted — the **CPU-only** inference decision is superseded by ADR 0010 (GPU offload is now
+the default; everything else here still stands)
 **Date:** 2026-06-14
 
 ## Context

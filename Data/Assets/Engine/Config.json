@@ -19,5 +19,6 @@
 	"textGenMaxTokens": 256,
 	"textGenTemperature": 0.8,
 	"textGenTopP": 0.95,
+	"textGenGpuLayers": 999,
 	"savedataPath": "../SaveData"
 }

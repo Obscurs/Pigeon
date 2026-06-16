@@ -1,9 +1,10 @@
 #include "pch.h"
 #include "Platform/Testing/TestingTextGenBackend.h"
 
-bool pg::TestingTextGenBackend::LoadModel(const std::string& modelPath)
+bool pg::TestingTextGenBackend::LoadModel(const std::string& modelPath, int gpuLayers)
 {
 	m_ModelPath = modelPath;
+	m_GpuLayers = gpuLayers;
 	m_Loaded = !modelPath.empty();
 	return m_Loaded;
 }

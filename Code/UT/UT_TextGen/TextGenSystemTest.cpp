@@ -30,6 +30,7 @@ namespace
 		config.m_TextGenMaxTokens = 32;
 		config.m_TextGenTemperature = 0.5f;
 		config.m_TextGenTopP = 0.9f;
+		config.m_TextGenGpuLayers = 24; // distinct from the engine default (999) to prove it is config-driven
 		registry.emplace<pg::EngineConfigSingletonComponent>(registry.create(), config);
 
 		pg::ResourceMapSingletonComponent resources;
@@ -131,6 +132,25 @@ TEST_CASE("TextGen.TextGenSystem::LoadsResidentModelFromResourceMap")
 	pg::TestingTextGenBackend* mock = dynamic_cast<pg::TestingTextGenBackend*>(backend->m_Backend.get());
 	REQUIRE(mock != nullptr);
 	CHECK(mock->GetModelPath().find("model.gguf") != std::string::npos);
+}
+
+TEST_CASE("TextGen.TextGenSystem::LoadsModelWithConfiguredGpuLayers")
+{
+	pg::World& world = pg::World::Create();
+	world.RegisterSystem(std::make_unique<pg::TextGenSystem>());
+	SeedConfigAndResources(true);
+
+	world.Update(pg::Timestep(0)); // create singletons
+	world.Update(pg::Timestep(0)); // load model
+
+	pg::TextGenBackendSingletonComponent* backend = GetBackend();
+	REQUIRE(backend != nullptr);
+	pg::TestingTextGenBackend* mock = dynamic_cast<pg::TestingTextGenBackend*>(backend->m_Backend.get());
+	REQUIRE(mock != nullptr);
+
+	// The system must forward the engine config's Text Gen GPU Layers to LoadModel (ADR 0010), not a
+	// hardcoded value.
+	CHECK(mock->GetGpuLayers() == 24);
 }
 
 TEST_CASE("TextGen.TextGenSystem::DoesNotLoadWhenNoModelDeclared")

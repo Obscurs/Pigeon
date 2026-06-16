@@ -323,6 +323,11 @@ if(PG_ENABLE_TEXTGEN)
     target_include_directories(PigeonLib PRIVATE ${PG_LLAMA_INCLUDE_DIR})
     target_link_libraries(PigeonLib ${PG_LLAMA_LIBS})
     target_compile_definitions(PigeonLib PRIVATE PG_LLAMA_ENABLED)
+    # llama's ggml-cuda backend (GGML_CUDA=ON, ADR 0010) needs the CUDA runtime. When diffusion is also
+    # enabled its in-tree CUDA build already provides these; link them explicitly so the text-gen GPU path
+    # is self-sufficient even when diffusion is off (duplicate target links are de-duplicated by CMake).
+    find_package(CUDAToolkit REQUIRED)
+    target_link_libraries(PigeonLib CUDA::cudart CUDA::cublas)
 endif()
 
 # Properties->General->Output Directory

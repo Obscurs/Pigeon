@@ -112,8 +112,8 @@ void pg::TextGenSystem::Update(const pg::Timestep& ts)
 		const std::string modelPath = FirstPath(resources.m_LanguageModelMap);
 		if (backend.m_Backend != nullptr && !modelPath.empty())
 		{
-			PG_CORE_INFO("TextGenSystem: loading language model '{0}'", modelPath);
-			backend.m_Backend->LoadModel(modelPath);
+			PG_CORE_INFO("TextGenSystem: loading language model '{0}' ({1} GPU layers)", modelPath, config.m_TextGenGpuLayers);
+			backend.m_Backend->LoadModel(modelPath, config.m_TextGenGpuLayers);
 		}
 		else
 		{

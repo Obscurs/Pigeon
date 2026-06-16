@@ -82,7 +82,7 @@ FetchContent_MakeAvailable(glm spdlog Catch2 msdf-atlas-gen nlohmann_json)
 # NOTE: both GIT_TAGs are pinned to verified-good commits — the ggml/sd.cpp/llama.cpp C APIs all evolve.
 # Bump deliberately and re-check StableDiffusionCppBackend.cpp / LlamaCppBackend.cpp when you do.
 option(PG_ENABLE_DIFFUSION "Build the stable-diffusion.cpp (CUDA) text-to-image backend" ON)
-option(PG_ENABLE_TEXTGEN "Build the llama.cpp (CPU) text-generation backend" ON)
+option(PG_ENABLE_TEXTGEN "Build the llama.cpp (CUDA) text-generation backend" ON)
 
 # Text-to-image (stable-diffusion.cpp, CUDA), built in-tree with its OWN ggml (GGML_CUDA only scopes this
 # ggml; llama's isolated ggml is unaffected). Pinned to #1650 (2026-06-13) — the bundled SDXL checkpoint +
@@ -114,21 +114,26 @@ if(PG_ENABLE_DIFFUSION)
   endif()
 endif()
 
-# Text generation (llama.cpp, CPU), built in an ISOLATED ExternalProject so its ggml never collides with
-# sd.cpp's. Static, CUDA-off, OpenMP-off (avoids a vcomp link dependency when linked by path; llama still
+# Text generation (llama.cpp, CUDA), built in an ISOLATED ExternalProject so its ggml never collides with
+# sd.cpp's (both are now CUDA, but they remain SEPARATE ggml build scopes — ADR 0009's isolation contract
+# is unchanged). Static, OpenMP-off (avoids a vcomp link dependency when linked by path; llama still
 # threads via n_threads). Installed to a prefix; PigeonLib links the static libs by path (see
-# Code/PigeonLib/CMakeLists.txt). The LLM runs on the CPU at runtime via n_gpu_layers = 0 (ADR 0009).
+# Code/PigeonLib/CMakeLists.txt). The LLM offloads layers to the GPU at runtime via the configurable
+# n_gpu_layers (default = all layers), ADR 0010.
 if(PG_ENABLE_TEXTGEN)
   include(ExternalProject)
   # The PigeonLib TU that includes <llama.h> exceeds MSVC's default COFF section limit.
   add_compile_options("$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:MSVC>>:/bigobj>")
   set(PG_LLAMA_INSTALL "${CMAKE_BINARY_DIR}/llama-isolated")
   set(PG_LLAMA_INCLUDE_DIR "${PG_LLAMA_INSTALL}/include" CACHE INTERNAL "isolated llama.cpp include dir")
-  # Static libs llama installs, ordered dependents-before-dependencies for the linker.
+  # Static libs llama installs, ordered dependents-before-dependencies for the linker. ggml-cuda is the
+  # CUDA backend (GGML_CUDA=ON); it needs the CUDA runtime (cudart/cublas), linked in PigeonLib's
+  # CMakeLists where the diffusion build already pulls it in.
   set(PG_LLAMA_LIBS
     "${PG_LLAMA_INSTALL}/lib/llama${CMAKE_STATIC_LIBRARY_SUFFIX}"
     "${PG_LLAMA_INSTALL}/lib/ggml${CMAKE_STATIC_LIBRARY_SUFFIX}"
     "${PG_LLAMA_INSTALL}/lib/ggml-cpu${CMAKE_STATIC_LIBRARY_SUFFIX}"
+    "${PG_LLAMA_INSTALL}/lib/ggml-cuda${CMAKE_STATIC_LIBRARY_SUFFIX}"
     "${PG_LLAMA_INSTALL}/lib/ggml-base${CMAKE_STATIC_LIBRARY_SUFFIX}"
     CACHE INTERNAL "isolated llama.cpp static libs")
   ExternalProject_Add(llama_isolated
@@ -138,7 +143,7 @@ if(PG_ENABLE_TEXTGEN)
       -DCMAKE_INSTALL_PREFIX=${PG_LLAMA_INSTALL}
       -DCMAKE_POSITION_INDEPENDENT_CODE=ON
       -DBUILD_SHARED_LIBS=OFF
-      -DGGML_CUDA=OFF
+      -DGGML_CUDA=ON
       -DGGML_OPENMP=OFF
       -DLLAMA_BUILD_TESTS=OFF
       -DLLAMA_BUILD_EXAMPLES=OFF
