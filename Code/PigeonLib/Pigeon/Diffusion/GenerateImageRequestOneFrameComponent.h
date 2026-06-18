@@ -64,5 +64,12 @@ namespace pg
 		// no composite.
 		pg::UUID m_BackgroundImageID;
 		float m_ChromaKeyThreshold = 0.35f;
+
+		// Optional skeleton-mask composite: instead of colour-keying, composite the generated subject over
+		// m_BackgroundImageID using the OpenPose skeleton's silhouette as a soft alpha mask (white = show
+		// the subject, black = show the background). Lets a txt2img + ControlNet figure be placed on a
+		// background without img2img (which NaNs here) and without chroma. Takes precedence over the
+		// chroma key. Ignored without both a background image and a ControlNet skeleton (m_ControlSkeletonID).
+		bool m_CompositeWithSkeletonMask = false;
 	};
 }

@@ -146,18 +146,23 @@ namespace
 		EmitSceneTransform(accessor, ent, glm::vec3(-0.6f, -0.6f, 0.f), glm::vec3(1.2f, 1.2f, 1.f));
 	}
 
-	// The text-to-image display quad: a world-space sprite bound to the generated-texture UUID. Until a
-	// generation completes that UUID is unregistered (the renderer falls back to the default texture);
-	// once ImageGenDemoSystem's request finishes, ResourceManagerSystem registers the result under the
-	// same UUID and it appears here. Press G to generate.
-	void CreateGeneratedImageSprite(pg::CheckedRegistryAccessor& accessor)
+	// The text-to-image pipeline display sprites: three world-space sprites bound to the pipeline's
+	// three result-texture UUIDs (ADR 0011), placed left to right - the restyled background, the
+	// OpenPose pose hint, and the final composite. Each UUID is unregistered until its step finishes
+	// (the renderer falls back to the default texture); once ImageGenDemoSystem's pipeline registers a
+	// result under its UUID, it appears in the matching sprite. Press G / Generate to run the pipeline.
+	void CreateGenerationDisplaySprites(pg::CheckedRegistryAccessor& accessor)
 	{
-		pg::ecs::Entity ent = accessor.Create();
-		pg::SpriteComponent sprite;
-		sprite.m_TextureID = sbx::k_GeneratedTextureID;
-		sprite.m_TexCoordsRect = glm::vec4(0.f, 0.f, 1.f, 1.f);
-		accessor.EmplaceDeferred<pg::SpriteComponent>(ent, std::move(sprite));
-		EmitSceneTransform(accessor, ent, glm::vec3(1.6f, 0.3f, 0.f), glm::vec3(1.0f, 1.0f, 1.f));
+		const pg::UUID resultIDs[3] = { sbx::k_BackgroundTextureID, sbx::k_HintTextureID, sbx::k_CompositeTextureID };
+		for (int i = 0; i < 3; ++i)
+		{
+			pg::ecs::Entity ent = accessor.Create();
+			pg::SpriteComponent sprite;
+			sprite.m_TextureID = resultIDs[i];
+			sprite.m_TexCoordsRect = glm::vec4(0.f, 0.f, 1.f, 1.f);
+			accessor.EmplaceDeferred<pg::SpriteComponent>(ent, std::move(sprite));
+			EmitSceneTransform(accessor, ent, glm::vec3(1.6f + i * 1.15f, 0.3f, 0.f), glm::vec3(1.0f, 1.0f, 1.f));
+		}
 	}
 
 	pg::ecs::Entity CreateLabel(pg::CheckedRegistryAccessor& accessor, const glm::vec3& position, const glm::vec3& scale, const std::string& text, const pg::UUID& fontID, const glm::vec4& color)
@@ -225,7 +230,7 @@ void sbx::SceneSetupSystem::Update(const pg::Timestep& ts)
 	Create3DCamera(accessor);
 	CreateModel(accessor, config);
 	CreateDisplaySprite(accessor, engineConfig);
-	CreateGeneratedImageSprite(accessor);
+	CreateGenerationDisplaySprites(accessor);
 
 	// Labels are positioned at their anchor (top-left of the text block); world is Y-up, so the
 	// near-top rows sit at positive Y and the bottom readout at negative Y.

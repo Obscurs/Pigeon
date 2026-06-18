@@ -10,10 +10,17 @@ while idle and the backend is loaded, assembles one GenerateImageRequest into ba
 the referenced skeleton) and launches a single generation on a background worker thread so the frame
 loop never blocks. Only one job runs at a time.
 
+It also drains any RasterizeOpenPoseHintRequest each frame (ADR 0011): for each, it resolves the
+referenced skeleton, rasterizes the canonical OpenPose hint at the requested size (falling back to the
+Generation Config defaults), and emits a RegisterGeneratedTextureRequest so the pose can be shown as an
+ordinary texture. This is synchronous CPU work independent of the job machinery; an unknown skeleton is
+skipped with a warning. It owns this because RegisterGeneratedTextureRequest has a single adder.
+
 ## Input Components
 | Component | Access | Notes |
 |---|---|---|
 | GenerateImageRequestOneFrameComponent | read | App-emitted request: prompt, overrides, LoRA refs, optional OpenPose ControlNet, target UUID |
+| RasterizeOpenPoseHintRequestOneFrameComponent | read | App-emitted request: skeleton UUID + target texture UUID + size; rasterized to a shown texture (ADR 0011) |
 | ResourceMapSingletonComponent | read | Resident checkpoint/ControlNet paths, LoRA paths, OpenPose skeletons |
 | EngineConfigSingletonComponent | read | Generation Config defaults for unset request fields |
 

@@ -1,20 +1,40 @@
 # ImageGenDemoSystem
 
 ## Purpose
-SandboxApp text-to-image demo. Returns early until the input state exists, then lazily creates its
-state singleton. While idle (no request issued yet), when the G key is pressed it emits a single
-GenerateImageRequest for the resident checkpoint with a LoRA (`k_DiffusionLoraID`, weight 0.8) and an
-OpenPose ControlNet hint (the loaded `k_DiffusionSkeletonID`), targeting `k_GeneratedTextureID` — the
-UUID SceneSetupSystem's display sprite samples. Issues one request per session (generation is
-expensive), latched by the state singleton's `m_Requested` flag.
+SandboxApp text-to-image demo driving a 3-step pipeline (ADR 0011). Returns early until the engine
+diffusion singletons (backend + job) and the resource map exist, then lazily creates its state
+singleton. Each frame it advances the running pipeline based on Diffusion Job completion and resource
+availability; an ImGui "Image Generation" panel exposes the editable background style prompt + a
+consistency slider + a Generate button (the G key is the same trigger, and the headless-test entry
+point since the panel needs no-context guarding). A Generate trigger, when the backend is loaded and the
+pipeline is idle/done, starts the sequence:
+
+1. **Background** — emits a GenerateImageRequest into `k_BackgroundTextureID`: img2img on the original
+   photo (`k_LivingRoomImageID`) with the panel's style prompt and a denoise derived from the
+   consistency slider (no LoRA, no ControlNet), restyling it while preserving structure.
+2. **Pose hint** — when the background job finishes, emits a RasterizeOpenPoseHintRequest into
+   `k_HintTextureID` to show the OpenPose skeleton.
+3. **Composite** — once the restyled background is retained as an input image (engine feed-forward),
+   emits a GenerateImageRequest into `k_CompositeTextureID`: the figure is generated with txt2img +
+   OpenPose ControlNet (`k_DiffusionSkeletonID`) + character LoRA (`k_DiffusionLoraID`) on a plain
+   background and composited over the restyled background via the skeleton's silhouette mask
+   (`m_CompositeWithSkeletonMask`, `m_BackgroundImageID = k_BackgroundTextureID`). img2img is not used
+   (img2img + ControlNet NaNs to grey with this checkpoint). When that job finishes the pipeline is done.
+
+Each generation step waits for its Diffusion Job (seen running, then idle); only one job runs at a time,
+so the engine serialises the steps. The three result UUIDs are shown side by side by SceneSetupSystem.
 
 ## Input Components
 | Component | Access | Notes |
 |---|---|---|
-| InputStateSingletonComponent | read | G keypress triggers the request |
+| KeyPressedEventComponent | read | G key starts the pipeline (also the headless-test trigger) |
+| DiffusionBackendSingletonComponent | read | Readiness gate: only start once the checkpoint is loaded |
+| DiffusionJobSingletonComponent | read | Active-job state drives the per-step completion detection |
+| ResourceMapSingletonComponent | read | The restyled background appearing as an input image gates the composite step |
 
 ## Output Components
 | Component | Access | Notes |
 |---|---|---|
-| ImageGenDemoStateSingletonComponent | write / add (deferred) | Created once; `m_Requested` latches the single per-session request |
-| GenerateImageRequestOneFrameComponent | add (oneframe) | The text-to-image request (engine-typed), read by the engine DiffusionSystem |
+| ImageGenDemoStateSingletonComponent | write / add (deferred) | Created once; holds the panel state (prompt, consistency) + pipeline step + job-seen flag |
+| GenerateImageRequestOneFrameComponent | add (oneframe) | The background and composite generation requests (engine-typed), read by the engine DiffusionSystem |
+| RasterizeOpenPoseHintRequestOneFrameComponent | add (oneframe) | The pose-hint rasterization request (engine-typed), read by the engine DiffusionSystem |

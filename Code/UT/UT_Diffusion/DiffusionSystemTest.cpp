@@ -11,6 +11,7 @@
 #include "Pigeon/Diffusion/DiffusionSystem.h"
 #include "Pigeon/Diffusion/GenerateImageRequestOneFrameComponent.h"
 #include "Pigeon/Diffusion/OpenPoseSkeleton.h"
+#include "Pigeon/Diffusion/RasterizeOpenPoseHintRequestOneFrameComponent.h"
 #include "Pigeon/Diffusion/RegisterGeneratedTextureRequestOneFrameComponent.h"
 #include "Pigeon/ECS/System.h"
 #include "Pigeon/ECS/World.h"
@@ -23,6 +24,7 @@ namespace
 	const pg::UUID k_LoraID("aaaaaaaa-0000-4000-8000-000000000003");
 	const pg::UUID k_SkeletonID("aaaaaaaa-0000-4000-8000-000000000004");
 	const pg::UUID k_InputImageID("aaaaaaaa-0000-4000-8000-000000000005");
+	const pg::UUID k_HintTextureID("aaaaaaaa-0000-4000-8000-000000000006");
 
 	// Seeds the singletons DiffusionSystem only reads (added by ConfigLoader / ResourceManager in
 	// production), with a small generation size and a checkpoint path so the backend loads.
@@ -91,6 +93,7 @@ TEST_CASE("Diffusion.DiffusionSystem::DeclareAccessIsCorrect")
 	pg::SystemAccessDecl decl = sys.DeclareAccess();
 
 	CHECK(decl.readSet.count(std::type_index(typeid(pg::GenerateImageRequestOneFrameComponent))) > 0);
+	CHECK(decl.readSet.count(std::type_index(typeid(pg::RasterizeOpenPoseHintRequestOneFrameComponent))) > 0);
 	CHECK(decl.readSet.count(std::type_index(typeid(pg::ResourceMapSingletonComponent))) > 0);
 	CHECK(decl.readSet.count(std::type_index(typeid(pg::EngineConfigSingletonComponent))) > 0);
 	CHECK(decl.writeSet.count(std::type_index(typeid(pg::DiffusionBackendSingletonComponent))) > 0);
@@ -340,4 +343,119 @@ TEST_CASE("Diffusion.DiffusionSystem::ChromaCompositeReplacesKeyedPixelsWithBack
 	REQUIRE(!registration.m_Image.m_Pixels.empty());
 	// The keyed-out grey foreground is replaced by the background (value 64).
 	CHECK(static_cast<int>(registration.m_Image.m_Pixels[0]) == 64);
+}
+
+TEST_CASE("Diffusion.DiffusionSystem::SkeletonMaskCompositePlacesSubjectOverBackground")
+{
+	pg::World& world = pg::World::Create();
+	world.RegisterSystem(std::make_unique<pg::DiffusionSystem>());
+	SeedConfigAndResources(true);
+
+	pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+	pg::GenerateImageRequestOneFrameComponent request;
+	request.m_TargetTextureID = k_TargetTexture;
+	request.m_Prompt = "lin on a plain background";
+	request.m_ControlSkeletonID = k_SkeletonID;
+	request.m_BackgroundImageID = k_InputImageID; // seeded 8x8 value 64, resized to the 64x64 gen size
+	request.m_CompositeWithSkeletonMask = true;
+	const pg::ecs::Entity requestEntity = registry.create();
+	registry.emplace<pg::GenerateImageRequestOneFrameComponent>(requestEntity, request);
+
+	world.Update(pg::Timestep(0));
+	world.Update(pg::Timestep(0));
+	registry.destroy(requestEntity);
+	REQUIRE(WaitForActiveJobDone(2000));
+
+	world.UpdateRetainingEvents(pg::Timestep(0));
+
+	auto view = pg::World::GetRegistryDirect().view<pg::RegisterGeneratedTextureRequestOneFrameComponent>();
+	REQUIRE(view.size() == 1);
+	const pg::RegisterGeneratedTextureRequestOneFrameComponent& registration =
+		view.get<pg::RegisterGeneratedTextureRequestOneFrameComponent>(view.front());
+	REQUIRE(registration.m_Image.m_Pixels.size() == static_cast<size_t>(64) * 64 * 3);
+	// The mock subject is a uniform grey (128); away from the skeleton the mask is black, so the corner
+	// shows the background (64). A corner near the background value proves the figure was composited over
+	// the background by the skeleton mask, not colour-keyed.
+	CHECK(static_cast<int>(registration.m_Image.m_Pixels[0]) < 100);
+}
+
+TEST_CASE("Diffusion.DiffusionSystem::RunsMultipleSequentialGenerationsWithoutDeadlock")
+{
+	pg::World& world = pg::World::Create();
+	world.RegisterSystem(std::make_unique<pg::DiffusionSystem>());
+	SeedConfigAndResources(true);
+
+	pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+	world.Update(pg::Timestep(0)); // create singletons
+	world.Update(pg::Timestep(0)); // load checkpoint
+
+	// Each generation's worker writes the job and then exits; reaping resets the job slot. The worker
+	// must not hold a shared_ptr to the job it lives on (that self-reference would join the worker on its
+	// own thread when the last reference drops). Running several in a row exercises that reap/join path.
+	for (int i = 0; i < 5; ++i)
+	{
+		pg::GenerateImageRequestOneFrameComponent request;
+		request.m_TargetTextureID = k_TargetTexture;
+		request.m_Prompt = "a pigeon knight";
+		const pg::ecs::Entity requestEntity = registry.create();
+		registry.emplace<pg::GenerateImageRequestOneFrameComponent>(requestEntity, request);
+
+		world.Update(pg::Timestep(0)); // launch the job
+		registry.destroy(requestEntity); // drop the request so the reap frame does not relaunch
+
+		REQUIRE(WaitForActiveJobDone(2000));
+		world.UpdateRetainingEvents(pg::Timestep(0)); // reap -> resets the job slot (joins the worker)
+
+		auto jobView = registry.view<pg::DiffusionJobSingletonComponent>();
+		REQUIRE(jobView.size() == 1);
+		CHECK(jobView.get<pg::DiffusionJobSingletonComponent>(jobView.front()).m_ActiveJob == nullptr);
+	}
+}
+
+TEST_CASE("Diffusion.DiffusionSystem::RasterizesOpenPoseHintToTexture")
+{
+	pg::World& world = pg::World::Create();
+	world.RegisterSystem(std::make_unique<pg::DiffusionSystem>());
+	SeedConfigAndResources(true);
+
+	pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+	pg::RasterizeOpenPoseHintRequestOneFrameComponent request;
+	request.m_SkeletonID = k_SkeletonID;
+	request.m_TargetTextureID = k_HintTextureID;
+	// Width/height left at 0 -> fall back to the engine Generation Config defaults (64x64).
+	const pg::ecs::Entity requestEntity = registry.create();
+	registry.emplace<pg::RasterizeOpenPoseHintRequestOneFrameComponent>(requestEntity, request);
+
+	world.Update(pg::Timestep(0)); // create singletons (returns early)
+	// Drop the request so the next frame does not re-rasterize a second time.
+	world.UpdateRetainingEvents(pg::Timestep(0)); // singletons present -> rasterize + emit register request
+	registry.destroy(requestEntity);
+
+	auto view = pg::World::GetRegistryDirect().view<pg::RegisterGeneratedTextureRequestOneFrameComponent>();
+	REQUIRE(view.size() == 1);
+	const pg::RegisterGeneratedTextureRequestOneFrameComponent& registration =
+		view.get<pg::RegisterGeneratedTextureRequestOneFrameComponent>(view.front());
+	CHECK(registration.m_TextureID == k_HintTextureID);
+	CHECK(registration.m_Image.m_Width == 64);
+	CHECK(registration.m_Image.m_Height == 64);
+	CHECK(registration.m_Image.m_Pixels.size() == static_cast<size_t>(64) * 64 * 3);
+}
+
+TEST_CASE("Diffusion.DiffusionSystem::IgnoresHintRequestForUnknownSkeleton")
+{
+	pg::World& world = pg::World::Create();
+	world.RegisterSystem(std::make_unique<pg::DiffusionSystem>());
+	SeedConfigAndResources(true);
+
+	pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+	pg::RasterizeOpenPoseHintRequestOneFrameComponent request;
+	request.m_SkeletonID = pg::UUID("bbbbbbbb-0000-4000-8000-0000000000ff"); // not in the resource map
+	request.m_TargetTextureID = k_HintTextureID;
+	const pg::ecs::Entity requestEntity = registry.create();
+	registry.emplace<pg::RasterizeOpenPoseHintRequestOneFrameComponent>(requestEntity, request);
+
+	world.Update(pg::Timestep(0)); // create singletons
+	world.UpdateRetainingEvents(pg::Timestep(0)); // unknown skeleton -> no register request
+
+	CHECK(pg::World::GetRegistryDirect().view<pg::RegisterGeneratedTextureRequestOneFrameComponent>().empty());
 }

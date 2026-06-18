@@ -117,7 +117,8 @@ namespace
 
 	// Registers a generated image (RGB) as a Texture2D under its caller-assigned UUID. The pixels are
 	// expanded RGB -> RGBA (opaque) because the texture backend expects four channels. A zero-sized or
-	// truncated image is ignored.
+	// truncated image is ignored. The RGB pixels are also retained as an Input Image under the same UUID
+	// so a later generation can re-feed this result as an img2img init / chroma background (ADR 0011).
 	void RegisterGeneratedTexture(pg::ResourceMapSingletonComponent& component, const pg::RegisterGeneratedTextureRequestOneFrameComponent& request)
 	{
 		const pg::Image& image = request.m_Image;
@@ -137,6 +138,7 @@ namespace
 		}
 
 		component.m_TextureMap[request.m_TextureID] = pg::MappedTexture{ pg::Texture2D::Create(image.m_Width, image.m_Height, 4, rgba.data()), pg::EMappedTextureType::eQuad };
+		component.m_InputImageMap[request.m_TextureID] = image;
 	}
 
 	// Render targets are pathless: an {id, width, height} entry. The created target is stored in the

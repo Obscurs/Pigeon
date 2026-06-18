@@ -323,6 +323,43 @@ namespace CatchTestsetFail
 	}
 
 	// ---------------------------------------------------------------------------
+	// Feed-forward (ADR 0011): a registered generated texture's CPU pixels are also
+	// retained as an Input Image under the same UUID, so a later generation can use
+	// it as an img2img init / chroma background.
+	// ---------------------------------------------------------------------------
+	TEST_CASE("Core.ResourceManagerSystem::GeneratedTextureIsReusableAsInputImage")
+	{
+		pg::World& world = pg::World::Create();
+		world.RegisterSystem(std::make_unique<pg::ResourceManagerSystem>());
+
+		world.Update(pg::Timestep(0));
+		world.Update(pg::Timestep(0));
+
+		const pg::UUID generatedID("f7000000-0000-4000-8000-000000000002");
+		pg::RegisterGeneratedTextureRequestOneFrameComponent registration;
+		registration.m_TextureID = generatedID;
+		registration.m_Image.m_Width = 4;
+		registration.m_Image.m_Height = 4;
+		registration.m_Image.m_Pixels.assign(static_cast<size_t>(4) * 4 * 3, 200);
+		pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+		registry.emplace<pg::RegisterGeneratedTextureRequestOneFrameComponent>(registry.create(), registration);
+
+		world.Update(pg::Timestep(0));
+
+		auto view = pg::World::GetRegistryDirect().view<pg::ResourceMapSingletonComponent>();
+		REQUIRE(view.size() == 1);
+		const pg::ResourceMapSingletonComponent& map =
+			view.get<pg::ResourceMapSingletonComponent>(view.front());
+
+		std::unordered_map<pg::UUID, pg::Image>::const_iterator input = map.m_InputImageMap.find(generatedID);
+		REQUIRE(input != map.m_InputImageMap.end());
+		CHECK(input->second.m_Width == 4);
+		CHECK(input->second.m_Height == 4);
+		REQUIRE(input->second.m_Pixels.size() == static_cast<size_t>(4) * 4 * 3);
+		CHECK(static_cast<int>(input->second.m_Pixels[0]) == 200);
+	}
+
+	// ---------------------------------------------------------------------------
 	// DeclareAccess: verify declared sets match the system's actual access
 	// ---------------------------------------------------------------------------
 	TEST_CASE("Core.ResourceManagerSystem::DeclareAccessIsCorrect")

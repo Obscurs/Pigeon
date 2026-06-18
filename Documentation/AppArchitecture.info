@@ -18,7 +18,7 @@ pg::CreateApplication()  [Sandbox2D.cpp]
   └── World::RegisterSystem(...) for:
         sbx::ConfigLoaderSystem        Assets/App/Config.json -> SandboxConfigSingletonComponent
         sbx::TransformResolveSystem    app transform requests -> ResolvedTransformRequest (engine type)
-        sbx::SceneSetupSystem          2D camera + sprite + animated character + labels + 3D camera + spinning model + 3D-output display sprite + transform requests + LoadLayoutEvent (once)
+        sbx::SceneSetupSystem          2D camera + sprite + animated character + labels + 3D camera + spinning model + 3D-output display sprite + three image-gen pipeline display sprites (background/pose-hint/composite) + transform requests + LoadLayoutEvent (once)
         sbx::ModelSpinSystem           ModelSpinComponent + time -> ModelSpinTransformRequest (spins the 3D model about Y)
         sbx::CameraControlSystem       held WASD + scroll + camera -> SetCameraRequest (engine type)
         sbx::CharacterControlSystem    held arrows -> CharacterTransformRequest (move) + SetSpriteAnimationRequest (facing/play)
@@ -37,7 +37,7 @@ pg::CreateApplication()  [Sandbox2D.cpp]
         sbx::UICloseSystem             release            -> UIDestroy (dismiss element)
         sbx::UIStatusSystem            spawn count        -> UIUpdateText (status label)
         sbx::DialogueDemoSystem        ImGui "Dialogue" panel; typewriter text -> UIUpdateTextReveal (dialogue label)
-        sbx::ImageGenDemoSystem        G key -> one GenerateImageRequest (checkpoint + LoRA + OpenPose ControlNet) into the generated-texture UUID; owns ImageGenDemoState
+        sbx::ImageGenDemoSystem        ImGui panel (background style prompt + consistency slider) / Generate button or G -> 3-step pipeline (ADR 0011): background restyle (img2img) -> pose-hint rasterize -> composite (img2img on the restyled background + OpenPose + character LoRA, skeleton-masked), advancing on each Diffusion Job; owns ImageGenDemoState
         sbx::TextGenDemoSystem         ImGui "Text Generation" panel; prompt + temp/max-tokens + Generate button -> GenerateTextRequest; shows the result; owns TextGenDemoState
         sbx::DebugPanelSystem          ImGui panel; owns DebugControlsSingletonComponent
         sbx::AudioDemoSystem           S/M/P keys -> Play/Stop/Pause/Resume audio requests; owns AudioDemoState

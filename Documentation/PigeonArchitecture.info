@@ -84,8 +84,9 @@ Core
   ├── ConfigLoaderSystem   Assets/Engine/Config.json (+ <savedataPath>/Config.json override)  →  EngineConfigSingletonComponent  (frame 1 only)
   ├── InputSystem          input event components  →  InputStateSingletonComponent
   ├── ResourceManagerSystem  manifests (textures/fonts/shaders/ui/sounds/json/models/renderTargets/
-  │                            checkpoints/loras/controlNets/openPoseSkeletons)  →  ResourceMapSingletonComponent
-  │                            (frame 1); thereafter drains RegisterGeneratedTextureRequest → m_TextureMap (ADR 0008)
+  │                            checkpoints/loras/controlNets/openPoseSkeletons/inputImages)  →  ResourceMapSingletonComponent
+  │                            (frame 1); thereafter drains RegisterGeneratedTextureRequest → m_TextureMap, also
+  │                            retaining the RGB pixels as an Input Image under the same UUID (ADR 0008 / 0011)
   ├── SaveDataSystem       EngineConfigSingletonComponent (savedata path) + SetSaveDataRequest (from app)
   │                          →  SaveDataSingletonComponent (uuid → json); loads <savedataPath>/SaveSlots/<uuid>.json
   │                            at startup, persists slot files on request
@@ -109,6 +110,10 @@ Diffusion  (in-engine text-to-image; opt-in CUDA backend, ADR 0008)
                            →  RegisterGeneratedTextureRequest → ResourceManagerSystem registers the
                               Generated Texture into m_TextureMap (the OpenPose hint is rasterized in-engine
                               from the referenced skeleton). Cross-frame, deferred — no ordering cycle.
+                           Also drains RasterizeOpenPoseHintRequest (from app) → rasterizes the skeleton's
+                              hint and emits RegisterGeneratedTextureRequest so the pose is shown as a
+                              texture; a generated image is reusable as a later generation's Input Image,
+                              enabling multi-step pipelines (ADR 0011).
 
 TextGen  (in-engine text generation; opt-in CUDA/GPU llama.cpp backend, ADR 0009 + 0010)
   └── TextGenSystem        GenerateTextRequest (from app) + ResourceMapSingletonComponent (GGUF model
@@ -177,7 +182,7 @@ UI  (canvas authored against a reference resolution; scaled to the window per AD
 | `Code/PigeonLib/Pigeon/Core/SaveDataSystem.*` | Save-data resource: loads <savedataPath>/SaveSlots/<uuid>.json into SaveDataSingletonComponent at startup; applies + persists SetSaveDataRequest slot updates from the app |
 | `Code/PigeonLib/Pigeon/Core/FileUtils.*` | Shared text-file read/write/exists helpers used by the config loader and writer |
 | `Code/PigeonLib/Pigeon/Core/Window.h` | Abstract window — `ApplyWindowConfig(width, height, mode)` resizes / switches windowed↔borderless-fullscreen |
-| `Code/PigeonLib/Pigeon/Diffusion/` | Text-to-image module (ADR 0008): OpenPoseSkeleton resource + OpenPoseHint rasterizer, DiffusionBackend abstraction + DiffusionJobParams/Image, DiffusionSystem (worker-thread job runner), GenerateImageRequest/RegisterGeneratedTextureRequest components (see Documentation/ModuleInfo/Diffusion) |
+| `Code/PigeonLib/Pigeon/Diffusion/` | Text-to-image module (ADR 0008): OpenPoseSkeleton resource + OpenPoseHint rasterizer, DiffusionBackend abstraction + DiffusionJobParams/Image, DiffusionSystem (worker-thread job runner), GenerateImageRequest/RasterizeOpenPoseHintRequest/RegisterGeneratedTextureRequest components. The hint-to-texture request + generated-image-as-input feed-forward enable multi-step pipelines (ADR 0011) (see Documentation/ModuleInfo/Diffusion) |
 | `Code/PigeonLib/Platform/StableDiffusion/StableDiffusionCppBackend.cpp` | Real stable-diffusion.cpp (CUDA) backend, active only under `-DPG_ENABLE_DIFFUSION=ON`; inert otherwise. Testing build uses Platform/Testing/TestingDiffusionBackend |
 | `Code/PigeonLib/Pigeon/TextGen/` | In-engine text-generation module (ADR 0009 + 0010): TextGenBackend abstraction + TextGenParams, TextGenSystem (worker-thread job runner; loads the model with the configured GPU-layer count), the GenerateTextRequest component, and the backend/job/result singletons (see Documentation/ModuleInfo/TextGen) |
 | `Code/PigeonLib/Platform/Llama/LlamaCppBackend.cpp` | Real llama.cpp (CUDA/GPU) text-generation backend, active only under `-DPG_ENABLE_TEXTGEN=ON` (builds the isolated ggml with `GGML_CUDA=ON`); inert otherwise. Offloads the configured `n_gpu_layers` (ADR 0010). Testing build uses Platform/Testing/TestingTextGenBackend |

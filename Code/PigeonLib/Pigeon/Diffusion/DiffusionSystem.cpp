@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <exception>
 #include <thread>
 #include <utility>
 
@@ -14,6 +15,7 @@
 #include "Pigeon/Diffusion/DiffusionJobSingletonComponent.h"
 #include "Pigeon/Diffusion/GenerateImageRequestOneFrameComponent.h"
 #include "Pigeon/Diffusion/OpenPoseHint.h"
+#include "Pigeon/Diffusion/RasterizeOpenPoseHintRequestOneFrameComponent.h"
 #include "Pigeon/Diffusion/RegisterGeneratedTextureRequestOneFrameComponent.h"
 #include "Pigeon/ECS/World.h"
 
@@ -149,6 +151,94 @@ namespace
 		return out;
 	}
 
+	// Box-blurs a white-on-black mask (separable two-pass on the red channel) so the composite edge
+	// between the figure and the background is a soft gradient rather than a hard silhouette cut. The
+	// blur also feathers the white region slightly outward, covering a little more of the figure.
+	pg::Image SoftenMask(const pg::Image& mask, int radius)
+	{
+		if (mask.m_Pixels.empty() || radius <= 0)
+		{
+			return mask;
+		}
+		const int width = static_cast<int>(mask.m_Width);
+		const int height = static_cast<int>(mask.m_Height);
+		std::vector<float> source(static_cast<size_t>(width) * height);
+		for (int i = 0; i < width * height; ++i)
+		{
+			source[i] = static_cast<float>(mask.m_Pixels[static_cast<size_t>(i) * 3]);
+		}
+		std::vector<float> horizontal(source.size());
+		const float norm = 1.f / (2 * radius + 1);
+		for (int y = 0; y < height; ++y)
+		{
+			for (int x = 0; x < width; ++x)
+			{
+				float sum = 0.f;
+				for (int dx = -radius; dx <= radius; ++dx)
+				{
+					sum += source[static_cast<size_t>(y) * width + std::clamp(x + dx, 0, width - 1)];
+				}
+				horizontal[static_cast<size_t>(y) * width + x] = sum * norm;
+			}
+		}
+		pg::Image out;
+		out.m_Width = mask.m_Width;
+		out.m_Height = mask.m_Height;
+		out.m_Pixels.resize(static_cast<size_t>(width) * height * 3);
+		for (int y = 0; y < height; ++y)
+		{
+			for (int x = 0; x < width; ++x)
+			{
+				float sum = 0.f;
+				for (int dy = -radius; dy <= radius; ++dy)
+				{
+					sum += horizontal[static_cast<size_t>(std::clamp(y + dy, 0, height - 1)) * width + x];
+				}
+				const uint8_t value = static_cast<uint8_t>(std::clamp(sum * norm, 0.f, 255.f) + 0.5f);
+				const size_t index = (static_cast<size_t>(y) * width + x) * 3;
+				out.m_Pixels[index] = value;
+				out.m_Pixels[index + 1] = value;
+				out.m_Pixels[index + 2] = value;
+			}
+		}
+		return out;
+	}
+
+	// Composites a foreground over a background using a single-channel (red) mask as alpha: white shows
+	// the foreground, black shows the background, greys blend. Places a generated character over a
+	// background via its skeleton silhouette without colour-keying. fg, bg, and mask must match size.
+	pg::Image MaskComposite(const pg::Image& fg, const pg::Image& bg, const pg::Image& mask)
+	{
+		if (fg.m_Pixels.empty() || fg.m_Width != bg.m_Width || fg.m_Height != bg.m_Height || fg.m_Width != mask.m_Width || fg.m_Height != mask.m_Height)
+		{
+			return fg;
+		}
+		pg::Image out;
+		out.m_Width = fg.m_Width;
+		out.m_Height = fg.m_Height;
+		out.m_Pixels.resize(fg.m_Pixels.size());
+		for (size_t i = 0; i + 2 < fg.m_Pixels.size(); i += 3)
+		{
+			const float alpha = static_cast<float>(mask.m_Pixels[i]) / 255.f;
+			for (int c = 0; c < 3; ++c)
+			{
+				const float f = static_cast<float>(fg.m_Pixels[i + c]);
+				const float b = static_cast<float>(bg.m_Pixels[i + c]);
+				out.m_Pixels[i + c] = static_cast<uint8_t>(f * alpha + b * (1.f - alpha) + 0.5f);
+			}
+		}
+		return out;
+	}
+
+	// Maps a skeleton's canvas-space keypoints onto an output image of the given pixel size, applying an
+	// extra placement transform (identity maps the canvas straight onto the output). Shared by the
+	// ControlNet hint and the standalone hint-texture rasterization.
+	std::array<pg::OpenPoseKeypoint, pg::OpenPoseSkeleton::k_JointCount> PlaceSkeletonKeypoints(const pg::OpenPoseSkeleton& skeleton, unsigned int width, unsigned int height, const glm::mat3& extraTransform)
+	{
+		const glm::mat3 transform = extraTransform * pg::MakeCanvasToImageTransform(skeleton.GetCanvasWidth(), skeleton.GetCanvasHeight(), width, height);
+		return pg::TransformKeypoints(skeleton.GetKeypoints(), transform);
+	}
+
 	// Resolves a request + engine defaults + resource paths into the backend's job parameters.
 	pg::DiffusionJobParams AssembleParams(const pg::GenerateImageRequestOneFrameComponent& request, const pg::EngineConfigSingletonComponent& config, const pg::ResourceMapSingletonComponent& resources)
 	{
@@ -195,8 +285,7 @@ namespace
 			if (it != resources.m_OpenPoseSkeletonMap.end() && it->second != nullptr)
 			{
 				const pg::OpenPoseSkeleton& skeleton = *it->second;
-				const glm::mat3 transform = request.m_ControlTransform * pg::MakeCanvasToImageTransform(skeleton.GetCanvasWidth(), skeleton.GetCanvasHeight(), params.m_Width, params.m_Height);
-				const std::array<pg::OpenPoseKeypoint, pg::OpenPoseSkeleton::k_JointCount> placed = pg::TransformKeypoints(skeleton.GetKeypoints(), transform);
+				const std::array<pg::OpenPoseKeypoint, pg::OpenPoseSkeleton::k_JointCount> placed = PlaceSkeletonKeypoints(skeleton, params.m_Width, params.m_Height, request.m_ControlTransform);
 				params.m_ControlHint = pg::RasterizeOpenPoseHint(placed, params.m_Width, params.m_Height);
 				params.m_HasControlHint = true;
 				params.m_ControlStrength = request.m_ControlStrength;
@@ -216,6 +305,24 @@ namespace
 
 		return params;
 	}
+
+	// Rasterizes a skeleton's canonical OpenPose hint into an RGB image of the request's size (falling
+	// back to the engine Generation Config defaults when unset), mapping the skeleton's canvas onto the
+	// output with identity placement. Returns an empty image when the skeleton is not in the resource
+	// map. (ADR 0011)
+	pg::Image RasterizeHintForRequest(const pg::RasterizeOpenPoseHintRequestOneFrameComponent& request, const pg::EngineConfigSingletonComponent& config, const pg::ResourceMapSingletonComponent& resources)
+	{
+		const unsigned int width = request.m_Width > 0 ? request.m_Width : config.m_DiffusionWidth;
+		const unsigned int height = request.m_Height > 0 ? request.m_Height : config.m_DiffusionHeight;
+		std::unordered_map<pg::UUID, pg::S_Ptr<pg::OpenPoseSkeleton>>::const_iterator it = resources.m_OpenPoseSkeletonMap.find(request.m_SkeletonID);
+		if (it == resources.m_OpenPoseSkeletonMap.end() || it->second == nullptr)
+		{
+			return pg::Image{};
+		}
+		const pg::OpenPoseSkeleton& skeleton = *it->second;
+		const std::array<pg::OpenPoseKeypoint, pg::OpenPoseSkeleton::k_JointCount> placed = PlaceSkeletonKeypoints(skeleton, width, height, glm::mat3(1.f));
+		return pg::RasterizeOpenPoseHint(placed, width, height);
+	}
 }
 
 pg::SystemAccessDecl pg::DiffusionSystem::DeclareAccess() const
@@ -223,6 +330,7 @@ pg::SystemAccessDecl pg::DiffusionSystem::DeclareAccess() const
 	pg::SystemAccessDecl decl;
 	decl.readSet = {
 		std::type_index(typeid(pg::GenerateImageRequestOneFrameComponent)),
+		std::type_index(typeid(pg::RasterizeOpenPoseHintRequestOneFrameComponent)),
 		std::type_index(typeid(pg::ResourceMapSingletonComponent)),
 		std::type_index(typeid(pg::EngineConfigSingletonComponent)),
 	};
@@ -289,6 +397,24 @@ void pg::DiffusionSystem::Update(const pg::Timestep& ts)
 		}
 	}
 
+	// Rasterize any OpenPose hint requests into registered textures so the pose can be shown on screen
+	// (ADR 0011). Synchronous CPU work, independent of the job machinery.
+	auto hintView = accessor.View<const pg::RasterizeOpenPoseHintRequestOneFrameComponent>();
+	for (pg::ecs::Entity hintEntity : hintView)
+	{
+		const pg::RasterizeOpenPoseHintRequestOneFrameComponent& hintRequest = hintView.get<const pg::RasterizeOpenPoseHintRequestOneFrameComponent>(hintEntity);
+		pg::Image hint = RasterizeHintForRequest(hintRequest, config, resources);
+		if (hint.m_Pixels.empty())
+		{
+			PG_CORE_WARN("DiffusionSystem: OpenPose hint skeleton not found/empty; skipping hint rasterization");
+			continue;
+		}
+		pg::RegisterGeneratedTextureRequestOneFrameComponent registration;
+		registration.m_TextureID = hintRequest.m_TargetTextureID;
+		registration.m_Image = std::move(hint);
+		accessor.EmplaceOneframe<pg::RegisterGeneratedTextureRequestOneFrameComponent>(accessor.Create(), std::move(registration));
+	}
+
 	// Reap a finished job: publish the result for registration, then clear the slot.
 	if (job.m_ActiveJob != nullptr)
 	{
@@ -346,24 +472,70 @@ void pg::DiffusionSystem::Update(const pg::Timestep& ts)
 				}
 			}
 
-			PG_CORE_INFO("DiffusionSystem: starting generation {0}x{1}, {2} steps, {3} LoRA(s), control={4}, composite={5}", params.m_Width, params.m_Height, params.m_Steps, params.m_Loras.size(), params.m_HasControlHint, hasBackground);
+			// Optional skeleton-mask composite (takes precedence over chroma): build a soft alpha mask from
+			// the ControlNet skeleton's silhouette so the worker can place the generated figure over the
+			// background without colour-keying. Resolved here (main thread) so the worker just blends.
+			bool hasMaskComposite = false;
+			pg::Image compositeMask;
+			if (request.m_CompositeWithSkeletonMask && hasBackground && !request.m_ControlSkeletonID.IsNull())
+			{
+				std::unordered_map<pg::UUID, pg::S_Ptr<pg::OpenPoseSkeleton>>::const_iterator skeletonIt = resources.m_OpenPoseSkeletonMap.find(request.m_ControlSkeletonID);
+				if (skeletonIt != resources.m_OpenPoseSkeletonMap.end() && skeletonIt->second != nullptr)
+				{
+					const std::array<pg::OpenPoseKeypoint, pg::OpenPoseSkeleton::k_JointCount> placed = PlaceSkeletonKeypoints(*skeletonIt->second, params.m_Width, params.m_Height, request.m_ControlTransform);
+					pg::Image mask = pg::RasterizeSkeletonMask(placed, params.m_Width, params.m_Height);
+					if (!mask.m_Pixels.empty())
+					{
+						compositeMask = SoftenMask(mask, std::max(1, static_cast<int>(params.m_Width) / 48));
+						hasMaskComposite = true;
+					}
+				}
+			}
+
+			PG_CORE_INFO("DiffusionSystem: starting generation {0}x{1}, {2} steps, {3} LoRA(s), control={4}, composite={5}, maskComposite={6}", params.m_Width, params.m_Height, params.m_Steps, params.m_Loras.size(), params.m_HasControlHint, hasBackground, hasMaskComposite);
 
 			pg::S_Ptr<pg::DiffusionJob> activeJob = std::make_shared<pg::DiffusionJob>();
 			activeJob->m_TargetTextureID = request.m_TargetTextureID;
 			activeJob->m_State = pg::EDiffusionJobState::eRunning;
 
+			// The worker captures a RAW pointer to the job, never a shared_ptr: the DiffusionJob owns the
+			// worker thread, so a shared_ptr capture would make the job own a reference to itself. Releasing
+			// the last such reference happens on the worker thread (when its lambda is destroyed), which
+			// would run ~DiffusionJob() — and thus m_Worker.join() — on the worker's own thread (a self-join
+			// deadlock/crash). The job outlives the worker: it is only reset/destroyed after the worker
+			// publishes its terminal state, and ~DiffusionJob joins the worker before its members die.
 			pg::S_Ptr<pg::DiffusionBackend> backendPtr = backend.m_Backend;
-			activeJob->m_Worker = std::thread([activeJob, backendPtr, params, background, chromaThreshold, hasBackground]()
+			pg::DiffusionJob* jobPtr = activeJob.get();
+			activeJob->m_Worker = std::thread([jobPtr, backendPtr, params, background, chromaThreshold, hasBackground, compositeMask, hasMaskComposite]()
 			{
-				pg::Image result = backendPtr->Generate(params);
-				if (!result.m_Pixels.empty() && hasBackground)
+				try
 				{
-					const glm::ivec3 chromaKey = EstimateKeyFromCorners(result);
-					result = ChromaComposite(result, background, chromaKey, chromaThreshold);
+					pg::Image result = backendPtr->Generate(params);
+					if (!result.m_Pixels.empty() && hasMaskComposite)
+					{
+						result = MaskComposite(result, background, compositeMask);
+					}
+					else if (!result.m_Pixels.empty() && hasBackground)
+					{
+						const glm::ivec3 chromaKey = EstimateKeyFromCorners(result);
+						result = ChromaComposite(result, background, chromaKey, chromaThreshold);
+					}
+					const bool ok = !result.m_Pixels.empty();
+					jobPtr->m_Result = std::move(result);
+					jobPtr->m_State = ok ? pg::EDiffusionJobState::eDone : pg::EDiffusionJobState::eFailed;
 				}
-				const bool ok = !result.m_Pixels.empty();
-				activeJob->m_Result = std::move(result);
-				activeJob->m_State = ok ? pg::EDiffusionJobState::eDone : pg::EDiffusionJobState::eFailed;
+				catch (const std::exception& e)
+				{
+					// A backend exception (e.g. out-of-memory) must not escape the worker and terminate the
+					// process; surface it and fail the job so the app keeps running.
+					PG_CORE_ERROR("DiffusionSystem: generation threw '{0}'; marking job failed", e.what());
+					jobPtr->m_State = pg::EDiffusionJobState::eFailed;
+				}
+				catch (...)
+				{
+					PG_CORE_ERROR("DiffusionSystem: generation threw a non-standard exception; marking job failed");
+					jobPtr->m_State = pg::EDiffusionJobState::eFailed;
+				}
 			});
 
 			job.m_ActiveJob = activeJob;

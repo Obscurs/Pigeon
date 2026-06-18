@@ -7,6 +7,8 @@
 // plain build links and runs without the heavy runtime, and the Testing build never needs CUDA.
 #ifdef PG_STABLE_DIFFUSION_ENABLED
 
+#include <algorithm>
+#include <cstdlib>
 #include <vector>
 
 #include <stable-diffusion.h>
@@ -99,6 +101,11 @@ bool pg::StableDiffusionCppBackend::LoadCheckpoint(const std::string& checkpoint
 	// Build the VAE encoder too (sd.cpp defaults to decode-only); img2img must encode the init image
 	// into a latent, which asserts without the encoder.
 	params.vae_decode_only = false;
+	// VAE placement. The checkpoint's baked VAE is broken on this build (a generation decodes to a flat
+	// grey, min=max=128), so without an external VAE we keep it on the CPU (fp32 — correct but slow, and
+	// its multi-GB RAM buffer is what exhausted memory and crashed the second generation). When a GPU-safe
+	// external VAE is supplied via the manifest (a fp16-fix), run it on the GPU: fast, and small VRAM.
+	params.keep_vae_on_cpu = m_VaePath.empty();
 	if (!m_ControlNetPath.empty())
 	{
 		params.control_net_path = m_ControlNetPath.c_str();
@@ -106,9 +113,6 @@ bool pg::StableDiffusionCppBackend::LoadCheckpoint(const std::string& checkpoint
 	if (!m_VaePath.empty())
 	{
 		params.vae_path = m_VaePath.c_str();
-		// The stock SDXL fp16 VAE overflows to NaN on GPU (decodes to a blank/white image); decoding it
-		// on the CPU runs in fp32 and avoids that. Slower per generation, but correct.
-		params.keep_vae_on_cpu = true;
 	}
 
 	m_Context = new_sd_ctx(&params);
@@ -192,6 +196,19 @@ pg::Image pg::StableDiffusionCppBackend::Generate(const pg::DiffusionJobParams& 
 		gen.mask_image = mask;
 	}
 
+	// Diagnostics: dump exactly what sd.cpp receives (img2img init + ControlNet combinations are where
+	// this build has produced flat-grey output) so failures are visible in the console.
+	PG_CORE_INFO("StableDiffusion: generate init={0} ({1}x{2}, strength {3}) control={4} ({5}x{6}, strength {7}) mask={8} loras={9}",
+		params.m_HasInitImage, params.m_InitImage.m_Width, params.m_InitImage.m_Height, params.m_DenoiseStrength,
+		params.m_HasControlHint, params.m_ControlHint.m_Width, params.m_ControlHint.m_Height, params.m_ControlStrength,
+		params.m_HasMask, params.m_Loras.size());
+	char* paramStr = sd_img_gen_params_to_str(&gen);
+	if (paramStr != nullptr)
+	{
+		PG_CORE_INFO("StableDiffusion: sd params:\n{0}", paramStr);
+		free(paramStr);
+	}
+
 	sd_image_t* results = generate_image(static_cast<sd_ctx_t*>(m_Context), &gen);
 	pg::Image image;
 	if (results != nullptr)
@@ -202,7 +219,25 @@ pg::Image pg::StableDiffusionCppBackend::Generate(const pg::DiffusionJobParams& 
 	if (image.m_Pixels.empty())
 	{
 		PG_CORE_WARN("StableDiffusion: generate_image returned no image (check VAE/params/VRAM)");
+		return image;
 	}
+
+	// Classify the output: a (near-)uniform image means the latent decoded flat (NaN/degenerate) rather
+	// than a real picture — the signature of the img2img+ControlNet grey, distinct from a real result.
+	uint8_t minValue = 255;
+	uint8_t maxValue = 0;
+	uint64_t sum = 0;
+	for (uint8_t channel : image.m_Pixels)
+	{
+		minValue = std::min(minValue, channel);
+		maxValue = std::max(maxValue, channel);
+		sum += channel;
+	}
+	const int mean = static_cast<int>(sum / image.m_Pixels.size());
+	const bool uniform = (maxValue - minValue) < 8;
+	PG_CORE_INFO("StableDiffusion: result {0}x{1} pixels min={2} max={3} mean={4} -> {5}",
+		image.m_Width, image.m_Height, static_cast<int>(minValue), static_cast<int>(maxValue), mean,
+		uniform ? "UNIFORM (latent decoded flat - VAE/latent NaN, not a real image)" : "has detail");
 	return image;
 }
 

@@ -16,7 +16,10 @@ UUID, so 2D draws can sample the 3D pass's output as an ordinary texture (ADR 00
 
 Checkpoints/LoRAs/ControlNets are recorded as resolved file paths only (the diffusion backend loads the
 weights, not the engine); OpenPose skeletons are parsed into pose resources. Generated images arrive as
-RGB and are expanded to RGBA when registered as textures (ADR 0008).
+RGB and are expanded to RGBA when registered as textures (ADR 0008); the RGB pixels are also retained as
+an Input Image under the same UUID so a later generation can re-feed the result as an img2img init or
+chroma background (ADR 0011) — this is what lets a multi-step pipeline chain one step's output into the
+next.
 
 ## Input Components
 | Component | Access | Notes |
@@ -27,4 +30,4 @@ RGB and are expanded to RGBA when registered as textures (ADR 0008).
 ## Output Components
 | Component | Access | Notes |
 |---|---|---|
-| ResourceMapSingletonComponent | write / add (deferred) | Created once with all asset maps (textures, shaders, fonts, UI layouts, sounds, JSON, models, render targets, checkpoints, LoRAs, ControlNets, OpenPose skeletons); thereafter modified in place to register generated textures |
+| ResourceMapSingletonComponent | write / add (deferred) | Created once with all asset maps (textures, shaders, fonts, UI layouts, sounds, JSON, models, render targets, checkpoints, LoRAs, ControlNets, OpenPose skeletons); thereafter modified in place to register generated textures (also retained as input images, ADR 0011) |

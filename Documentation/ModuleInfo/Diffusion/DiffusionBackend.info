@@ -38,8 +38,20 @@ idle); only one generation runs at a time.
 App-emitted (engine-typed) request: target texture UUID (caller-assigned, like an audio Voice Handle),
 prompt/negative/seed, optional Generation Config overrides, LoRA refs (UUID + weight), and an optional
 OpenPose ControlNet (skeleton UUID + strength + a 2D placement transform). Unset config fields fall back
-to the engine defaults.
+to the engine defaults. Optionally composites the generated subject over a background image (resolved like
+an Input Image): either chroma-keyed (auto-detected key colour + threshold) or, when
+`m_CompositeWithSkeletonMask` is set, via the ControlNet skeleton's silhouette as a soft alpha mask (the
+mask path takes precedence). The composite runs on the worker thread, off the frame loop.
+
+## RasterizeOpenPoseHintRequestOneFrameComponent
+App-emitted (engine-typed) request to rasterize an OpenPose Skeleton's canonical hint and register it
+as a Generated Texture under a caller-assigned target UUID, so the pose can be shown on screen rather
+than only fed internally to a ControlNet job (ADR 0011). Carries the skeleton UUID, the target texture
+UUID, and an output size (0 => fall back to the Generation Config defaults). Handled synchronously by
+DiffusionSystem — not a Diffusion Job.
 
 ## RegisterGeneratedTextureRequestOneFrameComponent
-Emitted by DiffusionSystem on completion; carries the generated image + target UUID for
-ResourceManagerSystem (sole writer of the resource map) to register as a texture.
+Emitted by DiffusionSystem on completion (and for a rasterized OpenPose hint); carries the generated
+image + target UUID for ResourceManagerSystem (sole writer of the resource map) to register as a
+texture. ResourceManagerSystem also retains the RGB pixels as an Input Image under the same UUID so a
+later generation can re-feed the result (ADR 0011).
