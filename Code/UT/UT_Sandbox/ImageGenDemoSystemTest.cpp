@@ -206,18 +206,22 @@ TEST_CASE("Sandbox.ImageGenDemoSystem::LaunchesCompositeWhenRestyledBackgroundIs
 	REQUIRE(view.size() == 1);
 	const pg::GenerateImageRequestOneFrameComponent& request =
 		view.get<pg::GenerateImageRequestOneFrameComponent>(view.front());
-	// Step 3 paints the figure into the restyled background: img2img on it (fed forward as the init image)
-	// + OpenPose ControlNet, confined to the figure by the skeleton inpaint mask so the rest of the room
-	// is preserved. The character LoRA is currently disabled (it binds 0 tensors against this checkpoint
-	// and corrupted the generation to grey).
+	// Step 3 places the posed character over the restyled background: txt2img + OpenPose ControlNet + the
+	// SDXL character LoRA generate the figure on a plain background, then it is composited onto the restyled
+	// background through the skeleton's silhouette mask (m_CompositeWithSkeletonMask). img2img is NOT used —
+	// img2img + ControlNet NaNs to flat grey on this checkpoint (ADR 0011).
 	CHECK(request.m_TargetTextureID == sbx::k_CompositeTextureID);
-	CHECK(request.m_InputImageID == sbx::k_BackgroundTextureID);
+	CHECK(request.m_InputImageID.IsNull());
+	CHECK_FALSE(request.m_MaskFromSkeleton);
 	CHECK(request.m_ControlSkeletonID == sbx::k_DiffusionSkeletonID);
-	CHECK(request.m_MaskFromSkeleton);
-	CHECK_FALSE(request.m_CompositeWithSkeletonMask);
-	CHECK(request.m_Loras.empty());
-	CHECK(request.m_DenoiseStrength > 0.f);
-	CHECK(request.m_DenoiseStrength < 1.f);
+	CHECK(request.m_BackgroundImageID == sbx::k_BackgroundTextureID);
+	CHECK(request.m_CompositeWithSkeletonMask);
+	// The character LoRA is applied by its resource UUID + weight, and its trigger word ("ff7t1f4") is in
+	// the prompt (without it the LoRA does not express the character).
+	REQUIRE(request.m_Loras.size() == 1);
+	CHECK(request.m_Loras[0].m_LoraID == sbx::k_DiffusionLoraID);
+	CHECK(request.m_Loras[0].m_Weight == Approx(0.8f));
+	CHECK(request.m_Prompt.find("ff7t1f4") != std::string::npos);
 	CHECK(GetState().m_Step == sbx::EImageGenStep::eComposite);
 }
 

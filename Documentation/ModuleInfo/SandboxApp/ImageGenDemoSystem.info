@@ -16,10 +16,14 @@ pipeline is idle/done, starts the sequence:
    `k_HintTextureID` to show the OpenPose skeleton.
 3. **Composite** — once the restyled background is retained as an input image (engine feed-forward),
    emits a GenerateImageRequest into `k_CompositeTextureID`: the figure is generated with txt2img +
-   OpenPose ControlNet (`k_DiffusionSkeletonID`) + character LoRA (`k_DiffusionLoraID`) on a plain
-   background and composited over the restyled background via the skeleton's silhouette mask
-   (`m_CompositeWithSkeletonMask`, `m_BackgroundImageID = k_BackgroundTextureID`). img2img is not used
-   (img2img + ControlNet NaNs to grey with this checkpoint). When that job finishes the pipeline is done.
+   OpenPose ControlNet (`k_DiffusionSkeletonID`) + the SDXL character LoRA (`k_DiffusionLoraID`, weight 0.8,
+   with its trigger word `ff7t1f4` leading the prompt) on a plain background, then composited onto the
+   restyled background (`m_BackgroundImageID = k_BackgroundTextureID`) through the skeleton's soft silhouette
+   mask (`m_CompositeWithSkeletonMask`). img2img is not used — img2img + ControlNet NaNs the latent to flat
+   grey on this checkpoint (ADR 0011); the composite is a CPU blend that always renders, at the cost of
+   approximate (rough-silhouette) edges. The LoRA must be the same architecture as the resident checkpoint
+   (an Illustrious/SDXL LoRA for this SDXL checkpoint); a wrong-architecture LoRA binds 0 tensors and is
+   silently ignored. When that job finishes the pipeline is done.
 
 Each generation step waits for its Diffusion Job (seen running, then idle); only one job runs at a time,
 so the engine serialises the steps. The three result UUIDs are shown side by side by SceneSetupSystem.

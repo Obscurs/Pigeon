@@ -30,7 +30,7 @@
 		{"id": "d8000000-0000-4000-8000-000000000001", "path" : "cyberillustrious_v40_CHECKPOINT.safetensors"}
 	],
 	"loras": [
-		{"id": "d8000000-0000-4000-8000-000000000002", "path" : "lin_LORA.safetensors"}
+		{"id": "d8000000-0000-4000-8000-000000000002", "path" : "FF7T1f4_f32.safetensors"}
 	],
 	"controlNets": [
 		{"id": "d8000000-0000-4000-8000-000000000003", "path" : "OpenPoseXL2_sdcpp.safetensors"}

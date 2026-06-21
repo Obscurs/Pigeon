@@ -106,6 +106,12 @@ bool pg::StableDiffusionCppBackend::LoadCheckpoint(const std::string& checkpoint
 	// its multi-GB RAM buffer is what exhausted memory and crashed the second generation). When a GPU-safe
 	// external VAE is supplied via the manifest (a fp16-fix), run it on the GPU: fast, and small VRAM.
 	params.keep_vae_on_cpu = m_VaePath.empty();
+	// This LoRA's merged weight deltas are tiny (max ~0.017), yet the default LoRA path (LORA_APPLY_AUTO ->
+	// "immediately" for a non-quantized checkpoint, i.e. merge into the resident weights) corrupts the fp16
+	// UNet into a flat-grey (min=max=128) NaN — an sd.cpp merge-path bug, not a numerical overflow (F32
+	// LoRA, a 0.2 weight, and flash attention all reproduced it). Applying the LoRA at runtime patches the
+	// delta during the forward pass without modifying the resident weights, bypassing the broken merge.
+	params.lora_apply_mode = LORA_APPLY_AT_RUNTIME;
 	if (!m_ControlNetPath.empty())
 	{
 		params.control_net_path = m_ControlNetPath.c_str();

@@ -32,6 +32,13 @@ namespace sbx
 		char m_BackgroundPrompt[1024] = {};
 		float m_Consistency = 0.6f;
 
+		// Composite-step diagnostics (the figure generation NaNs to flat grey with this LoRA): the LoRA
+		// weight is panel-tunable to find a non-NaN strength, and the OpenPose ControlNet can be turned off
+		// to test whether the figure renders from txt2img + LoRA alone (isolating a LoRA x ControlNet
+		// interaction). Defaults match the normal pipeline so behaviour is unchanged until edited.
+		float m_CompositeLoraWeight = 0.8f;
+		bool m_CompositeUseControlNet = true;
+
 		EImageGenStep m_Step = EImageGenStep::eIdle;
 		// True once the current generation step's Diffusion Job has been observed running, so the next
 		// idle frame is recognised as that job finishing (rather than the gap before it launches).

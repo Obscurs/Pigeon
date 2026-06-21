@@ -20,12 +20,6 @@
 namespace
 {
 
-	// Step 3 img2img denoise, applied only inside the skeleton inpaint mask (the figure region). It must
-	// be high so the ControlNet has the regeneration freedom to impose the pose there; the mask keeps that
-	// high denoise from touching the rest of the restyled room, which stays pixel-exact. Below 1.0 so
-	// sd.cpp still encodes the init image as the starting point.
-	const float k_CompositeDenoiseStrength = 0.9f;
-
 	// Maps the panel's consistency slider (1 = most faithful to the original photo) to an img2img
 	// denoise strength for the background restyle: more consistency -> less of the photo is rewritten.
 	float ConsistencyToDenoise(float consistency)
@@ -69,25 +63,34 @@ namespace
 		accessor.EmplaceOneframe<pg::RasterizeOpenPoseHintRequestOneFrameComponent>(accessor.Create(), std::move(request));
 	}
 
-	// Step 3: paint the figure into the restyled background. img2img on that background (the previous
-	// step's result, fed forward as the init image) + OpenPose ControlNet (poses the figure), confined to
-	// the skeleton's region by an inpaint mask (m_MaskFromSkeleton) so a high denoise can impose the pose
-	// on the figure while the rest of the restyled room stays pixel-exact. This is regeneration-masking
-	// (no composite seams), the only way plain img2img gives both a strong pose and the kept background.
-	// (The grey that blocked this earlier was the character LoRA, now disabled.)
-	void EmitCompositeRequest(pg::CheckedRegistryAccessor& accessor)
+	// Step 3: place the posed character over the restyled background. The figure is generated with txt2img
+	// + OpenPose ControlNet (poses it) + the SDXL character LoRA (k_DiffusionLoraID, trigger word leading
+	// the prompt) on a plain background, then composited onto the restyled background through the skeleton's
+	// soft silhouette mask (m_CompositeWithSkeletonMask). img2img + ControlNet is NOT used: on this SDXL
+	// checkpoint it NaNs the latent and decodes to flat grey (min=max=128) regardless of VAE or inpaint mask
+	// (ADR 0011). The composite is a CPU blend, so it always renders; the silhouette is rough, so edge
+	// placement is approximate — a deliberate trade for a result that reliably shows the character. (An
+	// earlier FLUX-architecture LoRA bound 0 tensors against this SDXL checkpoint — the wrong architecture,
+	// not a cause of grey — and was replaced by an Illustrious/SDXL character LoRA.)
+	void EmitCompositeRequest(pg::CheckedRegistryAccessor& accessor, const sbx::ImageGenDemoStateSingletonComponent& state)
 	{
 		pg::GenerateImageRequestOneFrameComponent request;
 		request.m_TargetTextureID = sbx::k_CompositeTextureID;
-		request.m_Prompt = "1girl, full body, standing in a room, detailed, masterpiece, best quality";
-		request.m_NegativePrompt = "blurry, lowres, deformed, bad anatomy, multiple people";
-		// Character LoRA disabled: it binds 0 tensors against this checkpoint ("0/1128 applied") and
-		// corrupted the generation to grey. Re-add once it binds correctly.
-		request.m_InputImageID = sbx::k_BackgroundTextureID;
-		request.m_DenoiseStrength = k_CompositeDenoiseStrength;
-		request.m_ControlSkeletonID = sbx::k_DiffusionSkeletonID;
-		request.m_ControlStrength = 1.0f;
-		request.m_MaskFromSkeleton = true;
+		// "ff7t1f4" is the character LoRA's trigger word — it must lead the prompt for the LoRA to express
+		// the trained character. A plain background keeps the silhouette composite clean.
+		request.m_Prompt = "ff7t1f4, 1girl, full body, standing, plain white background, simple background, detailed, masterpiece, best quality";
+		request.m_NegativePrompt = "blurry, lowres, deformed, bad anatomy, multiple people, complex background";
+		request.m_Loras.push_back(pg::GenerateImageLoraRef{ sbx::k_DiffusionLoraID, state.m_CompositeLoraWeight });
+		// The OpenPose ControlNet poses the figure and its silhouette masks the composite over the restyled
+		// background. Both are gated by the same panel toggle so the figure generation can be tested without
+		// the ControlNet (txt2img + LoRA only, shown full-frame) to isolate the flat-grey NaN.
+		if (state.m_CompositeUseControlNet)
+		{
+			request.m_ControlSkeletonID = sbx::k_DiffusionSkeletonID;
+			request.m_ControlStrength = 1.0f;
+			request.m_BackgroundImageID = sbx::k_BackgroundTextureID;
+			request.m_CompositeWithSkeletonMask = true;
+		}
 		accessor.EmplaceOneframe<pg::GenerateImageRequestOneFrameComponent>(accessor.Create(), std::move(request));
 	}
 
@@ -113,7 +116,7 @@ namespace
 		case sbx::EImageGenStep::eHint:
 			if (resources.m_InputImageMap.count(sbx::k_BackgroundTextureID) > 0)
 			{
-				EmitCompositeRequest(accessor);
+				EmitCompositeRequest(accessor, state);
 				state.m_Step = sbx::EImageGenStep::eComposite;
 				state.m_SawJobRunning = false;
 			}
@@ -228,6 +231,8 @@ void sbx::ImageGenDemoSystem::Update(const pg::Timestep& ts)
 	ImGui::TextWrapped("Background style prompt (restyles the photo, keeps its structure):");
 	ImGui::InputTextMultiline("##bgprompt", state.m_BackgroundPrompt, sizeof(state.m_BackgroundPrompt), ImVec2(-1.0f, ImGui::GetTextLineHeight() * 3));
 	ImGui::SliderFloat("Consistency", &state.m_Consistency, 0.0f, 1.0f);
+	ImGui::SliderFloat("Composite LoRA weight", &state.m_CompositeLoraWeight, 0.0f, 1.5f);
+	ImGui::Checkbox("Composite ControlNet", &state.m_CompositeUseControlNet);
 
 	if (backendReady && IsPipelineIdle(state))
 	{
