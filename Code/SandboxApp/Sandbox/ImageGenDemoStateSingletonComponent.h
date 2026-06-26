@@ -38,6 +38,9 @@ namespace sbx
 		// interaction). Defaults match the normal pipeline so behaviour is unchanged until edited.
 		float m_CompositeLoraWeight = 0.8f;
 		bool m_CompositeUseControlNet = true;
+		// Scales the skeleton silhouette mask: smaller hugs the figure, trimming the plain-background halo
+		// ("cloud") around the composited character. Panel-tunable since the ideal value is visual.
+		float m_CompositeMaskScale = 0.65f;
 
 		EImageGenStep m_Step = EImageGenStep::eIdle;
 		// True once the current generation step's Diffusion Job has been observed running, so the next

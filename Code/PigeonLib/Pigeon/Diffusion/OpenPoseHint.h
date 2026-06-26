@@ -25,7 +25,9 @@ namespace pg
 	// torso, and a head disc) in the output image's pixel space. Used as an img2img inpainting mask so
 	// only the character's body region is regenerated, leaving the surrounding photo untouched. Returns
 	// an empty image when no keypoint is valid.
-	Image RasterizeSkeletonMask(const std::array<OpenPoseKeypoint, OpenPoseSkeleton::k_JointCount>& keypoints, uint32_t width, uint32_t height);
+	// thicknessScale (default 1) scales the silhouette's stroke width: smaller hugs the figure more tightly
+	// (less of a composited figure's plain background bleeds around it), at the risk of clipping the body.
+	Image RasterizeSkeletonMask(const std::array<OpenPoseKeypoint, OpenPoseSkeleton::k_JointCount>& keypoints, uint32_t width, uint32_t height, float thicknessScale = 1.0f);
 
 	// Applies a homogeneous 2D transform (glm::mat3 acting on vec3(x, y, 1)) to every keypoint
 	// position; confidence is carried through unchanged.

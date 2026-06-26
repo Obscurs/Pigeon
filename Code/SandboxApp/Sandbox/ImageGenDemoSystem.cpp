@@ -90,6 +90,7 @@ namespace
 			request.m_ControlStrength = 1.0f;
 			request.m_BackgroundImageID = sbx::k_BackgroundTextureID;
 			request.m_CompositeWithSkeletonMask = true;
+			request.m_CompositeMaskScale = state.m_CompositeMaskScale;
 		}
 		accessor.EmplaceOneframe<pg::GenerateImageRequestOneFrameComponent>(accessor.Create(), std::move(request));
 	}
@@ -233,6 +234,7 @@ void sbx::ImageGenDemoSystem::Update(const pg::Timestep& ts)
 	ImGui::SliderFloat("Consistency", &state.m_Consistency, 0.0f, 1.0f);
 	ImGui::SliderFloat("Composite LoRA weight", &state.m_CompositeLoraWeight, 0.0f, 1.5f);
 	ImGui::Checkbox("Composite ControlNet", &state.m_CompositeUseControlNet);
+	ImGui::SliderFloat("Composite mask tightness", &state.m_CompositeMaskScale, 0.2f, 1.2f);
 
 	if (backendReady && IsPipelineIdle(state))
 	{

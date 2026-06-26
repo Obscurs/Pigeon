@@ -483,10 +483,12 @@ void pg::DiffusionSystem::Update(const pg::Timestep& ts)
 				if (skeletonIt != resources.m_OpenPoseSkeletonMap.end() && skeletonIt->second != nullptr)
 				{
 					const std::array<pg::OpenPoseKeypoint, pg::OpenPoseSkeleton::k_JointCount> placed = PlaceSkeletonKeypoints(*skeletonIt->second, params.m_Width, params.m_Height, request.m_ControlTransform);
-					pg::Image mask = pg::RasterizeSkeletonMask(placed, params.m_Width, params.m_Height);
+					pg::Image mask = pg::RasterizeSkeletonMask(placed, params.m_Width, params.m_Height, request.m_CompositeMaskScale);
 					if (!mask.m_Pixels.empty())
 					{
-						compositeMask = SoftenMask(mask, std::max(1, static_cast<int>(params.m_Width) / 48));
+						// A small feather softens the cut without smearing the figure's plain background into the
+						// scene — a wide feather is what reads as a halo/"cloud" around the composited figure.
+						compositeMask = SoftenMask(mask, std::max(1, static_cast<int>(params.m_Width) / 128));
 						hasMaskComposite = true;
 					}
 				}

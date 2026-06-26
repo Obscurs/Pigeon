@@ -122,7 +122,7 @@ pg::HintImage pg::RasterizeOpenPoseHint(const std::array<pg::OpenPoseKeypoint, p
 	return image;
 }
 
-pg::Image pg::RasterizeSkeletonMask(const std::array<pg::OpenPoseKeypoint, pg::OpenPoseSkeleton::k_JointCount>& keypoints, uint32_t width, uint32_t height)
+pg::Image pg::RasterizeSkeletonMask(const std::array<pg::OpenPoseKeypoint, pg::OpenPoseSkeleton::k_JointCount>& keypoints, uint32_t width, uint32_t height, float thicknessScale)
 {
 	// Size the strokes from the skeleton's extent so the silhouette roughly fills a human body.
 	bool any = false;
@@ -158,7 +158,9 @@ pg::Image pg::RasterizeSkeletonMask(const std::array<pg::OpenPoseKeypoint, pg::O
 	const float spanX = maxX - minX;
 	const float spanY = maxY - minY;
 	const float diagonal = std::sqrt(spanX * spanX + spanY * spanY);
-	const float limbHalfWidth = std::max(static_cast<float>(std::min(width, height)) * 0.05f, diagonal * 0.09f);
+	// Kept modest so the silhouette hugs the figure: an over-generous mask leaves a margin of the figure's
+	// plain background that shows around it when composited over a scene. thicknessScale tunes this further.
+	const float limbHalfWidth = std::max(static_cast<float>(std::min(width, height)) * 0.045f, diagonal * 0.08f) * thicknessScale;
 
 	pg::Image mask;
 	mask.m_Width = width;

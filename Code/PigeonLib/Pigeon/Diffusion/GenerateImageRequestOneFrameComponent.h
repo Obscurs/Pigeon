@@ -71,5 +71,10 @@ namespace pg
 		// background without img2img (which NaNs here) and without chroma. Takes precedence over the
 		// chroma key. Ignored without both a background image and a ControlNet skeleton (m_ControlSkeletonID).
 		bool m_CompositeWithSkeletonMask = false;
+
+		// Scales the skeleton silhouette mask's stroke width for the skeleton-mask composite (1 = default).
+		// Smaller hugs the figure more tightly, trimming the halo of plain background around the composited
+		// figure; too small clips the body. Ignored unless m_CompositeWithSkeletonMask.
+		float m_CompositeMaskScale = 1.0f;
 	};
 }
