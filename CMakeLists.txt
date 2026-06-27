@@ -167,12 +167,17 @@ option(PG_ENABLE_MATTING "Build the onnxruntime (CUDA) image-matting backend" ON
 # Image matting (onnxruntime, CUDA execution provider). Cuts the generated figure out of its plain
 # background by its real outline so it composites into the scene without a halo (ADR 0012). Unlike the GGML
 # backends this is the ONE dependency shipped as PREBUILT DLLs — onnxruntime publishes no static GPU build —
-# fetched and extracted from the official GPU release zip (no source build). Its bundled CUDA/cuDNN must
-# agree with the toolkit the GGML backends build against, so the version is pinned and bumped deliberately
-# (onnxruntime 1.17.x targets CUDA 11.8/12.x + cuDNN 8.x). PigeonLib links the import lib and defines
-# PG_MATTING_ENABLED (Code/PigeonLib/CMakeLists.txt); SandboxApp copies the runtime DLLs next to the exe.
+# fetched and extracted from the official GPU release zip (no source build). PigeonLib links the import lib
+# and defines PG_MATTING_ENABLED (Code/PigeonLib/CMakeLists.txt); SandboxApp copies the runtime DLLs next to
+# the exe. The runtime falls back to the CPU EP if CUDA cannot init, so a wrong toolkit never breaks the app.
+#
+# CUDA-version coupling: onnxruntime's GPU zip is built against a SPECIFIC CUDA major + cuDNN. 1.19+ targets
+# CUDA 12 + cuDNN 9 (1.17 was CUDA 11.8 + cuDNN 8). The GGML backends here use CUDA 12 (cudart/cublas 12) and
+# the GGML stack ships NO cuDNN, so we pin the CUDA-12 onnxruntime build AND bundle the cuDNN 9 redist DLLs
+# next to the exe (the CUDA 12 runtime itself is found on PATH from the installed toolkit). Bump both versions
+# together and keep them on the same CUDA major.
 if(PG_ENABLE_MATTING)
-  set(PG_ONNXRUNTIME_VERSION "1.17.1")
+  set(PG_ONNXRUNTIME_VERSION "1.20.1")   # CUDA 12 + cuDNN 9 build
   FetchContent_Declare(
     onnxruntime_gpu
     URL https://github.com/microsoft/onnxruntime/releases/download/v${PG_ONNXRUNTIME_VERSION}/onnxruntime-win-x64-gpu-${PG_ONNXRUNTIME_VERSION}.zip
@@ -180,6 +185,17 @@ if(PG_ENABLE_MATTING)
   FetchContent_MakeAvailable(onnxruntime_gpu)
   # The zip has no CMakeLists, so MakeAvailable only extracts it; expose the dir for the include/lib/DLLs.
   set(PG_ONNXRUNTIME_DIR "${onnxruntime_gpu_SOURCE_DIR}" CACHE INTERNAL "onnxruntime GPU prebuilt root")
+
+  # cuDNN 9 (for CUDA 12) runtime DLLs — onnxruntime's CUDA EP needs cuDNN, which the GGML CUDA stack does
+  # NOT ship, so without these onnxruntime_providers_cuda.dll fails to load (LoadLibrary error 126) and the
+  # matte silently drops to CPU. NVIDIA's redist archive is downloadable without a login; bundle its DLLs.
+  set(PG_CUDNN_VERSION "9.5.1.17")
+  FetchContent_Declare(
+    cudnn_redist
+    URL https://developer.download.nvidia.com/compute/cudnn/redist/cudnn/windows-x86_64/cudnn-windows-x86_64-${PG_CUDNN_VERSION}_cuda12-archive.zip
+  )
+  FetchContent_MakeAvailable(cudnn_redist)
+  set(PG_CUDNN_DIR "${cudnn_redist_SOURCE_DIR}" CACHE INTERNAL "cuDNN 9 redist root")
 endif()
 
 set(MSDFGEN_INCLUDE_DIRS

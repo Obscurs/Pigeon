@@ -31,11 +31,20 @@ real matte means introducing a **second inference-runtime family** (ONNX) alongs
 Add a **Matting Backend** — a platform-abstracted ONNX inference runtime — and composite the figure
 through its Alpha Matte **inline in the diffusion worker**, replacing the skeleton-mask alpha branch.
 
-- **Runtime: onnxruntime with the CUDA execution provider.** It shares the GPU with the resident
-  SDXL checkpoint (the matte is small, ~tens of MB working set) and reuses the CUDA toolchain
-  diffusion/text-gen already require, rather than introducing a third GPU API (DirectML). onnxruntime
-  ships **prebuilt GPU binaries**, so there is no monster source build — but they are **DLLs**, making
-  this the one engine dependency *not* linked statically.
+- **Runtime: onnxruntime with the CUDA execution provider, falling back to CPU.** It shares the GPU
+  with the resident SDXL checkpoint (the matte is small, ~tens of MB working set) and reuses the CUDA
+  toolchain diffusion/text-gen already require, rather than introducing a third GPU API (DirectML).
+  onnxruntime ships **prebuilt GPU binaries**, so there is no monster source build — but they are
+  **DLLs**, making this the one engine dependency *not* linked statically. **Crucial caveat:** the CUDA
+  EP additionally needs **cuDNN**, which the GGML CUDA stack (cuBLAS/cudart only) does *not* ship — and the
+  onnxruntime GPU zip is built for a SPECIFIC CUDA major, so a machine that runs diffusion on the GPU may
+  still fail to load `onnxruntime_providers_cuda.dll` (`LoadLibrary` error 126 = missing dependent DLL) on
+  both counts. Resolved on two fronts: (1) the build pins the **CUDA-12** onnxruntime build (1.20.1) to
+  match the GGML toolkit's CUDA 12, and **bundles the cuDNN 9 redist DLLs** next to the executable (fetched
+  from NVIDIA's public redist, ~800 MB) so the CUDA EP loads out of the box; (2) the backend still **catches
+  CUDA-EP init failure and recreates the session on the CPU EP** (isnet is ~1–2s on CPU) as a safety net, so
+  a toolkit mismatch degrades gracefully instead of silently dropping to the skeleton fallback. Bump the
+  onnxruntime and cuDNN versions together on the same CUDA major.
 - **Model: isnet-general-use.** A prompt-free saliency-matting model (the modern rembg default),
   declared in a Resource Manifest's `mattingModels` array and loaded from the `ImageGeneration`
   folder. Like a Checkpoint, the resource map records only its resolved **path**

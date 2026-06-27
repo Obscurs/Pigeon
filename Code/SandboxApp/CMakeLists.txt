@@ -104,13 +104,16 @@ target_link_libraries (
 set_target_properties(SandboxApp PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
-# Copy the onnxruntime runtime DLLs next to the executable: the matting backend (ADR 0012) loads them at
-# runtime, and onnxruntime GPU has no static distribution, so these are the one set of DLLs that must ship
-# alongside SandboxApp. Skipped entirely when matting is disabled (e.g. the Testing/UT configure).
+# Copy the onnxruntime + cuDNN runtime DLLs next to the executable: the matting backend (ADR 0012) loads
+# them at runtime. onnxruntime GPU has no static distribution, and its CUDA EP needs cuDNN (which the GGML
+# CUDA stack does not ship), so both must sit beside SandboxApp for the GPU matte to load — otherwise the
+# backend falls back to CPU. cuDNN DLLs are globbed recursively since the redist archive nests them under a
+# versioned bin/ folder. Skipped entirely when matting is disabled (e.g. the Testing/UT configure).
 if(PG_ENABLE_MATTING)
     file(GLOB PG_ONNXRUNTIME_DLLS "${PG_ONNXRUNTIME_DIR}/lib/*.dll")
+    file(GLOB_RECURSE PG_CUDNN_DLLS "${PG_CUDNN_DIR}/*.dll")
     add_custom_command(TARGET SandboxApp POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PG_ONNXRUNTIME_DLLS} "$<TARGET_FILE_DIR:SandboxApp>"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PG_ONNXRUNTIME_DLLS} ${PG_CUDNN_DLLS} "$<TARGET_FILE_DIR:SandboxApp>"
         COMMAND_EXPAND_LISTS
-        COMMENT "Copying onnxruntime DLLs next to SandboxApp")
+        COMMENT "Copying onnxruntime + cuDNN DLLs next to SandboxApp")
 endif()
