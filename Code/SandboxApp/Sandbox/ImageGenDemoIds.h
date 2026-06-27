@@ -5,9 +5,10 @@
 namespace sbx
 {
 	// Shared UUIDs for the text-to-image demo. The model/skeleton/input-image IDs match the App
-	// ResourcesManifest (Assets/App/ImageGeneration); the three result-texture IDs are caller-assigned
-	// (not in the manifest): the 3-step pipeline (ADR 0011) registers its restyled background, OpenPose
-	// pose hint, and final composite under them, and SceneSetupSystem shows a sprite bound to each.
+	// ResourcesManifest (Assets/App/ImageGeneration); the four result-texture IDs are caller-assigned
+	// (not in the manifest): the pipeline (ADR 0011) registers its restyled background, OpenPose pose
+	// hint, final composite, and optional integration pass under them, and SceneSetupSystem shows a
+	// sprite bound to each.
 	inline const pg::UUID k_DiffusionCheckpointID("d8000000-0000-4000-8000-000000000001");
 	inline const pg::UUID k_DiffusionLoraID("d8000000-0000-4000-8000-000000000002");
 	inline const pg::UUID k_DiffusionControlNetID("d8000000-0000-4000-8000-000000000003");
@@ -16,4 +17,5 @@ namespace sbx
 	inline const pg::UUID k_BackgroundTextureID("d8000000-0000-4000-8000-0000000000fa");
 	inline const pg::UUID k_HintTextureID("d8000000-0000-4000-8000-0000000000fb");
 	inline const pg::UUID k_CompositeTextureID("d8000000-0000-4000-8000-0000000000fc");
+	inline const pg::UUID k_IntegratedTextureID("d8000000-0000-4000-8000-0000000000fd");
 }

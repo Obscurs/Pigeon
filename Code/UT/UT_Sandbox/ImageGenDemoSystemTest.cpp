@@ -61,6 +61,24 @@ namespace
 		return view.get<sbx::ImageGenDemoStateSingletonComponent>(view.front());
 	}
 
+	sbx::ImageGenDemoStateSingletonComponent& GetMutableState()
+	{
+		pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+		auto view = registry.view<sbx::ImageGenDemoStateSingletonComponent>();
+		return view.get<sbx::ImageGenDemoStateSingletonComponent>(view.front());
+	}
+
+	// Makes a generated result available as a reusable input image (the ADR 0011 feed-forward that
+	// ResourceManagerSystem performs in production), gating the steps that consume a previous result.
+	void RetainAsInputImage(const pg::UUID& id)
+	{
+		pg::Image image;
+		image.m_Width = 4;
+		image.m_Height = 4;
+		image.m_Pixels.assign(static_cast<size_t>(4) * 4 * 3, 90);
+		GetResources().m_InputImageMap[id] = image;
+	}
+
 	void SetJobRunning(bool running)
 	{
 		GetJob().m_ActiveJob = running ? std::make_shared<pg::DiffusionJob>() : nullptr;
@@ -93,6 +111,17 @@ namespace
 		world.Update(pg::Timestep(0)); // observes the job running
 		SetJobRunning(false);
 		world.Update(pg::Timestep(0)); // observes it finished -> advances
+	}
+
+	// Drives the pipeline through background + hint to the composite step (eComposite), with the restyled
+	// background retained as an input image so the composite request has been emitted. Leaves the world at
+	// step == eComposite, ready for the composite job to run.
+	void DriveToComposite(pg::World& world)
+	{
+		DriveToBackground(world);
+		RunStepToCompletion(world); // background job finishes -> eHint
+		RetainAsInputImage(sbx::k_BackgroundTextureID);
+		world.Update(pg::Timestep(0)); // restyled background available -> launches composite -> eComposite
 	}
 }
 
@@ -231,17 +260,85 @@ TEST_CASE("Sandbox.ImageGenDemoSystem::CompletesWhenCompositeJobFinishes")
 	pg::World& world = pg::World::Create();
 	world.RegisterSystem(std::make_unique<sbx::ImageGenDemoSystem>());
 
-	DriveToBackground(world);
-	RunStepToCompletion(world); // -> eHint
-
-	pg::Image background;
-	background.m_Width = 4;
-	background.m_Height = 4;
-	background.m_Pixels.assign(static_cast<size_t>(4) * 4 * 3, 90);
-	GetResources().m_InputImageMap[sbx::k_BackgroundTextureID] = background;
-	world.Update(pg::Timestep(0)); // -> eComposite
-
+	DriveToComposite(world);
 	RunStepToCompletion(world); // composite job runs then finishes
+
+	// The integration pass is off by default, so the composite is the final step.
+	CHECK(GetState().m_Step == sbx::EImageGenStep::eDone);
+}
+
+TEST_CASE("Sandbox.ImageGenDemoSystem::SkipsIntegrationWhenDisabled")
+{
+	pg::World& world = pg::World::Create();
+	world.RegisterSystem(std::make_unique<sbx::ImageGenDemoSystem>());
+
+	DriveToComposite(world);
+	RunStepToCompletion(world); // composite job finishes -> eDone (integration off)
+
+	CHECK(GetState().m_Step == sbx::EImageGenStep::eDone);
+	// No integration request is emitted when the pass is disabled.
+	CHECK(pg::World::GetRegistryDirect().view<pg::GenerateImageRequestOneFrameComponent>().empty());
+}
+
+TEST_CASE("Sandbox.ImageGenDemoSystem::WaitsForIntegrationWhenEnabled")
+{
+	pg::World& world = pg::World::Create();
+	world.RegisterSystem(std::make_unique<sbx::ImageGenDemoSystem>());
+
+	DriveToComposite(world);
+	GetMutableState().m_IntegrationPass = true;
+	RunStepToCompletion(world); // composite job finishes -> eIntegrate (waiting for feed-forward)
+
+	// Enabling the pass makes the composite advance to the integration step instead of finishing.
+	CHECK(GetState().m_Step == sbx::EImageGenStep::eIntegrate);
+	// The composite is not yet retained as an input image, so no integration request is emitted yet.
+	CHECK(pg::World::GetRegistryDirect().view<pg::GenerateImageRequestOneFrameComponent>().empty());
+}
+
+TEST_CASE("Sandbox.ImageGenDemoSystem::EmitsIntegrationRequestWhenCompositeReady")
+{
+	pg::World& world = pg::World::Create();
+	world.RegisterSystem(std::make_unique<sbx::ImageGenDemoSystem>());
+
+	DriveToComposite(world);
+	GetMutableState().m_IntegrationPass = true;
+	GetMutableState().m_IntegrationStrength = 0.4f;
+	RunStepToCompletion(world); // -> eIntegrate
+
+	// The integration pass waits for the composite to be retained as an input image (feed-forward).
+	RetainAsInputImage(sbx::k_CompositeTextureID);
+	world.Update(pg::Timestep(0)); // composite available -> launch integration
+
+	auto view = pg::World::GetRegistryDirect().view<pg::GenerateImageRequestOneFrameComponent>();
+	REQUIRE(view.size() == 1);
+	const pg::GenerateImageRequestOneFrameComponent& request =
+		view.get<pg::GenerateImageRequestOneFrameComponent>(view.front());
+	// The integration pass is a pure img2img regeneration of the composite: the composite is the init
+	// image, and there is no ControlNet (which NaNs to grey here) and no LoRA — it only harmonises.
+	CHECK(request.m_TargetTextureID == sbx::k_IntegratedTextureID);
+	CHECK(request.m_InputImageID == sbx::k_CompositeTextureID);
+	CHECK(request.m_ControlSkeletonID.IsNull());
+	CHECK(request.m_BackgroundImageID.IsNull());
+	CHECK_FALSE(request.m_CompositeWithMatte);
+	CHECK(request.m_Loras.empty());
+	CHECK(request.m_DenoiseStrength == Approx(0.4f));
+	// The integration prompt leads with the background style prompt and asks for an integrated scene.
+	CHECK(request.m_Prompt.find("integrated") != std::string::npos);
+	CHECK(GetState().m_Step == sbx::EImageGenStep::eIntegrating);
+}
+
+TEST_CASE("Sandbox.ImageGenDemoSystem::CompletesAfterIntegrationJob")
+{
+	pg::World& world = pg::World::Create();
+	world.RegisterSystem(std::make_unique<sbx::ImageGenDemoSystem>());
+
+	DriveToComposite(world);
+	GetMutableState().m_IntegrationPass = true;
+	RunStepToCompletion(world); // -> eIntegrate
+	RetainAsInputImage(sbx::k_CompositeTextureID);
+	world.Update(pg::Timestep(0)); // -> eIntegrating
+
+	RunStepToCompletion(world); // integration job runs then finishes
 
 	CHECK(GetState().m_Step == sbx::EImageGenStep::eDone);
 }

@@ -1,13 +1,14 @@
 # ImageGenDemoSystem
 
 ## Purpose
-SandboxApp text-to-image demo driving a 3-step pipeline (ADR 0011). Returns early until the engine
-diffusion singletons (backend + job) and the resource map exist, then lazily creates its state
-singleton. Each frame it advances the running pipeline based on Diffusion Job completion and resource
-availability; an ImGui "Image Generation" panel exposes the editable background style prompt + a
-consistency slider + a Generate button (the G key is the same trigger, and the headless-test entry
-point since the panel needs no-context guarding). A Generate trigger, when the backend is loaded and the
-pipeline is idle/done, starts the sequence:
+SandboxApp text-to-image demo driving a 3-step pipeline plus an optional 4th step (ADR 0011). Returns
+early until the engine diffusion singletons (backend + job) and the resource map exist, then lazily
+creates its state singleton. Each frame it advances the running pipeline based on Diffusion Job
+completion and resource availability; an ImGui "Image Generation" panel exposes the editable background
+style prompt + a consistency slider + an "Integration pass" checkbox (with a strength slider) + a
+Generate button (the G key is the same trigger, and the headless-test entry point since the panel needs
+no-context guarding). A Generate trigger, when the backend is loaded and the pipeline is idle/done,
+starts the sequence:
 
 1. **Background** — emits a GenerateImageRequest into `k_BackgroundTextureID`: img2img on the original
    photo (`k_LivingRoomImageID`) with the panel's style prompt and a denoise derived from the
@@ -25,10 +26,17 @@ pipeline is idle/done, starts the sequence:
    img2img is not used — img2img + ControlNet NaNs the latent to flat grey on this checkpoint (ADR 0011);
    the composite is a CPU blend that always renders. The LoRA must be the same architecture as the resident
    checkpoint (an Illustrious/SDXL LoRA for this SDXL checkpoint); a wrong-architecture LoRA binds 0 tensors
-   and is silently ignored. When that job finishes the pipeline is done.
+   and is silently ignored.
+4. **Integration pass (optional)** — only when the panel's "Integration pass" checkbox is on. Once the
+   composite is retained as an input image (the same engine feed-forward), emits a GenerateImageRequest into
+   `k_IntegratedTextureID`: a pure img2img regeneration of the composite (`m_InputImageID = k_CompositeTextureID`)
+   at the panel's integration strength (denoise), with no ControlNet and no LoRA, harmonising the matted figure
+   into the background so it reads as one coherent image. When that job finishes the pipeline is done. With the
+   checkbox off, the composite is the final step and the pipeline is done when its job finishes.
 
 Each generation step waits for its Diffusion Job (seen running, then idle); only one job runs at a time,
-so the engine serialises the steps. The three result UUIDs are shown side by side by SceneSetupSystem.
+so the engine serialises the steps. The four result UUIDs are shown side by side by SceneSetupSystem (the
+integration sprite stays on the default texture unless the pass is enabled).
 
 ## Input Components
 | Component | Access | Notes |

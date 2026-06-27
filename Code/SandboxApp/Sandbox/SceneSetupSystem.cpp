@@ -146,15 +146,16 @@ namespace
 		EmitSceneTransform(accessor, ent, glm::vec3(-0.6f, -0.6f, 0.f), glm::vec3(1.2f, 1.2f, 1.f));
 	}
 
-	// The text-to-image pipeline display sprites: three world-space sprites bound to the pipeline's
-	// three result-texture UUIDs (ADR 0011), placed left to right - the restyled background, the
-	// OpenPose pose hint, and the final composite. Each UUID is unregistered until its step finishes
-	// (the renderer falls back to the default texture); once ImageGenDemoSystem's pipeline registers a
-	// result under its UUID, it appears in the matching sprite. Press G / Generate to run the pipeline.
+	// The text-to-image pipeline display sprites: four world-space sprites bound to the pipeline's
+	// result-texture UUIDs (ADR 0011), placed left to right - the restyled background, the OpenPose pose
+	// hint, the final composite, and the optional integration pass. Each UUID is unregistered until its
+	// step finishes (the renderer falls back to the default texture); once ImageGenDemoSystem's pipeline
+	// registers a result under its UUID, it appears in the matching sprite. The integration sprite stays
+	// on the default texture unless the panel's integration pass is enabled. Press G / Generate to run it.
 	void CreateGenerationDisplaySprites(pg::CheckedRegistryAccessor& accessor)
 	{
-		const pg::UUID resultIDs[3] = { sbx::k_BackgroundTextureID, sbx::k_HintTextureID, sbx::k_CompositeTextureID };
-		for (int i = 0; i < 3; ++i)
+		const pg::UUID resultIDs[4] = { sbx::k_BackgroundTextureID, sbx::k_HintTextureID, sbx::k_CompositeTextureID, sbx::k_IntegratedTextureID };
+		for (int i = 0; i < 4; ++i)
 		{
 			pg::ecs::Entity ent = accessor.Create();
 			pg::SpriteComponent sprite;

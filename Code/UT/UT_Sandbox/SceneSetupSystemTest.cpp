@@ -116,9 +116,10 @@ namespace CatchTestsetFail
 		const pg::OrthographicCameraComponent& camera = cameraView.get<pg::OrthographicCameraComponent>(cameraView.front());
 		CHECK(std::fabs(camera.m_AspectRatio - 1280.f / 720.f) < 1e-4f);
 
-		// Six sprites: the static demo sprite, the animated character, the 3D display sprite, and the
-		// three text-to-image pipeline display sprites (restyled background, pose hint, composite).
-		CHECK(pg::World::GetRegistryDirect().view<pg::SpriteComponent>().size() == 6);
+		// Seven sprites: the static demo sprite, the animated character, the 3D display sprite, and the
+		// four text-to-image pipeline display sprites (restyled background, pose hint, composite, and the
+		// optional integration pass).
+		CHECK(pg::World::GetRegistryDirect().view<pg::SpriteComponent>().size() == 7);
 		// One 3D camera looking at the spinning model.
 		CHECK(pg::World::GetRegistryDirect().view<pg::PerspectiveCameraComponent>().size() == 1);
 		CHECK(pg::World::GetRegistryDirect().view<sbx::LabelComponent>().size() == 3);

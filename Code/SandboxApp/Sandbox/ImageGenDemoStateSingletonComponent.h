@@ -9,9 +9,11 @@ namespace sbx
 	enum class EImageGenStep
 	{
 		eIdle,
-		eBackground, // restyling the original photo (img2img)
-		eHint,       // rasterizing the OpenPose pose hint
-		eComposite,  // painting the figure into the restyled background
+		eBackground,  // restyling the original photo (img2img)
+		eHint,        // rasterizing the OpenPose pose hint
+		eComposite,   // painting the figure into the restyled background
+		eIntegrate,   // waiting for the composite feed-forward, then launching the integration pass
+		eIntegrating, // the integration img2img pass is running
 		eDone
 	};
 
@@ -45,6 +47,13 @@ namespace sbx
 		// the figure's painted glow / white-background spill leaves around the silhouette (ADR 0012).
 		// Panel-tunable since the ideal value is visual; too large eats thin features (fingers, hair).
 		int m_CompositeMatteErodePixels = 8;
+
+		// Optional integration pass (off by default): after the composite, regenerate the whole frame
+		// with the composite as an img2img init at this denoise strength, harmonising the matted figure
+		// into the background so it reads as one coherent image rather than a cutout (pure img2img, no
+		// ControlNet/LoRA). A low strength keeps the composition; too high reinvents the scene.
+		bool m_IntegrationPass = false;
+		float m_IntegrationStrength = 0.35f;
 
 		EImageGenStep m_Step = EImageGenStep::eIdle;
 		// True once the current generation step's Diffusion Job has been observed running, so the next

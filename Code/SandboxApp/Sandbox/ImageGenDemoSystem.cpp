@@ -102,9 +102,27 @@ namespace
 		accessor.EmplaceOneframe<pg::GenerateImageRequestOneFrameComponent>(accessor.Create(), std::move(request));
 	}
 
-	// Advances the running pipeline: the two generation steps wait for their Diffusion Job to finish
-	// (seen running, then idle); the instant hint step gates the composite on the restyled background
-	// becoming available as an input image (the engine feed-forward), so its img2img init resolves.
+	// Optional step 4: an integration pass over the finished composite. The composite (background + matted
+	// figure) is fed back as an img2img init and the whole frame is lightly regenerated, harmonising the
+	// figure's lighting/texture into the background so it reads as one coherent image rather than a cutout.
+	// Pure img2img - no ControlNet (which NaNs the latent to flat grey on this checkpoint, ADR 0011) and no
+	// LoRA; the low denoise (m_IntegrationStrength) keeps the composition. The style prompt leads so the
+	// harmonisation matches the restyled background's aesthetic.
+	void EmitIntegrationRequest(pg::CheckedRegistryAccessor& accessor, const sbx::ImageGenDemoStateSingletonComponent& state)
+	{
+		pg::GenerateImageRequestOneFrameComponent request;
+		request.m_TargetTextureID = sbx::k_IntegratedTextureID;
+		request.m_Prompt = std::string(state.m_BackgroundPrompt) + ", 1girl in the scene, cohesive lighting, seamless, integrated, masterpiece, best quality";
+		request.m_NegativePrompt = "blurry, lowres, deformed, text, watermark, collage, cutout, sticker, pasted, hard edges";
+		request.m_InputImageID = sbx::k_CompositeTextureID;
+		request.m_DenoiseStrength = state.m_IntegrationStrength;
+		accessor.EmplaceOneframe<pg::GenerateImageRequestOneFrameComponent>(accessor.Create(), std::move(request));
+	}
+
+	// Advances the running pipeline: the generation steps wait for their Diffusion Job to finish (seen
+	// running, then idle); the instant hint step gates the composite on the restyled background becoming
+	// available as an input image (the engine feed-forward), so its img2img init resolves. The optional
+	// integration pass gates the same way on the composite becoming an input image.
 	void AdvancePipeline(pg::CheckedRegistryAccessor& accessor, sbx::ImageGenDemoStateSingletonComponent& state, const pg::ResourceMapSingletonComponent& resources, bool jobRunning)
 	{
 		switch (state.m_Step)
@@ -136,6 +154,25 @@ namespace
 			}
 			else if (state.m_SawJobRunning)
 			{
+				state.m_Step = state.m_IntegrationPass ? sbx::EImageGenStep::eIntegrate : sbx::EImageGenStep::eDone;
+				state.m_SawJobRunning = false;
+			}
+			break;
+		case sbx::EImageGenStep::eIntegrate:
+			if (resources.m_InputImageMap.count(sbx::k_CompositeTextureID) > 0)
+			{
+				EmitIntegrationRequest(accessor, state);
+				state.m_Step = sbx::EImageGenStep::eIntegrating;
+				state.m_SawJobRunning = false;
+			}
+			break;
+		case sbx::EImageGenStep::eIntegrating:
+			if (jobRunning)
+			{
+				state.m_SawJobRunning = true;
+			}
+			else if (state.m_SawJobRunning)
+			{
 				state.m_Step = sbx::EImageGenStep::eDone;
 				state.m_SawJobRunning = false;
 			}
@@ -161,11 +198,13 @@ namespace
 	{
 		switch (step)
 		{
-		case sbx::EImageGenStep::eBackground: return "1/3 restyling background...";
-		case sbx::EImageGenStep::eHint:       return "2/3 building pose hint...";
-		case sbx::EImageGenStep::eComposite:  return "3/3 compositing figure...";
-		case sbx::EImageGenStep::eDone:       return "done";
-		default:                              return "idle";
+		case sbx::EImageGenStep::eBackground:  return "1/3 restyling background...";
+		case sbx::EImageGenStep::eHint:        return "2/3 building pose hint...";
+		case sbx::EImageGenStep::eComposite:   return "3/3 compositing figure...";
+		case sbx::EImageGenStep::eIntegrate:   return "integration pass...";
+		case sbx::EImageGenStep::eIntegrating: return "integration pass...";
+		case sbx::EImageGenStep::eDone:        return "done";
+		default:                               return "idle";
 		}
 	}
 }
@@ -243,6 +282,10 @@ void sbx::ImageGenDemoSystem::Update(const pg::Timestep& ts)
 	ImGui::Checkbox("Composite ControlNet", &state.m_CompositeUseControlNet);
 	ImGui::SliderFloat("Composite mask tightness", &state.m_CompositeMaskScale, 0.2f, 1.2f);
 	ImGui::SliderInt("Matte edge trim (px)", &state.m_CompositeMatteErodePixels, 0, 30);
+	ImGui::Separator();
+	// Optional 4th pass: regenerate the composite (img2img) so the figure integrates into the background.
+	ImGui::Checkbox("Integration pass", &state.m_IntegrationPass);
+	ImGui::SliderFloat("Integration strength", &state.m_IntegrationStrength, 0.1f, 0.8f);
 
 	if (backendReady && IsPipelineIdle(state))
 	{
@@ -266,6 +309,6 @@ void sbx::ImageGenDemoSystem::Update(const pg::Timestep& ts)
 
 	ImGui::Separator();
 	ImGui::TextWrapped("Status: %s", StepLabel(state.m_Step));
-	ImGui::TextWrapped("Background -> Pose -> Composite, shown left to right in the scene.");
+	ImGui::TextWrapped("Background -> Pose -> Composite (-> Integration), shown left to right in the scene.");
 	ImGui::End();
 }
