@@ -44,6 +44,9 @@
 	"vae": [
 		{"id": "d8000000-0000-4000-8000-000000000008", "path" : "sdxl-fp16.vae.safetensors"}
 	],
+	"mattingModels": [
+		{"id": "d8000000-0000-4000-8000-000000000009", "path" : "isnet-general-use.onnx"}
+	],
 	"languageModels": [
 		{"id": "d8000000-0000-4000-8000-000000000007", "path" : "Llama-3.1-128k-Dark-Planet-Uncensored-8B-Q4_k_s.gguf"}
 	]

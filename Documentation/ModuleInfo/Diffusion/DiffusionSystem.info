@@ -2,13 +2,21 @@
 
 ## Purpose
 Drives in-engine text-to-image generation (ADR 0008). Returns early until the engine config and
-resource map exist. Lazily creates the diffusion backend + job singletons (deferred), then loads the
-resident checkpoint (+ optional ControlNet) once from the resource map's model paths. Each frame it
-reaps a finished Diffusion Job — emitting a RegisterGeneratedTextureRequest carrying the result — and,
-while idle and the backend is loaded, assembles one GenerateImageRequest into backend job parameters
-(resolving Generation Config defaults, LoRA UUIDs to paths, and the OpenPose Control Hint by rasterizing
-the referenced skeleton) and launches a single generation on a background worker thread so the frame
-loop never blocks. Only one job runs at a time.
+resource map exist. Lazily creates the diffusion backend + job + matting backend singletons (deferred),
+then loads the resident checkpoint (+ optional ControlNet) and the resident matting model once from the
+resource map's model paths. Each frame it reaps a finished Diffusion Job — emitting a
+RegisterGeneratedTextureRequest carrying the result — and, while idle and the backend is loaded,
+assembles one GenerateImageRequest into backend job parameters (resolving Generation Config defaults,
+LoRA UUIDs to paths, and the OpenPose Control Hint by rasterizing the referenced skeleton) and launches a
+single generation on a background worker thread so the frame loop never blocks. Only one job runs at a time.
+
+The worker may composite the generated subject over a background image (resolved like an Input Image),
+choosing the alpha source by precedence (ADR 0012): the figure's per-pixel **Alpha Matte** from the
+Matting Backend (m_CompositeWithMatte) → the OpenPose skeleton's **silhouette mask**
+(m_CompositeWithSkeletonMask, also the matte's fallback when the Matting Backend is unavailable) →
+**chroma key**. The matte is computed on the worker (it needs the generated figure); the skeleton
+silhouette is resolved on the main thread and captured as the fallback. The composite is a CPU blend, so
+it cannot produce the flat grey that img2img + ControlNet does on the bundled checkpoint.
 
 It also drains any RasterizeOpenPoseHintRequest each frame (ADR 0011): for each, it resolves the
 referenced skeleton, rasterizes the canonical OpenPose hint at the requested size (falling back to the
@@ -21,7 +29,7 @@ skipped with a warning. It owns this because RegisterGeneratedTextureRequest has
 |---|---|---|
 | GenerateImageRequestOneFrameComponent | read | App-emitted request: prompt, overrides, LoRA refs, optional OpenPose ControlNet, target UUID |
 | RasterizeOpenPoseHintRequestOneFrameComponent | read | App-emitted request: skeleton UUID + target texture UUID + size; rasterized to a shown texture (ADR 0011) |
-| ResourceMapSingletonComponent | read | Resident checkpoint/ControlNet paths, LoRA paths, OpenPose skeletons |
+| ResourceMapSingletonComponent | read | Resident checkpoint/ControlNet/VAE paths, LoRA paths, OpenPose skeletons, matting model paths, input/background images |
 | EngineConfigSingletonComponent | read | Generation Config defaults for unset request fields |
 
 ## Output Components
@@ -29,4 +37,5 @@ skipped with a warning. It owns this because RegisterGeneratedTextureRequest has
 |---|---|---|
 | DiffusionBackendSingletonComponent | write / add (deferred) | Created once (holds the platform backend); m_LoadAttempted guards the one-time checkpoint load |
 | DiffusionJobSingletonComponent | write / add (deferred) | Holds the single active/just-finished job (worker thread + atomic state + result) |
-| RegisterGeneratedTextureRequestOneFrameComponent | add (oneframe) | Emitted when a job completes; drained by ResourceManagerSystem |
+| MattingBackendSingletonComponent | write / add (deferred) | Created once (holds the matting backend); m_LoadAttempted guards the one-time matting-model load (ADR 0012) |
+| RegisterGeneratedTextureRequestOneFrameComponent | add (oneframe) | Emitted when a job completes (and for a rasterized OpenPose hint); drained by ResourceManagerSystem |

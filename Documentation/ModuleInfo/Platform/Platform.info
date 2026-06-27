@@ -22,7 +22,19 @@ flag — there are no runtime branches.
 `TestingHelper` is a singleton observation log that `TestingBuffer` and `TestingRendererAPI`
 write to, allowing unit tests to assert on recorded draw calls without a GPU.
 
+## AI inference backends
+The in-engine AI runtimes are also platform backends, but selected by the **renderer-API switch** (their
+`Create()`, mirroring `pg::AudioDevice`) rather than `TESTS_ENABLED`, each behind its own opt-in so a plain
+build links without the heavy runtime: `pg::DiffusionBackend` → `StableDiffusionCppBackend`
+(`PG_ENABLE_DIFFUSION`, CUDA) / `TestingDiffusionBackend`; `pg::TextGenBackend` → `LlamaCppBackend`
+(`PG_ENABLE_TEXTGEN`, CUDA) / `TestingTextGenBackend`; `pg::MattingBackend` → `OnnxMattingBackend`
+(`PG_ENABLE_MATTING`, onnxruntime CUDA) / `TestingMattingBackend` (ADR 0012). The onnxruntime backend is
+the one dependency shipped as DLLs rather than linked statically.
+
 ## File Location
 `Code/PigeonLib/Platform/Windows/` — Win32 window and input
 `Code/PigeonLib/Platform/DirectX11/` — DirectX 11 graphics implementations
+`Code/PigeonLib/Platform/StableDiffusion/` — stable-diffusion.cpp text-to-image backend (opt-in `PG_ENABLE_DIFFUSION`)
+`Code/PigeonLib/Platform/Llama/` — llama.cpp text-generation backend (opt-in `PG_ENABLE_TEXTGEN`)
+`Code/PigeonLib/Platform/Onnx/` — onnxruntime image-matting backend (opt-in `PG_ENABLE_MATTING`)
 `Code/PigeonLib/Platform/Testing/` — headless stubs for unit tests

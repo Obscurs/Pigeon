@@ -15,6 +15,23 @@ the renderer-API switch, mirroring AudioDevice:
   last job params, returns a solid mid-grey image of the requested size. Lets tests exercise the full
   request → generate → register path with no CUDA, model files, or real inference.
 
+## MattingBackend (ADR 0012)
+Platform abstraction for the image-matting inference runtime, used to cut the generated figure out of its
+plain background by its real outline for compositing (replacing the geometric skeleton silhouette and its
+"gray cloud" halo). Not an ECS system — driven by DiffusionSystem. Abstract interface: `LoadModel(path)`
+loads the session-resident model once, `IsLoaded()` reports readiness, `Matte(image)` runs one
+segmentation synchronously (on the diffusion worker thread) and returns an RGB Alpha Matte the same size
+as the input (white = foreground, channels replicated so it feeds the mask-composite alpha; empty on
+failure). `Create()` selects the concrete backend by the renderer-API switch, mirroring DiffusionBackend:
+- **OnnxMattingBackend** (DirectX11 builds) — wraps onnxruntime with the CUDA execution provider, running
+  the bundled **isnet-general-use** model. Compiled active only when PigeonLib is built with
+  `-DPG_ENABLE_MATTING=ON` (defines `PG_MATTING_ENABLED`); otherwise it is an inert no-op (IsLoaded() ==
+  false), so a plain build links without onnxruntime and the composite falls back to the skeleton
+  silhouette. onnxruntime GPU ships as DLLs (the one non-static dependency), copied next to the executable.
+- **TestingMattingBackend** (Testing builds) — deterministic mock: records the model path + Matte count and
+  returns a fixed split matte (left half white, right half black). Lets tests exercise the matte-composite
+  and skeleton-fallback paths with no onnxruntime, CUDA, or model files.
+
 ## DiffusionJobParams
 The fully-resolved inputs of one generation handed to the backend: prompt/negative/seed, steps, CFG
 scale, sampler name, width/height, clip skip, the LoRA set (path + weight), an optional img2img init
@@ -28,6 +45,10 @@ inits, and generated results.
 ## DiffusionBackendSingletonComponent
 Holds the session backend (`m_Backend`) and `m_LoadAttempted` (guards the one-time resident load).
 
+## MattingBackendSingletonComponent (ADR 0012)
+Holds the session matting backend (`m_Backend`) and `m_LoadAttempted` (guards the one-time resident
+matting-model load). Created and owned by DiffusionSystem, mirroring DiffusionBackendSingletonComponent.
+
 ## DiffusionJob / DiffusionJobSingletonComponent
 DiffusionJob is the in-flight (or just-finished) generation: an atomic state
 (pending/running/done/failed), the target texture UUID, the result image, and the worker thread (joined
@@ -39,9 +60,11 @@ App-emitted (engine-typed) request: target texture UUID (caller-assigned, like a
 prompt/negative/seed, optional Generation Config overrides, LoRA refs (UUID + weight), and an optional
 OpenPose ControlNet (skeleton UUID + strength + a 2D placement transform). Unset config fields fall back
 to the engine defaults. Optionally composites the generated subject over a background image (resolved like
-an Input Image): either chroma-keyed (auto-detected key colour + threshold) or, when
-`m_CompositeWithSkeletonMask` is set, via the ControlNet skeleton's silhouette as a soft alpha mask (the
-mask path takes precedence). The composite runs on the worker thread, off the frame loop.
+an Input Image), choosing the alpha by precedence (ADR 0012): the figure's per-pixel Alpha Matte from the
+Matting Backend when `m_CompositeWithMatte` is set; else the ControlNet skeleton's silhouette as a soft
+alpha mask when `m_CompositeWithSkeletonMask` is set (also the matte's fallback when the Matting Backend is
+unavailable); else a chroma key (auto-detected key colour + threshold). The composite runs on the worker
+thread, off the frame loop.
 
 ## RasterizeOpenPoseHintRequestOneFrameComponent
 App-emitted (engine-typed) request to rasterize an OpenPose Skeleton's canonical hint and register it

@@ -14,6 +14,8 @@
 #include "Pigeon/Diffusion/DiffusionJob.h"
 #include "Pigeon/Diffusion/DiffusionJobSingletonComponent.h"
 #include "Pigeon/Diffusion/GenerateImageRequestOneFrameComponent.h"
+#include "Pigeon/Diffusion/MattingBackend.h"
+#include "Pigeon/Diffusion/MattingBackendSingletonComponent.h"
 #include "Pigeon/Diffusion/OpenPoseHint.h"
 #include "Pigeon/Diffusion/RasterizeOpenPoseHintRequestOneFrameComponent.h"
 #include "Pigeon/Diffusion/RegisterGeneratedTextureRequestOneFrameComponent.h"
@@ -230,6 +232,88 @@ namespace
 		return out;
 	}
 
+	// Morphologically erodes a white-on-black mask (separable two-pass min filter on the red channel) by
+	// `radius` pixels, shrinking the foreground region inward. Trims the uniform halo ring — the figure's
+	// painted glow or its flat-background spill — that the matte includes around the subject's outline.
+	pg::Image ErodeMask(const pg::Image& mask, int radius)
+	{
+		if (mask.m_Pixels.empty() || radius <= 0)
+		{
+			return mask;
+		}
+		const int width = static_cast<int>(mask.m_Width);
+		const int height = static_cast<int>(mask.m_Height);
+		std::vector<uint8_t> source(static_cast<size_t>(width) * height);
+		for (int i = 0; i < width * height; ++i)
+		{
+			source[i] = mask.m_Pixels[static_cast<size_t>(i) * 3];
+		}
+		std::vector<uint8_t> horizontal(source.size());
+		for (int y = 0; y < height; ++y)
+		{
+			for (int x = 0; x < width; ++x)
+			{
+				uint8_t minValue = 255;
+				for (int dx = -radius; dx <= radius; ++dx)
+				{
+					minValue = std::min(minValue, source[static_cast<size_t>(y) * width + std::clamp(x + dx, 0, width - 1)]);
+				}
+				horizontal[static_cast<size_t>(y) * width + x] = minValue;
+			}
+		}
+		pg::Image out;
+		out.m_Width = mask.m_Width;
+		out.m_Height = mask.m_Height;
+		out.m_Pixels.resize(static_cast<size_t>(width) * height * 3);
+		for (int y = 0; y < height; ++y)
+		{
+			for (int x = 0; x < width; ++x)
+			{
+				uint8_t minValue = 255;
+				for (int dy = -radius; dy <= radius; ++dy)
+				{
+					minValue = std::min(minValue, horizontal[static_cast<size_t>(std::clamp(y + dy, 0, height - 1)) * width + x]);
+				}
+				const size_t index = (static_cast<size_t>(y) * width + x) * 3;
+				out.m_Pixels[index] = minValue;
+				out.m_Pixels[index + 1] = minValue;
+				out.m_Pixels[index + 2] = minValue;
+			}
+		}
+		return out;
+	}
+
+	// Composites a foreground over a background through a single-channel (red) alpha matte, decontaminating
+	// the figure's edge spill. The figure is generated on a flat key colour (estimated from its corners), so
+	// its anti-aliased edge pixels are tinted toward that key; subtracting the key's contribution at partial
+	// alpha (out = fg + (1-alpha)*(bg - key)) replaces the bright fringe with the real background instead of
+	// letting it glow over the scene. At alpha=1 the result is the figure, at alpha=0 the background; fg, bg,
+	// and matte must match size.
+	pg::Image MatteComposite(const pg::Image& fg, const pg::Image& bg, const pg::Image& matte, const glm::ivec3& spillKey)
+	{
+		if (fg.m_Pixels.empty() || fg.m_Width != bg.m_Width || fg.m_Height != bg.m_Height || fg.m_Width != matte.m_Width || fg.m_Height != matte.m_Height)
+		{
+			return fg;
+		}
+		pg::Image out;
+		out.m_Width = fg.m_Width;
+		out.m_Height = fg.m_Height;
+		out.m_Pixels.resize(fg.m_Pixels.size());
+		for (size_t i = 0; i + 2 < fg.m_Pixels.size(); i += 3)
+		{
+			const float alpha = static_cast<float>(matte.m_Pixels[i]) / 255.f;
+			for (int c = 0; c < 3; ++c)
+			{
+				const float f = static_cast<float>(fg.m_Pixels[i + c]);
+				const float b = static_cast<float>(bg.m_Pixels[i + c]);
+				const float k = static_cast<float>(spillKey[c]);
+				const float v = f + (1.f - alpha) * (b - k);
+				out.m_Pixels[i + c] = static_cast<uint8_t>(std::clamp(v + 0.5f, 0.f, 255.f));
+			}
+		}
+		return out;
+	}
+
 	// Maps a skeleton's canvas-space keypoints onto an output image of the given pixel size, applying an
 	// extra placement transform (identity maps the canvas straight onto the output). Shared by the
 	// ControlNet hint and the standalone hint-texture rasterization.
@@ -337,10 +421,12 @@ pg::SystemAccessDecl pg::DiffusionSystem::DeclareAccess() const
 	decl.writeSet = {
 		std::type_index(typeid(pg::DiffusionBackendSingletonComponent)),
 		std::type_index(typeid(pg::DiffusionJobSingletonComponent)),
+		std::type_index(typeid(pg::MattingBackendSingletonComponent)),
 	};
 	decl.addSet = {
 		std::type_index(typeid(pg::DiffusionBackendSingletonComponent)),
 		std::type_index(typeid(pg::DiffusionJobSingletonComponent)),
+		std::type_index(typeid(pg::MattingBackendSingletonComponent)),
 		std::type_index(typeid(pg::RegisterGeneratedTextureRequestOneFrameComponent)),
 	};
 	return decl;
@@ -357,11 +443,12 @@ void pg::DiffusionSystem::Update(const pg::Timestep& ts)
 		return;
 	}
 
-	// Lazily create the backend + job singletons (deferred -> visible next frame), like the other
-	// startup singletons.
+	// Lazily create the backend + job + matting singletons (deferred -> visible next frame), like the
+	// other startup singletons.
 	auto backendView = accessor.View<pg::DiffusionBackendSingletonComponent>();
 	auto jobView = accessor.View<pg::DiffusionJobSingletonComponent>();
-	if (backendView.empty() || jobView.empty())
+	auto mattingView = accessor.View<pg::MattingBackendSingletonComponent>();
+	if (backendView.empty() || jobView.empty() || mattingView.empty())
 	{
 		if (backendView.empty())
 		{
@@ -373,6 +460,12 @@ void pg::DiffusionSystem::Update(const pg::Timestep& ts)
 		{
 			accessor.EmplaceDeferred<pg::DiffusionJobSingletonComponent>(accessor.Create(), pg::DiffusionJobSingletonComponent{});
 		}
+		if (mattingView.empty())
+		{
+			pg::MattingBackendSingletonComponent mattingComponent;
+			mattingComponent.m_Backend = pg::MattingBackend::Create();
+			accessor.EmplaceDeferred<pg::MattingBackendSingletonComponent>(accessor.Create(), std::move(mattingComponent));
+		}
 		return;
 	}
 
@@ -380,6 +473,7 @@ void pg::DiffusionSystem::Update(const pg::Timestep& ts)
 	const pg::ResourceMapSingletonComponent& resources = resourceView.get<const pg::ResourceMapSingletonComponent>(resourceView.front());
 	pg::DiffusionBackendSingletonComponent& backend = backendView.get<pg::DiffusionBackendSingletonComponent>(backendView.front());
 	pg::DiffusionJobSingletonComponent& job = jobView.get<pg::DiffusionJobSingletonComponent>(jobView.front());
+	pg::MattingBackendSingletonComponent& matting = mattingView.get<pg::MattingBackendSingletonComponent>(mattingView.front());
 
 	// Load the resident checkpoint (+ ControlNet) exactly once.
 	if (!backend.m_LoadAttempted)
@@ -394,6 +488,24 @@ void pg::DiffusionSystem::Update(const pg::Timestep& ts)
 		else
 		{
 			PG_CORE_WARN("DiffusionSystem: no checkpoint in the resource map ({0} declared); text-to-image disabled", resources.m_CheckpointMap.size());
+		}
+	}
+
+	// Load the resident matting model exactly once (ADR 0012). Independent of the checkpoint: when it is
+	// absent (no model declared, the opt-in off, or a Testing build) the figure composite falls back to
+	// the skeleton silhouette mask.
+	if (!matting.m_LoadAttempted)
+	{
+		matting.m_LoadAttempted = true;
+		const std::string mattingPath = FirstPath(resources.m_MattingModelMap);
+		if (matting.m_Backend != nullptr && !mattingPath.empty())
+		{
+			PG_CORE_INFO("DiffusionSystem: loading matting model '{0}'", mattingPath);
+			matting.m_Backend->LoadModel(mattingPath);
+		}
+		else
+		{
+			PG_CORE_WARN("DiffusionSystem: no matting model in the resource map ({0} declared); figure composite falls back to the skeleton silhouette", resources.m_MattingModelMap.size());
 		}
 	}
 
@@ -472,12 +584,13 @@ void pg::DiffusionSystem::Update(const pg::Timestep& ts)
 				}
 			}
 
-			// Optional skeleton-mask composite (takes precedence over chroma): build a soft alpha mask from
-			// the ControlNet skeleton's silhouette so the worker can place the generated figure over the
-			// background without colour-keying. Resolved here (main thread) so the worker just blends.
+			// Skeleton-mask composite: build a soft alpha mask from the ControlNet skeleton's silhouette so
+			// the worker can place the generated figure over the background without colour-keying. Resolved
+			// here (main thread) so the worker just blends. Built when the skeleton-mask composite is
+			// requested OR as the fallback for the matte composite (when the Matting Backend is unavailable).
 			bool hasMaskComposite = false;
 			pg::Image compositeMask;
-			if (request.m_CompositeWithSkeletonMask && hasBackground && !request.m_ControlSkeletonID.IsNull())
+			if ((request.m_CompositeWithSkeletonMask || request.m_CompositeWithMatte) && hasBackground && !request.m_ControlSkeletonID.IsNull())
 			{
 				std::unordered_map<pg::UUID, pg::S_Ptr<pg::OpenPoseSkeleton>>::const_iterator skeletonIt = resources.m_OpenPoseSkeletonMap.find(request.m_ControlSkeletonID);
 				if (skeletonIt != resources.m_OpenPoseSkeletonMap.end() && skeletonIt->second != nullptr)
@@ -494,7 +607,17 @@ void pg::DiffusionSystem::Update(const pg::Timestep& ts)
 				}
 			}
 
-			PG_CORE_INFO("DiffusionSystem: starting generation {0}x{1}, {2} steps, {3} LoRA(s), control={4}, composite={5}, maskComposite={6}", params.m_Width, params.m_Height, params.m_Steps, params.m_Loras.size(), params.m_HasControlHint, hasBackground, hasMaskComposite);
+			// Optional image-matting composite (takes precedence over the skeleton mask and chroma): the
+			// worker cuts the generated figure out with the resident Matting Backend's per-pixel Alpha Matte
+			// and composites it over the background, integrating the figure without the silhouette's halo
+			// (ADR 0012). The matte is computed on the worker (it needs the generated figure); the skeleton
+			// mask built above is its fallback when the backend is unavailable. The backend pointer is a
+			// shared_ptr copy that outlives the worker (the matting backend does not own the worker).
+			const bool wantMatteComposite = request.m_CompositeWithMatte && hasBackground;
+			pg::S_Ptr<pg::MattingBackend> mattingBackendPtr = wantMatteComposite ? matting.m_Backend : nullptr;
+			const int matteErodePixels = request.m_MatteErodePixels;
+
+			PG_CORE_INFO("DiffusionSystem: starting generation {0}x{1}, {2} steps, {3} LoRA(s), control={4}, composite={5}, maskComposite={6}, matteComposite={7}", params.m_Width, params.m_Height, params.m_Steps, params.m_Loras.size(), params.m_HasControlHint, hasBackground, hasMaskComposite, wantMatteComposite);
 
 			pg::S_Ptr<pg::DiffusionJob> activeJob = std::make_shared<pg::DiffusionJob>();
 			activeJob->m_TargetTextureID = request.m_TargetTextureID;
@@ -508,19 +631,48 @@ void pg::DiffusionSystem::Update(const pg::Timestep& ts)
 			// publishes its terminal state, and ~DiffusionJob joins the worker before its members die.
 			pg::S_Ptr<pg::DiffusionBackend> backendPtr = backend.m_Backend;
 			pg::DiffusionJob* jobPtr = activeJob.get();
-			activeJob->m_Worker = std::thread([jobPtr, backendPtr, params, background, chromaThreshold, hasBackground, compositeMask, hasMaskComposite]()
+			activeJob->m_Worker = std::thread([jobPtr, backendPtr, params, background, chromaThreshold, hasBackground, compositeMask, hasMaskComposite, mattingBackendPtr, wantMatteComposite, matteErodePixels]()
 			{
 				try
 				{
 					pg::Image result = backendPtr->Generate(params);
-					if (!result.m_Pixels.empty() && hasMaskComposite)
+					if (!result.m_Pixels.empty())
 					{
-						result = MaskComposite(result, background, compositeMask);
-					}
-					else if (!result.m_Pixels.empty() && hasBackground)
-					{
-						const glm::ivec3 chromaKey = EstimateKeyFromCorners(result);
-						result = ChromaComposite(result, background, chromaKey, chromaThreshold);
+						// Composite precedence: image matte (pixel-accurate cutout) -> skeleton silhouette
+						// (fallback when matting is unavailable) -> chroma key. The matte needs the generated
+						// figure, so it is computed here on the worker.
+						pg::Image matteAlpha;
+						if (wantMatteComposite && mattingBackendPtr != nullptr && mattingBackendPtr->IsLoaded())
+						{
+							matteAlpha = mattingBackendPtr->Matte(result);
+						}
+						else if (wantMatteComposite)
+						{
+							PG_CORE_WARN("DiffusionSystem: matte composite requested but the matting backend is not loaded; falling back to the skeleton silhouette");
+						}
+						if (!matteAlpha.m_Pixels.empty() && matteAlpha.m_Width == result.m_Width && matteAlpha.m_Height == result.m_Height)
+						{
+							// Trim the matte inward to drop the figure's halo ring, then composite with edge
+							// decontamination against the figure's own (flat) background colour.
+							const glm::ivec3 spillKey = EstimateKeyFromCorners(result);
+							const pg::Image trimmedMatte = ErodeMask(matteAlpha, matteErodePixels);
+							result = MatteComposite(result, background, trimmedMatte, spillKey);
+							PG_CORE_INFO("DiffusionSystem: composited via Alpha Matte (edge trim {0}px)", matteErodePixels);
+						}
+						else if (wantMatteComposite && hasMaskComposite)
+						{
+							PG_CORE_WARN("DiffusionSystem: matting backend returned an empty matte; using the skeleton silhouette");
+							result = MaskComposite(result, background, compositeMask);
+						}
+						else if (hasMaskComposite)
+						{
+							result = MaskComposite(result, background, compositeMask);
+						}
+						else if (hasBackground)
+						{
+							const glm::ivec3 chromaKey = EstimateKeyFromCorners(result);
+							result = ChromaComposite(result, background, chromaKey, chromaThreshold);
+						}
 					}
 					const bool ok = !result.m_Pixels.empty();
 					jobPtr->m_Result = std::move(result);

@@ -74,7 +74,21 @@ namespace pg
 
 		// Scales the skeleton silhouette mask's stroke width for the skeleton-mask composite (1 = default).
 		// Smaller hugs the figure more tightly, trimming the halo of plain background around the composited
-		// figure; too small clips the body. Ignored unless m_CompositeWithSkeletonMask.
+		// figure; too small clips the body. Ignored unless m_CompositeWithSkeletonMask (or the matte's
+		// skeleton fallback below).
 		float m_CompositeMaskScale = 1.0f;
+
+		// Optional image-matting composite: cut the generated subject out of its plain background with the
+		// resident Matting Backend's per-pixel Alpha Matte and composite it over m_BackgroundImageID, so the
+		// figure integrates without the skeleton silhouette's surrounding halo (ADR 0012). Takes precedence
+		// over both the chroma key and the skeleton mask. When the Matting Backend is unavailable (no model,
+		// the opt-in off, or a Testing build) the composite falls back to the skeleton silhouette, so a
+		// ControlNet skeleton (m_ControlSkeletonID) should still be supplied. Ignored without a background image.
+		bool m_CompositeWithMatte = false;
+
+		// Trims the Alpha Matte inward by this many pixels before the matte composite, shrinking the
+		// foreground to cut off a uniform halo ring (the figure's painted glow or its flat-background spill)
+		// that the matte includes around the subject's outline. 0 = no trim. Ignored unless m_CompositeWithMatte.
+		int m_MatteErodePixels = 0;
 	};
 }

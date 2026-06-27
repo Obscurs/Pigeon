@@ -208,14 +208,15 @@ TEST_CASE("Sandbox.ImageGenDemoSystem::LaunchesCompositeWhenRestyledBackgroundIs
 		view.get<pg::GenerateImageRequestOneFrameComponent>(view.front());
 	// Step 3 places the posed character over the restyled background: txt2img + OpenPose ControlNet + the
 	// SDXL character LoRA generate the figure on a plain background, then it is composited onto the restyled
-	// background through the skeleton's silhouette mask (m_CompositeWithSkeletonMask). img2img is NOT used —
+	// background through the figure's per-pixel Alpha Matte (m_CompositeWithMatte), which falls back to the
+	// skeleton silhouette when the matting backend is unavailable (ADR 0012). img2img is NOT used —
 	// img2img + ControlNet NaNs to flat grey on this checkpoint (ADR 0011).
 	CHECK(request.m_TargetTextureID == sbx::k_CompositeTextureID);
 	CHECK(request.m_InputImageID.IsNull());
 	CHECK_FALSE(request.m_MaskFromSkeleton);
 	CHECK(request.m_ControlSkeletonID == sbx::k_DiffusionSkeletonID);
 	CHECK(request.m_BackgroundImageID == sbx::k_BackgroundTextureID);
-	CHECK(request.m_CompositeWithSkeletonMask);
+	CHECK(request.m_CompositeWithMatte);
 	// The character LoRA is applied by its resource UUID + weight, and its trigger word ("ff7t1f4") is in
 	// the prompt (without it the LoRA does not express the character).
 	REQUIRE(request.m_Loras.size() == 1);

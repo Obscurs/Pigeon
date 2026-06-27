@@ -41,6 +41,10 @@ namespace sbx
 		// Scales the skeleton silhouette mask: smaller hugs the figure, trimming the plain-background halo
 		// ("cloud") around the composited character. Panel-tunable since the ideal value is visual.
 		float m_CompositeMaskScale = 0.65f;
+		// Trims the matte inward by this many pixels before compositing, cutting off the bright halo ring
+		// the figure's painted glow / white-background spill leaves around the silhouette (ADR 0012).
+		// Panel-tunable since the ideal value is visual; too large eats thin features (fingers, hair).
+		int m_CompositeMatteErodePixels = 8;
 
 		EImageGenStep m_Step = EImageGenStep::eIdle;
 		// True once the current generation step's Diffusion Job has been observed running, so the next

@@ -162,6 +162,26 @@ if(PG_ENABLE_TEXTGEN)
   )
 endif()
 
+option(PG_ENABLE_MATTING "Build the onnxruntime (CUDA) image-matting backend" ON)
+
+# Image matting (onnxruntime, CUDA execution provider). Cuts the generated figure out of its plain
+# background by its real outline so it composites into the scene without a halo (ADR 0012). Unlike the GGML
+# backends this is the ONE dependency shipped as PREBUILT DLLs — onnxruntime publishes no static GPU build —
+# fetched and extracted from the official GPU release zip (no source build). Its bundled CUDA/cuDNN must
+# agree with the toolkit the GGML backends build against, so the version is pinned and bumped deliberately
+# (onnxruntime 1.17.x targets CUDA 11.8/12.x + cuDNN 8.x). PigeonLib links the import lib and defines
+# PG_MATTING_ENABLED (Code/PigeonLib/CMakeLists.txt); SandboxApp copies the runtime DLLs next to the exe.
+if(PG_ENABLE_MATTING)
+  set(PG_ONNXRUNTIME_VERSION "1.17.1")
+  FetchContent_Declare(
+    onnxruntime_gpu
+    URL https://github.com/microsoft/onnxruntime/releases/download/v${PG_ONNXRUNTIME_VERSION}/onnxruntime-win-x64-gpu-${PG_ONNXRUNTIME_VERSION}.zip
+  )
+  FetchContent_MakeAvailable(onnxruntime_gpu)
+  # The zip has no CMakeLists, so MakeAvailable only extracts it; expose the dir for the include/lib/DLLs.
+  set(PG_ONNXRUNTIME_DIR "${onnxruntime_gpu_SOURCE_DIR}" CACHE INTERNAL "onnxruntime GPU prebuilt root")
+endif()
+
 set(MSDFGEN_INCLUDE_DIRS
     "${msdf-atlas-gen_SOURCE_DIR}/msdf-atlas-gen"
     "${msdf-atlas-gen_SOURCE_DIR}/msdfgen"

@@ -103,3 +103,14 @@ target_link_libraries (
 # Properties->General->Output Directory
 set_target_properties(SandboxApp PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
+
+# Copy the onnxruntime runtime DLLs next to the executable: the matting backend (ADR 0012) loads them at
+# runtime, and onnxruntime GPU has no static distribution, so these are the one set of DLLs that must ship
+# alongside SandboxApp. Skipped entirely when matting is disabled (e.g. the Testing/UT configure).
+if(PG_ENABLE_MATTING)
+    file(GLOB PG_ONNXRUNTIME_DLLS "${PG_ONNXRUNTIME_DIR}/lib/*.dll")
+    add_custom_command(TARGET SandboxApp POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PG_ONNXRUNTIME_DLLS} "$<TARGET_FILE_DIR:SandboxApp>"
+        COMMAND_EXPAND_LISTS
+        COMMENT "Copying onnxruntime DLLs next to SandboxApp")
+endif()

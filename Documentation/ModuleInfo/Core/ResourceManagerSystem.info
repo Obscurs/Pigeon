@@ -2,9 +2,10 @@
 
 ## Purpose
 On the first frame, loads all textures, fonts, shaders, UI layouts, sound clips, JSON assets, 3D
-models, render targets, and the text-to-image model assets (checkpoints, LoRAs, ControlNets, OpenPose
-skeletons) from `Assets/Engine/ResourcesManifest.json` and `Assets/App/ResourcesManifest.json`, then
-creates ResourceMapSingletonComponent containing the fully populated asset maps. On every subsequent
+models, render targets, and the text-to-image model assets (checkpoints, LoRAs, ControlNets, VAEs,
+OpenPose skeletons, matting models) from `Assets/Engine/ResourcesManifest.json` and
+`Assets/App/ResourcesManifest.json`, then creates ResourceMapSingletonComponent containing the fully
+populated asset maps. On every subsequent
 frame it drains any RegisterGeneratedTextureRequest, registering each generated image as a Texture2D in
 the existing texture map under its caller-assigned UUID (so a generated image becomes an ordinary
 texture). The first-frame load is guarded by a presence check; the registration drain runs in steady
@@ -14,8 +15,10 @@ Render targets are pathless manifest entries (`{id, width, height}`): the create
 stored in the render-target map and its colour buffer is registered in the texture map under the same
 UUID, so 2D draws can sample the 3D pass's output as an ordinary texture (ADR 0007).
 
-Checkpoints/LoRAs/ControlNets are recorded as resolved file paths only (the diffusion backend loads the
-weights, not the engine); OpenPose skeletons are parsed into pose resources. Generated images arrive as
+Checkpoints/LoRAs/ControlNets/VAEs are recorded as resolved file paths only (the diffusion backend loads
+the weights, not the engine); matting models likewise are paths only, loaded by the matting backend
+(onnxruntime) from the `mattingModels` manifest category under the `ImageGeneration` folder (ADR 0012);
+OpenPose skeletons are parsed into pose resources. Generated images arrive as
 RGB and are expanded to RGBA when registered as textures (ADR 0008); the RGB pixels are also retained as
 an Input Image under the same UUID so a later generation can re-feed the result as an img2img init or
 chroma background (ADR 0011) — this is what lets a multi-step pipeline chain one step's output into the
@@ -30,4 +33,4 @@ next.
 ## Output Components
 | Component | Access | Notes |
 |---|---|---|
-| ResourceMapSingletonComponent | write / add (deferred) | Created once with all asset maps (textures, shaders, fonts, UI layouts, sounds, JSON, models, render targets, checkpoints, LoRAs, ControlNets, OpenPose skeletons); thereafter modified in place to register generated textures (also retained as input images, ADR 0011) |
+| ResourceMapSingletonComponent | write / add (deferred) | Created once with all asset maps (textures, shaders, fonts, UI layouts, sounds, JSON, models, render targets, checkpoints, LoRAs, ControlNets, VAEs, OpenPose skeletons, matting models); thereafter modified in place to register generated textures (also retained as input images, ADR 0011) |

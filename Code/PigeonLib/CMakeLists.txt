@@ -203,6 +203,11 @@ file(GLOB PLATFORM_LLAMA
     "Platform/Llama/LlamaCppBackend.h"
 )
 
+file(GLOB PLATFORM_ONNX
+    "Platform/Onnx/OnnxMattingBackend.cpp"
+    "Platform/Onnx/OnnxMattingBackend.h"
+)
+
 file(GLOB PLATFORM_TESTING
     "Platform/Testing/TestingBuffer.cpp"
     "Platform/Testing/TestingContext.cpp"
@@ -210,6 +215,8 @@ file(GLOB PLATFORM_TESTING
     "Platform/Testing/TestingDiffusionBackend.h"
     "Platform/Testing/TestingHelper.cpp"
     "Platform/Testing/TestingInput.cpp"
+    "Platform/Testing/TestingMattingBackend.cpp"
+    "Platform/Testing/TestingMattingBackend.h"
     "Platform/Testing/TestingRenderTarget.cpp"
     "Platform/Testing/TestingRendererAPI.cpp"
     "Platform/Testing/TestingShader.cpp"
@@ -253,6 +260,7 @@ source_group("Platform\\DirectX11" FILES ${PLATFORM_DX})
 source_group("Platform\\Miniaudio" FILES ${PLATFORM_MINIAUDIO})
 source_group("Platform\\StableDiffusion" FILES ${PLATFORM_SD})
 source_group("Platform\\Llama" FILES ${PLATFORM_LLAMA})
+source_group("Platform\\Onnx" FILES ${PLATFORM_ONNX})
 source_group("Pigeon\\ECS" FILES ${ECS_WORLD})
 source_group("Pigeon\\ECS\\Systems" FILES ${ECS_SYSTEMS})
 source_group("Pigeon\\ECS\\Components" FILES ${ECS_COMPONENTS})
@@ -328,6 +336,17 @@ if(PG_ENABLE_TEXTGEN)
     # is self-sufficient even when diffusion is off (duplicate target links are de-duplicated by CMake).
     find_package(CUDAToolkit REQUIRED)
     target_link_libraries(PigeonLib CUDA::cudart CUDA::cublas)
+endif()
+
+# Activate the real onnxruntime matting backend only when the opt-in is enabled; otherwise the
+# OnnxMattingBackend compiles to an inert no-op (see Platform/Onnx) and the figure composite falls back to
+# the skeleton silhouette. onnxruntime GPU ships as PREBUILT DLLs (fetched in the root CMakeLists), so this
+# links the import lib by path — the one engine dependency not linked statically (ADR 0012). The runtime
+# DLLs are copied next to the executable by SandboxApp's CMakeLists.
+if(PG_ENABLE_MATTING)
+    target_include_directories(PigeonLib PRIVATE "${PG_ONNXRUNTIME_DIR}/include")
+    target_link_libraries(PigeonLib "${PG_ONNXRUNTIME_DIR}/lib/onnxruntime.lib")
+    target_compile_definitions(PigeonLib PRIVATE PG_MATTING_ENABLED)
 endif()
 
 # Properties->General->Output Directory

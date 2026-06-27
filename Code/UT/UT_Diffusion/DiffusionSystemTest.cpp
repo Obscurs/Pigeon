@@ -10,12 +10,14 @@
 #include "Pigeon/Diffusion/DiffusionJobSingletonComponent.h"
 #include "Pigeon/Diffusion/DiffusionSystem.h"
 #include "Pigeon/Diffusion/GenerateImageRequestOneFrameComponent.h"
+#include "Pigeon/Diffusion/MattingBackendSingletonComponent.h"
 #include "Pigeon/Diffusion/OpenPoseSkeleton.h"
 #include "Pigeon/Diffusion/RasterizeOpenPoseHintRequestOneFrameComponent.h"
 #include "Pigeon/Diffusion/RegisterGeneratedTextureRequestOneFrameComponent.h"
 #include "Pigeon/ECS/System.h"
 #include "Pigeon/ECS/World.h"
 #include "Platform/Testing/TestingDiffusionBackend.h"
+#include "Platform/Testing/TestingMattingBackend.h"
 
 namespace
 {
@@ -25,10 +27,13 @@ namespace
 	const pg::UUID k_SkeletonID("aaaaaaaa-0000-4000-8000-000000000004");
 	const pg::UUID k_InputImageID("aaaaaaaa-0000-4000-8000-000000000005");
 	const pg::UUID k_HintTextureID("aaaaaaaa-0000-4000-8000-000000000006");
+	const pg::UUID k_MattingID("aaaaaaaa-0000-4000-8000-000000000007");
 
 	// Seeds the singletons DiffusionSystem only reads (added by ConfigLoader / ResourceManager in
-	// production), with a small generation size and a checkpoint path so the backend loads.
-	void SeedConfigAndResources(bool withCheckpoint)
+	// production), with a small generation size and a checkpoint path so the backend loads. withMattingModel
+	// declares a matting model so the matte backend loads (the composite uses the matte alpha); omit it to
+	// exercise the skeleton-silhouette fallback.
+	void SeedConfigAndResources(bool withCheckpoint, bool withMattingModel = true)
 	{
 		pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
 
@@ -41,6 +46,10 @@ namespace
 		if (withCheckpoint)
 		{
 			resources.m_CheckpointMap[k_CheckpointID] = "Assets/App/ImageGeneration/checkpoint.safetensors";
+		}
+		if (withMattingModel)
+		{
+			resources.m_MattingModelMap[k_MattingID] = "Assets/App/ImageGeneration/isnet-general-use.onnx";
 		}
 		resources.m_LoraMap[k_LoraID] = "Assets/App/ImageGeneration/lora.safetensors";
 		resources.m_OpenPoseSkeletonMap[k_SkeletonID] = pg::OpenPoseSkeleton::CreateFromJsonString(
@@ -63,6 +72,17 @@ namespace
 			return nullptr;
 		}
 		return &view.get<pg::DiffusionBackendSingletonComponent>(view.front());
+	}
+
+	pg::MattingBackendSingletonComponent* GetMattingBackend()
+	{
+		pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+		auto view = registry.view<pg::MattingBackendSingletonComponent>();
+		if (view.empty())
+		{
+			return nullptr;
+		}
+		return &view.get<pg::MattingBackendSingletonComponent>(view.front());
 	}
 
 	// Spins the engine forward until the active job reports done (bounded). The mock backend completes
@@ -98,8 +118,10 @@ TEST_CASE("Diffusion.DiffusionSystem::DeclareAccessIsCorrect")
 	CHECK(decl.readSet.count(std::type_index(typeid(pg::EngineConfigSingletonComponent))) > 0);
 	CHECK(decl.writeSet.count(std::type_index(typeid(pg::DiffusionBackendSingletonComponent))) > 0);
 	CHECK(decl.writeSet.count(std::type_index(typeid(pg::DiffusionJobSingletonComponent))) > 0);
+	CHECK(decl.writeSet.count(std::type_index(typeid(pg::MattingBackendSingletonComponent))) > 0);
 	CHECK(decl.addSet.count(std::type_index(typeid(pg::DiffusionBackendSingletonComponent))) > 0);
 	CHECK(decl.addSet.count(std::type_index(typeid(pg::DiffusionJobSingletonComponent))) > 0);
+	CHECK(decl.addSet.count(std::type_index(typeid(pg::MattingBackendSingletonComponent))) > 0);
 	CHECK(decl.addSet.count(std::type_index(typeid(pg::RegisterGeneratedTextureRequestOneFrameComponent))) > 0);
 }
 
@@ -377,6 +399,137 @@ TEST_CASE("Diffusion.DiffusionSystem::SkeletonMaskCompositePlacesSubjectOverBack
 	// shows the background (64). A corner near the background value proves the figure was composited over
 	// the background by the skeleton mask, not colour-keyed.
 	CHECK(static_cast<int>(registration.m_Image.m_Pixels[0]) < 100);
+}
+
+TEST_CASE("Diffusion.DiffusionSystem::LoadsResidentMattingModelFromResourceMap")
+{
+	pg::World& world = pg::World::Create();
+	world.RegisterSystem(std::make_unique<pg::DiffusionSystem>());
+	SeedConfigAndResources(true);
+
+	world.Update(pg::Timestep(0)); // create singletons
+	world.Update(pg::Timestep(0)); // load checkpoint + matting model
+
+	pg::MattingBackendSingletonComponent* matting = GetMattingBackend();
+	REQUIRE(matting != nullptr);
+	REQUIRE(matting->m_Backend != nullptr);
+	CHECK(matting->m_Backend->IsLoaded());
+
+	pg::TestingMattingBackend* mock = dynamic_cast<pg::TestingMattingBackend*>(matting->m_Backend.get());
+	REQUIRE(mock != nullptr);
+	CHECK(mock->GetModelPath().find("isnet-general-use.onnx") != std::string::npos);
+}
+
+TEST_CASE("Diffusion.DiffusionSystem::MatteCompositePlacesSubjectOverBackgroundUsingMatteAlpha")
+{
+	pg::World& world = pg::World::Create();
+	world.RegisterSystem(std::make_unique<pg::DiffusionSystem>());
+	SeedConfigAndResources(true);
+
+	pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+	pg::GenerateImageRequestOneFrameComponent request;
+	request.m_TargetTextureID = k_TargetTexture;
+	request.m_Prompt = "lin on a plain background";
+	request.m_ControlSkeletonID = k_SkeletonID;
+	request.m_BackgroundImageID = k_InputImageID; // seeded 8x8 value 64, resized to the 64x64 gen size
+	request.m_CompositeWithMatte = true;
+	const pg::ecs::Entity requestEntity = registry.create();
+	registry.emplace<pg::GenerateImageRequestOneFrameComponent>(requestEntity, request);
+
+	world.Update(pg::Timestep(0));
+	world.Update(pg::Timestep(0));
+	registry.destroy(requestEntity);
+	REQUIRE(WaitForActiveJobDone(2000));
+
+	world.UpdateRetainingEvents(pg::Timestep(0));
+
+	auto view = pg::World::GetRegistryDirect().view<pg::RegisterGeneratedTextureRequestOneFrameComponent>();
+	REQUIRE(view.size() == 1);
+	const pg::RegisterGeneratedTextureRequestOneFrameComponent& registration =
+		view.get<pg::RegisterGeneratedTextureRequestOneFrameComponent>(view.front());
+	REQUIRE(registration.m_Image.m_Pixels.size() == static_cast<size_t>(64) * 64 * 3);
+	// The mock matte is white on the left half (foreground), black on the right (background). So the
+	// left edge keeps the mock subject (grey 128) and the right edge shows the background (64) — proving
+	// the matte alpha drove the composite, not the centred skeleton silhouette or a chroma key.
+	CHECK(static_cast<int>(registration.m_Image.m_Pixels[0]) == 128);
+	const size_t rightIndex = (static_cast<size_t>(0) * 64 + 63) * 3;
+	CHECK(static_cast<int>(registration.m_Image.m_Pixels[rightIndex]) == 64);
+}
+
+TEST_CASE("Diffusion.DiffusionSystem::MatteCompositeFallsBackToSkeletonMaskWhenBackendUnavailable")
+{
+	pg::World& world = pg::World::Create();
+	world.RegisterSystem(std::make_unique<pg::DiffusionSystem>());
+	SeedConfigAndResources(true, /*withMattingModel=*/false); // matte backend created but never loaded
+
+	pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+	pg::GenerateImageRequestOneFrameComponent request;
+	request.m_TargetTextureID = k_TargetTexture;
+	request.m_Prompt = "lin on a plain background";
+	request.m_ControlSkeletonID = k_SkeletonID;
+	request.m_BackgroundImageID = k_InputImageID;
+	request.m_CompositeWithMatte = true;
+	const pg::ecs::Entity requestEntity = registry.create();
+	registry.emplace<pg::GenerateImageRequestOneFrameComponent>(requestEntity, request);
+
+	world.Update(pg::Timestep(0));
+	world.Update(pg::Timestep(0));
+	registry.destroy(requestEntity);
+	REQUIRE(WaitForActiveJobDone(2000));
+
+	world.UpdateRetainingEvents(pg::Timestep(0));
+
+	pg::MattingBackendSingletonComponent* matting = GetMattingBackend();
+	REQUIRE(matting != nullptr);
+	REQUIRE(matting->m_Backend != nullptr);
+	CHECK(matting->m_Backend->IsLoaded() == false); // no model declared -> not loaded
+
+	auto view = pg::World::GetRegistryDirect().view<pg::RegisterGeneratedTextureRequestOneFrameComponent>();
+	REQUIRE(view.size() == 1);
+	const pg::RegisterGeneratedTextureRequestOneFrameComponent& registration =
+		view.get<pg::RegisterGeneratedTextureRequestOneFrameComponent>(view.front());
+	REQUIRE(registration.m_Image.m_Pixels.size() == static_cast<size_t>(64) * 64 * 3);
+	// With no matte the composite falls back to the skeleton silhouette: away from the centred skeleton the
+	// mask is black, so the top-left corner shows the background (64), not the matte's left-foreground (128).
+	CHECK(static_cast<int>(registration.m_Image.m_Pixels[0]) < 100);
+}
+
+TEST_CASE("Diffusion.DiffusionSystem::MatteErodeTrimsForegroundEdgeInward")
+{
+	pg::World& world = pg::World::Create();
+	world.RegisterSystem(std::make_unique<pg::DiffusionSystem>());
+	SeedConfigAndResources(true);
+
+	pg::ecs::Registry& registry = pg::World::GetRegistryDirect();
+	pg::GenerateImageRequestOneFrameComponent request;
+	request.m_TargetTextureID = k_TargetTexture;
+	request.m_Prompt = "lin on a plain background";
+	request.m_ControlSkeletonID = k_SkeletonID;
+	request.m_BackgroundImageID = k_InputImageID;
+	request.m_CompositeWithMatte = true;
+	request.m_MatteErodePixels = 8; // shrinks the mock matte's foreground (x<32) inward to x<24
+	const pg::ecs::Entity requestEntity = registry.create();
+	registry.emplace<pg::GenerateImageRequestOneFrameComponent>(requestEntity, request);
+
+	world.Update(pg::Timestep(0));
+	world.Update(pg::Timestep(0));
+	registry.destroy(requestEntity);
+	REQUIRE(WaitForActiveJobDone(2000));
+
+	world.UpdateRetainingEvents(pg::Timestep(0));
+
+	auto view = pg::World::GetRegistryDirect().view<pg::RegisterGeneratedTextureRequestOneFrameComponent>();
+	REQUIRE(view.size() == 1);
+	const pg::RegisterGeneratedTextureRequestOneFrameComponent& registration =
+		view.get<pg::RegisterGeneratedTextureRequestOneFrameComponent>(view.front());
+	REQUIRE(registration.m_Image.m_Pixels.size() == static_cast<size_t>(64) * 64 * 3);
+	// The mock matte keeps the figure (128) for x<32. Eroding 8px shrinks the foreground to x<24, so a
+	// pixel just inside the old edge (x=28) now shows the background (64), while a pixel deep in the figure
+	// (x=10) still shows the figure (128) — proving the erode trim cut the outline ring inward.
+	const size_t deepIndex = (static_cast<size_t>(0) * 64 + 10) * 3;
+	const size_t edgeIndex = (static_cast<size_t>(0) * 64 + 28) * 3;
+	CHECK(static_cast<int>(registration.m_Image.m_Pixels[deepIndex]) == 128);
+	CHECK(static_cast<int>(registration.m_Image.m_Pixels[edgeIndex]) == 64);
 }
 
 TEST_CASE("Diffusion.DiffusionSystem::RunsMultipleSequentialGenerationsWithoutDeadlock")

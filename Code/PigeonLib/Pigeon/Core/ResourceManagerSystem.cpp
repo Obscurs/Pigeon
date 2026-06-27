@@ -104,6 +104,13 @@ namespace
 		component.m_LanguageModelMap[resource.m_UUID] = resource.m_Path;
 	}
 
+	// ONNX matting models are loaded by the matting backend (onnxruntime), not the engine, so the
+	// resource map only records their resolved file paths (ADR 0012).
+	void LoadMattingModelFromResource(pg::ResourceMapSingletonComponent& component, const ParsedResource& resource)
+	{
+		component.m_MattingModelMap[resource.m_UUID] = resource.m_Path;
+	}
+
 	// Input images for img2img are decoded to CPU RGB pixels (the diffusion backend consumes pixels).
 	void LoadInputImageFromResource(pg::ResourceMapSingletonComponent& component, const ParsedResource& resource)
 	{
@@ -273,6 +280,14 @@ namespace
 			for (json child : jsonObject["languageModels"])
 			{
 				LoadLanguageModelFromResource(component, GetParsedResourceFromJsonItem(child, prefix, "TextGeneration"));
+			}
+		}
+		if (jsonObject.contains("mattingModels"))
+		{
+			PG_CORE_EXCEPT(jsonObject["mattingModels"].is_array(), "could not parse mattingModels from resource manifest");
+			for (json child : jsonObject["mattingModels"])
+			{
+				LoadMattingModelFromResource(component, GetParsedResourceFromJsonItem(child, prefix, "ImageGeneration"));
 			}
 		}
 		if (jsonObject.contains("inputImages"))

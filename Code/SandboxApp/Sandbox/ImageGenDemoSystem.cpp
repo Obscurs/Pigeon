@@ -65,13 +65,14 @@ namespace
 
 	// Step 3: place the posed character over the restyled background. The figure is generated with txt2img
 	// + OpenPose ControlNet (poses it) + the SDXL character LoRA (k_DiffusionLoraID, trigger word leading
-	// the prompt) on a plain background, then composited onto the restyled background through the skeleton's
-	// soft silhouette mask (m_CompositeWithSkeletonMask). img2img + ControlNet is NOT used: on this SDXL
+	// the prompt) on a plain background, then composited onto the restyled background through the figure's
+	// per-pixel Alpha Matte (m_CompositeWithMatte) so it integrates by its real outline — replacing the
+	// skeleton silhouette, whose geometric bounds left a "gray cloud" halo (ADR 0012; the silhouette is the
+	// fallback when the Matting Backend is unavailable). img2img + ControlNet is NOT used: on this SDXL
 	// checkpoint it NaNs the latent and decodes to flat grey (min=max=128) regardless of VAE or inpaint mask
-	// (ADR 0011). The composite is a CPU blend, so it always renders; the silhouette is rough, so edge
-	// placement is approximate — a deliberate trade for a result that reliably shows the character. (An
-	// earlier FLUX-architecture LoRA bound 0 tensors against this SDXL checkpoint — the wrong architecture,
-	// not a cause of grey — and was replaced by an Illustrious/SDXL character LoRA.)
+	// (ADR 0011). The composite is a CPU blend, so it always renders. (An earlier FLUX-architecture LoRA
+	// bound 0 tensors against this SDXL checkpoint — the wrong architecture, not a cause of grey — and was
+	// replaced by an Illustrious/SDXL character LoRA.)
 	void EmitCompositeRequest(pg::CheckedRegistryAccessor& accessor, const sbx::ImageGenDemoStateSingletonComponent& state)
 	{
 		pg::GenerateImageRequestOneFrameComponent request;
@@ -79,7 +80,9 @@ namespace
 		// "ff7t1f4" is the character LoRA's trigger word — it must lead the prompt for the LoRA to express
 		// the trained character. A plain background keeps the silhouette composite clean.
 		request.m_Prompt = "ff7t1f4, 1girl, full body, standing, plain white background, simple background, detailed, masterpiece, best quality";
-		request.m_NegativePrompt = "blurry, lowres, deformed, bad anatomy, multiple people, complex background";
+		// Negatives include glow/aura/outline terms: on a plain white background the model tends to paint a
+		// soft halo around the subject, which the matte then keeps as foreground and reads as a bright ring.
+		request.m_NegativePrompt = "blurry, lowres, deformed, bad anatomy, multiple people, complex background, glowing, glow, aura, halo, rim lighting, backlight, bloom, vignette, white outline, sticker, border";
 		request.m_Loras.push_back(pg::GenerateImageLoraRef{ sbx::k_DiffusionLoraID, state.m_CompositeLoraWeight });
 		// The OpenPose ControlNet poses the figure and its silhouette masks the composite over the restyled
 		// background. Both are gated by the same panel toggle so the figure generation can be tested without
@@ -89,8 +92,12 @@ namespace
 			request.m_ControlSkeletonID = sbx::k_DiffusionSkeletonID;
 			request.m_ControlStrength = 1.0f;
 			request.m_BackgroundImageID = sbx::k_BackgroundTextureID;
-			request.m_CompositeWithSkeletonMask = true;
+			// Cut the figure out by its real outline with the matting model and composite it over the
+			// restyled background (ADR 0012), eliminating the skeleton silhouette's "gray cloud" halo. The
+			// skeleton mask (its tightness knob) remains the fallback when the Matting Backend is unavailable.
+			request.m_CompositeWithMatte = true;
 			request.m_CompositeMaskScale = state.m_CompositeMaskScale;
+			request.m_MatteErodePixels = state.m_CompositeMatteErodePixels;
 		}
 		accessor.EmplaceOneframe<pg::GenerateImageRequestOneFrameComponent>(accessor.Create(), std::move(request));
 	}
@@ -235,6 +242,7 @@ void sbx::ImageGenDemoSystem::Update(const pg::Timestep& ts)
 	ImGui::SliderFloat("Composite LoRA weight", &state.m_CompositeLoraWeight, 0.0f, 1.5f);
 	ImGui::Checkbox("Composite ControlNet", &state.m_CompositeUseControlNet);
 	ImGui::SliderFloat("Composite mask tightness", &state.m_CompositeMaskScale, 0.2f, 1.2f);
+	ImGui::SliderInt("Matte edge trim (px)", &state.m_CompositeMatteErodePixels, 0, 30);
 
 	if (backendReady && IsPipelineIdle(state))
 	{

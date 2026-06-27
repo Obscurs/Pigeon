@@ -52,6 +52,10 @@ namespace pg
 		// backend (llama.cpp) loads itself; the engine does not parse the weights.
 		std::unordered_map<pg::UUID, std::string> m_LanguageModelMap;
 
+		// Image-matting ONNX models. Like checkpoints, these are resolved file paths the matting backend
+		// (onnxruntime) loads itself; the engine does not parse the weights (ADR 0012).
+		std::unordered_map<pg::UUID, std::string> m_MattingModelMap;
+
 		pg::UUID m_DefaultTexture = pg::UUID::Generate();
 	};
 }
