@@ -4,8 +4,8 @@
 
 namespace sbx
 {
-	// Shared UUIDs for the text-to-image demo. The model/skeleton/input-image IDs match the App
-	// ResourcesManifest (Assets/App/ImageGeneration); the four result-texture IDs are caller-assigned
+	// Shared UUIDs for the text-to-image demo. The model/skeleton/input-image IDs match the Sandbox
+	// ResourcesManifest (Assets/Sandbox/ImageGeneration); the four result-texture IDs are caller-assigned
 	// (not in the manifest): the pipeline (ADR 0011) registers its restyled background, OpenPose pose
 	// hint, final composite, and optional integration pass under them, and SceneSetupSystem shows a
 	// sprite bound to each.

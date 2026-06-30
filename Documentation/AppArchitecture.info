@@ -15,8 +15,9 @@ registers only the systems below; execution order is derived automatically from 
 ```
 pg::CreateApplication()  [Sandbox2D.cpp]
   ├── Sandbox::Create()                       (delegates to pg::Application::Create())
+  ├── SetAppAssetsFolder("Sandbox")           (engine loads Data/Assets/Sandbox; default is "App")
   └── World::RegisterSystem(...) for:
-        sbx::ConfigLoaderSystem        Assets/App/Config.json -> SandboxConfigSingletonComponent
+        sbx::ConfigLoaderSystem        Assets/Sandbox/Config.json -> SandboxConfigSingletonComponent
         sbx::TransformResolveSystem    app transform requests -> ResolvedTransformRequest (engine type)
         sbx::SceneSetupSystem          2D camera + sprite + animated character + labels + 3D camera + spinning model + 3D-output display sprite + four image-gen pipeline display sprites (background/pose-hint/composite/integration) + transform requests + LoadLayoutEvent (once)
         sbx::ModelSpinSystem           ModelSpinComponent + time -> ModelSpinTransformRequest (spins the 3D model about Y)
@@ -66,7 +67,7 @@ Frame 2
                          creates SpawnerSingletonComponent
 
 Frame 3+  (steady state)
-  engine UIControlSystem loads Data/Assets/App/UI/SandboxUI.json (from LoadLayoutEvent)
+  engine UIControlSystem loads Data/Assets/Sandbox/UI/SandboxUI.json (from LoadLayoutEvent)
   the render bridges, animation, input, and UI interaction systems run every frame (below)
 ```
 
@@ -149,5 +150,5 @@ Save Data (engine SaveDataSystem)
 | `Code/SandboxApp/Sandbox/*System.cpp` | One focused system per file (see Documentation/ModuleInfo/SandboxApp) |
 | `Code/SandboxApp/Sandbox/*Component.h` | Pure-data components and state singletons |
 | `Code/SandboxApp/Sandbox/UIElementHelpers.*` | Shared sandbox helpers: find a UI element by UUID; UI event predicates |
-| `Data/Assets/App/Config.json` | UUID references for fonts, textures, the 3D model, the UI layout, and targeted UI elements |
-| `Data/Assets/App/UI/SandboxUI.json` | Root UI layout: toggle button + a dismissible panel (status text, note, close button) |
+| `Data/Assets/Sandbox/Config.json` | UUID references for fonts, textures, the 3D model, the UI layout, and targeted UI elements |
+| `Data/Assets/Sandbox/UI/SandboxUI.json` | Root UI layout: toggle button + a dismissible panel (status text, note, close button) |

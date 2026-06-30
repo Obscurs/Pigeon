@@ -10,11 +10,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Projects
 
-Three projects live in this repo:
+Four projects live in this repo:
 
 - **PigeonLib** — custom 2D game engine (static library). Handles windowing, DirectX 11 rendering, ECS, events, ImGui, and UI.
-- **SandboxApp** — Sandbox app to test the PigeonLib.
+- **SandboxApp** — Sandbox app to test the PigeonLib. Its assets live under `Data/Assets/Sandbox`.
+- **App** — minimal application that boots the engine with no app-specific systems. Its assets live under `Data/Assets/App`.
 - **UT** — unit tests for both engine and application, built only under the `Testing` configuration.
+
+Each app's asset folder under `Data/Assets/<folder>` is set per app via `pg::Application::SetAppAssetsFolder` (default `"App"`; SandboxApp sets `"Sandbox"`) — see ADR 0013.
 
 ## Build System
 

@@ -1,0 +1,53 @@
+{
+	"ui": [
+		{"id": "e48eb073-fcb1-44eb-a3b0-eb2f186a5831", "path" : "SandboxUI.json"}
+	],
+	"textures": [
+		{"id": "c5ceb129-c518-4048-9856-a26e00f2676a", "path" : "alphaTest.png"},
+		{"id": "e3afff59-1ee8-4396-b9ed-b093dd521f91", "path" : "Checkerboard.png"},
+		{"id": "989d3ba6-0062-4cf2-bab5-1c6de7ea2da3", "path" : "Checkerboard2.png"},
+		{"id": "132fdaf4-2f53-48a9-aed0-a803c503ca07", "path" : "fontSprite.png"},
+		{"id": "34b58f09-e65f-44cf-b640-344c728bc2ea", "path" : "sampleSprite.png"}
+
+	],
+	"fonts": [
+		{"id": "1f701e90-545e-4e74-87f4-00bcc293cf4c", "path" : "opensans/OpenSans-Bold.ttf"},
+		{"id": "a60c36f6-3c65-4bc5-8279-30ce17d854c6", "path" : "opensans/OpenSans-Regular.ttf"}
+	],
+	"shaders": [
+	],
+	"sounds": [
+		{"id": "b2000000-0000-4000-8000-000000000001", "path" : "sampleSound.mp3"},
+		{"id": "b2000000-0000-4000-8000-000000000002", "path" : "sampleMusic.mp3"}
+	],
+	"json": [
+		{"id": "b2000000-0000-4000-8000-000000000003", "path" : "sampleData.json"}
+	],
+	"models": [
+		{"id": "b2000000-0000-4000-8000-000000000004", "path" : "monkey.obj"}
+	],
+	"checkpoints": [
+		{"id": "d8000000-0000-4000-8000-000000000001", "path" : "ilustmix_v70Cinematic.safetensors"}
+	],
+	"loras": [
+		{"id": "d8000000-0000-4000-8000-000000000002", "path" : "FF7T1f4_f32.safetensors"}
+	],
+	"controlNets": [
+		{"id": "d8000000-0000-4000-8000-000000000003", "path" : "OpenPoseXL2_sdcpp.safetensors"}
+	],
+	"openPoseSkeletons": [
+		{"id": "d8000000-0000-4000-8000-000000000004", "path" : "standing_10.json"}
+	],
+	"inputImages": [
+		{"id": "d8000000-0000-4000-8000-000000000006", "path" : "livingRoom.jpg"}
+	],
+	"vae": [
+		{"id": "d8000000-0000-4000-8000-000000000008", "path" : "sdxl-fp16.vae.safetensors"}
+	],
+	"mattingModels": [
+		{"id": "d8000000-0000-4000-8000-000000000009", "path" : "isnet-general-use.onnx"}
+	],
+	"languageModels": [
+		{"id": "d8000000-0000-4000-8000-000000000007", "path" : "Llama-3.1-128k-Dark-Planet-Uncensored-8B-Q4_k_s.gguf"}
+	]
+}

@@ -240,6 +240,7 @@ configure_file(
 
 add_subdirectory(Code/PigeonLib)
 add_subdirectory(Code/SandboxApp)
+add_subdirectory(Code/App)
 add_subdirectory(Code/UT)
 
 set_target_properties(freetype PROPERTIES FOLDER "Dependencies")

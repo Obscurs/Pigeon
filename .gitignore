@@ -3,5 +3,5 @@ Data\imgui.ini
 
 # Text-to-image model files are large (multi-GB) and managed outside version control.
 # Keep the small authored OpenPose skeleton(s) tracked so the demo still loads on a fresh clone.
-Data/Assets/App/ImageGeneration/*
-!Data/Assets/App/ImageGeneration/standing_10.json
+Data/Assets/Sandbox/ImageGeneration/*
+!Data/Assets/Sandbox/ImageGeneration/standing_10.json

@@ -2,6 +2,7 @@
 #include "Pigeon/Core/ResourceManagerSystem.h"
 
 #include "Pigeon/Audio/SoundClip.h"
+#include "Pigeon/Core/Application.h"
 #include "Pigeon/Core/Clock.h"
 #include "Pigeon/Core/ResourceMapSingletonComponent.h"
 #include "Pigeon/Diffusion/RegisterGeneratedTextureRequestOneFrameComponent.h"
@@ -336,7 +337,10 @@ void pg::ResourceManagerSystem::Update(const pg::Timestep& ts)
 #ifdef TESTS_ENABLED
 		LoadResourcesFromPath(component, "Assets/UT/ResourcesManifest.json", "UT");
 #else
-		LoadResourcesFromPath(component, "Assets/App/ResourcesManifest.json", "App");
+		// The app's asset folder name is configured per application (defaults to "App"); SandboxApp sets
+		// "Sandbox". This is the sole place the engine resolves the app's folder under Data/Assets.
+		const std::string& appFolder = pg::Application::Get().GetAppAssetsFolder();
+		LoadResourcesFromPath(component, "Assets/" + appFolder + "/ResourcesManifest.json", appFolder);
 #endif
 		accessor.EmplaceDeferred<pg::ResourceMapSingletonComponent>(ent, std::move(component));
 		return;

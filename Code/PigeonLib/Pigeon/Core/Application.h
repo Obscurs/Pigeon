@@ -8,6 +8,8 @@
 #include "Pigeon/Events/Event.h"
 #include "Pigeon/Renderer/Buffer.h"
 
+#include <string>
+
 namespace pg
 {
 	class ImGuiLayer;
@@ -59,6 +61,12 @@ namespace pg
 		inline Window& GetWindow() { return *m_Data.m_Window; }
 		inline InputLayer& GetInputLayer() { return *m_Data.m_InputLayer; }
 
+		// The name of this application's asset folder under Data/Assets (e.g. "App", "Sandbox"). The engine
+		// ResourceManagerSystem resolves the app resource manifest and all app asset paths under it. Defaults
+		// to "App"; an app with a differently named folder sets it in CreateApplication() before Run().
+		inline const std::string& GetAppAssetsFolder() const { return m_AppAssetsFolder; }
+		inline void SetAppAssetsFolder(const std::string& folder) { m_AppAssetsFolder = folder; }
+
 		inline static Application& Get() { return *s_Instance; }
 		inline static bool HasInstance() { return s_Instance != nullptr; }
 	private:
@@ -72,6 +80,7 @@ namespace pg
 		bool OnWindowResize(const WindowResizeEvent& e);
 
 		Data m_Data;
+		std::string m_AppAssetsFolder = "App";
 	private:
 		static pg::U_Ptr<Application> s_Instance;
 	};

@@ -49,7 +49,7 @@ void sbx::ConfigLoaderSystem::Update(const pg::Timestep& ts)
 		return;
 	}
 
-	const std::string configStr = ReadJSONFileToString("Assets/App/Config.json");
+	const std::string configStr = ReadJSONFileToString("Assets/Sandbox/Config.json");
 	const json jsonObject = json::parse(configStr);
 
 	sbx::SandboxConfigSingletonComponent component;

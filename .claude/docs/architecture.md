@@ -3,7 +3,9 @@
 ## Engine vs. Game Split
 
 - **PigeonLib** — engine-generic code only: windowing, rendering, ECS primitives, transforms, UI, events, input. No application-specific logic.
-- **SandboxApp** — application code that uses PigeonLib. All domain-specific systems, components, and assets live here.
+- **SandboxApp** — the showcase application that uses PigeonLib; exercises every engine capability. Its domain-specific systems, components, and assets (`Data/Assets/Sandbox`) live here.
+- **App** — a second, minimal application that uses PigeonLib with no app systems (the most basic boot). Its assets live under `Data/Assets/App`.
+- Each application's asset folder under `Data/Assets/<folder>` is `pg::Application::GetAppAssetsFolder()` — default `"App"`, set per app in `CreateApplication()` (SandboxApp sets `"Sandbox"`). The engine `ResourceManagerSystem` loads `Assets/<folder>/ResourcesManifest.json` (ADR 0013).
 
 ## ECS Contract
 

@@ -36,6 +36,9 @@ public:
 pg::Application& pg::CreateApplication()
 {
 	pg::Application& sandbox = Sandbox::Create();
+	// SandboxApp's assets live under Data/Assets/Sandbox (the engine default is "App"). Set this before
+	// Run() so the engine ResourceManagerSystem loads the right app manifest and resolves asset paths.
+	sandbox.SetAppAssetsFolder("Sandbox");
 	pg::World& world = pg::World::Get();
 
 	// Engine systems (camera, input, resources, renderer, UI) are registered by Application::Init.

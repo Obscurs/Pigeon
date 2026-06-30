@@ -3,7 +3,7 @@
 
 namespace sbx
 {
-	// Resolved UUIDs read from Assets/App/Config.json. Every system in the showcase
+	// Resolved UUIDs read from Assets/Sandbox/Config.json. Every system in the showcase
 	// looks elements, textures and fonts up through this single config so the JSON
 	// assets stay the only place real UUIDs are written.
 	struct SandboxConfigSingletonComponent

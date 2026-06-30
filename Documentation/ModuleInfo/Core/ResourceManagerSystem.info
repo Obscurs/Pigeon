@@ -3,9 +3,12 @@
 ## Purpose
 On the first frame, loads all textures, fonts, shaders, UI layouts, sound clips, JSON assets, 3D
 models, render targets, and the text-to-image model assets (checkpoints, LoRAs, ControlNets, VAEs,
-OpenPose skeletons, matting models) from `Assets/Engine/ResourcesManifest.json` and
-`Assets/App/ResourcesManifest.json`, then creates ResourceMapSingletonComponent containing the fully
-populated asset maps. On every subsequent
+OpenPose skeletons, matting models) from `Assets/Engine/ResourcesManifest.json` and the app's
+`Assets/<appFolder>/ResourcesManifest.json`, then creates ResourceMapSingletonComponent containing the fully
+populated asset maps. The app's folder name is `pg::Application::GetAppAssetsFolder()` — configured per
+application (default `"App"`; SandboxApp sets `"Sandbox"`) — so a single engine resolves each app's
+manifest and asset paths under `Data/Assets/<appFolder>`. (Under the Testing build the app manifest is
+`Assets/UT/ResourcesManifest.json` instead.) On every subsequent
 frame it drains any RegisterGeneratedTextureRequest, registering each generated image as a Texture2D in
 the existing texture map under its caller-assigned UUID (so a generated image becomes an ordinary
 texture). The first-frame load is guarded by a presence check; the registration drain runs in steady

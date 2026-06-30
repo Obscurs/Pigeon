@@ -2,7 +2,7 @@
 
 ## Purpose
 One-shot initialization system for SandboxApp. On the first frame, reads
-`Assets/App/Config.json` and creates SandboxConfigSingletonComponent containing every UUID the
+`Assets/Sandbox/Config.json` and creates SandboxConfigSingletonComponent containing every UUID the
 showcase needs: two fonts, the sprite, textured-quad and animated-character textures, the main UI layout, the UI
 element ids the interaction systems target (toggle button, toggle panel, status text, close
 button, close target), the three button textures swapped on interaction (default / hover /
@@ -17,4 +17,4 @@ subsequent frames (presence check guards early exit).
 ## Output Components
 | Component | Access | Notes |
 |---|---|---|
-| SandboxConfigSingletonComponent | add (deferred) | Created once from Assets/App/Config.json |
+| SandboxConfigSingletonComponent | add (deferred) | Created once from Assets/Sandbox/Config.json |
